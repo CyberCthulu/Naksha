@@ -59,7 +59,7 @@ export default function SignupScreen({ navigation }: any) {
     if (insertError) {
       setError(insertError.message)
     } else {
-  navigation.replace('CheckEmail')
+  navigation.replace('CheckEmail', { email })
     }
   }
 
