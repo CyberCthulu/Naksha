@@ -8,14 +8,16 @@ export default function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
-  const handleLogin = async () => {
-    const { error } = await signInWithEmail(email, password)
-    if (error) {
-      setError(error.message)
+const handleLogin = async () => {
+  const { error, data } = await signInWithEmail(email, password);
+  if (error) {
+    if (error.message.includes("Email not confirmed")) {
+      setError("Please verify your email before logging in.");
     } else {
-      navigation.replace('Dashboard') // assumes you’ll create a Dashboard route
+      setError(error.message);
     }
   }
+}
 
   return (
     <View style={styles.container}>
@@ -30,6 +32,10 @@ export default function LoginScreen({ navigation }: any) {
       />
       {error !== '' && <Text style={{ color: 'red' }}>{error}</Text>}
       <Button title="Login" onPress={handleLogin} />
+      <Button
+      title="Don't have an account? Sign Up"
+      onPress={() => navigation.navigate('Signup')}
+    />
     </View>
   )
 }
