@@ -4,6 +4,8 @@ import React, { useState, useEffect, createContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import supabase from './lib/supabase';
+import * as Linking from 'expo-linking'
+
 
 import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
@@ -13,6 +15,16 @@ import CheckEmailScreen from './screens/CheckEmailScreen';
 
 // Create AuthContext to provide user state
 export const AuthContext = createContext<{ user: any | null }>({ user: null });
+
+const linking = {
+  prefixes: ['naksha://'],
+  config: {
+    screens: {
+      AuthCallback: 'auth/callback',
+      // optional: map other screens here too
+    },
+  },
+}
 
 const Stack = createNativeStackNavigator();
 
