@@ -1,47 +1,56 @@
-//App.tsx
+// App.tsx
 
 import React, { useState, useEffect, createContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import * as Linking from 'expo-linking';
 import supabase from './lib/supabase';
-import * as Linking from 'expo-linking'
-
 
 import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
-import DashboardScreen from './screens/DashboardScreen';
 import CheckEmailScreen from './screens/CheckEmailScreen';
+import DashboardScreen from './screens/DashboardScreen';
 
-
-// Create AuthContext to provide user state
+// AuthContext to share user state
 export const AuthContext = createContext<{ user: any | null }>({ user: null });
 
+const Stack = createNativeStackNavigator();
+
+// Build your deep-link prefix from expo-linking
+const prefix = Linking.createURL('/'); // → naksha:///
+
 const linking = {
-  prefixes: ['naksha://'],
+  prefixes: [prefix],
   config: {
     screens: {
-      AuthCallback: 'auth/callback',
-      // optional: map other screens here too
+      Login: 'login',
+      Signup: 'signup',
+      CheckEmail: 'verify-email',
+      Dashboard: 'dashboard',
+      AuthCallback: 'auth/callback', // if/when you implement a dedicated callback screen
     },
   },
-}
-
-const Stack = createNativeStackNavigator();
+};
 
 export default function App() {
   const [user, setUser] = useState<any | null>(null);
 
   useEffect(() => {
-    // Check initial auth session
+    // 1) Fetch initial session
     const initAuth = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) console.warn('Error getting session:', error);
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+      if (error) console.warn('Error getting session:', error.message);
       setUser(session?.user ?? null);
     };
     initAuth();
 
-    // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // 2) Subscribe to auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
 
@@ -52,11 +61,13 @@ export default function App() {
 
   return (
     <AuthContext.Provider value={{ user }}>
-      <NavigationContainer>
+      <NavigationContainer linking={linking} fallback={<></>}>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {user ? (
+            // User is signed in
             <Stack.Screen name="Dashboard" component={DashboardScreen} />
           ) : (
+            // Auth flow
             <>
               <Stack.Screen name="Login" component={LoginScreen} />
               <Stack.Screen name="Signup" component={SignupScreen} />
