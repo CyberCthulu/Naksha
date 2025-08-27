@@ -67,9 +67,13 @@ export default function DashboardScreen() {
     (profile?.first_name?.trim() || '') +
     (profile?.last_name ? ` ${profile.last_name}` : '')
 
-  // Pretty time without seconds (e.g., "14:30")
-  const prettyTime =
-    (profile?.birth_time && profile.birth_time.slice(0, 5)) ?? '—'
+// Pretty time with locale formatting (12h/24h depending on device settings)
+const prettyTime = profile?.birth_time
+  ? new Date(`1970-01-01T${profile.birth_time}Z`).toLocaleTimeString([], {
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+  : '—'
 
   if (loading) {
     return (
