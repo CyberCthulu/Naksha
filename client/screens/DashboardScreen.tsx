@@ -1,6 +1,7 @@
 // screens/DashboardScreen.tsx
-import { useEffect, useState } from 'react'
-import { View, Text, Button, StyleSheet, ActivityIndicator, Alert } from 'react-native'
+import { useEffect, useState, useCallback } from 'react'
+import { View, Text, Button, StyleSheet, ActivityIndicator } from 'react-native'
+import { useFocusEffect } from '@react-navigation/native'
 import supabase from '../lib/supabase'
 import { signOut } from '../lib/auth'
 
@@ -20,12 +21,15 @@ export default function DashboardScreen() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
 
-      const { data: { user }, error: userErr } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error: userErr,
+      } = await supabase.auth.getUser()
       if (userErr) throw userErr
       if (!user) {
         setError('No active session found.')
@@ -36,27 +40,36 @@ export default function DashboardScreen() {
         .from('users')
         .select('*')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
 
-      if (profErr && profErr.code !== 'PGRST116') { // not found
-        throw profErr
-      }
-
+      if (profErr) throw profErr
       setProfile((data as Profile) ?? null)
     } catch (e: any) {
       setError(e?.message ?? 'Failed to load dashboard.')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
+  // Initial load
   useEffect(() => {
     load()
-  }, [])
+  }, [load])
+
+  // Refresh whenever the screen regains focus
+  useFocusEffect(
+    useCallback(() => {
+      load()
+    }, [load])
+  )
 
   const displayName =
     (profile?.first_name?.trim() || '') +
     (profile?.last_name ? ` ${profile.last_name}` : '')
+
+  // Pretty time without seconds (e.g., "14:30")
+  const prettyTime =
+    (profile?.birth_time && profile.birth_time.slice(0, 5)) ?? '—'
 
   if (loading) {
     return (
@@ -90,7 +103,7 @@ export default function DashboardScreen() {
           <Text style={styles.cardTitle}>Your Birth Details</Text>
           <Text>Email: {profile.email ?? '—'}</Text>
           <Text>Date: {profile.birth_date ?? '—'}</Text>
-          <Text>Time: {profile.birth_time ?? '—'}</Text>
+          <Text>Time: {prettyTime}</Text>
           <Text>Location: {profile.birth_location ?? '—'}</Text>
           <Text>Time Zone: {profile.time_zone ?? '—'}</Text>
         </View>
