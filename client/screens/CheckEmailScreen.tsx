@@ -59,9 +59,8 @@ export default function CheckEmailScreen({ navigation }: any) {
       }
 
       // Idempotent write of the profile row
-      const { error: upsertError } = await supabase.from('users').upsert(
+      const { error: updateError } = await supabase.from('users').update(
         {
-          id: user.id,
           email: user.email,
           first_name: firstName,
           last_name: lastName,
@@ -69,12 +68,12 @@ export default function CheckEmailScreen({ navigation }: any) {
           birth_time: birthTime,
           birth_location: birthLocation,
           time_zone: timeZone,
-        },
-        { onConflict: 'id' }
-      )
+        })
+        .eq('id', user.id)
+      
 
-      if (upsertError) {
-        Alert.alert('Save Failed', upsertError.message)
+      if (updateError) {
+        Alert.alert('Save Failed', updateError.message)
         return
       }
 
