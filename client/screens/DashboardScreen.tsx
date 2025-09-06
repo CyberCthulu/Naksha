@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native'
 import supabase from '../lib/supabase'
 import { signOut } from '../lib/auth'
 
-type Profile = {
+type User = {
   id: string
   email: string | null
   first_name: string | null
@@ -18,7 +18,7 @@ type Profile = {
 
 export default function DashboardScreen() {
   const [loading, setLoading] = useState(true)
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const [profile, setProfile] = useState<User | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
@@ -43,7 +43,7 @@ export default function DashboardScreen() {
         .maybeSingle()
 
       if (profErr) throw profErr
-      setProfile((data as Profile) ?? null)
+      setProfile((data as User) ?? null)
     } catch (e: any) {
       setError(e?.message ?? 'Failed to load dashboard.')
     } finally {
@@ -68,12 +68,14 @@ export default function DashboardScreen() {
     (profile?.last_name ? ` ${profile.last_name}` : '')
 
 // Pretty time with locale formatting (12h/24h depending on device settings)
-const prettyTime = profile?.birth_time
-  ? new Date(`1970-01-01T${profile.birth_time}Z`).toLocaleTimeString([], {
-      hour: 'numeric',
-      minute: '2-digit',
-    })
-  : '—'
+ const prettyTime = (() => {
+    const t = profile?.birth_time
+    if (!t) return '—'
+    const [h, m] = t.split(':') // "HH:MM:SS" -> ["HH","MM","SS"]
+    const d = new Date()
+    d.setHours(parseInt(h || '0', 10), parseInt(m || '0', 10), 0, 0) // local time
+    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+  })()
 
   if (loading) {
     return (
