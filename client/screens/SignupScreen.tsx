@@ -1,9 +1,7 @@
 // screens/SignupScreen.tsx
-
 import React, { useState, useEffect } from 'react'
 import { View, Text, TextInput, Button, StyleSheet, Platform } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
-import supabase from '../lib/supabase'
 import { signUpWithEmail } from '../lib/auth'
 
 export default function SignupScreen({ navigation }: any) {
@@ -16,6 +14,7 @@ export default function SignupScreen({ navigation }: any) {
   const [birthLocation, setBirthLocation] = useState('')
   const [timeZone, setTimeZone] = useState('')
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [showTimePicker, setShowTimePicker] = useState(false)
 
@@ -25,39 +24,64 @@ export default function SignupScreen({ navigation }: any) {
   }, [])
 
   const handleSignup = async () => {
+    if (submitting) return
+
+    // Basic validation
+    if (!email.trim() || !password.trim()) {
+      setError('Email and password are required.')
+      return
+    }
     if (!birthDate || !birthTime) {
       setError('Please select both birth date and time.')
       return
     }
 
-    const formattedDate = birthDate.toISOString().split('T')[0]
-    const formattedTime = birthTime.toTimeString().split(' ')[0]
+    setError('')
+    setSubmitting(true)
 
-    const { data, error } = await signUpWithEmail(email, password)
+    // Format to what the DB/trigger expects
+    const formattedDate = birthDate.toISOString().split('T')[0]      // YYYY-MM-DD
+    const formattedTime = birthTime.toTimeString().split(' ')[0]     // HH:MM:SS (local)
+
+    // ✅ Send profile metadata at sign-up
+    const { error } = await signUpWithEmail(email.trim(), password, {
+      first_name: firstName || undefined,
+      last_name: lastName || undefined,
+      birth_date: formattedDate,
+      birth_time: formattedTime,
+      birth_location: birthLocation || undefined,
+      time_zone: timeZone || undefined,
+    })
+
+    setSubmitting(false)
+
     if (error) {
       setError(error.message)
       return
     }
 
-    // No DB insert here — we wait until CheckEmail screen
-    navigation.replace('CheckEmail', {
-      email,
-      firstName,
-      lastName,
-      birthDate: formattedDate,
-      birthTime: formattedTime,
-      birthLocation,
-      timeZone,
-    })
+    // We no longer need to stash data here for DB insertion—the trigger handles it.
+    navigation.replace('CheckEmail', { email })
   }
 
   return (
     <View style={styles.container}>
       <Text>Email</Text>
-      <TextInput style={styles.input} value={email} onChangeText={setEmail} />
+      <TextInput
+        style={styles.input}
+        autoCapitalize="none"
+        keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
+      />
 
       <Text>Password</Text>
-      <TextInput style={styles.input} value={password} onChangeText={setPassword} secureTextEntry />
+      <TextInput
+        style={styles.input}
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
 
       <Text>First Name</Text>
       <TextInput style={styles.input} value={firstName} onChangeText={setFirstName} />
@@ -69,6 +93,7 @@ export default function SignupScreen({ navigation }: any) {
       <Button
         title={birthDate ? birthDate.toDateString() : 'Select Date'}
         onPress={() => setShowDatePicker(true)}
+        disabled={submitting}
       />
       {showDatePicker && (
         <DateTimePicker
@@ -86,6 +111,7 @@ export default function SignupScreen({ navigation }: any) {
       <Button
         title={birthTime ? birthTime.toLocaleTimeString() : 'Select Time'}
         onPress={() => setShowTimePicker(true)}
+        disabled={submitting}
       />
       {showTimePicker && (
         <DateTimePicker
@@ -106,9 +132,17 @@ export default function SignupScreen({ navigation }: any) {
       <Text>Time Zone (auto-detected)</Text>
       <TextInput style={styles.input} value={timeZone} editable={false} />
 
-      {error !== '' && <Text style={{ color: 'red' }}>{error}</Text>}
-      <Button title="Sign Up" onPress={handleSignup} />
-      <Button title="Already have an account? Log In" onPress={() => navigation.replace('Login')} />
+      {error !== '' && <Text style={{ color: 'red', marginTop: 6 }}>{error}</Text>}
+
+      <View style={{ height: 8 }} />
+      <Button title={submitting ? 'Signing Up…' : 'Sign Up'} onPress={handleSignup} disabled={submitting} />
+
+      <View style={{ height: 8 }} />
+      <Button
+        title="Already have an account? Log In"
+        onPress={() => navigation.replace('Login')}
+        disabled={submitting}
+      />
     </View>
   )
 }

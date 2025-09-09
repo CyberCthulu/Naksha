@@ -11,12 +11,27 @@ function getRedirectTo() {
   return Linking.createURL('/auth/callback')
 }
 
-export async function signUpWithEmail(email: string, password: string) {
-  return supabase.auth.signUp({
+export type ProfileMeta = {
+  first_name?: string
+  last_name?: string
+  birth_date?: string      // 'YYYY-MM-DD'
+  birth_time?: string      // 'HH:MM:SS'
+  birth_location?: string
+  time_zone?: string
+}
+
+export async function signUpWithEmail(
+  email: string,
+  password: string,
+  meta: ProfileMeta = {}
+) {
+  return await supabase.auth.signUp({
     email,
     password,
     options: {
       emailRedirectTo: getRedirectTo(),
+      // 👇 THIS is the key: send profile data with the auth user
+      data: meta,
     },
   })
 }

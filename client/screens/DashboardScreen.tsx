@@ -1,7 +1,7 @@
 // screens/DashboardScreen.tsx
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { View, Text, Button, StyleSheet, ActivityIndicator } from 'react-native'
-import { useFocusEffect } from '@react-navigation/native'
+import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import supabase from '../lib/supabase'
 import { signOut } from '../lib/auth'
 
@@ -16,10 +16,19 @@ type User = {
   time_zone: string | null
 }
 
+function needsProfileCompletion(p: Partial<User> | null | undefined) {
+  if (!p) return true
+  return !p.first_name || !p.last_name || !p.birth_date || !p.birth_time || !p.birth_location || !p.time_zone
+}
+
 export default function DashboardScreen() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<User | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const nav = useNavigation<any>()
+  const didEnsureOnce = useRef(false)
+  const didNavigateRef = useRef(false) // ← ADD THIS
 
   const load = useCallback(async () => {
     try {
@@ -36,39 +45,46 @@ export default function DashboardScreen() {
         return
       }
 
+      // Ensure a row exists (older accounts might not have one in rare cases)
+      if (!didEnsureOnce.current) {
+        await supabase.from('users').upsert(
+          { id: user.id, email: user.email ?? null },
+          { onConflict: 'id' }
+        )
+        didEnsureOnce.current = true
+      }
+
       const { data, error: profErr } = await supabase
         .from('users')
         .select('*')
         .eq('id', user.id)
         .maybeSingle()
-
       if (profErr) throw profErr
-      setProfile((data as User) ?? null)
+
+      const u = (data as User) ?? null
+      setProfile(u)
+
+      // ← ADD THIS BLOCK RIGHT AFTER setProfile(u):
+      if (needsProfileCompletion(u) && !didNavigateRef.current) {
+        (nav as any).navigate('CompleteProfile')
+        didNavigateRef.current = true
+      }
+
     } catch (e: any) {
       setError(e?.message ?? 'Failed to load dashboard.')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [nav])
 
-  // Initial load
-  useEffect(() => {
-    load()
-  }, [load])
-
-  // Refresh whenever the screen regains focus
-  useFocusEffect(
-    useCallback(() => {
-      load()
-    }, [load])
-  )
+  useEffect(() => { load() }, [load])
+  useFocusEffect(useCallback(() => { load() }, [load]))
 
   const displayName =
     (profile?.first_name?.trim() || '') +
     (profile?.last_name ? ` ${profile.last_name}` : '')
 
-// Pretty time with locale formatting (12h/24h depending on device settings)
- const prettyTime = (() => {
+  const prettyTime = (() => {
     const t = profile?.birth_time
     if (!t) return '—'
     const [h, m] = t.split(':') // "HH:MM:SS" -> ["HH","MM","SS"]
