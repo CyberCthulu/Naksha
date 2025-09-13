@@ -8,7 +8,9 @@ import supabase from './supabase'
  * In a built app, this resolves to your scheme, e.g. naksha://auth/callback
  */
 function getRedirectTo() {
-  return Linking.createURL('/auth/callback')
+  const url = Linking.createURL('/auth/callback')
+  console.log("🔗 Supabase emailRedirectTo:", url)
+  return url
 }
 
 export type ProfileMeta = {
