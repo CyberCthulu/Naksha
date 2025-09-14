@@ -8,3 +8,12 @@ import { computeNatalPlanets, PlanetPos, findAspects, Aspect } from '../lib/astr
 const ZODIAC = ['Ar','Ta','Ge','Cn','Le','Vi','Li','Sc','Sg','Cp','Aq','Pi']
 const signOf = (lon: number) => Math.floor(lon / 30)
 const degInSign = (lon: number) => (lon % 30 + 30) % 30
+
+type ProfileForChart = {
+  birth_date: string | null
+  birth_time: string | null
+  time_zone: string | null
+  first_name?: string | null
+  last_name?: string | null
+}
+
