@@ -11,6 +11,8 @@ import CheckEmailScreen from './screens/CheckEmailScreen';
 import DashboardScreen from './screens/DashboardScreen';
 import AuthCallbackScreen from './screens/AuthCallbackScreen';
 import CompleteProfileScreen from './screens/CompleteProfileScreen';
+import ChartScreen from './screens/ChartScreen'
+
 
 export const AuthContext = createContext<{ user: any | null }>({ user: null });
 const Stack = createNativeStackNavigator();
@@ -24,6 +26,7 @@ const linking = {
       CheckEmail: 'verify-email',
       Dashboard: 'dashboard',
       CompleteProfile: 'complete-profile',
+      Chart: 'chart',
       AuthCallback: 'auth/callback',
     },
   },
@@ -60,6 +63,11 @@ export default function App() {
                 name="CompleteProfile"
                 component={CompleteProfileScreen}
                 options={{ headerShown: true, title: 'Complete Profile' }}
+              />
+              <Stack.Screen
+                name="Chart"
+                component={ChartScreen}
+                options={{ headerShown: true, title: 'Birth Chart' }} 
               />
             </>
           ) : (
