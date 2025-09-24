@@ -141,11 +141,11 @@ export default function DashboardScreen() {
 
       <View style={{ height: 12 }} />
       {/* View Birth Chart */}
-<Button
-  title="View Birth Chart"
-  onPress={() => (nav as any).navigate('Chart', { profile })}
-  disabled={!profile || needsProfileCompletion(profile)}
-/>
+    <Button
+    title="View Birth Chart"
+    onPress={() => (nav as any).navigate('Chart', { profile })}
+    disabled={!profile || needsProfileCompletion(profile)}
+    />
       <Button title="Sign Out" onPress={signOut} />
     </View>
   )
