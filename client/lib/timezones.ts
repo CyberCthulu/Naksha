@@ -6,3 +6,5 @@ import { listTimeZones } from 'timezone-support'
 export const TIMEZONES: string[] = listTimeZones()
 
 export function isValidTimeZone(tz: string | null | undefined): tz is string {
+  return !!tz && TIMEZONES.includes(tz)
+}
