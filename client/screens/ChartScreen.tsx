@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import Svg, { Circle, Line, G, Text as SvgText } from 'react-native-svg'
 import { birthToUTC } from '../lib/time'
 import { computeNatalPlanets, findAspects, PlanetPos, Aspect } from '../lib/astro'
+import { normalizeZone } from '../lib/timezones'
 
 // Simple zodiac helpers
 const ZODIAC = ['Ar','Ta','Ge','Cn','Le','Vi','Li','Sc','Sg','Cp','Aq','Pi']
