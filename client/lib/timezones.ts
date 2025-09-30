@@ -22,3 +22,11 @@ const ABBR_TO_IANA: Record<string, string> = {
   GMT: 'Etc/GMT',
   UTC: 'Etc/UTC',
 };
+
+export function normalizeZone(raw:string | null | undefined): string | null {
+  if (!raw) return null;
+  const z = raw.trim();
+  const mapped = ABBR_TO_IANA[z.toUpperCase()];
+  if (mapped) return mapped;
+  return isValidTimeZone(z) ? z : null;
+}
