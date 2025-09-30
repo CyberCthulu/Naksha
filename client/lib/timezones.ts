@@ -8,3 +8,5 @@ export const TIMEZONES: string[] = listTimeZones()
 export function isValidTimeZone(tz: string | null | undefined): tz is string {
   return !!tz && TIMEZONES.includes(tz)
 }
+
+const ABBR_TO_IANA: Record<string, string> = {
