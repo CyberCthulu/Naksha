@@ -10,3 +10,15 @@ export function isValidTimeZone(tz: string | null | undefined): tz is string {
 }
 
 const ABBR_TO_IANA: Record<string, string> = {
+    PST: 'America/Los_Angeles',
+  PDT: 'America/Los_Angeles',
+  MST: 'America/Denver',
+  MDT: 'America/Denver',
+  CST: 'America/Chicago',
+  CDT: 'America/Chicago',
+  EST: 'America/New_York',
+  EDT: 'America/New_York',
+  IST: 'Asia/Kolkata',
+  GMT: 'Etc/GMT',
+  UTC: 'Etc/UTC',
+};
