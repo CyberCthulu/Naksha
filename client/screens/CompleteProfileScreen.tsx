@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { View, Text, TextInput, Button, StyleSheet, Platform, Alert } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import supabase from '../lib/supabase'
+import { isValidTimeZone, normalizeZone } from '../lib/timezones'
 
 export default function CompleteProfileScreen({ navigation }: any) {
   const [firstName, setFirstName] = useState('')

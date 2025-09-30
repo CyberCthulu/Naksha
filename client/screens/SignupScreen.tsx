@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react'
 import { View, Text, TextInput, Button, StyleSheet, Platform } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { signUpWithEmail } from '../lib/auth'
+import { isValidTimeZone, normalizeZone } from '../lib/timezones'
+
 
 export default function SignupScreen({ navigation }: any) {
   const [email, setEmail] = useState('')
