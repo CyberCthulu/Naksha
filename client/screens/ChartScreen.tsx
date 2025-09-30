@@ -1,3 +1,4 @@
+// screens/ChartScreen.tsx
 import React, { useMemo } from 'react'
 import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import Svg, { Circle, Line, G, Text as SvgText } from 'react-native-svg'
@@ -6,7 +7,7 @@ import { computeNatalPlanets, findAspects, PlanetPos, Aspect } from '../lib/astr
 import { normalizeZone } from '../lib/timezones'
 
 // Simple zodiac helpers
-const ZODIAC = ['Ar','Ta','Ge','Cn','Le','Vi','Li','Sc','Sg','Cp','Aq','Pi']
+const ZODIAC = ['Ar', 'Ta', 'Ge', 'Cn', 'Le', 'Vi', 'Li', 'Sc', 'Sg', 'Cp', 'Aq', 'Pi']
 const signOf = (lon: number) => Math.floor(lon / 30)
 const degInSign = (lon: number) => (lon % 30 + 30) % 30
 
@@ -21,24 +22,40 @@ type ProfileForChart = {
 export default function ChartScreen({ route }: any) {
   const { profile } = route.params as { profile: ProfileForChart }
 
-  // Defensive: if anything is missing, bail with a message
+  // Defensive: if anything is missing, show a helpful message
   if (!profile?.birth_date || !profile?.birth_time || !profile?.time_zone) {
     return (
       <View style={[styles.container, { alignItems: 'center' }]}>
         <Text style={styles.h1}>Natal Chart</Text>
-        <Text style={{ opacity: 0.8 }}>
+        <Text style={{ opacity: 0.8, textAlign: 'center' }}>
           Missing birth date, time, or time zone. Please complete your profile.
         </Text>
       </View>
     )
   }
 
+  // Normalize time zone (handles PST/EST/etc -> IANA, and validates IANA strings)
+  const tz = normalizeZone(profile.time_zone)
+  if (!tz) {
+    return (
+      <View style={[styles.container, { alignItems: 'center' }]}>
+        <Text style={styles.h1}>Natal Chart</Text>
+        <Text style={{ opacity: 0.8, textAlign: 'center' }}>
+          Your saved time zone isn’t valid. Please update it in “Complete Profile”.
+        </Text>
+        <Text style={{ opacity: 0.6, marginTop: 6 }}>
+          Current value: {String(profile.time_zone)}
+        </Text>
+      </View>
+    )
+  }
+
   const { planets, aspects } = useMemo(() => {
-    const { jsDate } = birthToUTC(profile.birth_date!, profile.birth_time!, profile.time_zone!)
+    const { jsDate } = birthToUTC(profile.birth_date!, profile.birth_time!, tz)
     const ps: PlanetPos[] = computeNatalPlanets(jsDate)
     const asps: Aspect[] = findAspects(ps)
     return { planets: ps, aspects: asps }
-  }, [profile.birth_date, profile.birth_time, profile.time_zone])
+  }, [profile.birth_date, profile.birth_time, tz])
 
   const size = 300
   const cx = size / 2
@@ -82,7 +99,7 @@ export default function ChartScreen({ route }: any) {
           const ang = (p.lon * Math.PI) / 180
           const x = cx + Math.cos(-ang + Math.PI / 2) * rPlanets
           const y = cy + Math.sin(-ang + Math.PI / 2) * rPlanets
-          const label = p.name[0] // quick placeholder
+          const label = p.name[0] // placeholder glyph
           return (
             <G key={p.name}>
               <Circle cx={x} cy={y} r={8} fill="#222" />
