@@ -1,3 +1,5 @@
+//components/TestSupabase.tsx
+
 import { useEffect } from 'react'
 import { View, Text } from 'react-native'
 import supabase from '../lib/supabase'
