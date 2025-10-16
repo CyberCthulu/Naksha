@@ -1,15 +1,21 @@
 // screens/ChartScreen.tsx
 import React, { useMemo } from 'react'
-import { View, Text, StyleSheet, ScrollView } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, useWindowDimensions } from 'react-native'
 import Svg, { Circle, Line, G, Text as SvgText } from 'react-native-svg'
 import { birthToUTC } from '../lib/time'
 import { computeNatalPlanets, findAspects, PlanetPos, Aspect } from '../lib/astro'
 import { normalizeZone } from '../lib/timezones'
 
+
 // Simple zodiac helpers
 const ZODIAC = ['Ar', 'Ta', 'Ge', 'Cn', 'Le', 'Vi', 'Li', 'Sc', 'Sg', 'Cp', 'Aq', 'Pi']
 const signOf = (lon: number) => Math.floor(lon / 30)
 const degInSign = (lon: number) => (lon % 30 + 30) % 30
+
+const GLYPH: Record<string, string> = {
+  Sun: '☉', Moon: '☽', Mercury: '☿', Venus: '♀', Mars: '♂',
+  Jupiter: '♃', Saturn: '♄', Uranus: '♅', Neptune: '♆', Pluto: '♇',
+}
 
 type ProfileForChart = {
   birth_date: string | null
