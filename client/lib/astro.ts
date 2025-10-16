@@ -52,11 +52,12 @@ export function findAspects(planets: PlanetPos[]): Aspect[] {
     for (let j = i + 1; j < planets.length; j++) {
       const a = planets[i], b = planets[j]
       // smallest angular distance 0..180
-      const delta = Math.abs(((a.lon - b.lon + 540) % 360) - 180)
+      const sep = Math.abs(((a.lon - b.lon + 540) % 360) - 180)
       for (const asp of ASPECTS) {
-        const target = Math.abs(180 - asp.angle)
-        const orb = Math.abs(delta - target)
-        if (orb <= asp.orb) res.push({ a: a.name, b: b.name, type: asp.type, orb: +orb.toFixed(2) })
+        const diff = Math.abs(sep - asp.angle) // ← the only diff we need
+        if (diff <= asp.orb) {
+          res.push({ a: a.name, b: b.name, type: asp.type, orb: +diff.toFixed(2) })
+        }
       }
     }
   }
