@@ -1,16 +1,17 @@
 // screens/ChartScreen.tsx
 import React, { useMemo } from 'react'
-import { View, Text, StyleSheet, ScrollView, useWindowDimensions } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, useWindowDimensions, Alert, Button } from 'react-native'
 import Svg, { Circle, Line, G, Text as SvgText } from 'react-native-svg'
 import { birthToUTC } from '../lib/time'
 import { computeNatalPlanets, findAspects, PlanetPos, Aspect } from '../lib/astro'
 import { normalizeZone } from '../lib/timezones'
+import ChartCompass from '../components/ChartCompass'
 
 
 // Simple zodiac helpers
 const ZODIAC = ['Ar', 'Ta', 'Ge', 'Cn', 'Le', 'Vi', 'Li', 'Sc', 'Sg', 'Cp', 'Aq', 'Pi']
-const signOf = (lon: number) => Math.floor(lon / 30)
-const degInSign = (lon: number) => (lon % 30 + 30) % 30
+const signOf = (lon: number) => Math.floor(((lon % 360) + 360) % 360 / 30)
+const degInSign = (lon: number) => ((lon % 30) + 30) % 30
 
 const GLYPH: Record<string, string> = {
   Sun: '☉', Moon: '☽', Mercury: '☿', Venus: '♀', Mars: '♂',
@@ -27,6 +28,7 @@ type ProfileForChart = {
 
 export default function ChartScreen({ route }: any) {
   const { profile } = route.params as { profile: ProfileForChart }
+  const { width } = useWindowDimensions()
 
   // Defensive: if anything is missing, show a helpful message
   if (!profile?.birth_date || !profile?.birth_time || !profile?.time_zone) {
@@ -59,16 +61,33 @@ export default function ChartScreen({ route }: any) {
   const { planets, aspects } = useMemo(() => {
     const { jsDate } = birthToUTC(profile.birth_date!, profile.birth_time!, tz)
     const ps: PlanetPos[] = computeNatalPlanets(jsDate)
-    const asps: Aspect[] = findAspects(ps)
+    const asps: Aspect[] = findAspects(ps) // make sure this is the fixed version
     return { planets: ps, aspects: asps }
   }, [profile.birth_date, profile.birth_time, tz])
 
-  const size = 300
+  // Sizing
+  const maxChart = 360
+  const pad = 16 // SVG viewBox padding to prevent clip
+  const size = Math.min(Math.max(280, width - 32), maxChart) // 16px screen margin each side
   const cx = size / 2
   const cy = size / 2
   const rOuter = size / 2 - 8
-  const rInner = rOuter - 22
+  const rInner = rOuter - 26
   const rPlanets = (rOuter + rInner) / 2
+  const rAspect = rInner - 6 // draw lines inside the inner ring
+
+  // angle helpers (SVG y axis goes down, so rotate by +90 and invert)
+  const toXY = (lonDeg: number, radius: number) => {
+    const ang = (lonDeg * Math.PI) / 180
+    const x = cx + Math.cos(-ang + Math.PI / 2) * radius
+    const y = cy + Math.sin(-ang + Math.PI / 2) * radius
+    return { x, y }
+  }
+
+  // style aspect lines by type (grayscale styling)
+  const aspectStroke: Record<Aspect['type'], number> = {
+    conj: 2.0, opp: 1.8, trine: 1.6, square: 1.6, sextile: 1.2
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -76,74 +95,108 @@ export default function ChartScreen({ route }: any) {
         {`Natal Chart${profile.first_name ? ` — ${profile.first_name}` : ''}`}
       </Text>
 
-      <Svg width={size} height={size}>
-        {/* Rings */}
-        <Circle cx={cx} cy={cy} r={rOuter} stroke="#ccc" strokeWidth={1} fill="none" />
-        <Circle cx={cx} cy={cy} r={rInner} stroke="#eee" strokeWidth={1} fill="none" />
+      <View style={{ alignItems: 'center' }}>
+        <Svg
+          width={size}
+          height={size}
+          viewBox={`${-pad} ${-pad} ${size + pad * 2} ${size + pad * 2}`} // ← prevents clipping
+        >
+          {/* Rings */}
+          <Circle cx={cx} cy={cy} r={rOuter} stroke="#ccc" strokeWidth={1} fill="none" />
+          <Circle cx={cx} cy={cy} r={rInner} stroke="#eee" strokeWidth={1} fill="none" />
 
-        {/* 12 sign dividers + labels */}
-        {Array.from({ length: 12 }).map((_, i) => {
-          const ang = (i * 30 * Math.PI) / 180
-          const x1 = cx + Math.cos(-ang + Math.PI / 2) * rInner
-          const y1 = cy + Math.sin(-ang + Math.PI / 2) * rInner
-          const x2 = cx + Math.cos(-ang + Math.PI / 2) * rOuter
-          const y2 = cy + Math.sin(-ang + Math.PI / 2) * rOuter
-          const lx = cx + Math.cos(-ang + Math.PI / 2) * (rOuter + 10)
-          const ly = cy + Math.sin(-ang + Math.PI / 2) * (rOuter + 10)
-          return (
-            <G key={i}>
-              <Line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#bbb" strokeWidth={1} />
-              <SvgText x={lx} y={ly} fontSize="10" textAnchor="middle" alignmentBaseline="middle">
-                {ZODIAC[i]}
-              </SvgText>
-            </G>
-          )
-        })}
+          {/* 12 sign dividers + labels */}
+          {Array.from({ length: 12 }).map((_, i) => {
+            const ang = i * 30
+            const { x: x1, y: y1 } = toXY(ang, rInner)
+            const { x: x2, y: y2 } = toXY(ang, rOuter)
+            const { x: lx, y: ly } = toXY(ang, rOuter + 12)
+            return (
+              <G key={i}>
+                <Line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#bbb" strokeWidth={1} />
+                <SvgText x={lx} y={ly} fontSize="10" textAnchor="middle" dy="3">
+                  {ZODIAC[i]}
+                </SvgText>
+              </G>
+            )
+          })}
 
-        {/* Planets */}
-        {planets.map((p) => {
-          const ang = (p.lon * Math.PI) / 180
-          const x = cx + Math.cos(-ang + Math.PI / 2) * rPlanets
-          const y = cy + Math.sin(-ang + Math.PI / 2) * rPlanets
-          const label = p.name[0] // placeholder glyph
-          return (
-            <G key={p.name}>
-              <Circle cx={x} cy={y} r={8} fill="#222" />
-              <SvgText
-                x={x}
-                y={y + 0.5}
-                fontSize="8"
-                fill="#fff"
-                textAnchor="middle"
-                alignmentBaseline="middle"
-              >
-                {label}
-              </SvgText>
-            </G>
-          )
-        })}
-      </Svg>
+          {/* Aspect lines */}
+          {aspects.map((a, idx) => {
+            const A = planets.find(p => p.name === a.a)!
+            const B = planets.find(p => p.name === a.b)!
+            const { x: x1, y: y1 } = toXY(A.lon, rAspect)
+            const { x: x2, y: y2 } = toXY(B.lon, rAspect)
+            return (
+              <Line
+                key={`${a.a}-${a.b}-${idx}`}
+                x1={x1} y1={y1} x2={x2} y2={y2}
+                stroke="#777"
+                strokeWidth={aspectStroke[a.type]}
+                opacity={0.85}
+                strokeDasharray={
+                  a.type === 'sextile' ? '4 4'
+                  : a.type === 'trine' ? '8 6'
+                  : undefined
+                }
+              />
+            )
+          })}
+
+          {/* Planets */}
+          {planets.map((p) => {
+            const { x, y } = toXY(p.lon, rPlanets)
+            const glyph = GLYPH[p.name] ?? p.name[0] // ← use glyphs
+            return (
+              <G key={p.name}>
+                <Circle cx={x} cy={y} r={9} fill="#222" />
+                <SvgText
+                  x={x}
+                  y={y}
+                  fontSize="9"
+                  fill="#fff"
+                  textAnchor="middle"
+                  dy="3" // more reliable than alignmentBaseline on Android
+                >
+                  {glyph}
+                </SvgText>
+              </G>
+            )
+          })}
+        </Svg>
+      </View>
 
       <Text style={styles.h2}>Positions</Text>
       {planets.map((p) => {
         const s = signOf(p.lon)
-        const deg = degInSign(p.lon)
+        const degFloat = degInSign(p.lon)
+        const deg = Math.floor(degFloat)
+        const min = Math.round((degFloat - deg) * 60)
+        const mm = String(min).padStart(2, '0')
         return (
           <Text key={p.name} style={styles.row}>
-            {p.name.padEnd(7)} {ZODIAC[s]} {deg.toFixed(2)}°
+            {`${p.name.padEnd(7)} ${ZODIAC[s]} ${deg}°${mm}′`}
           </Text>
         )
       })}
+
+      <View style={{ height: 16 }} />
+      <ChartCompass style={{ marginBottom: 12 }} />  
 
       <Text style={styles.h2}>Aspects</Text>
       {aspects.length === 0 ? (
         <Text style={styles.muted}>None (within default orbs)</Text>
       ) : (
-        aspects.map((a, i) => (
-          <Text key={`${a.a}-${a.b}-${i}`} style={styles.row}>
-            {a.a} {a.type} {a.b} (orb {a.orb}°)
-          </Text>
-        ))
+        aspects
+          .slice()
+          .sort((a, b) => a.orb - b.orb)
+          .map((a, i) => (
+            <Text key={`${a.a}-${a.b}-${i}`} style={styles.row}>
+              {`${a.a} ${a.type} ${a.b} (orb ${a.orb.toFixed(2)}°)`}
+
+            </Text>
+
+          ))
       )}
     </ScrollView>
   )
