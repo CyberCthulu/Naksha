@@ -50,3 +50,13 @@ export async function saveChart(userId: string, input: BuildChartInput) {
   if (error) throw error
   return data as ChartRow
 }
+
+export async function listCharts(userId: string) {
+  const { data, error } = await supabase
+    .from('charts')
+    .select('id,user_id,name,chart_data,created_at,updated_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as ChartRow[]
+}
