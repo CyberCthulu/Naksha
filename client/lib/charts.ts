@@ -18,3 +18,24 @@ export type BuildChartInput = {
     birth_time: string
     time_zone: string
 }
+
+export function BuildChartData(input: BuildChartInput) {
+    const tz = normalizeZone(input.time_zone)
+    if (!tz) throw new Error('Invalid time zone')
+
+    const { jsDate, dtUTC } = birthToUTC(input.birth_date, input.birth_time, tz)
+    const planets = computeNatalPlanets(jsDate)
+    const aspects = findAspects(planets)
+    return {
+    meta: {
+      name: input.name,
+      birth_date: input.birth_date,
+      birth_time: input.birth_time,
+      time_zone: tz,
+      computed_at: new Date().toISOString(),
+      instant_utc: dtUTC.toISO(),
+    },
+    planets,
+    aspects,
+  }
+}
