@@ -11,7 +11,7 @@ import { saveChart } from '../lib/charts'
 
 // Simple zodiac helpers
 const ZODIAC = ['Ar', 'Ta', 'Ge', 'Cn', 'Le', 'Vi', 'Li', 'Sc', 'Sg', 'Cp', 'Aq', 'Pi']
-const signOf = (lon: number) => Math.floor(((lon % 360) + 360) % 360 / 30)
+const signOf = (lon: number) => Math.floor(lon / 30)
 const degInSign = (lon: number) => ((lon % 30) + 30) % 30
 
 const GLYPH: Record<string, string> = {
@@ -90,7 +90,7 @@ export default function ChartScreen({ route }: any) {
     conj: 2.0, opp: 1.8, trine: 1.6, square: 1.6, sextile: 1.2
   }
 
-    const onSave = async () => {
+  const onSave = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return Alert.alert('Not signed in')
 
@@ -99,7 +99,7 @@ export default function ChartScreen({ route }: any) {
         name: `${profile.first_name ?? 'My'} Natal Chart`,
         birth_date: profile.birth_date!,     // YYYY-MM-DD
         birth_time: profile.birth_time!,     // HH:MM:SS
-        time_zone: normalizeZone(profile.time_zone!)!, // IANA
+        time_zone: tz // IANA
       })
       Alert.alert('Saved', 'Chart saved to your library.')
     } catch (e: any) {
@@ -112,8 +112,10 @@ export default function ChartScreen({ route }: any) {
       <Text style={styles.h1}>
         {`Natal Chart${profile.first_name ? ` — ${profile.first_name}` : ''}`}
       </Text>
-
       
+      <View style={{ alignItems: 'center', marginBottom: 8 }}>
+        <Button title="Save Chart" onPress={onSave} />
+      </View>
 
       <View style={{ alignItems: 'center' }}>
         <Svg
@@ -143,8 +145,9 @@ export default function ChartScreen({ route }: any) {
 
           {/* Aspect lines */}
           {aspects.map((a, idx) => {
-            const A = planets.find(p => p.name === a.a)!
-            const B = planets.find(p => p.name === a.b)!
+            const A = planets.find(p => p.name === a.a)
+            const B = planets.find(p => p.name === a.b)
+            if (!A || !B) return null
             const { x: x1, y: y1 } = toXY(A.lon, rAspect)
             const { x: x2, y: y2 } = toXY(B.lon, rAspect)
             return (
