@@ -6,7 +6,8 @@ import { birthToUTC } from '../lib/time'
 import { computeNatalPlanets, findAspects, PlanetPos, Aspect } from '../lib/astro'
 import { normalizeZone } from '../lib/timezones'
 import ChartCompass from '../components/ChartCompass'
-
+import supabase from '../lib/supabase'
+import { saveChart } from '../lib/charts'
 
 // Simple zodiac helpers
 const ZODIAC = ['Ar', 'Ta', 'Ge', 'Cn', 'Le', 'Vi', 'Li', 'Sc', 'Sg', 'Cp', 'Aq', 'Pi']
@@ -89,11 +90,30 @@ export default function ChartScreen({ route }: any) {
     conj: 2.0, opp: 1.8, trine: 1.6, square: 1.6, sextile: 1.2
   }
 
+    const onSave = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return Alert.alert('Not signed in')
+
+    try {
+      await saveChart(user.id, {
+        name: `${profile.first_name ?? 'My'} Natal Chart`,
+        birth_date: profile.birth_date!,     // YYYY-MM-DD
+        birth_time: profile.birth_time!,     // HH:MM:SS
+        time_zone: normalizeZone(profile.time_zone!)!, // IANA
+      })
+      Alert.alert('Saved', 'Chart saved to your library.')
+    } catch (e: any) {
+      Alert.alert('Save failed', e?.message ?? 'Unknown error')
+    }
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.h1}>
         {`Natal Chart${profile.first_name ? ` — ${profile.first_name}` : ''}`}
       </Text>
+
+      
 
       <View style={{ alignItems: 'center' }}>
         <Svg
