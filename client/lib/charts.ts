@@ -60,3 +60,14 @@ export async function listCharts(userId: string) {
   if (error) throw error
   return (data ?? []) as ChartRow[]
 }
+
+export async function getChart(id: number, userId: string) {
+  const { data, error } = await supabase
+    .from('charts')
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (error) throw error
+  return data as ChartRow | null
+}
