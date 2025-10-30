@@ -39,3 +39,14 @@ export function BuildChartData(input: BuildChartInput) {
     aspects,
   }
 }
+
+export async function saveChart(userId: string, input: BuildChartInput) {
+  const payload = BuildChartData(input)
+  const { data, error } = await supabase
+    .from('charts')
+    .insert({ user_id: userId, name: input.name, chart_data: payload })
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as ChartRow
+}
