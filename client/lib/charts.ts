@@ -71,3 +71,12 @@ export async function getChart(id: number, userId: string) {
   if (error) throw error
   return data as ChartRow | null
 }
+
+export async function deleteChart(id: number, userId: string) {
+  const { error } = await supabase
+    .from('charts')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', userId)
+  if (error) throw error
+}
