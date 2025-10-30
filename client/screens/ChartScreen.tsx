@@ -114,7 +114,7 @@ export default function ChartScreen({ route }: any) {
       </Text>
       
       <View style={{ alignItems: 'center', marginBottom: 8 }}>
-        <Button title="Save Chart" onPress={onSave} />
+        <Button title="Save Chart Data" onPress={onSave} />
       </View>
 
       <View style={{ alignItems: 'center' }}>
