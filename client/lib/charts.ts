@@ -11,3 +11,10 @@ export type ChartRow = {
     created_at: string | null
     updated_at: string | null
 }
+
+export type BuildChartInput = {
+    name: string
+    birth_date: string
+    birth_time: string
+    time_zone: string
+}
