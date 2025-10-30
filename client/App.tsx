@@ -12,6 +12,7 @@ import DashboardScreen from './screens/DashboardScreen';
 import AuthCallbackScreen from './screens/AuthCallbackScreen';
 import CompleteProfileScreen from './screens/CompleteProfileScreen';
 import ChartScreen from './screens/ChartScreen'
+import MyChartsScreen from './screens/MyCharts';
 
 
 export const AuthContext = createContext<{ user: any | null }>({ user: null });
@@ -27,6 +28,7 @@ const linking = {
       Dashboard: 'dashboard',
       CompleteProfile: 'complete-profile',
       Chart: 'chart',
+      MyCharts: 'my-charts',
       AuthCallback: 'auth/callback',
     },
   },
@@ -64,11 +66,8 @@ export default function App() {
                 component={CompleteProfileScreen}
                 options={{ headerShown: true, title: 'Complete Profile' }}
               />
-              <Stack.Screen
-                name="Chart"
-                component={ChartScreen}
-                options={{ headerShown: true, title: 'Birth Chart' }} 
-              />
+              <Stack.Screen name="Chart" component={ChartScreen} options={{ headerShown: true, title: 'Birth Chart' }} />
+              <Stack.Screen name="MyCharts" component={MyChartsScreen} options={{ headerShown: true, title: 'My Saved Charts' }} />
             </>
           ) : (
             <>
