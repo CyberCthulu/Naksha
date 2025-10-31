@@ -1,6 +1,6 @@
 // screens/ChartScreen.tsx
-import React, { useMemo } from 'react'
-import { View, Text, StyleSheet, ScrollView, useWindowDimensions, Alert, Button } from 'react-native'
+import React, { useMemo, useEffect, useState } from 'react'
+import { View, Text, StyleSheet, ScrollView, useWindowDimensions, Alert, Button, ActivityIndicator } from 'react-native'
 import Svg, { Circle, Line, G, Text as SvgText } from 'react-native-svg'
 import { birthToUTC } from '../lib/time'
 import { computeNatalPlanets, findAspects, PlanetPos, Aspect } from '../lib/astro'
