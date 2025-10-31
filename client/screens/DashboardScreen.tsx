@@ -10,6 +10,15 @@ import { computeNatalPlanets, findAspects } from '../lib/astro'
 import { normalizeZone } from '../lib/timezones'
 import { saveChart } from '../lib/charts'
 
+// zodiac helpers
+const ZODIAC = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
+const ZODIAC_GLY = ['♈︎','♉︎','♊︎','♋︎','♌︎','♍︎','♎︎','♏︎','♐︎','♑︎','♒︎','♓︎']
+const signOf = (lon: number) => Math.floor((((lon % 360) + 360) % 360) / 30)
+
+const [sunSign, setSunSign] = useState<string | null>(null)
+const [moonSign, setMoonSign] = useState<string | null>(null)
+
+
 type User = {
   id: string
   email: string | null
@@ -68,6 +77,49 @@ export default function DashboardScreen() {
 
       const u = (data as User) ?? null
       setProfile(u)
+
+      // NEW — Fetch or compute Sun/Moon sign from saved chart
+if (!needsProfileCompletion(u)) {
+  const tz = normalizeZone(u.time_zone!)
+  if (tz && u.birth_date && u.birth_time) {
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // Try to load saved chart
+    const { data: existing } = await supabase
+      .from('charts')
+      .select('chart_data')
+      .eq('user_id', user!.id)
+      .eq('birth_date', u.birth_date)
+      .eq('birth_time', u.birth_time)
+      .eq('time_zone', tz)
+      .maybeSingle()
+
+    if (existing?.chart_data?.planets) {
+      // derive from saved chart
+      const planets = existing.chart_data.planets
+      const sun = planets.find((p: any) => p.name === 'Sun')
+      const moon = planets.find((p: any) => p.name === 'Moon')
+      if (sun) setSunSign(`${ZODIAC_GLY[signOf(sun.lon)]} ${ZODIAC[signOf(sun.lon)]}`)
+      if (moon) setMoonSign(`${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}`)
+    } else {
+      // no saved chart yet — compute and save it once
+      const { jsDate } = birthToUTC(u.birth_date, u.birth_time, tz)
+      const planets = computeNatalPlanets(jsDate)
+      const asps = findAspects(planets)
+      await saveChart(user!.id, {
+        name: `${u.first_name ?? 'My'} Natal Chart`,
+        birth_date: u.birth_date,
+        birth_time: u.birth_time,
+        time_zone: tz,
+      })
+      const sun = planets.find(p => p.name === 'Sun')
+      const moon = planets.find(p => p.name === 'Moon')
+      if (sun) setSunSign(`${ZODIAC_GLY[signOf(sun.lon)]} ${ZODIAC[signOf(sun.lon)]}`)
+      if (moon) setMoonSign(`${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}`)
+    }
+  }
+}
+
 
       // ← ADD THIS BLOCK RIGHT AFTER setProfile(u):
       if (needsProfileCompletion(u) && !didNavigateRef.current) {
