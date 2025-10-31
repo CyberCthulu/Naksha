@@ -90,22 +90,43 @@ export default function ChartScreen({ route }: any) {
     conj: 2.0, opp: 1.8, trine: 1.6, square: 1.6, sextile: 1.2
   }
 
-  const onSave = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return Alert.alert('Not signed in')
+const onSave = async () => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return Alert.alert('Not signed in')
 
-    try {
-      await saveChart(user.id, {
-        name: `${profile.first_name ?? 'My'} Natal Chart`,
-        birth_date: profile.birth_date!,     // YYYY-MM-DD
-        birth_time: profile.birth_time!,     // HH:MM:SS
-        time_zone: tz // IANA
-      })
-      Alert.alert('Saved', 'Chart saved to your library.')
-    } catch (e: any) {
-      Alert.alert('Save failed', e?.message ?? 'Unknown error')
+  try {
+    // 1️⃣ Check if a chart already exists for this date/time/tz
+    const { data: existing, error: lookupError } = await supabase
+      .from('charts')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('birth_date', profile.birth_date!)
+      .eq('birth_time', profile.birth_time!)
+      .eq('time_zone', tz)
+      .maybeSingle()
+
+    if (lookupError) throw lookupError
+
+    if (existing) {
+      // 2️⃣ Already saved → don’t upsert again
+      Alert.alert('Already Saved', 'This chart is already in your library.')
+      return
     }
+
+    // 3️⃣ Only save if not already stored
+    await saveChart(user.id, {
+      name: `${profile.first_name ?? 'My'} Natal Chart`,
+      birth_date: profile.birth_date!, // YYYY-MM-DD
+      birth_time: profile.birth_time!, // HH:MM:SS
+      time_zone: tz,                   // IANA
+    })
+
+    Alert.alert('Saved', 'Chart saved to your library.')
+  } catch (e: any) {
+    Alert.alert('Save failed', e?.message ?? 'Unknown error')
   }
+}
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
