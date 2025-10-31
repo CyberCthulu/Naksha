@@ -4,12 +4,15 @@ import { birthToUTC } from './time'
 import { normalizeZone } from './timezones'
 
 export type ChartRow = {
-    id: number
-    user_id: string
-    name: string
-    chart_data: any
-    created_at: string | null
-    updated_at: string | null
+  id: number
+  user_id: string
+  name: string
+  birth_date: string | null
+  birth_time: string | null
+  time_zone: string | null
+  chart_data: any
+  created_at: string | null
+  updated_at: string | null
 }
 
 export type BuildChartInput = {
@@ -44,7 +47,17 @@ export async function saveChart(userId: string, input: BuildChartInput) {
   const payload = BuildChartData(input)
   const { data, error } = await supabase
     .from('charts')
-    .insert({ user_id: userId, name: input.name, chart_data: payload })
+    .upsert(
+      {
+        user_id: userId,
+        name: input.name,
+        birth_date: input.birth_date,     // NEW
+        birth_time: input.birth_time,     // NEW
+        time_zone: input.time_zone,       // NEW
+        chart_data: payload
+      },
+      { onConflict: 'user_id,birth_date,birth_time,time_zone' } // NEW
+    )    
     .select('*')
     .single()
   if (error) throw error
