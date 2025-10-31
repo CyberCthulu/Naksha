@@ -30,6 +30,9 @@ type ProfileForChart = {
 export default function ChartScreen({ route }: any) {
   const { profile } = route.params as { profile: ProfileForChart }
   const { width } = useWindowDimensions()
+  const [loading, setLoading] = useState(true)
+  const [planets, setPlanets] = useState<PlanetPos[]>([])
+  const [aspects, setAspects] = useState<Aspect[]>([])
 
   // Defensive: if anything is missing, show a helpful message
   if (!profile?.birth_date || !profile?.birth_time || !profile?.time_zone) {
@@ -59,12 +62,49 @@ export default function ChartScreen({ route }: any) {
     )
   }
 
-  const { planets, aspects } = useMemo(() => {
-    const { jsDate } = birthToUTC(profile.birth_date!, profile.birth_time!, tz)
-    const ps: PlanetPos[] = computeNatalPlanets(jsDate)
-    const asps: Aspect[] = findAspects(ps) // make sure this is the fixed version
-    return { planets: ps, aspects: asps }
+    // Fetch or compute chart once
+  useEffect(() => {
+    const loadChart = async () => {
+      setLoading(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        Alert.alert('Not signed in')
+        return
+      }
+
+      try {
+        // Check if chart already saved
+        const { data: existing } = await supabase
+          .from('charts')
+          .select('chart_data')
+          .eq('user_id', user.id)
+          .eq('birth_date', profile.birth_date!)
+          .eq('birth_time', profile.birth_time!)
+          .eq('time_zone', tz)
+          .maybeSingle()
+
+        if (existing?.chart_data) {
+          console.log('Loaded chart from Supabase')
+          setPlanets(existing.chart_data.planets ?? [])
+          setAspects(existing.chart_data.aspects ?? [])
+        } else {
+          console.log('No saved chart, computing new one...')
+          const { jsDate } = birthToUTC(profile.birth_date!, profile.birth_time!, tz)
+          const ps = computeNatalPlanets(jsDate)
+          const asps = findAspects(ps)
+          setPlanets(ps)
+          setAspects(asps)
+        }
+      } catch (e: any) {
+        Alert.alert('Error loading chart', e.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadChart()
   }, [profile.birth_date, profile.birth_time, tz])
+
 
   // Sizing
   const maxChart = 360
