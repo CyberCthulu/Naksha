@@ -6,7 +6,7 @@ import supabase from '../lib/supabase'
 import { signOut } from '../lib/auth'
 
 import { birthToUTC } from '../lib/time'
-import { computeNatalPlanets, findAspects } from '../lib/astro'
+import { computeNatalPlanets } from '../lib/astro'
 import { normalizeZone } from '../lib/timezones'
 import { saveChart } from '../lib/charts'
 
@@ -14,7 +14,6 @@ import { saveChart } from '../lib/charts'
 const ZODIAC = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
 const ZODIAC_GLY = ['♈︎','♉︎','♊︎','♋︎','♌︎','♍︎','♎︎','♏︎','♐︎','♑︎','♒︎','♓︎']
 const signOf = (lon: number) => Math.floor((((lon % 360) + 360) % 360) / 30)
-
 
 type User = {
   id: string
@@ -36,30 +35,29 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<User | null>(null)
   const [error, setError] = useState<string | null>(null)
-
   const [sunSign, setSunSign] = useState<string | null>(null)
   const [moonSign, setMoonSign] = useState<string | null>(null)
 
   const nav = useNavigation<any>()
   const didEnsureOnce = useRef(false)
-  const didNavigateRef = useRef(false) // ← ADD THIS
+  const didNavigateRef = useRef(false)
+  const unmounted = useRef(false)
 
   const load = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
 
-      const {
-        data: { user },
-        error: userErr,
-      } = await supabase.auth.getUser()
+      // 1) Session
+      const { data: { user }, error: userErr } = await supabase.auth.getUser()
       if (userErr) throw userErr
       if (!user) {
+        setSunSign(null); setMoonSign(null)
         setError('No active session found.')
         return
       }
 
-      // Ensure a row exists (older accounts might not have one in rare cases)
+      // 2) Ensure profile row exists (once)
       if (!didEnsureOnce.current) {
         await supabase.from('users').upsert(
           { id: user.id, email: user.email ?? null },
@@ -68,6 +66,7 @@ export default function DashboardScreen() {
         didEnsureOnce.current = true
       }
 
+      // 3) Load profile
       const { data, error: profErr } = await supabase
         .from('users')
         .select('*')
@@ -78,61 +77,72 @@ export default function DashboardScreen() {
       const u = (data as User) ?? null
       setProfile(u)
 
-      // NEW — Fetch or compute Sun/Moon sign from saved chart
-if (!needsProfileCompletion(u)) {
-  const tz = normalizeZone(u.time_zone!)
-  if (tz && u.birth_date && u.birth_time) {
-    const { data: { user } } = await supabase.auth.getUser()
-
-    // Try to load saved chart
-    const { data: existing } = await supabase
-      .from('charts')
-      .select('chart_data')
-      .eq('user_id', user!.id)
-      .eq('birth_date', u.birth_date)
-      .eq('birth_time', u.birth_time)
-      .eq('time_zone', tz)
-      .maybeSingle()
-
-    if (existing?.chart_data?.planets) {
-      // derive from saved chart
-      const planets = existing.chart_data.planets
-      const sun = planets.find((p: any) => p.name === 'Sun')
-      const moon = planets.find((p: any) => p.name === 'Moon')
-      if (sun) setSunSign(`${ZODIAC_GLY[signOf(sun.lon)]} ${ZODIAC[signOf(sun.lon)]}`)
-      if (moon) setMoonSign(`${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}`)
-    } else {
-      // no saved chart yet — compute and save it once
-      const { jsDate } = birthToUTC(u.birth_date, u.birth_time, tz)
-      const planets = computeNatalPlanets(jsDate)
-      const asps = findAspects(planets)
-      await saveChart(user!.id, {
-        name: `${u.first_name ?? 'My'} Natal Chart`,
-        birth_date: u.birth_date,
-        birth_time: u.birth_time,
-        time_zone: tz,
-      })
-      const sun = planets.find(p => p.name === 'Sun')
-      const moon = planets.find(p => p.name === 'Moon')
-      if (sun) setSunSign(`${ZODIAC_GLY[signOf(sun.lon)]} ${ZODIAC[signOf(sun.lon)]}`)
-      if (moon) setMoonSign(`${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}`)
-    }
-  }
-}
-
-
-      // ← ADD THIS BLOCK RIGHT AFTER setProfile(u):
-      if (needsProfileCompletion(u) && !didNavigateRef.current) {
-        (nav as any).navigate('CompleteProfile')
-        didNavigateRef.current = true
+      // 4) If profile incomplete → navigate once and clear signs
+      if (needsProfileCompletion(u)) {
+        setSunSign(null); setMoonSign(null)
+        if (!didNavigateRef.current) {
+          (nav as any).navigate('CompleteProfile')
+          didNavigateRef.current = true
+        }
+        return
       }
 
+      // 5) Try to load saved chart for (user, birth_date, birth_time, time_zone)
+      const tz = normalizeZone(u.time_zone!)
+      if (!(tz && u.birth_date && u.birth_time)) {
+        setSunSign(null); setMoonSign(null)
+        return
+      }
+
+      const { data: existing } = await supabase
+        .from('charts')
+        .select('chart_data')
+        .eq('user_id', user.id)
+        .eq('birth_date', u.birth_date)
+        .eq('birth_time', u.birth_time)
+        .eq('time_zone', tz)
+        .maybeSingle()
+
+      if (existing?.chart_data?.planets) {
+        const planets = existing.chart_data.planets as { name: string; lon: number }[]
+        const sun = planets.find(p => p.name === 'Sun')
+        const moon = planets.find(p => p.name === 'Moon')
+        setSunSign(sun ? `${ZODIAC_GLY[signOf(sun.lon)]} ${ZODIAC[signOf(sun.lon)]}` : null)
+        setMoonSign(moon ? `${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}` : null)
+      } else {
+        // 6) Compute once and save for future loads
+        const { jsDate } = birthToUTC(u.birth_date, u.birth_time, tz)
+        const planets = computeNatalPlanets(jsDate)
+        try {
+          await saveChart(user.id, {
+            name: `${u.first_name ?? 'My'} Natal Chart`,
+            birth_date: u.birth_date,
+            birth_time: u.birth_time,
+            time_zone: tz,
+          })
+        } catch (e) {
+          // Non-fatal (e.g., unique constraint already satisfied elsewhere)
+          console.warn('saveChart failed:', e)
+        }
+        const sun = planets.find(p => p.name === 'Sun')
+        const moon = planets.find(p => p.name === 'Moon')
+        setSunSign(sun ? `${ZODIAC_GLY[signOf(sun.lon)]} ${ZODIAC[signOf(sun.lon)]}` : null)
+        setMoonSign(moon ? `${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}` : null)
+      }
     } catch (e: any) {
-      setError(e?.message ?? 'Failed to load dashboard.')
+      if (!unmounted.current) {
+        setError(e?.message ?? 'Failed to load dashboard.')
+        setSunSign(null); setMoonSign(null)
+      }
     } finally {
-      setLoading(false)
+      if (!unmounted.current) setLoading(false)
     }
   }, [nav])
+
+  useEffect(() => {
+    unmounted.current = false
+    return () => { unmounted.current = true }
+  }, [])
 
   useEffect(() => { load() }, [load])
   useFocusEffect(useCallback(() => { load() }, [load]))
@@ -144,9 +154,9 @@ if (!needsProfileCompletion(u)) {
   const prettyTime = (() => {
     const t = profile?.birth_time
     if (!t) return '—'
-    const [h, m] = t.split(':') // "HH:MM:SS" -> ["HH","MM","SS"]
+    const [h, m] = t.split(':')
     const d = new Date()
-    d.setHours(parseInt(h || '0', 10), parseInt(m || '0', 10), 0, 0) // local time
+    d.setHours(parseInt(h || '0', 10), parseInt(m || '0', 10), 0, 0)
     return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
   })()
 
@@ -176,15 +186,14 @@ if (!needsProfileCompletion(u)) {
       <Text style={styles.sub}>
         {displayName ? `Hello, ${displayName}!` : 'Hello!'}
       </Text>
-     
-     {sunSign && (
-  <View style={styles.card}>
-    <Text style={styles.cardTitle}>Your Signs</Text>
-    <Text>☀️ Sun: {sunSign}</Text>
-    <Text>🌙 Moon: {moonSign ?? '—'}</Text>
-  </View>
-)}
 
+      {sunSign && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Your Signs</Text>
+          <Text>☀️ Sun: {sunSign}</Text>
+          <Text>🌙 Moon: {moonSign ?? '—'}</Text>
+        </View>
+      )}
 
       {profile ? (
         <View style={styles.card}>
@@ -206,12 +215,11 @@ if (!needsProfileCompletion(u)) {
       )}
 
       <View style={{ height: 12 }} />
-      {/* View Birth Chart */}
-    <Button
-    title="View Birth Chart"
-    onPress={() => (nav as any).navigate('Chart', { profile })}
-    disabled={!profile || needsProfileCompletion(profile)}
-    />
+      <Button
+        title="View Birth Chart"
+        onPress={() => (nav as any).navigate('Chart', { profile })}
+        disabled={!profile || needsProfileCompletion(profile)}
+      />
       <Button title="My Charts" onPress={() => (nav as any).navigate('MyCharts')} />
       <Button title="Sign Out" onPress={signOut} />
     </View>
@@ -225,7 +233,7 @@ const styles = StyleSheet.create({
   sub: { marginTop: 6, marginBottom: 16, opacity: 0.9 },
   card: {
     borderWidth: 1, borderColor: '#ddd', borderRadius: 10,
-    padding: 12, backgroundColor: '#fff'
+    padding: 12, backgroundColor: '#fff', marginBottom: 12
   },
   cardTitle: { fontWeight: '600', marginBottom: 6 },
 })
