@@ -15,9 +15,6 @@ const ZODIAC = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpi
 const ZODIAC_GLY = ['♈︎','♉︎','♊︎','♋︎','♌︎','♍︎','♎︎','♏︎','♐︎','♑︎','♒︎','♓︎']
 const signOf = (lon: number) => Math.floor((((lon % 360) + 360) % 360) / 30)
 
-const [sunSign, setSunSign] = useState<string | null>(null)
-const [moonSign, setMoonSign] = useState<string | null>(null)
-
 
 type User = {
   id: string
@@ -39,6 +36,9 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<User | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const [sunSign, setSunSign] = useState<string | null>(null)
+  const [moonSign, setMoonSign] = useState<string | null>(null)
 
   const nav = useNavigation<any>()
   const didEnsureOnce = useRef(false)
@@ -176,13 +176,19 @@ if (!needsProfileCompletion(u)) {
       <Text style={styles.sub}>
         {displayName ? `Hello, ${displayName}!` : 'Hello!'}
       </Text>
+     
+     {sunSign && (
+  <View style={styles.card}>
+    <Text style={styles.cardTitle}>Your Signs</Text>
+    <Text>☀️ Sun: {sunSign}</Text>
+    <Text>🌙 Moon: {moonSign ?? '—'}</Text>
+  </View>
+)}
+
 
       {profile ? (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Your Birth Details</Text>
-          <Text style={styles.cardTitle}>Your Signs</Text>
-          <Text>☀️ Sun: {sunSign}</Text>
-          <Text>🌙 Moon: {moonSign ?? '—'}</Text>
           <Text>Email: {profile.email ?? '—'}</Text>
           <Text>Date: {profile.birth_date ?? '—'}</Text>
           <Text>Time: {prettyTime}</Text>
