@@ -180,6 +180,9 @@ if (!needsProfileCompletion(u)) {
       {profile ? (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Your Birth Details</Text>
+          <Text style={styles.cardTitle}>Your Signs</Text>
+          <Text>☀️ Sun: {sunSign}</Text>
+          <Text>🌙 Moon: {moonSign ?? '—'}</Text>
           <Text>Email: {profile.email ?? '—'}</Text>
           <Text>Date: {profile.birth_date ?? '—'}</Text>
           <Text>Time: {prettyTime}</Text>
