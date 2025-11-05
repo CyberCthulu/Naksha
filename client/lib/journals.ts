@@ -9,3 +9,17 @@ export type JournalRow = {
     created_at: string
     updated_at: string | null
 }
+
+export async function listJournals() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not signed in')
+
+  const { data, error } = await supabase
+    .from('journals')
+    .select('id, chart_id, prompt_template, content, created_at, updated_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return (data ?? []) as JournalRow[]
+}
