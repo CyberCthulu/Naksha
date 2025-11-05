@@ -11,8 +11,10 @@ import CheckEmailScreen from './screens/CheckEmailScreen';
 import DashboardScreen from './screens/DashboardScreen';
 import AuthCallbackScreen from './screens/AuthCallbackScreen';
 import CompleteProfileScreen from './screens/CompleteProfileScreen';
-import ChartScreen from './screens/ChartScreen'
+import ChartScreen from './screens/ChartScreen';
 import MyChartsScreen from './screens/MyCharts';
+import JournalEditorScreen from './screens/JournalEditorScreen';
+import JournalListScreen from './screens/JournalListScreen';
 
 
 export const AuthContext = createContext<{ user: any | null }>({ user: null });
@@ -30,6 +32,8 @@ const linking = {
       Chart: 'chart',
       MyCharts: 'my-charts',
       AuthCallback: 'auth/callback',
+      JournalEditor: 'journal/edit/:id?',
+      JournalList: 'journal/list',
     },
   },
 };
@@ -68,6 +72,8 @@ export default function App() {
               />
               <Stack.Screen name="Chart" component={ChartScreen} options={{ headerShown: true, title: 'Birth Chart' }} />
               <Stack.Screen name="MyCharts" component={MyChartsScreen} options={{ headerShown: true, title: 'My Saved Charts' }} />
+              <Stack.Screen name="JournalList" component={JournalListScreen} options={{ headerShown: true, title: 'My Journal' }} />
+              <Stack.Screen name="JournalEditor" component={JournalEditorScreen} options={{ headerShown: true, title: 'Journal Entry' }} />
             </>
           ) : (
             <>
