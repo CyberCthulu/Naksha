@@ -28,4 +28,28 @@ export default function JournalEditorScreen() {
             setSaving(false)
         }
     }
+
+      return (
+    <View style={styles.container}>
+      <Text style={styles.h1}>{initialId ? 'Edit Entry' : 'New Entry'}</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Write your thoughts…"
+        multiline
+        value={content}
+        onChangeText={setContent}
+      />
+      <Button title={saving ? 'Saving…' : 'Save'} onPress={onSave} disabled={saving} />
+    </View>
+  )
  }
+
+ const styles = StyleSheet.create({
+  container: { flex: 1, padding: 16, paddingTop: 40, gap: 10 },
+  h1: { fontSize: 20, fontWeight: '600' },
+  input: {
+    flex: 1,
+    borderWidth: 1, borderColor: '#ccc', borderRadius: 8,
+    padding: 12, textAlignVertical: 'top'
+  },
+})
