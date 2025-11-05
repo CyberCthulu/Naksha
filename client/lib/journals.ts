@@ -50,3 +50,16 @@ export async function upsertJournal(input: {
   if (error) throw error
   return data as JournalRow
 }
+
+export async function deleteJournal(id: number) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not signed in')
+
+  const { error } = await supabase
+    .from('journals')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) throw error
+}
