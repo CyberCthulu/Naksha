@@ -66,16 +66,24 @@ export default function JournalListScreen() {
       <FlatList
         data={rows}
         keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => nav.navigate('JournalEditor', { id: item.id, content: item.content })}
-            onLongPress={() => onDelete(item.id)}
-          >
-            <Text numberOfLines={3}>{item.content}</Text>
-            <Text style={styles.meta}>{new Date(item.created_at).toLocaleString()}</Text>
-          </TouchableOpacity>
-        )}
+        renderItem={({ item }) => {
+          const ts = item.updated_at ?? item.created_at
+          const edited = !!item.updated_at && item.updated_at !== item.created_at
+
+          return (
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => nav.navigate('JournalEditor', { id: item.id, content: item.content })}
+              onLongPress={() => onDelete(item.id)}
+            >
+              <Text numberOfLines={3}>{item.content}</Text>
+              <Text style={styles.meta}>
+                {edited ? 'Edited: ' : 'Created: '}
+                {new Date(ts).toLocaleString()}
+              </Text>
+            </TouchableOpacity>
+          )
+        }}
         ListEmptyComponent={<Text style={{ opacity: 0.7 }}>No entries yet.</Text>}
         contentContainerStyle={{ gap: 10, paddingVertical: 10 }}
       />

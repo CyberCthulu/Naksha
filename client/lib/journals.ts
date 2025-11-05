@@ -42,9 +42,11 @@ export async function upsertJournal(input: {
     content: input.content,
   }
 
+  if (input.id != null) payload.id = input.id
+
     const { data, error } = await supabase
     .from('journals')
-    .upsert(payload)
+    .upsert(payload, { onConflict: 'id' })
     .select('*')
     .single()
 
