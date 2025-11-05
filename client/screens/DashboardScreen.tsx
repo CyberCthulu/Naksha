@@ -221,6 +221,7 @@ export default function DashboardScreen() {
         disabled={!profile || needsProfileCompletion(profile)}
       />
       <Button title="My Charts" onPress={() => (nav as any).navigate('MyCharts')} />
+      <Button title="Journal" onPress={() => (nav as any).navigate('JournalList')} />
       <Button title="Sign Out" onPress={signOut} />
     </View>
   )
