@@ -23,3 +23,30 @@ export async function listJournals() {
   if (error) throw error
   return (data ?? []) as JournalRow[]
 }
+
+export async function upsertJournal(input: {
+  id?: number
+  content: string
+  chart_id?: number | null
+  prompt_template?: string | null
+}) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not signed in')
+
+  const payload = {
+    id: input.id,
+    user_id: user.id,
+    chart_id: input.chart_id ?? null,
+    prompt_template: input.prompt_template ?? null,
+    content: input.content,
+  }
+
+    const { data, error } = await supabase
+    .from('journals')
+    .upsert(payload)
+    .select('*')
+    .single()
+
+  if (error) throw error
+  return data as JournalRow
+}
