@@ -18,6 +18,7 @@ export async function listJournals() {
     .from('journals')
     .select('id, chart_id, prompt_template, content, created_at, updated_at')
     .eq('user_id', user.id)
+    .order('updated_at', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
 
   if (error) throw error
