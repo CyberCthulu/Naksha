@@ -75,7 +75,7 @@ export default function ChartScreen({ route }: any) {
         // 1) Try to load saved
         const { data: existing, error } = await supabase
           .from('charts')
-          .select('chart_data')
+          .select('id, updated_at, chart_data')
           .eq('user_id', user.id)
           .eq('birth_date', profile.birth_date!)
           .eq('birth_time', profile.birth_time!)
@@ -183,7 +183,7 @@ export default function ChartScreen({ route }: any) {
       </Text>
 
       <View style={{ alignItems: 'center', marginBottom: 8 }}>
-        <Button title={isSaved ? 'Already Saved' : 'Save Chart Data'} onPress={onSavePress} />
+        <Button title={isSaved ? 'Already Saved' : 'Save Chart Data'} onPress={onSavePress} disabled={isSaved || loading}/>
       </View>
 
       <View style={{ alignItems: 'center' }}>
