@@ -48,7 +48,7 @@ export default function JournalEditorScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 40 }]}>
-        <Text style={styles.h1}>{initialId ? 'Edit Entry' : 'New Entry'}</Text>
+        <Text style={styles.h1}>{initialId ? 'Something to add?' : 'Share your thoughts'}</Text>
 
         <TextInput
           style={styles.titleInput}

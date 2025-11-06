@@ -67,7 +67,7 @@ export default function JournalListScreen() {
         style={styles.newBtn}
         onPress={() => nav.navigate('JournalEditor', { id: undefined, title: '', content: '' })}
       >
-        <Text style={styles.newBtnText}>+ New Entry</Text>
+        <Text style={styles.newBtnText}>+ Share your Thoughts </Text>
       </TouchableOpacity>
 
       <FlatList
