@@ -1,12 +1,15 @@
 // screens/JournalEditorScreen.tsx
 import { useState } from 'react'
-import { View, Text, StyleSheet, TextInput, Button, Alert } from 'react-native'
+import { View, Text, StyleSheet, TextInput, Button, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
 import { useRoute, useNavigation } from '@react-navigation/native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { upsertJournal } from '../lib/journals'
 
 export default function JournalEditorScreen() {
   const nav = useNavigation<any>()
   const route = useRoute<any>()
+  const insets = useSafeAreaInsets()
+
   const initialId: number | undefined = route.params?.id
   const initialTitle: string = route.params?.title ?? ''
   const initialContent: string = route.params?.content ?? ''
@@ -40,39 +43,54 @@ export default function JournalEditorScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.h1}>{initialId ? 'Edit Entry' : 'New Entry'}</Text>
+    <KeyboardAvoidingView
+      style={[styles.flex, { paddingBottom: insets.bottom + 16 }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 40 }]}>
+        <Text style={styles.h1}>{initialId ? 'Edit Entry' : 'New Entry'}</Text>
 
-      <TextInput
-        style={styles.titleInput}
-        placeholder="Title (optional)"
-        value={title}
-        onChangeText={setTitle}
-      />
+        <TextInput
+          style={styles.titleInput}
+          placeholder="Title (optional)"
+          value={title}
+          onChangeText={setTitle}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Write your thoughts…"
-        multiline
-        value={content}
-        onChangeText={setContent}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Write your thoughts…"
+          multiline
+          value={content}
+          onChangeText={setContent}
+        />
+      </ScrollView>
 
-      <Button title={saving ? 'Saving…' : 'Save'} onPress={onSave} disabled={saving} />
-    </View>
+      <View style={[styles.footer, { marginBottom: insets.bottom + 8 }]}>
+        <Button title={saving ? 'Saving…' : 'Save'} onPress={onSave} disabled={saving} />
+      </View>
+    </KeyboardAvoidingView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, paddingTop: 40, gap: 10 },
-  h1: { fontSize: 20, fontWeight: '600' },
+  flex: { flex: 1, backgroundColor: '#fff' },
+  container: { flexGrow: 1, padding: 16, paddingTop: 40, gap: 10 },
+  h1: { fontSize: 20, fontWeight: '600', marginBottom: 4 },
   titleInput: {
     borderWidth: 1, borderColor: '#ccc', borderRadius: 8,
     padding: 10,
   },
   input: {
     flex: 1,
+    minHeight: 200,
     borderWidth: 1, borderColor: '#ccc', borderRadius: 8,
-    padding: 12, textAlignVertical: 'top'
+    padding: 12, textAlignVertical: 'top',
+  },
+  footer: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#ddd',
+    padding: 12,
+    backgroundColor: '#fafafa',
   },
 })
