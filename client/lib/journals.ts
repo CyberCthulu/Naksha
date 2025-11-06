@@ -5,6 +5,7 @@ export type JournalRow = {
     user_id: string
     chart_id: number | null
     prompt_template: string | null
+    title: string | null            // ← NEW
     content: string
     created_at: string
     updated_at: string | null
@@ -16,7 +17,7 @@ export async function listJournals() {
 
   const { data, error } = await supabase
     .from('journals')
-    .select('id, chart_id, prompt_template, content, created_at, updated_at')
+    .select('id, chart_id, prompt_template, title, content, created_at, updated_at')
     .eq('user_id', user.id)
     .order('updated_at', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
@@ -27,6 +28,7 @@ export async function listJournals() {
 
 export async function upsertJournal(input: {
   id?: number
+  title?: string | null 
   content: string
   chart_id?: number | null
   prompt_template?: string | null
@@ -39,6 +41,7 @@ export async function upsertJournal(input: {
     user_id: user.id,
     chart_id: input.chart_id ?? null,
     prompt_template: input.prompt_template ?? null,
+    title: input.title ?? null,
     content: input.content,
   }
 
