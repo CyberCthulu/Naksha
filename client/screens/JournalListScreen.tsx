@@ -4,6 +4,13 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, 
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { listJournals, deleteJournal, JournalRow } from '../lib/journals'
 
+function makeDisplayTitle(row: JournalRow) {
+  // Prefer explicit title; else first non-empty line of content; else fallback
+  if (row.title && row.title.trim()) return row.title.trim()
+  const firstLine = (row.content ?? '').split(/\r?\n/).find(l => l.trim().length > 0)
+  return firstLine?.trim() || 'Untitled entry'
+}
+
 export default function JournalListScreen() {
   const nav = useNavigation<any>()
   const [loading, setLoading] = useState(true)
@@ -58,7 +65,7 @@ export default function JournalListScreen() {
 
       <TouchableOpacity
         style={styles.newBtn}
-        onPress={() => nav.navigate('JournalEditor', { id: undefined, content: '' })}
+        onPress={() => nav.navigate('JournalEditor', { id: undefined, title: '', content: '' })}
       >
         <Text style={styles.newBtnText}>+ New Entry</Text>
       </TouchableOpacity>
@@ -69,14 +76,16 @@ export default function JournalListScreen() {
         renderItem={({ item }) => {
           const ts = item.updated_at ?? item.created_at
           const edited = !!item.updated_at && item.updated_at !== item.created_at
+          const title = makeDisplayTitle(item)
 
           return (
             <TouchableOpacity
               style={styles.card}
-              onPress={() => nav.navigate('JournalEditor', { id: item.id, content: item.content })}
+              onPress={() => nav.navigate('JournalEditor', { id: item.id, title: item.title ?? '', content: item.content })}
               onLongPress={() => onDelete(item.id)}
             >
-              <Text numberOfLines={3}>{item.content}</Text>
+              <Text style={styles.title} numberOfLines={1}>{title}</Text>
+              <Text numberOfLines={3} style={{ marginTop: 4 }}>{item.content}</Text>
               <Text style={styles.meta}>
                 {edited ? 'Edited: ' : 'Created: '}
                 {new Date(ts).toLocaleString()}
@@ -100,5 +109,6 @@ const styles = StyleSheet.create({
   },
   newBtnText: { fontWeight: '600' },
   card: { borderWidth: 1, borderColor: '#eee', borderRadius: 10, padding: 12, backgroundColor: '#fff' },
+  title: { fontWeight: '700' },
   meta: { marginTop: 6, fontSize: 12, opacity: 0.6 }
 })
