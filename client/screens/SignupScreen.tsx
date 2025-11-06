@@ -1,31 +1,37 @@
-//client/screens/SignupScreen.tsx
-
-import React, { useState, useEffect } from 'react'
-import { View, Text, TextInput, Button, StyleSheet, Platform, Alert } from 'react-native'
-import DateTimePicker from '@react-native-community/datetimepicker'
-import { Picker } from '@react-native-picker/picker'
+// client/screens/SignupScreen.tsx
+import React, { useEffect, useState } from 'react'
+import { View, Text, Button, StyleSheet, Alert } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
 import { signUpWithEmail } from '../lib/auth'
-import { TIMEZONES, normalizeZone } from '../lib/timezones'
+import { normalizeZone } from '../lib/timezones'
 
-export default function SignupScreen({ navigation }: any) {
+// Auth UI components
+import AuthContainer from '../components/auth/AuthContainer'
+import EmailField from '../components/auth/EmailField'
+import PasswordField from '../components/auth/PasswordField'
+import ProfileFields from '../components/auth/ProfileFields'
+
+export default function SignupScreen() {
+  const navigation = useNavigation<any>()
+
+  // Account
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  // Profile fields
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [birthDate, setBirthDate] = useState<Date | null>(null)
   const [birthTime, setBirthTime] = useState<Date | null>(null)
   const [birthLocation, setBirthLocation] = useState('')
-  const [timeZone, setTimeZone] = useState('') // will hold IANA after normalize
-  const [error, setError] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const [showTimePicker, setShowTimePicker] = useState(false)
+  const [timeZone, setTimeZone] = useState('Etc/UTC') // IANA
 
-  // Detect device zone, normalize it, default picker to that value if valid
+  // Default to device zone (normalized)
   useEffect(() => {
     const detected = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
-    const normalized = normalizeZone(detected) || 'Etc/UTC'
-    setTimeZone(normalized)
+    setTimeZone(normalizeZone(detected) || 'Etc/UTC')
   }, [])
 
   const handleSignup = async () => {
@@ -41,7 +47,7 @@ export default function SignupScreen({ navigation }: any) {
       return
     }
 
-    // Normalize and verify the selected time zone
+    // Normalize and verify TZ
     const normalized = normalizeZone(timeZone)
     if (!normalized) {
       Alert.alert('Invalid Time Zone', 'Please pick a valid time zone.')
@@ -51,9 +57,9 @@ export default function SignupScreen({ navigation }: any) {
     setError('')
     setSubmitting(true)
 
-    // Format values for DB / auth
-    const formattedDate = birthDate.toISOString().split('T')[0]      // YYYY-MM-DD
-    const formattedTime = birthTime.toTimeString().split(' ')[0]     // HH:MM:SS
+    // Format values for DB/auth
+    const formattedDate = birthDate.toISOString().split('T')[0]       // YYYY-MM-DD
+    const formattedTime = birthTime.toTimeString().split(' ')[0]      // HH:MM:SS
 
     const { error } = await signUpWithEmail(email.trim(), password, {
       first_name: firstName || undefined,
@@ -75,80 +81,20 @@ export default function SignupScreen({ navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
-      <Text>Email</Text>
-      <TextInput
-        style={styles.input}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
+    <AuthContainer>
+      <EmailField value={email} onChange={setEmail} />
+      <PasswordField value={password} onChange={setPassword} />
+
+      <ProfileFields
+        firstName={firstName} setFirstName={setFirstName}
+        lastName={lastName} setLastName={setLastName}
+        birthDate={birthDate} setBirthDate={setBirthDate}
+        birthTime={birthTime} setBirthTime={setBirthTime}
+        birthLocation={birthLocation} setBirthLocation={setBirthLocation}
+        timeZone={timeZone} setTimeZone={setTimeZone}
       />
 
-      <Text>Password</Text>
-      <TextInput
-        style={styles.input}
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-
-      <Text>First Name</Text>
-      <TextInput style={styles.input} value={firstName} onChangeText={setFirstName} />
-
-      <Text>Last Name</Text>
-      <TextInput style={styles.input} value={lastName} onChangeText={setLastName} />
-
-      <Text>Birth Date</Text>
-      <Button
-        title={birthDate ? birthDate.toDateString() : 'Select Date'}
-        onPress={() => setShowDatePicker(true)}
-        disabled={submitting}
-      />
-      {showDatePicker && (
-        <DateTimePicker
-          value={birthDate || new Date()}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={(_, selectedDate) => {
-            setShowDatePicker(false)
-            if (selectedDate) setBirthDate(selectedDate)
-          }}
-        />
-      )}
-
-      <Text>Birth Time</Text>
-      <Button
-        title={birthTime ? birthTime.toLocaleTimeString() : 'Select Time'}
-        onPress={() => setShowTimePicker(true)}
-        disabled={submitting}
-      />
-      {showTimePicker && (
-        <DateTimePicker
-          value={birthTime || new Date()}
-          mode="time"
-          is24Hour={true}
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={(_, selectedTime) => {
-            setShowTimePicker(false)
-            if (selectedTime) setBirthTime(selectedTime)
-          }}
-        />
-      )}
-
-      <Text>Birth Location</Text>
-      <TextInput style={styles.input} value={birthLocation} onChangeText={setBirthLocation} />
-
-      <Text>Time Zone</Text>
-      <View style={styles.pickerWrap}>
-        <Picker selectedValue={timeZone} onValueChange={(v) => setTimeZone(v)}>
-          {TIMEZONES.map((tz) => (
-            <Picker.Item key={tz} label={tz} value={tz} />
-          ))}
-        </Picker>
-      </View>
-
-      {error !== '' && <Text style={{ color: 'red', marginTop: 6 }}>{error}</Text>}
+      {error !== '' && <Text style={styles.error}>{error}</Text>}
 
       <View style={{ height: 8 }} />
       <Button title={submitting ? 'Signing Up…' : 'Sign Up'} onPress={handleSignup} disabled={submitting} />
@@ -159,24 +105,10 @@ export default function SignupScreen({ navigation }: any) {
         onPress={() => navigation.replace('Login')}
         disabled={submitting}
       />
-    </View>
+    </AuthContainer>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: 'center' },
-  input: {
-    borderWidth: 1,
-    borderColor: '#aaa',
-    padding: 10,
-    marginVertical: 5,
-    borderRadius: 5,
-  },
-  pickerWrap: {
-    borderWidth: 1,
-    borderColor: '#aaa',
-    borderRadius: 5,
-    marginVertical: 5,
-    overflow: 'hidden',
-  },
+  error: { color: 'crimson', marginTop: 6 }
 })
