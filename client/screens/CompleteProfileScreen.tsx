@@ -1,21 +1,38 @@
-//client/screens/SignupScreen.tsx
+// client/screens/CompleteProfileScreen.tsx
 import React, { useEffect, useState } from 'react'
-import { View, Text, TextInput, Button, StyleSheet, Platform, Alert } from 'react-native'
-import DateTimePicker from '@react-native-community/datetimepicker'
-import { Picker } from '@react-native-picker/picker'
+import { View, Text, Button, StyleSheet, Alert } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
 import supabase from '../lib/supabase'
-import { TIMEZONES, normalizeZone } from '../lib/timezones'
+import { normalizeZone } from '../lib/timezones'
 
-export default function CompleteProfileScreen({ navigation }: any) {
+// Shared auth UI
+import AuthContainer from '../components/auth/AuthContainer'
+import ProfileFields from '../components/auth/ProfileFields'
+
+type DBUser = {
+  id: string
+  email: string | null
+  first_name: string | null
+  last_name: string | null
+  birth_date: string | null
+  birth_time: string | null
+  birth_location: string | null
+  time_zone: string | null
+}
+
+export default function CompleteProfileScreen() {
+  const navigation = useNavigation<any>()
+
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [birthDate, setBirthDate] = useState<Date | null>(null)
   const [birthTime, setBirthTime] = useState<Date | null>(null)
   const [birthLocation, setBirthLocation] = useState('')
-  const [timeZone, setTimeZone] = useState('Etc/UTC') // IANA in picker
-  const [submitting, setSubmitting] = useState(false)
-  const [showDate, setShowDate] = useState(false)
-  const [showTime, setShowTime] = useState(false)
+  const [timeZone, setTimeZone] = useState('Etc/UTC')
+
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Default picker to device zone (normalized)
   useEffect(() => {
@@ -23,70 +40,94 @@ export default function CompleteProfileScreen({ navigation }: any) {
     setTimeZone(normalizeZone(detected) || 'Etc/UTC')
   }, [])
 
-  // Prefill from users table if present
+  // Prefill from users table
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const { data } = await supabase
-        .from('users')
-        .select('first_name,last_name,birth_date,birth_time,birth_location,time_zone')
-        .eq('id', user.id)
-        .maybeSingle()
-
-      if (data) {
-        setFirstName(data.first_name ?? '')
-        setLastName(data.last_name ?? '')
-        setBirthLocation(data.birth_location ?? '')
-
-        // normalize any legacy values like "PST" → "America/Los_Angeles"
-        const normalized = normalizeZone(data.time_zone) || timeZone
-        setTimeZone(normalized)
-
-        if (data.birth_date) setBirthDate(new Date(`${data.birth_date}T12:00:00`))
-        if (data.birth_time) {
-          const [h, m, s] = String(data.birth_time).split(':').map((x: string) => parseInt(x || '0', 10))
-          const d = new Date()
-          d.setHours(h || 0, m || 0, s || 0, 0)
-          setBirthTime(d)
+      try {
+        setLoading(true); setError(null)
+        const { data: { user }, error: uerr } = await supabase.auth.getUser()
+        if (uerr) throw uerr
+        if (!user) {
+          setError('No active session.')
+          return
         }
+
+        // Ensure user row exists (in case of older accounts)
+        await supabase.from('users').upsert({ id: user.id, email: user.email ?? null }, { onConflict: 'id' })
+
+        const { data, error: perr } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle<DBUser>()
+        if (perr) throw perr
+
+        if (data) {
+          setFirstName(data.first_name ?? '')
+          setLastName(data.last_name ?? '')
+          setBirthLocation(data.birth_location ?? '')
+
+          // Normalize to IANA if needed
+          const tz = normalizeZone(data.time_zone) || timeZone
+          setTimeZone(tz)
+
+          // Safe date/time hydration
+          if (data.birth_date) {
+            // Use noon to avoid timezone shifts when constructing a Date
+            setBirthDate(new Date(`${data.birth_date}T12:00:00`))
+          }
+          if (data.birth_time) {
+            const [h, m, s] = String(data.birth_time).split(':').map(v => parseInt(v || '0', 10))
+            const t = new Date()
+            t.setHours(h || 0, m || 0, s || 0, 0)
+            setBirthTime(t)
+          }
+        }
+      } catch (e: any) {
+        setError(e?.message ?? 'Failed to load profile.')
+      } finally {
+        setLoading(false)
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const onSave = async () => {
+    if (saving) return
+
     if (!firstName.trim() || !lastName.trim() || !birthDate || !birthTime || !birthLocation.trim()) {
       Alert.alert('Missing info', 'Please complete all fields.')
       return
     }
 
-    // Ensure we persist a valid IANA
     const normalized = normalizeZone(timeZone)
     if (!normalized) {
       Alert.alert('Invalid Time Zone', 'Please pick a valid time zone.')
       return
     }
 
-    setSubmitting(true)
+    setSaving(true)
     try {
-      const formattedDate = birthDate.toISOString().split('T')[0]
-      const formattedTime = birthTime.toTimeString().split(' ')[0]
+      const formattedDate = birthDate.toISOString().split('T')[0]      // YYYY-MM-DD
+      const formattedTime = birthTime.toTimeString().split(' ')[0]     // HH:MM:SS
+
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not signed in.')
 
-      // Update users table (RLS allows own-row)
-      const { error: upErr } = await supabase.from('users').update({
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        birth_date: formattedDate,
-        birth_time: formattedTime,
-        birth_location: birthLocation.trim(),
-        time_zone: normalized, // ✅ save normalized IANA
-      }).eq('id', user.id)
+      // Update users table
+      const { error: upErr } = await supabase.from('users')
+        .update({
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          birth_date: formattedDate,
+          birth_time: formattedTime,
+          birth_location: birthLocation.trim(),
+          time_zone: normalized,
+        })
+        .eq('id', user.id)
       if (upErr) throw upErr
 
-      // Optional: keep auth.user_metadata in sync
+      // Keep auth.user_metadata in sync
       await supabase.auth.updateUser({
         data: {
           first_name: firstName.trim(),
@@ -94,7 +135,7 @@ export default function CompleteProfileScreen({ navigation }: any) {
           birth_date: formattedDate,
           birth_time: formattedTime,
           birth_location: birthLocation.trim(),
-          time_zone: normalized, // ✅
+          time_zone: normalized,
         },
       })
 
@@ -102,71 +143,43 @@ export default function CompleteProfileScreen({ navigation }: any) {
     } catch (e: any) {
       Alert.alert('Save failed', e?.message ?? 'Unknown error')
     } finally {
-      setSubmitting(false)
+      setSaving(false)
     }
   }
 
+  if (loading) {
+    return (
+      <AuthContainer>
+        <Text style={{ opacity: 0.8, marginBottom: 12 }}>Loading…</Text>
+      </AuthContainer>
+    )
+  }
+
   return (
-    <View style={styles.container}>
+    <AuthContainer>
       <Text style={styles.title}>Complete Your Profile</Text>
 
-      <Text>First Name</Text>
-      <TextInput style={styles.input} value={firstName} onChangeText={setFirstName} />
+      <ProfileFields
+        firstName={firstName} setFirstName={setFirstName}
+        lastName={lastName} setLastName={setLastName}
+        birthDate={birthDate} setBirthDate={setBirthDate}
+        birthTime={birthTime} setBirthTime={setBirthTime}
+        birthLocation={birthLocation} setBirthLocation={setBirthLocation}
+        timeZone={timeZone} setTimeZone={setTimeZone}
+      />
 
-      <Text>Last Name</Text>
-      <TextInput style={styles.input} value={lastName} onChangeText={setLastName} />
-
-      <Text>Birth Date</Text>
-      <Button title={birthDate ? birthDate.toDateString() : 'Select Date'} onPress={() => setShowDate(true)} />
-      {showDate && (
-        <DateTimePicker
-          value={birthDate || new Date()}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'compact' : 'calendar'}
-          onChange={(_, d) => { setShowDate(false); if (d) setBirthDate(d) }}
-        />
-      )}
-
-      <Text>Birth Time</Text>
-      <Button title={birthTime ? birthTime.toLocaleTimeString() : 'Select Time'} onPress={() => setShowTime(true)} />
-      {showTime && (
-        <DateTimePicker
-          value={birthTime || new Date()}
-          mode="time"
-          display={Platform.OS === 'ios' ? 'spinner' : 'clock'}
-          onChange={(_, d) => { setShowTime(false); if (d) setBirthTime(d) }}
-        />
-      )}
-
-      <Text>Birth Location</Text>
-      <TextInput style={styles.input} value={birthLocation} onChangeText={setBirthLocation} />
-
-      <Text>Time Zone</Text>
-      <View style={styles.pickerWrap}>
-        <Picker selectedValue={timeZone} onValueChange={(v) => setTimeZone(v)}>
-          {TIMEZONES.map((tz) => (
-            <Picker.Item key={tz} label={tz} value={tz} />
-          ))}
-        </Picker>
-      </View>
+      {error && <Text style={styles.error}>{error}</Text>}
 
       <View style={{ height: 8 }} />
-      <Button title={submitting ? 'Saving…' : 'Save'} disabled={submitting} onPress={onSave} />
+      <Button title={saving ? 'Saving…' : 'Save & Continue'} onPress={onSave} disabled={saving} />
+
       <View style={{ height: 8 }} />
-      <Button title="Skip for now" onPress={() => navigation.goBack()} disabled={submitting} />
-    </View>
+      <Button title="Skip for now" onPress={() => (navigation as any).goBack()} disabled={saving} />
+    </AuthContainer>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, paddingTop: 40, gap: 6 },
   title: { fontSize: 20, fontWeight: '600', marginBottom: 8 },
-  input: { borderWidth: 1, borderColor: '#aaa', padding: 10, borderRadius: 6, marginVertical: 4 },
-  pickerWrap: {
-    borderWidth: 1,
-    borderColor: '#aaa',
-    borderRadius: 6,
-    marginVertical: 4,
-    overflow: 'hidden',
-  },
+  error: { color: 'crimson', marginTop: 8 }
 })
