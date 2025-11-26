@@ -19,6 +19,8 @@ type DBUser = {
   birth_time: string | null
   birth_location: string | null
   time_zone: string | null
+  birth_lat?: number | null
+  birth_lon?: number | null
 }
 
 export default function CompleteProfileScreen() {
@@ -30,6 +32,8 @@ export default function CompleteProfileScreen() {
   const [birthTime, setBirthTime] = useState<Date | null>(null)
   const [birthLocation, setBirthLocation] = useState('')
   const [timeZone, setTimeZone] = useState('Etc/UTC')
+  const [birthLat, setBirthLat] = useState<number | null>(null)
+  const [birthLon, setBirthLon] = useState<number | null>(null)
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -71,6 +75,10 @@ export default function CompleteProfileScreen() {
           // Normalize to IANA if needed
           const tz = normalizeZone(data.time_zone) || timeZone
           setTimeZone(tz)
+        
+          // hydrate lat/lon if present
+          setBirthLat(data.birth_lat ?? null)
+          setBirthLon(data.birth_lon ?? null)
 
           // Safe date/time hydration
           if (data.birth_date) {
@@ -114,6 +122,21 @@ export default function CompleteProfileScreen() {
 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not signed in.')
+  
+      // If we don’t have lat/lon yet, resolve from birthLocation
+      let lat = birthLat
+      let lon = birthLon
+      if (lat == null || lon == null) {
+        const results = await geocodePlace(birthLocation.trim())
+        if (!results.length) {
+          throw new Error('Could not resolve birth location. Please refine it (e.g., "Redwood City, CA").')
+        }
+        // Use the top result — later we can add a picker if you want
+        lat = results[0].lat
+        lon = results[0].lon
+        setBirthLat(lat)
+        setBirthLon(lon)
+      }
 
       // Update users table
       const { error: upErr } = await supabase.from('users')
@@ -124,6 +147,8 @@ export default function CompleteProfileScreen() {
           birth_time: formattedTime,
           birth_location: birthLocation.trim(),
           time_zone: normalized,
+          birth_lat: lat,
+          birth_lon: lon,
         })
         .eq('id', user.id)
       if (upErr) throw upErr
@@ -137,6 +162,8 @@ export default function CompleteProfileScreen() {
           birth_time: formattedTime,
           birth_location: birthLocation.trim(),
           time_zone: normalized,
+          birth_lat: lat,
+          birth_lon: lon,
         },
       })
 
