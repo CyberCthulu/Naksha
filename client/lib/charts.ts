@@ -65,7 +65,7 @@ export async function saveChart(userId: string, input: BuildChartInput) {
         chart_data: payload,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: 'user_id,birth_date,birth_time,time_zone' } // NEW
+      { onConflict: 'user_id,birth_date,birth_time,time_zone' } 
     )    
     .select('*')
     .single()
