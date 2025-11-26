@@ -1,3 +1,4 @@
+// screens/MyCharts.tsx
 import React, { useCallback, useEffect, useState } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator, FlatList, TouchableOpacity, Alert } from 'react-native'
 import supabase from '../lib/supabase'
@@ -28,14 +29,13 @@ export default function MyChartsScreen() {
 
   const openChart = (row: ChartRow) => {
     const data = row.chart_data
-    // Navigate to Chart screen showing the saved data instead of recomputing
     nav.navigate('Chart', { fromSaved: true, saved: data, profile: {
-      // for header; also allows ChartScreen’s existing UI to fallback
       birth_date: data?.meta?.birth_date ?? null,
       birth_time: data?.meta?.birth_time ?? null,
       time_zone : data?.meta?.time_zone ?? null,
       first_name: data?.meta?.name ?? null,
       last_name : null,
+      birth_location: data?.meta?.birth_location ?? null,
     }})
   }
 
@@ -69,17 +69,24 @@ export default function MyChartsScreen() {
           data={rows}
           keyExtractor={(r) => String(r.id)}
           ItemSeparatorComponent={() => <View style={{height:10}} />}
-          renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => openChart(item)} style={styles.row}>
-              <View style={{flex:1}}>
-                <Text style={styles.title}>{item.name}</Text>
-                <Text style={styles.sub}>
-                  {item.chart_data?.meta?.birth_date} · {item.chart_data?.meta?.birth_time} · {item.chart_data?.meta?.time_zone}
-                </Text>
-              </View>
-              <Text style={styles.delete} onPress={() => remove(item)}>Delete</Text>
-            </TouchableOpacity>
-          )}
+          renderItem={({ item }) => {
+            const meta = item.chart_data?.meta || {}
+            const base = [meta.birth_date, meta.birth_time, meta.time_zone].filter(Boolean).join(' · ')
+            const coords = (meta.birth_lat != null && meta.birth_lon != null)
+              ? ` · (${Number(meta.birth_lat).toFixed(2)}, ${Number(meta.birth_lon).toFixed(2)})`
+              : ''
+            const loc = meta.birth_location ? `${meta.birth_location} · ` : ''
+
+            return (
+              <TouchableOpacity onPress={() => openChart(item)} style={styles.row}>
+                <View style={{flex:1}}>
+                  <Text style={styles.title}>{item.name}</Text>
+                  <Text style={styles.sub}>{loc}{base}{coords}</Text>
+                </View>
+                <Text style={styles.delete} onPress={() => remove(item)}>Delete</Text>
+              </TouchableOpacity>
+            )
+          }}
         />
       )}
     </View>
