@@ -4,6 +4,7 @@ import { View, Text, Button, StyleSheet, Alert } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import supabase from '../lib/supabase'
 import { normalizeZone } from '../lib/timezones'
+import { geocodePlace } from '../lib/geocode'
 
 // Shared auth UI
 import AuthContainer from '../components/auth/AuthContainer'
