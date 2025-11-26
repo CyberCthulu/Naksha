@@ -24,10 +24,12 @@ type ProfileForChart = {
   time_zone: string | null
   first_name?: string | null
   last_name?: string | null
+  birth_location?: string | null
 }
 
 export default function ChartScreen({ route }: any) {
   const { profile } = route.params as { profile: ProfileForChart }
+  const savedMeta = (route.params?.saved?.meta) || {}
   const { width } = useWindowDimensions()
   const [loading, setLoading] = useState(true)
   const [planets, setPlanets] = useState<PlanetPos[]>([])
@@ -109,7 +111,6 @@ export default function ChartScreen({ route }: any) {
             })
             if (alive) setIsSaved(true)
           } catch (e) {
-            // Non-fatal; UI still shows computed chart
             console.warn('Auto-save failed:', e)
           }
         }
@@ -176,11 +177,25 @@ export default function ChartScreen({ route }: any) {
     )
   }
 
+  // subtitle pieces (prefer saved meta when available)
+  const subtitleLocation = savedMeta.birth_location ?? (profile as any).birth_location ?? null
+  const subtitleZone = savedMeta.time_zone ?? tz
+  const subtitleCoords =
+    (savedMeta.birth_lat != null && savedMeta.birth_lon != null)
+      ? ` (${Number(savedMeta.birth_lat).toFixed(2)}, ${Number(savedMeta.birth_lon).toFixed(2)})`
+      : ''
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.h1}>
         {`Natal Chart${profile.first_name ? ` — ${profile.first_name}` : ''}`}
       </Text>
+
+      {(subtitleLocation || subtitleZone) && (
+        <Text style={styles.sub}>
+          {subtitleLocation ? `${subtitleLocation}` : ''}{subtitleLocation && subtitleZone ? ' • ' : ''}{subtitleZone}{subtitleCoords}
+        </Text>
+      )}
 
       <View style={{ alignItems: 'center', marginBottom: 8 }}>
         <Button title={isSaved ? 'Already Saved' : 'Save Chart Data'} onPress={onSavePress} disabled={isSaved || loading}/>
@@ -283,7 +298,8 @@ export default function ChartScreen({ route }: any) {
 
 const styles = StyleSheet.create({
   container: { padding: 16 },
-  h1: { fontSize: 18, fontWeight: '600', marginBottom: 10, alignSelf: 'center' },
+  h1: { fontSize: 18, fontWeight: '600', marginBottom: 4, alignSelf: 'center' },
+  sub: { opacity: 0.7, alignSelf: 'center', marginBottom: 8 },
   h2: { fontSize: 16, fontWeight: '600', marginTop: 16, alignSelf: 'flex-start' },
   row: { fontFamily: 'monospace' as any, alignSelf: 'flex-start' },
   muted: { opacity: 0.7, alignSelf: 'flex-start' },
