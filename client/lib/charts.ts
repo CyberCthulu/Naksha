@@ -9,6 +9,8 @@ export type ChartRow = {
   name: string
   birth_date: string | null
   birth_time: string | null
+  birth_lat: number | null
+  birth_lon: number | null 
   time_zone: string | null
   chart_data: any
   created_at: string | null
@@ -20,6 +22,8 @@ export type BuildChartInput = {
     birth_date: string
     birth_time: string
     time_zone: string
+    birth_lat?: number | null   
+    birth_lon?: number | null   
 }
 
 export function BuildChartData(input: BuildChartInput) {
@@ -35,6 +39,8 @@ export function BuildChartData(input: BuildChartInput) {
       birth_date: input.birth_date,
       birth_time: input.birth_time,
       time_zone: tz,
+      birth_lat: input.birth_lat ?? null,
+      birth_lon: input.birth_lon ?? null,       
       computed_at: new Date().toISOString(),
       instant_utc: dtUTC.toISO(),
     },
@@ -51,9 +57,11 @@ export async function saveChart(userId: string, input: BuildChartInput) {
       {
         user_id: userId,
         name: input.name,
-        birth_date: input.birth_date,     // NEW
-        birth_time: input.birth_time,     // NEW
-        time_zone: input.time_zone,       // NEW
+        birth_date: input.birth_date,   
+        birth_time: input.birth_time,     
+        time_zone: input.time_zone,
+        birth_lat: input.birth_lat ?? null,
+        birth_lon: input.birth_lon ?? null,       
         chart_data: payload,
         updated_at: new Date().toISOString(),
       },
