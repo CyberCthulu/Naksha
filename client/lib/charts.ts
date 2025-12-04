@@ -67,6 +67,69 @@ export function toJulianDate(date: Date): number {
   return JD
 }
 
+// approximate mean obliquity of ecliptic (good enough for house cusps)
+function meanObliquity(jd: number): number {
+  const T = (jd - 2451545.0) / 36525
+  // arcseconds
+  const epsSec =
+    21.448 -
+    T * (46.8150 + T * (0.00059 - T * 0.001813))
+  const epsDeg = 23 + 26 / 60 + epsSec / 3600
+  return epsDeg
+}
+
+// Greenwich Mean Sidereal Time (degrees)
+function gmstDegrees(jd: number): number {
+  const T = (jd - 2451545.0) / 36525
+  const gmst =
+    280.46061837 +
+    360.98564736629 * (jd - 2451545.0) +
+    0.000387933 * T * T -
+    (T * T * T) / 38710000
+  return norm360(gmst)
+}
+
+// Local sidereal time in degrees (lon: east>0, west<0)
+function localSiderealDegrees(jd: number, lonDeg: number): number {
+  return norm360(gmstDegrees(jd) + lonDeg)
+}
+
+/**
+ * Compute Whole-Sign house cusps from birth date/time and location.
+ * This uses an approximate Ascendant calculation – good enough for UX.
+ */
+export function computeWholeSignHouses(
+  jsDate: Date,
+  latDeg: number,
+  lonDeg: number
+): HouseCusp[] {
+  const jd = toJulianDate(jsDate)
+  const eps = meanObliquity(jd) * DEG2RAD
+  const phi = latDeg * DEG2RAD
+  const lst = localSiderealDegrees(jd, lonDeg) * DEG2RAD
+
+  // Ascendant longitude (Meeus-style formula, approx)
+  const num = Math.cos(lst)
+  const den = -Math.sin(lst) * Math.cos(eps) - Math.tan(phi) * Math.sin(eps)
+  let lambdaAsc = Math.atan2(num, den) * RAD2DEG
+  lambdaAsc = norm360(lambdaAsc)
+
+  // Whole-sign: 1st house starts at 0° of Ascendant’s sign
+  const ascSign = Math.floor(lambdaAsc / 30)
+  const firstCusp = ascSign * 30
+
+  const houses: HouseCusp[] = []
+  for (let i = 0; i < 12; i++) {
+    houses.push({
+      house: i + 1,
+      lon: norm360(firstCusp + i * 30),
+    })
+  }
+  return houses
+}
+
+
+
 export function BuildChartData(input: BuildChartInput) {
     const tz = normalizeZone(input.time_zone)
     if (!tz) throw new Error('Invalid time zone')
