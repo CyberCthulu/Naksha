@@ -31,6 +31,42 @@ export type HouseCusp = {
     lon: number
 }
 
+const DEG2RAD = Math.PI / 180
+const RAD2DEG = 180 / Math.PI
+
+export function norm360(deg: number) {
+    return ((deg % 360) + 360) % 360
+}
+
+export function toJulianDate(date: Date): number {
+  const y = date.getUTCFullYear()
+  const m = date.getUTCMonth() + 1
+  const D =
+    date.getUTCDate() +
+    (date.getUTCHours() +
+      (date.getUTCMinutes() + date.getUTCSeconds() / 60) / 60) /
+      24
+
+  let Y = y
+  let M = m
+  if (m <= 2) {
+    Y = y - 1
+    M = m + 12
+  }
+
+  const A = Math.floor(Y / 100)
+  const B = 2 - A + Math.floor(A / 4)
+
+  const JD =
+    Math.floor(365.25 * (Y + 4716)) +
+    Math.floor(30.6001 * (M + 1)) +
+    D +
+    B -
+    1524.5
+
+  return JD
+}
+
 export function BuildChartData(input: BuildChartInput) {
     const tz = normalizeZone(input.time_zone)
     if (!tz) throw new Error('Invalid time zone')
