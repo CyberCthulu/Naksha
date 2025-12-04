@@ -26,6 +26,11 @@ export type BuildChartInput = {
     birth_lon?: number | null   
 }
 
+export type HouseCusp = {
+    house: number
+    lon: number
+}
+
 export function BuildChartData(input: BuildChartInput) {
     const tz = normalizeZone(input.time_zone)
     if (!tz) throw new Error('Invalid time zone')
