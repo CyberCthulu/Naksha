@@ -215,6 +215,12 @@ export default function DashboardScreen() {
       )}
 
       <View style={{ height: 12 }} />
+
+      <Button
+       title="Edit Birth Details"
+       onPress={() => (nav as any).navigate('CompleteProfile')}
+      />
+
       <Button
         title="View Birth Chart"
         onPress={() => (nav as any).navigate('Chart', { profile })}
