@@ -121,6 +121,8 @@ export default function DashboardScreen() {
             birth_date: u.birth_date,
             birth_time: u.birth_time,
             time_zone: tz,
+            birth_lat: u.birth_lat ?? null,
+            birth_lon: u.birth_lon ?? null,
           })
         } catch (e) {
           // Non-fatal (e.g., unique constraint already satisfied elsewhere)
@@ -146,8 +148,8 @@ export default function DashboardScreen() {
     return () => { unmounted.current = true }
   }, [])
 
-  useEffect(() => { load() }, [load])
-  useFocusEffect(useCallback(() => { load() }, [load]))
+  useFocusEffect(useCallback(() => {
+    load()}, [load]))
 
   const displayName =
     (profile?.first_name?.trim() || '') +
