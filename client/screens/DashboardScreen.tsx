@@ -24,6 +24,8 @@ type User = {
   birth_time: string | null
   birth_location: string | null
   time_zone: string | null
+  birth_lat: number | null
+  birth_lon: number | null
 }
 
 function needsProfileCompletion(p: Partial<User> | null | undefined) {
