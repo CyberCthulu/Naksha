@@ -15,6 +15,8 @@ import ChartScreen from './screens/ChartScreen';
 import MyChartsScreen from './screens/MyCharts';
 import JournalEditorScreen from './screens/JournalEditorScreen';
 import JournalListScreen from './screens/JournalListScreen';
+import ProfileScreen from './screens/ProfileScreen'
+
 
 
 export const AuthContext = createContext<{ user: any | null }>({ user: null });
@@ -34,6 +36,7 @@ const linking = {
       AuthCallback: 'auth/callback',
       JournalEditor: 'journal/edit/:id?',
       JournalList: 'journal/list',
+      Profile: 'profile',
     },
   },
 };
@@ -74,6 +77,7 @@ export default function App() {
               <Stack.Screen name="MyCharts" component={MyChartsScreen} options={{ headerShown: true, title: 'My Saved Charts' }} />
               <Stack.Screen name="JournalList" component={JournalListScreen} options={{ headerShown: true, title: 'My Journal' }} />
               <Stack.Screen name="JournalEditor" component={JournalEditorScreen} options={{ headerShown: true, title: 'Journal Entry' }} />
+              <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: true, title: 'My Profile' }} />
             </>
           ) : (
             <>

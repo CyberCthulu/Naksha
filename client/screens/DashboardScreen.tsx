@@ -232,6 +232,7 @@ export default function DashboardScreen() {
       />
       <Button title="My Charts" onPress={() => (nav as any).navigate('MyCharts')} />
       <Button title="Journal" onPress={() => (nav as any).navigate('JournalList')} />
+      <Button title="My Profile" onPress={() => (nav as any).navigate('Profile')} />
       <Button title="Sign Out" onPress={signOut} />
     </View>
   )
