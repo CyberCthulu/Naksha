@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import Svg, { Circle, Line, G, Text as SvgText } from 'react-native-svg'
+import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { ParamListBase } from '@react-navigation/native'
 
 import { birthToUTC } from '../lib/time'
 import {
@@ -67,10 +69,12 @@ type RouteParams = {
   saved?: SavedChartPayload
 }
 
-type ChartScreenProps = { route: { params: RouteParams } }
+// Let React Navigation define the screen props (navigation + route)
+type ChartScreenProps = NativeStackScreenProps<ParamListBase, 'Chart'>
 
 export default function ChartScreen({ route }: ChartScreenProps) {
-  const { profile, fromSaved, saved } = route.params
+  // Tell TS what we expect in params
+  const { profile, fromSaved, saved } = route.params as RouteParams
   const savedMeta = saved?.meta || {}
   const { width } = useWindowDimensions()
 
@@ -114,7 +118,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     if (fromSaved && saved?.planets && saved?.aspects) {
       if (!alive) return
 
-      // Start from whatever is stored for houses
       let localHouses: HouseCusp[] | null =
         (saved.houses as HouseCusp[] | null) ?? null
 
@@ -177,7 +180,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
           let localHouses: HouseCusp[] | null =
             (cd.houses as HouseCusp[] | null) ?? null
 
-          // Same fallback: if houses not stored but we know location, compute them
           if (
             !localHouses &&
             profile.birth_date &&
@@ -390,7 +392,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
             fill="none"
           />
 
-          {/* 12 sign dividers + labels (0° Aries, 30° Taurus, …) */}
+          {/* 12 sign dividers + labels */}
           {Array.from({ length: 12 }).map((_, i) => {
             const ang = i * 30
             const { x: x1, y: y1 } = toXY(ang, rInner)
@@ -409,11 +411,9 @@ export default function ChartScreen({ route }: ChartScreenProps) {
           {/* House cusps & numbers (Whole Sign) */}
           {houses &&
             houses.map((h) => {
-              // cusp line at exact longitude
               const { x: x1, y: y1 } = toXY(h.lon, rHouseInner)
               const { x: x2, y: y2 } = toXY(h.lon, rHouseOuter)
 
-              // label roughly in the middle of the house (cusp + 15°)
               const midLon = h.lon + 15
               const { x: lx, y: ly } = toXY(midLon, rHouseLabel)
 
@@ -502,7 +502,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         const mm = String(min).padStart(2, '0')
         return (
           <Text key={p.name} style={styles.row}>
-            {`${p.name.padEnd(7)} ${ZODIAC[s]} ${deg}°${mm}′`}
+            {`${p.name.padEnd(7)} ${ZODIAC[s]} ${deg}°${mm}′`}`
           </Text>
         )
       })}
