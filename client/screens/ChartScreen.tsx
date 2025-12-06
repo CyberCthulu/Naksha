@@ -1,9 +1,26 @@
 // screens/ChartScreen.tsx
 import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, useWindowDimensions, Alert, Button, ActivityIndicator } from 'react-native'
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  useWindowDimensions,
+  Alert,
+  Button,
+  ActivityIndicator,
+} from 'react-native'
 import Svg, { Circle, Line, G, Text as SvgText } from 'react-native-svg'
+
 import { birthToUTC } from '../lib/time'
-import { computeNatalPlanets, findAspects, PlanetPos, Aspect } from '../lib/astro'
+import {
+  computeNatalPlanets,
+  findAspects,
+  computeWholeSignHouses,
+  PlanetPos,
+  Aspect,
+  HouseCusp,
+} from '../lib/astro'
 import { normalizeZone } from '../lib/timezones'
 import ChartCompass from '../components/ChartCompass'
 import supabase from '../lib/supabase'
@@ -14,8 +31,16 @@ const signOf = (lon: number) => Math.floor(lon / 30)
 const degInSign = (lon: number) => ((lon % 30) + 30) % 30
 
 const GLYPH: Record<string, string> = {
-  Sun: '☉', Moon: '☽', Mercury: '☿', Venus: '♀', Mars: '♂',
-  Jupiter: '♃', Saturn: '♄', Uranus: '♅', Neptune: '♆', Pluto: '♇',
+  Sun: '☉',
+  Moon: '☽',
+  Mercury: '☿',
+  Venus: '♀',
+  Mars: '♂',
+  Jupiter: '♃',
+  Saturn: '♄',
+  Uranus: '♅',
+  Neptune: '♆',
+  Pluto: '♇',
 }
 
 type ProfileForChart = {
@@ -29,26 +54,31 @@ type ProfileForChart = {
   last_name?: string | null
 }
 
+type SavedChartPayload = {
+  meta?: any
+  planets?: PlanetPos[]
+  aspects?: Aspect[]
+  houses?: HouseCusp[] | null
+}
+
 type RouteParams = {
   profile: ProfileForChart
   fromSaved?: boolean
-  saved?: {
-    meta?: any
-    planets?: PlanetPos[]
-    aspects?: Aspect[]
-    houses?: any
-  }
+  saved?: SavedChartPayload
 }
 
-export default function ChartScreen({ route }: any) {
-  const { profile, fromSaved, saved } = route.params as RouteParams
+type ChartScreenProps = { route: { params: RouteParams } }
+
+export default function ChartScreen({ route }: ChartScreenProps) {
+  const { profile, fromSaved, saved } = route.params
   const savedMeta = saved?.meta || {}
   const { width } = useWindowDimensions()
 
-  const [loading, setLoading] = useState(!fromSaved || !saved?.planets)
+  const [loading, setLoading] = useState<boolean>(!fromSaved || !saved?.planets)
   const [planets, setPlanets] = useState<PlanetPos[]>(saved?.planets ?? [])
   const [aspects, setAspects] = useState<Aspect[]>(saved?.aspects ?? [])
-  const [isSaved, setIsSaved] = useState(!!fromSaved)
+  const [houses, setHouses] = useState<HouseCusp[] | null>(saved?.houses ?? null)
+  const [isSaved, setIsSaved] = useState<boolean>(!!fromSaved)
 
   // Guard: must have core birth info
   if (!profile?.birth_date || !profile?.birth_time || !profile?.time_zone) {
@@ -80,8 +110,12 @@ export default function ChartScreen({ route }: any) {
   useEffect(() => {
     let alive = true
 
-    // If we navigated from MyCharts with full saved data, we’re done.
+    // If we navigated from MyCharts with full saved data, hydrate and exit.
     if (fromSaved && saved?.planets && saved?.aspects) {
+      if (!alive) return
+      setPlanets(saved.planets)
+      setAspects(saved.aspects)
+      setHouses(saved.houses ?? null)
       setIsSaved(true)
       setLoading(false)
       return
@@ -90,7 +124,9 @@ export default function ChartScreen({ route }: any) {
     const loadChart = async () => {
       setLoading(true)
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
         if (!user) {
           if (alive) setLoading(false)
           Alert.alert('Not signed in')
@@ -111,19 +147,33 @@ export default function ChartScreen({ route }: any) {
 
         if (existing?.chart_data) {
           if (!alive) return
-          setPlanets(existing.chart_data.planets ?? [])
-          setAspects(existing.chart_data.aspects ?? [])
+          const cd = existing.chart_data
+          setPlanets(cd.planets ?? [])
+          setAspects(cd.aspects ?? [])
+          setHouses((cd.houses as HouseCusp[] | null) ?? null)
           setIsSaved(true)
         } else {
           // 2) No saved chart → compute and (optionally) auto-save once
           const { jsDate } = birthToUTC(profile.birth_date!, profile.birth_time!, tz)
           const ps = computeNatalPlanets(jsDate)
           const asps = findAspects(ps)
+
+          let localHouses: HouseCusp[] | null = null
+          if (profile.birth_lat != null && profile.birth_lon != null) {
+            localHouses = computeWholeSignHouses(
+              jsDate,
+              profile.birth_lat,
+              profile.birth_lon
+            )
+          }
+
           if (!alive) return
           setPlanets(ps)
           setAspects(asps)
+          setHouses(localHouses)
           setIsSaved(false)
 
+          // Auto-save first time so future loads are instant
           try {
             await saveChart(user.id, {
               name: `${profile.first_name ?? 'My'} Natal Chart`,
@@ -149,7 +199,7 @@ export default function ChartScreen({ route }: any) {
     return () => {
       alive = false
     }
-  }, [fromSaved, saved, profile.birth_date, profile.birth_time, tz])
+  }, [fromSaved, saved, profile.birth_date, profile.birth_time, profile.birth_lat, profile.birth_lon, tz])
 
   // Sizing
   const maxChart = 360
@@ -161,6 +211,11 @@ export default function ChartScreen({ route }: any) {
   const rInner = rOuter - 26
   const rPlanets = (rOuter + rInner) / 2
   const rAspect = rInner - 6
+
+  // House ring slightly inside the sign ring
+  const rHouseOuter = rInner - 2
+  const rHouseInner = rInner - 22
+  const rHouseLabel = rHouseInner - 10
 
   const toXY = (lonDeg: number, radius: number) => {
     const ang = (lonDeg * Math.PI) / 180
@@ -182,7 +237,9 @@ export default function ChartScreen({ route }: any) {
       Alert.alert('Already Saved', 'This chart is already in your library.')
       return
     }
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (!user) return Alert.alert('Not signed in')
     try {
       await saveChart(user.id, {
@@ -254,57 +311,65 @@ export default function ChartScreen({ route }: any) {
           height={size}
           viewBox={`${-pad} ${-pad} ${size + pad * 2} ${size + pad * 2}`}
         >
-          {/* Rings */}
-          <Circle
-            cx={cx}
-            cy={cy}
-            r={rOuter}
-            stroke="#ccc"
-            strokeWidth={1}
-            fill="none"
-          />
-          <Circle
-            cx={cx}
-            cy={cy}
-            r={rInner}
-            stroke="#eee"
-            strokeWidth={1}
-            fill="none"
-          />
+          {/* Outer & inner rings */}
+          <Circle cx={cx} cy={cy} r={rOuter} stroke="#ccc" strokeWidth={1} fill="none" />
+          <Circle cx={cx} cy={cy} r={rInner} stroke="#eee" strokeWidth={1} fill="none" />
 
-          {/* 12 sign dividers + labels */}
+          {/* 12 sign dividers + labels (0° Aries, 30° Taurus, …) */}
           {Array.from({ length: 12 }).map((_, i) => {
             const ang = i * 30
             const { x: x1, y: y1 } = toXY(ang, rInner)
             const { x: x2, y: y2 } = toXY(ang, rOuter)
             const { x: lx, y: ly } = toXY(ang, rOuter + 12)
             return (
-              <G key={i}>
-                <Line
-                  x1={x1}
-                  y1={y1}
-                  x2={x2}
-                  y2={y2}
-                  stroke="#bbb"
-                  strokeWidth={1}
-                />
-                <SvgText
-                  x={lx}
-                  y={ly}
-                  fontSize="10"
-                  textAnchor="middle"
-                  dy="3"
-                >
+              <G key={`sign-${i}`}>
+                <Line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#bbb" strokeWidth={1} />
+                <SvgText x={lx} y={ly} fontSize={10} textAnchor="middle" dy={3}>
                   {ZODIAC[i]}
                 </SvgText>
               </G>
             )
           })}
 
+          {/* House cusps & numbers (Whole Sign) */}
+          {houses &&
+            houses.map((h) => {
+              // cusp line at exact longitude
+              const { x: x1, y: y1 } = toXY(h.lon, rHouseInner)
+              const { x: x2, y: y2 } = toXY(h.lon, rHouseOuter)
+
+              // label roughly in the middle of the house (cusp + 15°)
+              const midLon = h.lon + 15
+              const { x: lx, y: ly } = toXY(midLon, rHouseLabel)
+
+              return (
+                <G key={`house-${h.house}`}>
+                  <Line
+                    x1={x1}
+                    y1={y1}
+                    x2={x2}
+                    y2={y2}
+                    stroke="#444"
+                    strokeWidth={1}
+                    opacity={0.9}
+                  />
+                  <SvgText
+                    x={lx}
+                    y={ly}
+                    fontSize={9}
+                    textAnchor="middle"
+                    dy={3}
+                  >
+                    {h.house}
+                  </SvgText>
+                </G>
+              )
+            })}
+
           {/* Aspect lines */}
           {aspects.map((a, idx) => {
-            const A = planets.find(p => p.name === a.a)
-            const B = planets.find(p => p.name === a.b)
+            const A = planets.find((p) => p.name === a.a)
+            const B = planets.find((p) => p.name === a.b)
             if (!A || !B) return null
             const { x: x1, y: y1 } = toXY(A.lon, rAspect)
             const { x: x2, y: y2 } = toXY(B.lon, rAspect)
@@ -330,7 +395,7 @@ export default function ChartScreen({ route }: any) {
           })}
 
           {/* Planets */}
-          {planets.map(p => {
+          {planets.map((p) => {
             const { x, y } = toXY(p.lon, rPlanets)
             const glyph = GLYPH[p.name] ?? p.name[0]
             return (
@@ -339,10 +404,10 @@ export default function ChartScreen({ route }: any) {
                 <SvgText
                   x={x}
                   y={y}
-                  fontSize="9"
+                  fontSize={9}
                   fill="#fff"
                   textAnchor="middle"
-                  dy="3"
+                  dy={3}
                 >
                   {glyph}
                 </SvgText>
@@ -352,8 +417,9 @@ export default function ChartScreen({ route }: any) {
         </Svg>
       </View>
 
+      {/* Planet positions */}
       <Text style={styles.h2}>Positions</Text>
-      {planets.map(p => {
+      {planets.map((p) => {
         const s = signOf(p.lon)
         const degFloat = degInSign(p.lon)
         const deg = Math.floor(degFloat)
@@ -366,9 +432,34 @@ export default function ChartScreen({ route }: any) {
         )
       })}
 
+      {/* House cusps listing */}
+      <View style={{ height: 16 }} />
+      <Text style={styles.h2}>Houses (Whole Sign)</Text>
+      {!houses ? (
+        <Text style={styles.muted}>
+          Houses require a birth location. Add or update your birth place to view
+          house cusps.
+        </Text>
+      ) : (
+        houses.map((h) => {
+          const s = signOf(h.lon)
+          const degFloat = degInSign(h.lon)
+          const deg = Math.floor(degFloat)
+          const min = Math.round((degFloat - deg) * 60)
+          const mm = String(min).padStart(2, '0')
+          const label = `House ${String(h.house).padStart(2, ' ')}`
+          return (
+            <Text key={`house-row-${h.house}`} style={styles.row}>
+              {`${label}  ${ZODIAC[s]} ${deg}°${mm}′`}
+            </Text>
+          )
+        })
+      )}
+
       <View style={{ height: 16 }} />
       <ChartCompass style={{ marginBottom: 12 }} />
 
+      {/* Aspects listing */}
       <Text style={styles.h2}>Aspects</Text>
       {aspects.length === 0 ? (
         <Text style={styles.muted}>None (within default orbs)</Text>
