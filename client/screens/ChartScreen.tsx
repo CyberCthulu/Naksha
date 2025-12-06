@@ -502,7 +502,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         const mm = String(min).padStart(2, '0')
         return (
           <Text key={p.name} style={styles.row}>
-            {`${p.name.padEnd(7)} ${ZODIAC[s]} ${deg}°${mm}′`}`
+            {`${p.name.padEnd(7)} ${ZODIAC[s]} ${deg}°${mm}′`}
           </Text>
         )
       })}
@@ -517,15 +517,11 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         </Text>
       ) : (
         houses.map((h) => {
-          const s = signOf(h.lon)
-          const degFloat = degInSign(h.lon)
-          const deg = Math.floor(degFloat)
-          const min = Math.round((degFloat - deg) * 60)
-          const mm = String(min).padStart(2, '0')
+          const signIndex = signOf(h.lon)
           const label = `House ${String(h.house).padStart(2, ' ')}`
           return (
             <Text key={`house-row-${h.house}`} style={styles.row}>
-              {`${label}  ${ZODIAC[s]} ${deg}°${mm}′`}
+              {`${label}  ${ZODIAC[signIndex]}`}
             </Text>
           )
         })
