@@ -110,17 +110,39 @@ export default function ChartScreen({ route }: ChartScreenProps) {
   useEffect(() => {
     let alive = true
 
-    // If we navigated from MyCharts with full saved data, hydrate and exit.
+    // --- CASE 1: Navigated from MyCharts with saved payload ---
     if (fromSaved && saved?.planets && saved?.aspects) {
       if (!alive) return
+
+      // Start from whatever is stored for houses
+      let localHouses: HouseCusp[] | null =
+        (saved.houses as HouseCusp[] | null) ?? null
+
+      // If houses weren't saved but we have full birth details + location, recompute
+      if (
+        !localHouses &&
+        profile.birth_date &&
+        profile.birth_time &&
+        profile.birth_lat != null &&
+        profile.birth_lon != null
+      ) {
+        const { jsDate } = birthToUTC(profile.birth_date, profile.birth_time, tz)
+        localHouses = computeWholeSignHouses(
+          jsDate,
+          profile.birth_lat,
+          profile.birth_lon
+        )
+      }
+
       setPlanets(saved.planets)
       setAspects(saved.aspects)
-      setHouses(saved.houses ?? null)
+      setHouses(localHouses)
       setIsSaved(true)
       setLoading(false)
       return
     }
 
+    // --- CASE 2: Compute / load from Supabase based on profile details ---
     const loadChart = async () => {
       setLoading(true)
       try {
@@ -148,13 +170,44 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         if (existing?.chart_data) {
           if (!alive) return
           const cd = existing.chart_data
-          setPlanets(cd.planets ?? [])
-          setAspects(cd.aspects ?? [])
-          setHouses((cd.houses as HouseCusp[] | null) ?? null)
+
+          const ps: PlanetPos[] = cd.planets ?? []
+          const asps: Aspect[] = cd.aspects ?? []
+
+          let localHouses: HouseCusp[] | null =
+            (cd.houses as HouseCusp[] | null) ?? null
+
+          // Same fallback: if houses not stored but we know location, compute them
+          if (
+            !localHouses &&
+            profile.birth_date &&
+            profile.birth_time &&
+            profile.birth_lat != null &&
+            profile.birth_lon != null
+          ) {
+            const { jsDate } = birthToUTC(
+              profile.birth_date,
+              profile.birth_time,
+              tz
+            )
+            localHouses = computeWholeSignHouses(
+              jsDate,
+              profile.birth_lat,
+              profile.birth_lon
+            )
+          }
+
+          setPlanets(ps)
+          setAspects(asps)
+          setHouses(localHouses)
           setIsSaved(true)
         } else {
           // 2) No saved chart → compute and (optionally) auto-save once
-          const { jsDate } = birthToUTC(profile.birth_date!, profile.birth_time!, tz)
+          const { jsDate } = birthToUTC(
+            profile.birth_date!,
+            profile.birth_time!,
+            tz
+          )
           const ps = computeNatalPlanets(jsDate)
           const asps = findAspects(ps)
 
@@ -199,7 +252,15 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     return () => {
       alive = false
     }
-  }, [fromSaved, saved, profile.birth_date, profile.birth_time, profile.birth_lat, profile.birth_lon, tz])
+  }, [
+    fromSaved,
+    saved,
+    profile.birth_date,
+    profile.birth_time,
+    profile.birth_lat,
+    profile.birth_lon,
+    tz,
+  ])
 
   // Sizing
   const maxChart = 360
@@ -312,8 +373,22 @@ export default function ChartScreen({ route }: ChartScreenProps) {
           viewBox={`${-pad} ${-pad} ${size + pad * 2} ${size + pad * 2}`}
         >
           {/* Outer & inner rings */}
-          <Circle cx={cx} cy={cy} r={rOuter} stroke="#ccc" strokeWidth={1} fill="none" />
-          <Circle cx={cx} cy={cy} r={rInner} stroke="#eee" strokeWidth={1} fill="none" />
+          <Circle
+            cx={cx}
+            cy={cy}
+            r={rOuter}
+            stroke="#ccc"
+            strokeWidth={1}
+            fill="none"
+          />
+          <Circle
+            cx={cx}
+            cy={cy}
+            r={rInner}
+            stroke="#eee"
+            strokeWidth={1}
+            fill="none"
+          />
 
           {/* 12 sign dividers + labels (0° Aries, 30° Taurus, …) */}
           {Array.from({ length: 12 }).map((_, i) => {
