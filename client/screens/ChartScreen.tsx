@@ -1,5 +1,5 @@
 // screens/ChartScreen.tsx
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   View,
   Text,
@@ -29,7 +29,7 @@ import supabase from '../lib/supabase'
 import { saveChart } from '../lib/charts'
 
 const ZODIAC = ['Ar', 'Ta', 'Ge', 'Cn', 'Le', 'Vi', 'Li', 'Sc', 'Sg', 'Cp', 'Aq', 'Pi']
-const signOf = (lon: number) => Math.floor(lon / 30)
+const signOf = (lon: number) => Math.floor(((lon % 360) + 360) / 30) % 12
 const degInSign = (lon: number) => ((lon % 30) + 30) % 30
 
 const GLYPH: Record<string, string> = {
@@ -43,25 +43,6 @@ const GLYPH: Record<string, string> = {
   Uranus: '♅',
   Neptune: '♆',
   Pluto: '♇',
-}
-
-// ---- Preferences (aligned with ProfileScreen) ----
-type HouseSystem = 'whole_sign' | 'placidus' | 'equal'
-type ZodiacType = 'tropical' | 'sidereal'
-type OrbMode = 'tight' | 'medium' | 'loose'
-
-type ChartPreferences = {
-  house_system: HouseSystem
-  zodiac_type: ZodiacType
-  orb_mode: OrbMode
-  show_house_degrees: boolean
-}
-
-const defaultPrefs: ChartPreferences = {
-  house_system: 'whole_sign',
-  zodiac_type: 'tropical',
-  orb_mode: 'medium',
-  show_house_degrees: true,
 }
 
 type ProfileForChart = {
@@ -88,11 +69,10 @@ type RouteParams = {
   saved?: SavedChartPayload
 }
 
-// Let React Navigation define the screen props (navigation + route)
+// React Navigation props for this screen
 type ChartScreenProps = NativeStackScreenProps<ParamListBase, 'Chart'>
 
 export default function ChartScreen({ route }: ChartScreenProps) {
-  // Tell TS what we expect in params
   const { profile, fromSaved, saved } = route.params as RouteParams
   const savedMeta = saved?.meta || {}
   const { width } = useWindowDimensions()
@@ -102,9 +82,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
   const [aspects, setAspects] = useState<Aspect[]>(saved?.aspects ?? [])
   const [houses, setHouses] = useState<HouseCusp[] | null>(saved?.houses ?? null)
   const [isSaved, setIsSaved] = useState<boolean>(!!fromSaved)
-
-  // NEW: chart preferences (from auth.user_metadata)
-  const [prefs, setPrefs] = useState<ChartPreferences>(defaultPrefs)
 
   // Guard: must have core birth info
   if (!profile?.birth_date || !profile?.birth_time || !profile?.time_zone) {
@@ -136,33 +113,9 @@ export default function ChartScreen({ route }: ChartScreenProps) {
   useEffect(() => {
     let alive = true
 
-    const hydratePrefsFromUser = (user: any) => {
-      const md = (user?.user_metadata ?? {}) as any
-      const loaded: ChartPreferences = {
-        house_system: md.pref_house_system ?? defaultPrefs.house_system,
-        zodiac_type: md.pref_zodiac_type ?? defaultPrefs.zodiac_type,
-        orb_mode: md.pref_orb_mode ?? defaultPrefs.orb_mode,
-        show_house_degrees:
-          typeof md.pref_show_house_degrees === 'boolean'
-            ? md.pref_show_house_degrees
-            : defaultPrefs.show_house_degrees,
-      }
-      if (alive) setPrefs(loaded)
-    }
-
     // --- CASE 1: Navigated from MyCharts with saved payload ---
     if (fromSaved && saved?.planets && saved?.aspects) {
-      // We still need to load user to hydrate preferences
-      ;(async () => {
-        try {
-          const {
-            data: { user },
-          } = await supabase.auth.getUser()
-          if (user) hydratePrefsFromUser(user)
-        } catch {
-          // ignore prefs errors
-        }
-      })()
+      if (!alive) return
 
       let localHouses: HouseCusp[] | null =
         (saved.houses as HouseCusp[] | null) ?? null
@@ -183,7 +136,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         )
       }
 
-      if (!alive) return
       setPlanets(saved.planets)
       setAspects(saved.aspects)
       setHouses(localHouses)
@@ -204,9 +156,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
           Alert.alert('Not signed in')
           return
         }
-
-        // hydrate preferences from metadata
-        hydratePrefsFromUser(user)
 
         // 1) Try to load saved chart from Supabase
         const { data: existing, error } = await supabase
@@ -230,6 +179,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
           let localHouses: HouseCusp[] | null =
             (cd.houses as HouseCusp[] | null) ?? null
 
+          // same fallback: if houses weren’t stored but we know location, compute them
           if (
             !localHouses &&
             profile.birth_date &&
@@ -345,27 +295,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     sextile: 1.2,
   }
 
-  // NEW: orb limits by mode (we filter already-computed aspects)
-  const ORB_LIMITS: Record<
-    Aspect['type'],
-    { tight: number; medium: number; loose: number }
-  > = {
-    conj: { tight: 2, medium: 4, loose: 6 },
-    opp: { tight: 2, medium: 4, loose: 6 },
-    trine: { tight: 1.5, medium: 3.5, loose: 5 },
-    square: { tight: 1.5, medium: 3.5, loose: 5 },
-    sextile: { tight: 1.0, medium: 2.5, loose: 4 },
-  }
-
-  const filteredAspects = useMemo(() => {
-    const mode = prefs.orb_mode
-    return aspects.filter((a) => {
-      const limits = ORB_LIMITS[a.type]
-      if (!limits) return true
-      return a.orb <= limits[mode]
-    })
-  }, [aspects, prefs.orb_mode])
-
   const onSavePress = async () => {
     if (isSaved) {
       Alert.alert('Already Saved', 'This chart is already in your library.')
@@ -479,7 +408,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
             )
           })}
 
-          {/* House cusps & numbers (Whole Sign currently) */}
+          {/* House cusps & numbers (Whole Sign) */}
           {houses &&
             houses.map((h) => {
               const { x: x1, y: y1 } = toXY(h.lon, rHouseInner)
@@ -512,8 +441,8 @@ export default function ChartScreen({ route }: ChartScreenProps) {
               )
             })}
 
-          {/* Aspect lines (respect orb prefs) */}
-          {filteredAspects.map((a, idx) => {
+          {/* Aspect lines */}
+          {aspects.map((a, idx) => {
             const A = planets.find((p) => p.name === a.a)
             const B = planets.find((p) => p.name === a.b)
             if (!A || !B) return null
@@ -578,30 +507,20 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         )
       })}
 
-      {/* House cusps listing */}
+      {/* House listing: Whole Sign, no degrees */}
       <View style={{ height: 16 }} />
-      <Text style={styles.h2}>
-        Houses (Whole Sign{prefs.house_system !== 'whole_sign' ? ' – others coming soon' : ''})
-      </Text>
+      <Text style={styles.h2}>Houses (Whole Sign)</Text>
       {!houses ? (
         <Text style={styles.muted}>
           Houses require a birth location. Add or update your birth place to view house cusps.
         </Text>
       ) : (
         houses.map((h) => {
-          const s = signOf(h.lon)
-          const degFloat = degInSign(h.lon)
-          const deg = Math.floor(degFloat)
-          const min = Math.round((degFloat - deg) * 60)
-          const mm = String(min).padStart(2, '0')
+          const signIndex = Math.floor(h.lon / 30) % 12
           const label = `House ${String(h.house).padStart(2, ' ')}`
-
-          const signLabel = ZODIAC[s]
-          const degreePart = prefs.show_house_degrees ? ` ${deg}°${mm}′` : ''
-
           return (
             <Text key={`house-row-${h.house}`} style={styles.row}>
-              {`${label}  ${signLabel}${degreePart}`}
+              {`${label}  ${ZODIAC[signIndex]}`}
             </Text>
           )
         })
@@ -610,12 +529,12 @@ export default function ChartScreen({ route }: ChartScreenProps) {
       <View style={{ height: 16 }} />
       <ChartCompass style={{ marginBottom: 12 }} />
 
-      {/* Aspects listing (respect orb prefs) */}
+      {/* Aspects listing */}
       <Text style={styles.h2}>Aspects</Text>
-      {filteredAspects.length === 0 ? (
-        <Text style={styles.muted}>None (within current orb settings)</Text>
+      {aspects.length === 0 ? (
+        <Text style={styles.muted}>None (within default orbs)</Text>
       ) : (
-        filteredAspects
+        aspects
           .slice()
           .sort((a, b) => a.orb - b.orb)
           .map((a, i) => (

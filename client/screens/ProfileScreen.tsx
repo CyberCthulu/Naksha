@@ -291,12 +291,12 @@ export default function ProfileScreen() {
           onPress={() => onUpdatePrefs({ house_system: 'whole_sign' })}
         />
         <ChoiceRow
-          label="Placidus"
+          label="Placidus (coming soon)"
           selected={prefs.house_system === 'placidus'}
           onPress={() => onUpdatePrefs({ house_system: 'placidus' })}
         />
         <ChoiceRow
-          label="Equal House"
+          label="Equal House (coming soon)"
           selected={prefs.house_system === 'equal'}
           onPress={() => onUpdatePrefs({ house_system: 'equal' })}
         />
@@ -308,7 +308,7 @@ export default function ProfileScreen() {
           onPress={() => onUpdatePrefs({ zodiac_type: 'tropical' })}
         />
         <ChoiceRow
-          label="Sidereal"
+          label="Sidereal (coming soon)"
           selected={prefs.zodiac_type === 'sidereal'}
           onPress={() => onUpdatePrefs({ zodiac_type: 'sidereal' })}
         />
