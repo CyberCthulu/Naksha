@@ -23,6 +23,12 @@ import {
   Aspect,
   HouseCusp,
 } from '../lib/astro'
+import {
+  zodiacNameFromLongitude,
+  getPlanetSignMeaning,
+  getHouseMeaning,
+  getAspectMeaning,
+} from '../lib/lexicon'
 import { normalizeZone } from '../lib/timezones'
 import ChartCompass from '../components/ChartCompass'
 import supabase from '../lib/supabase'
@@ -334,6 +340,22 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     )
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Derived: Sun & Moon meanings via lexicon
+  // ─────────────────────────────────────────────────────────────
+
+  const sun = planets.find(p => p.name === 'Sun')
+  const moon = planets.find(p => p.name === 'Moon')
+
+  const sunSignName = sun ? zodiacNameFromLongitude(sun.lon) : null
+  const moonSignName = moon ? zodiacNameFromLongitude(moon.lon) : null
+
+  const sunMeaning =
+    sunSignName ? getPlanetSignMeaning('Sun', sunSignName) : null
+
+  const moonMeaning =
+    moonSignName ? getPlanetSignMeaning('Moon', moonSignName) : null
+
   // Subtitle: prefer saved meta if present
   const subtitleLocation =
     savedMeta.birth_location ?? (profile as any).birth_location ?? null
@@ -358,6 +380,28 @@ export default function ChartScreen({ route }: ChartScreenProps) {
           {subtitleZone}
           {subtitleCoords}
         </Text>
+      )}
+
+      {/* Quick interpretation highlights */}
+      {(sunMeaning || moonMeaning) && (
+        <View style={styles.highlightCard}>
+          {sunMeaning && sunSignName && (
+            <View style={{ marginBottom: moonMeaning ? 8 : 0 }}>
+              <Text style={styles.highlightTitle}>
+                Sun in {sunSignName}
+              </Text>
+              <Text style={styles.highlightText}>{sunMeaning.short}</Text>
+            </View>
+          )}
+          {moonMeaning && moonSignName && (
+            <View>
+              <Text style={styles.highlightTitle}>
+                Moon in {moonSignName}
+              </Text>
+              <Text style={styles.highlightText}>{moonMeaning.short}</Text>
+            </View>
+          )}
+        </View>
       )}
 
       <View style={{ alignItems: 'center', marginBottom: 8 }}>
@@ -518,6 +562,8 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         houses.map((h) => {
           const signIndex = Math.floor(h.lon / 30) % 12
           const label = `House ${String(h.house).padStart(2, ' ')}`
+          // We’re not showing house meanings yet, but this is ready when you want:
+          // const houseMeaning = getHouseMeaning(h.house as any)
           return (
             <Text key={`house-row-${h.house}`} style={styles.row}>
               {`${label}  ${ZODIAC[signIndex]}`}
@@ -554,4 +600,24 @@ const styles = StyleSheet.create({
   h2: { fontSize: 16, fontWeight: '600', marginTop: 16, alignSelf: 'flex-start' },
   row: { fontFamily: 'monospace' as any, alignSelf: 'flex-start' },
   muted: { opacity: 0.7, alignSelf: 'flex-start' },
+
+  // New styles for Sun/Moon highlight card
+  highlightCard: {
+    borderWidth: 1,
+    borderColor: '#e5e5e5',
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 8,
+    marginBottom: 8,
+    backgroundColor: '#fafafa',
+  },
+  highlightTitle: {
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  highlightText: {
+    fontSize: 13,
+    lineHeight: 18,
+    opacity: 0.85,
+  },
 })
