@@ -1,18 +1,43 @@
 // screens/ChartScreen.tsx
 import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, useWindowDimensions, Alert, Button, ActivityIndicator } from 'react-native'
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  useWindowDimensions,
+  Alert,
+  Button,
+  ActivityIndicator,
+} from 'react-native'
 import Svg, { Circle, Line, G, Text as SvgText } from 'react-native-svg'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { ParamListBase } from '@react-navigation/native'
+
 import { birthToUTC } from '../lib/time'
-import { computeNatalPlanets, findAspects, computeWholeSignHouses, PlanetPos, Aspect, HouseCusp } from '../lib/astro'
-import { zodiacNameFromLongitude, getPlanetSignMeaning, getHouseMeaning, getAspectMeaning } from '../lib/lexicon'
+import {
+  computeNatalPlanets,
+  findAspects,
+  computeWholeSignHouses,
+  PlanetPos,
+  Aspect,
+  HouseCusp,
+} from '../lib/astro'
+import {
+  zodiacNameFromLongitude,
+  getPlanetSignMeaning,
+  getHouseMeaning,
+  getAspectMeaning,
+  PlanetKey,
+} from '../lib/lexicon'
 import { normalizeZone } from '../lib/timezones'
 import ChartCompass from '../components/ChartCompass'
 import supabase from '../lib/supabase'
 import { saveChart } from '../lib/charts'
 
 const ZODIAC = ['Ar', 'Ta', 'Ge', 'Cn', 'Le', 'Vi', 'Li', 'Sc', 'Sg', 'Cp', 'Aq', 'Pi']
+
+// 0..360 → index 0..11
 const signOf = (lon: number) => Math.floor(((lon % 360) + 360) / 30) % 12
 const degInSign = (lon: number) => ((lon % 30) + 30) % 30
 
@@ -318,22 +343,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     )
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Derived: Sun & Moon meanings via lexicon
-  // ─────────────────────────────────────────────────────────────
-
-  const sun = planets.find(p => p.name === 'Sun')
-  const moon = planets.find(p => p.name === 'Moon')
-
-  const sunSignName = sun ? zodiacNameFromLongitude(sun.lon) : null
-  const moonSignName = moon ? zodiacNameFromLongitude(moon.lon) : null
-
-  const sunMeaning =
-    sunSignName ? getPlanetSignMeaning('Sun', sunSignName) : null
-
-  const moonMeaning =
-    moonSignName ? getPlanetSignMeaning('Moon', moonSignName) : null
-
   // Subtitle: prefer saved meta if present
   const subtitleLocation =
     savedMeta.birth_location ?? (profile as any).birth_location ?? null
@@ -358,28 +367,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
           {subtitleZone}
           {subtitleCoords}
         </Text>
-      )}
-
-      {/* Quick interpretation highlights */}
-      {(sunMeaning || moonMeaning) && (
-        <View style={styles.highlightCard}>
-          {sunMeaning && sunSignName && (
-            <View style={{ marginBottom: moonMeaning ? 8 : 0 }}>
-              <Text style={styles.highlightTitle}>
-                Sun in {sunSignName}
-              </Text>
-              <Text style={styles.highlightText}>{sunMeaning.short}</Text>
-            </View>
-          )}
-          {moonMeaning && moonSignName && (
-            <View>
-              <Text style={styles.highlightTitle}>
-                Moon in {moonSignName}
-              </Text>
-              <Text style={styles.highlightText}>{moonMeaning.short}</Text>
-            </View>
-          )}
-        </View>
       )}
 
       <View style={{ alignItems: 'center', marginBottom: 8 }}>
@@ -514,7 +501,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         </Svg>
       </View>
 
-      {/* Planet positions */}
+      {/* Planet positions + short meanings */}
       <Text style={styles.h2}>Positions</Text>
       {planets.map((p) => {
         const s = signOf(p.lon)
@@ -522,10 +509,19 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         const deg = Math.floor(degFloat)
         const min = Math.round((degFloat - deg) * 60)
         const mm = String(min).padStart(2, '0')
+
+        const signName = zodiacNameFromLongitude(p.lon)
+        const meaning = getPlanetSignMeaning(p.name as PlanetKey, signName)
+
         return (
-          <Text key={p.name} style={styles.row}>
-            {`${p.name.padEnd(7)} ${ZODIAC[s]} ${deg}°${mm}′`}
-          </Text>
+          <View key={p.name} style={styles.positionBlock}>
+            <Text style={styles.row}>
+              {`${p.name.padEnd(7)} ${ZODIAC[s]} ${deg}°${mm}′`}
+            </Text>
+            {meaning?.short && (
+              <Text style={styles.positionSummary}>{meaning.short}</Text>
+            )}
+          </View>
         )
       })}
 
@@ -540,8 +536,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         houses.map((h) => {
           const signIndex = Math.floor(h.lon / 30) % 12
           const label = `House ${String(h.house).padStart(2, ' ')}`
-          // We’re not showing house meanings yet, but this is ready when you want:
-          // const houseMeaning = getHouseMeaning(h.house as any)
           return (
             <Text key={`house-row-${h.house}`} style={styles.row}>
               {`${label}  ${ZODIAC[signIndex]}`}
@@ -579,23 +573,14 @@ const styles = StyleSheet.create({
   row: { fontFamily: 'monospace' as any, alignSelf: 'flex-start' },
   muted: { opacity: 0.7, alignSelf: 'flex-start' },
 
-  // New styles for Sun/Moon highlight card
-  highlightCard: {
-    borderWidth: 1,
-    borderColor: '#e5e5e5',
-    borderRadius: 10,
-    padding: 10,
-    marginTop: 8,
-    marginBottom: 8,
-    backgroundColor: '#fafafa',
+  // New styles for per-planet summaries
+  positionBlock: {
+    alignSelf: 'flex-start',
+    marginBottom: 6,
   },
-  highlightTitle: {
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  highlightText: {
-    fontSize: 13,
-    lineHeight: 18,
-    opacity: 0.85,
+  positionSummary: {
+    fontSize: 12,
+    opacity: 0.8,
+    marginTop: 2,
   },
 })
