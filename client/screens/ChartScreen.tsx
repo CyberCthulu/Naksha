@@ -1,34 +1,12 @@
 // screens/ChartScreen.tsx
 import React, { useEffect, useState } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  useWindowDimensions,
-  Alert,
-  Button,
-  ActivityIndicator,
-} from 'react-native'
+import { View, Text, StyleSheet, ScrollView, useWindowDimensions, Alert, Button, ActivityIndicator } from 'react-native'
 import Svg, { Circle, Line, G, Text as SvgText } from 'react-native-svg'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { ParamListBase } from '@react-navigation/native'
-
 import { birthToUTC } from '../lib/time'
-import {
-  computeNatalPlanets,
-  findAspects,
-  computeWholeSignHouses,
-  PlanetPos,
-  Aspect,
-  HouseCusp,
-} from '../lib/astro'
-import {
-  zodiacNameFromLongitude,
-  getPlanetSignMeaning,
-  getHouseMeaning,
-  getAspectMeaning,
-} from '../lib/lexicon'
+import { computeNatalPlanets, findAspects, computeWholeSignHouses, PlanetPos, Aspect, HouseCusp } from '../lib/astro'
+import { zodiacNameFromLongitude, getPlanetSignMeaning, getHouseMeaning, getAspectMeaning } from '../lib/lexicon'
 import { normalizeZone } from '../lib/timezones'
 import ChartCompass from '../components/ChartCompass'
 import supabase from '../lib/supabase'
