@@ -29,7 +29,7 @@ import {
   getHouseMeaning,
   getAspectMeaning,
   PlanetKey,
-} from '../lib/lexicon'
+} from '../lib/lexicon/index'
 import { normalizeZone } from '../lib/timezones'
 import ChartCompass from '../components/ChartCompass'
 import supabase from '../lib/supabase'
