@@ -38,7 +38,7 @@ import {
   type PlanetKey,
   type HouseNumber,
   type AspectType,
-} from '../lib/lexicon'
+} from '../lib/lexicon/index'
 
 const ZODIAC_ABBR = [
   'Ar',
