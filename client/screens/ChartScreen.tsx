@@ -1,5 +1,5 @@
 // screens/ChartScreen.tsx
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   View,
   Text,
@@ -23,22 +23,38 @@ import {
   Aspect,
   HouseCusp,
 } from '../lib/astro'
-import {
-  zodiacNameFromLongitude,
-  getPlanetSignMeaning,
-  getHouseMeaning,
-  getAspectMeaning,
-  PlanetKey,
-} from '../lib/lexicon/index'
 import { normalizeZone } from '../lib/timezones'
 import ChartCompass from '../components/ChartCompass'
 import supabase from '../lib/supabase'
 import { saveChart } from '../lib/charts'
 
-const ZODIAC = ['Ar', 'Ta', 'Ge', 'Cn', 'Le', 'Vi', 'Li', 'Sc', 'Sg', 'Cp', 'Aq', 'Pi']
+// ✅ Import from the lexicon FOLDER barrel (lib/lexicon/index.ts)
+import {
+  zodiacNameFromLongitude,
+  signIndexFromLongitude,
+  getPlanetSignMeaning,
+  getHouseMeaning,
+  getAspectMeaning,
+  type PlanetKey,
+  type HouseNumber,
+  type AspectType,
+} from '../lib/lexicon'
 
-// 0..360 → index 0..11
-const signOf = (lon: number) => Math.floor(((lon % 360) + 360) / 30) % 12
+const ZODIAC_ABBR = [
+  'Ar',
+  'Ta',
+  'Ge',
+  'Cn',
+  'Le',
+  'Vi',
+  'Li',
+  'Sc',
+  'Sg',
+  'Cp',
+  'Aq',
+  'Pi',
+]
+
 const degInSign = (lon: number) => ((lon % 30) + 30) % 30
 
 const GLYPH: Record<string, string> = {
@@ -78,8 +94,32 @@ type RouteParams = {
   saved?: SavedChartPayload
 }
 
-// React Navigation props for this screen
 type ChartScreenProps = NativeStackScreenProps<ParamListBase, 'Chart'>
+
+function asPlanetKey(name: string): PlanetKey | null {
+  const allowed: PlanetKey[] = [
+    'Sun',
+    'Moon',
+    'Mercury',
+    'Venus',
+    'Mars',
+    'Jupiter',
+    'Saturn',
+    'Uranus',
+    'Neptune',
+    'Pluto',
+  ]
+  return (allowed as string[]).includes(name) ? (name as PlanetKey) : null
+}
+
+function asHouseNumber(n: number): HouseNumber | null {
+  return n >= 1 && n <= 12 ? (n as HouseNumber) : null
+}
+
+function asAspectType(t: string): AspectType | null {
+  const allowed: AspectType[] = ['conj', 'opp', 'square', 'trine', 'sextile']
+  return (allowed as string[]).includes(t) ? (t as AspectType) : null
+}
 
 export default function ChartScreen({ route }: ChartScreenProps) {
   const { profile, fromSaved, saved } = route.params as RouteParams
@@ -126,8 +166,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     if (fromSaved && saved?.planets && saved?.aspects) {
       if (!alive) return
 
-      let localHouses: HouseCusp[] | null =
-        (saved.houses as HouseCusp[] | null) ?? null
+      let localHouses: HouseCusp[] | null = (saved.houses as HouseCusp[] | null) ?? null
 
       // If houses weren't saved but we have full birth details + location, recompute
       if (
@@ -138,11 +177,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         profile.birth_lon != null
       ) {
         const { jsDate } = birthToUTC(profile.birth_date, profile.birth_time, tz)
-        localHouses = computeWholeSignHouses(
-          jsDate,
-          profile.birth_lat,
-          profile.birth_lon
-        )
+        localHouses = computeWholeSignHouses(jsDate, profile.birth_lat, profile.birth_lon)
       }
 
       setPlanets(saved.planets)
@@ -185,10 +220,9 @@ export default function ChartScreen({ route }: ChartScreenProps) {
           const ps: PlanetPos[] = cd.planets ?? []
           const asps: Aspect[] = cd.aspects ?? []
 
-          let localHouses: HouseCusp[] | null =
-            (cd.houses as HouseCusp[] | null) ?? null
+          let localHouses: HouseCusp[] | null = (cd.houses as HouseCusp[] | null) ?? null
 
-          // same fallback: if houses weren’t stored but we know location, compute them
+          // fallback: if houses not stored but we know location, compute them
           if (
             !localHouses &&
             profile.birth_date &&
@@ -196,16 +230,8 @@ export default function ChartScreen({ route }: ChartScreenProps) {
             profile.birth_lat != null &&
             profile.birth_lon != null
           ) {
-            const { jsDate } = birthToUTC(
-              profile.birth_date,
-              profile.birth_time,
-              tz
-            )
-            localHouses = computeWholeSignHouses(
-              jsDate,
-              profile.birth_lat,
-              profile.birth_lon
-            )
+            const { jsDate } = birthToUTC(profile.birth_date, profile.birth_time, tz)
+            localHouses = computeWholeSignHouses(jsDate, profile.birth_lat, profile.birth_lon)
           }
 
           setPlanets(ps)
@@ -214,21 +240,13 @@ export default function ChartScreen({ route }: ChartScreenProps) {
           setIsSaved(true)
         } else {
           // 2) No saved chart → compute and (optionally) auto-save once
-          const { jsDate } = birthToUTC(
-            profile.birth_date!,
-            profile.birth_time!,
-            tz
-          )
+          const { jsDate } = birthToUTC(profile.birth_date!, profile.birth_time!, tz)
           const ps = computeNatalPlanets(jsDate)
           const asps = findAspects(ps)
 
           let localHouses: HouseCusp[] | null = null
           if (profile.birth_lat != null && profile.birth_lon != null) {
-            localHouses = computeWholeSignHouses(
-              jsDate,
-              profile.birth_lat,
-              profile.birth_lon
-            )
+            localHouses = computeWholeSignHouses(jsDate, profile.birth_lat, profile.birth_lon)
           }
 
           if (!alive) return
@@ -329,30 +347,29 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     }
   }
 
+  const subtitleLocation = savedMeta.birth_location ?? (profile as any).birth_location ?? null
+  const subtitleZone = savedMeta.time_zone ?? tz
+  const subtitleCoords =
+    savedMeta.birth_lat != null && savedMeta.birth_lon != null
+      ? ` (${Number(savedMeta.birth_lat).toFixed(2)}, ${Number(savedMeta.birth_lon).toFixed(2)})`
+      : ''
+
+  const sunSummary = useMemo(() => {
+    const sun = planets.find((p) => p.name === 'Sun')
+    if (!sun) return null
+    const signName = zodiacNameFromLongitude(sun.lon)
+    const meaning = getPlanetSignMeaning('Sun', signName)
+    return { signName, meaning }
+  }, [planets])
+
   if (loading) {
     return (
-      <View
-        style={[
-          styles.container,
-          { flex: 1, alignItems: 'center', justifyContent: 'center' },
-        ]}
-      >
+      <View style={[styles.container, { flex: 1, alignItems: 'center', justifyContent: 'center' }]}>
         <ActivityIndicator size="large" />
         <Text style={{ marginTop: 8 }}>Loading chart…</Text>
       </View>
     )
   }
-
-  // Subtitle: prefer saved meta if present
-  const subtitleLocation =
-    savedMeta.birth_location ?? (profile as any).birth_location ?? null
-  const subtitleZone = savedMeta.time_zone ?? tz
-  const subtitleCoords =
-    savedMeta.birth_lat != null && savedMeta.birth_lon != null
-      ? ` (${Number(savedMeta.birth_lat).toFixed(2)}, ${Number(
-          savedMeta.birth_lon
-        ).toFixed(2)})`
-      : ''
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -367,6 +384,13 @@ export default function ChartScreen({ route }: ChartScreenProps) {
           {subtitleZone}
           {subtitleCoords}
         </Text>
+      )}
+
+      {!!sunSummary?.meaning?.short && (
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryTitle}>{`Sun in ${sunSummary.signName}`}</Text>
+          <Text style={styles.summaryText}>{sunSummary.meaning.short}</Text>
+        </View>
       )}
 
       <View style={{ alignItems: 'center', marginBottom: 8 }}>
@@ -384,22 +408,8 @@ export default function ChartScreen({ route }: ChartScreenProps) {
           viewBox={`${-pad} ${-pad} ${size + pad * 2} ${size + pad * 2}`}
         >
           {/* Outer & inner rings */}
-          <Circle
-            cx={cx}
-            cy={cy}
-            r={rOuter}
-            stroke="#ccc"
-            strokeWidth={1}
-            fill="none"
-          />
-          <Circle
-            cx={cx}
-            cy={cy}
-            r={rInner}
-            stroke="#eee"
-            strokeWidth={1}
-            fill="none"
-          />
+          <Circle cx={cx} cy={cy} r={rOuter} stroke="#ccc" strokeWidth={1} fill="none" />
+          <Circle cx={cx} cy={cy} r={rInner} stroke="#eee" strokeWidth={1} fill="none" />
 
           {/* 12 sign dividers + labels */}
           {Array.from({ length: 12 }).map((_, i) => {
@@ -411,44 +421,29 @@ export default function ChartScreen({ route }: ChartScreenProps) {
               <G key={`sign-${i}`}>
                 <Line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#bbb" strokeWidth={1} />
                 <SvgText x={lx} y={ly} fontSize={10} textAnchor="middle" dy={3}>
-                  {ZODIAC[i]}
+                  {ZODIAC_ABBR[i]}
                 </SvgText>
               </G>
             )
           })}
 
           {/* House cusps & numbers (Whole Sign) */}
-          {houses &&
-            houses.map((h) => {
-              const { x: x1, y: y1 } = toXY(h.lon, rHouseInner)
-              const { x: x2, y: y2 } = toXY(h.lon, rHouseOuter)
+          {houses?.map((h) => {
+            const { x: x1, y: y1 } = toXY(h.lon, rHouseInner)
+            const { x: x2, y: y2 } = toXY(h.lon, rHouseOuter)
 
-              const midLon = h.lon + 15
-              const { x: lx, y: ly } = toXY(midLon, rHouseLabel)
+            const midLon = h.lon + 15
+            const { x: lx, y: ly } = toXY(midLon, rHouseLabel)
 
-              return (
-                <G key={`house-${h.house}`}>
-                  <Line
-                    x1={x1}
-                    y1={y1}
-                    x2={x2}
-                    y2={y2}
-                    stroke="#444"
-                    strokeWidth={1}
-                    opacity={0.9}
-                  />
-                  <SvgText
-                    x={lx}
-                    y={ly}
-                    fontSize={9}
-                    textAnchor="middle"
-                    dy={3}
-                  >
-                    {h.house}
-                  </SvgText>
-                </G>
-              )
-            })}
+            return (
+              <G key={`house-${h.house}`}>
+                <Line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#444" strokeWidth={1} opacity={0.9} />
+                <SvgText x={lx} y={ly} fontSize={9} textAnchor="middle" dy={3}>
+                  {h.house}
+                </SvgText>
+              </G>
+            )
+          })}
 
           {/* Aspect lines */}
           {aspects.map((a, idx) => {
@@ -468,11 +463,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
                 strokeWidth={aspectStroke[a.type]}
                 opacity={0.85}
                 strokeDasharray={
-                  a.type === 'sextile'
-                    ? '4 4'
-                    : a.type === 'trine'
-                    ? '8 6'
-                    : undefined
+                  a.type === 'sextile' ? '4 4' : a.type === 'trine' ? '8 6' : undefined
                 }
               />
             )
@@ -485,14 +476,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
             return (
               <G key={p.name}>
                 <Circle cx={x} cy={y} r={9} fill="#222" />
-                <SvgText
-                  x={x}
-                  y={y}
-                  fontSize={9}
-                  fill="#fff"
-                  textAnchor="middle"
-                  dy={3}
-                >
+                <SvgText x={x} y={y} fontSize={9} fill="#fff" textAnchor="middle" dy={3}>
                   {glyph}
                 </SvgText>
               </G>
@@ -501,31 +485,32 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         </Svg>
       </View>
 
-      {/* Planet positions + short meanings */}
+      {/* Positions + short meanings (compact: not vertical blocks) */}
       <Text style={styles.h2}>Positions</Text>
       {planets.map((p) => {
-        const s = signOf(p.lon)
+        const signIdx = signIndexFromLongitude(p.lon)
         const degFloat = degInSign(p.lon)
         const deg = Math.floor(degFloat)
         const min = Math.round((degFloat - deg) * 60)
         const mm = String(min).padStart(2, '0')
 
+        const pk = asPlanetKey(p.name)
         const signName = zodiacNameFromLongitude(p.lon)
-        const meaning = getPlanetSignMeaning(p.name as PlanetKey, signName)
+        const meaning = pk ? getPlanetSignMeaning(pk, signName) : null
 
         return (
-          <View key={p.name} style={styles.positionBlock}>
-            <Text style={styles.row}>
-              {`${p.name.padEnd(7)} ${ZODIAC[s]} ${deg}°${mm}′`}
+          <View key={p.name} style={styles.itemRow}>
+            <Text style={styles.itemLeft}>
+              {`${p.name.padEnd(7)} ${ZODIAC_ABBR[signIdx]} ${deg}°${mm}′`}
             </Text>
-            {meaning?.short && (
-              <Text style={styles.positionSummary}>{meaning.short}</Text>
-            )}
+            <Text style={styles.itemRight} numberOfLines={3}>
+              {meaning?.short ?? ''}
+            </Text>
           </View>
         )
       })}
 
-      {/* House listing: Whole Sign, no degrees */}
+      {/* Houses (Whole Sign) + short meanings (no degrees shown) */}
       <View style={{ height: 16 }} />
       <Text style={styles.h2}>Houses (Whole Sign)</Text>
       {!houses ? (
@@ -534,12 +519,17 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         </Text>
       ) : (
         houses.map((h) => {
-          const signIndex = Math.floor(h.lon / 30) % 12
-          const label = `House ${String(h.house).padStart(2, ' ')}`
+          const signIdx = signIndexFromLongitude(h.lon)
+          const hn = asHouseNumber(h.house)
+          const meaning = hn ? getHouseMeaning(hn) : null
+
           return (
-            <Text key={`house-row-${h.house}`} style={styles.row}>
-              {`${label}  ${ZODIAC[signIndex]}`}
-            </Text>
+            <View key={`house-row-${h.house}`} style={styles.itemRow}>
+              <Text style={styles.itemLeft}>{`House ${String(h.house).padStart(2, ' ')}  ${ZODIAC_ABBR[signIdx]}`}</Text>
+              <Text style={styles.itemRight} numberOfLines={3}>
+                {meaning?.short ?? ''}
+              </Text>
+            </View>
           )
         })
       )}
@@ -547,7 +537,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
       <View style={{ height: 16 }} />
       <ChartCompass style={{ marginBottom: 12 }} />
 
-      {/* Aspects listing */}
+      {/* Aspects + short meanings */}
       <Text style={styles.h2}>Aspects</Text>
       {aspects.length === 0 ? (
         <Text style={styles.muted}>None (within default orbs)</Text>
@@ -555,11 +545,20 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         aspects
           .slice()
           .sort((a, b) => a.orb - b.orb)
-          .map((a, i) => (
-            <Text key={`${a.a}-${a.b}-${i}`} style={styles.row}>
-              {`${a.a} ${a.type} ${a.b} (orb ${a.orb.toFixed(2)}°)`}
-            </Text>
-          ))
+          .map((a, i) => {
+            const at = asAspectType(a.type)
+            const meaning = at ? getAspectMeaning(at) : null
+            return (
+              <View key={`${a.a}-${a.b}-${i}`} style={styles.itemRow}>
+                <Text style={styles.itemLeft}>
+                  {`${a.a} ${a.type} ${a.b} (${a.orb.toFixed(2)}°)`}
+                </Text>
+                <Text style={styles.itemRight} numberOfLines={3}>
+                  {meaning?.short ?? ''}
+                </Text>
+              </View>
+            )
+          })
       )}
     </ScrollView>
   )
@@ -570,17 +569,34 @@ const styles = StyleSheet.create({
   h1: { fontSize: 18, fontWeight: '600', marginBottom: 4, alignSelf: 'center' },
   sub: { opacity: 0.7, alignSelf: 'center', marginBottom: 8 },
   h2: { fontSize: 16, fontWeight: '600', marginTop: 16, alignSelf: 'flex-start' },
-  row: { fontFamily: 'monospace' as any, alignSelf: 'flex-start' },
   muted: { opacity: 0.7, alignSelf: 'flex-start' },
 
-  // New styles for per-planet summaries
-  positionBlock: {
-    alignSelf: 'flex-start',
-    marginBottom: 6,
+  summaryCard: {
+    borderWidth: 1,
+    borderColor: '#e6e6e6',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 10,
+    backgroundColor: '#fff',
   },
-  positionSummary: {
+  summaryTitle: { fontWeight: '700', marginBottom: 4 },
+  summaryText: { opacity: 0.85 },
+
+  // Compact two-column rows so meanings aren’t “stacked”
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  itemLeft: {
+    width: 150,
+    fontFamily: 'monospace' as any,
+  },
+  itemRight: {
+    flex: 1,
     fontSize: 12,
     opacity: 0.8,
-    marginTop: 2,
+    paddingLeft: 10,
+    lineHeight: 16,
   },
 })
