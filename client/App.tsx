@@ -4,6 +4,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as Linking from 'expo-linking';
 import supabase from './lib/supabase';
+import { SpaceProvider } from './components/space/SpaceProvider'
+import SpaceBackground from './components/space/SpaceBackground'
 
 import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
@@ -62,11 +64,13 @@ export default function App() {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user }}>
-      <NavigationContainer linking={linking} fallback={<></>}>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {user ? (
-            <>
+    <SpaceProvider>
+    <SpaceBackground />
+     <AuthContext.Provider value={{ user }}>
+       <NavigationContainer linking={linking} fallback={<></>}>
+         <Stack.Navigator screenOptions={{ headerShown: false }}>
+           {user ? (
+             <>
               <Stack.Screen name="Dashboard" component={DashboardScreen} />
               <Stack.Screen
                 name="CompleteProfile"
@@ -92,5 +96,6 @@ export default function App() {
         </Stack.Navigator>
       </NavigationContainer>
     </AuthContext.Provider>
+    </SpaceProvider>
   );
 }

@@ -13,6 +13,7 @@ import {
 import Svg, { Circle, Line, G, Text as SvgText } from 'react-native-svg'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { ParamListBase } from '@react-navigation/native'
+import { useSpace } from '../components/space/SpaceProvider'
 
 import { birthToUTC } from '../lib/time'
 import {
