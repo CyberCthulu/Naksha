@@ -38,7 +38,7 @@ import {
   type PlanetKey,
   type HouseNumber,
   type AspectType,
-} from '../lib/lexicon/index'
+} from '../lib/lexicon'
 
 const ZODIAC_ABBR = [
   'Ar',
@@ -573,6 +573,7 @@ const styles = StyleSheet.create({
 
   summaryCard: {
     borderWidth: 1,
+    alignItems: 'center',
     borderColor: '#e6e6e6',
     borderRadius: 10,
     padding: 10,
