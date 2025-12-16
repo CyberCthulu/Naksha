@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   summaryTitle: { fontWeight: '700', marginBottom: 4 },
-  summaryText: { opacity: 0.85 },
+  summaryText: { opacity: 0.85, alignItems: 'center', textAlign: 'center' },
 
   // Compact two-column rows so meanings aren’t “stacked”
   itemRow: {

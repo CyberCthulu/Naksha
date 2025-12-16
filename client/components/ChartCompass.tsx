@@ -85,22 +85,49 @@ function LegendLine({ label, variant = 'conj' }: LegendLineProps) {
   )
 }
 
+// components/ChartCompass.tsx
+
+// ...same imports & component code...
+
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     borderColor: '#e3e3e3',
     borderRadius: 10,
-    padding: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 12,   // ⬅️ a touch more horizontal padding
     backgroundColor: '#fff',
     gap: 6,
   },
   title: { fontSize: 16, fontWeight: '600', textAlign: 'center', marginBottom: 4 },
   section: { marginTop: 6, fontWeight: '600' },
+
   grid2: { flexDirection: 'row', flexWrap: 'wrap' },
   grid3: { flexDirection: 'row', flexWrap: 'wrap' },
-  row: { flexDirection: 'row', alignItems: 'center', width: '50%', paddingVertical: 4 },
-  glyph: { fontSize: 16, width: 26, textAlign: 'center' },
-  label: { fontSize: 14 },
+
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '50%',
+    paddingVertical: 4,
+    paddingRight: 12,        // ⬅️ crucial: gives the right column breathing room
+    minWidth: 0,             // ⬅️ allow children to shrink on Android
+  },
+
+  glyph: {
+    fontSize: 16,
+    width: 26,
+    textAlign: 'center',
+    marginRight: 6,
+  },
+
+  label: {
+    fontSize: 14,
+    flex: 1,                 // ⬅️ let the label take remaining width
+    flexShrink: 1,           // ⬅️ and shrink if needed instead of clipping
+    minWidth: 0,             // ⬅️ avoid overflow measurement bugs on Android
+  },
+
   line: {
     width: 24,
     height: 0,
@@ -108,4 +135,4 @@ const styles = StyleSheet.create({
     borderColor: '#777',
     marginRight: 8,
   },
-})
+});
