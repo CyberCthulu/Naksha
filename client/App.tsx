@@ -49,8 +49,14 @@ const TransparentTheme = {
   colors: {
     ...DefaultTheme.colors,
     background: 'transparent',
+    card: 'transparent',
+    border: 'transparent',
+    text: '#fff',
+    primary: '#fff',
+    notification: '#fff',
   },
 }
+
 
 export default function App() {
   const [user, setUser] = useState<any | null>(null)
@@ -74,7 +80,7 @@ export default function App() {
 
   return (
     <SpaceProvider>
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, backgroundColor: '000' }}>
         {/* Background layer */}
         <SpaceBackground />
 
@@ -84,7 +90,9 @@ export default function App() {
             <Stack.Navigator
               screenOptions={{
                 headerShown: false,
-                contentStyle: { backgroundColor: 'transparent' }, // ✅ THIS FIXES WHITE SCREENS
+                contentStyle: { backgroundColor: 'transparent' },
+                headerTransparent: true,
+                headerStyle: { backgroundColor: 'transparent' },
               }}
             >
               {user ? (
@@ -93,32 +101,32 @@ export default function App() {
                   <Stack.Screen
                     name="CompleteProfile"
                     component={CompleteProfileScreen}
-                    options={{ headerShown: true, title: 'Complete Profile' }}
+                    options={{ headerShown: true, title: 'Complete Profile', headerTransparent: true }}
                   />
                   <Stack.Screen
                     name="Chart"
                     component={ChartScreen}
-                    options={{ headerShown: true, title: 'Birth Chart' }}
+                    options={{ headerShown: true, title: 'Birth Chart', headerTransparent: true }}
                   />
                   <Stack.Screen
                     name="MyCharts"
                     component={MyChartsScreen}
-                    options={{ headerShown: true, title: 'My Saved Charts' }}
+                    options={{ headerShown: true, title: 'My Saved Charts', headerTransparent: true }}
                   />
                   <Stack.Screen
                     name="JournalList"
                     component={JournalListScreen}
-                    options={{ headerShown: true, title: 'My Journal' }}
+                    options={{ headerShown: true, title: 'My Journal', headerTransparent: true }}
                   />
                   <Stack.Screen
                     name="JournalEditor"
                     component={JournalEditorScreen}
-                    options={{ headerShown: true, title: 'Journal Entry' }}
+                    options={{ headerShown: true, title: 'Journal Entry', headerTransparent: true }}
                   />
                   <Stack.Screen
                     name="Profile"
                     component={ProfileScreen}
-                    options={{ headerShown: true, title: 'My Profile' }}
+                    options={{ headerShown: true, title: 'My Profile', headerTransparent: true }}
                   />
                 </>
               ) : (

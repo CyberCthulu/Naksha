@@ -65,6 +65,7 @@ export default function SpaceBackground() {
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
       <Canvas camera={{ position: [0, 0, 10], fov: 50 }}>
+        <color attach='background' args={['#000']} />
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} intensity={1.0} />
         <StarPoints />

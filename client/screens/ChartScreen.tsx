@@ -560,6 +560,7 @@ const styles = StyleSheet.create({
   muted: { opacity: 0.7, alignSelf: 'flex-start' },
 
   summaryCard: {
+    color: '#ffffff',
     borderWidth: 1,
     alignItems: 'center',
     borderColor: '#e6e6e6',

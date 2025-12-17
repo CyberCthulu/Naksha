@@ -11,7 +11,10 @@ import { normalizeZone } from '../lib/timezones'
 import { saveChart } from '../lib/charts'
 
 // zodiac helpers
-const ZODIAC = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']
+const ZODIAC = [
+  'Aries','Taurus','Gemini','Cancer','Leo','Virgo',
+  'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces',
+]
 const ZODIAC_GLY = ['♈︎','♉︎','♊︎','♋︎','♌︎','♍︎','♎︎','♏︎','♐︎','♑︎','♒︎','♓︎']
 const signOf = (lon: number) => Math.floor((((lon % 360) + 360) % 360) / 30)
 
@@ -83,7 +86,7 @@ export default function DashboardScreen() {
       if (needsProfileCompletion(u)) {
         setSunSign(null); setMoonSign(null)
         if (!didNavigateRef.current) {
-          (nav as any).navigate('CompleteProfile')
+          nav.navigate('CompleteProfile')
           didNavigateRef.current = true
         }
         return
@@ -115,6 +118,7 @@ export default function DashboardScreen() {
         // 6) Compute once and save for future loads
         const { jsDate } = birthToUTC(u.birth_date, u.birth_time, tz)
         const planets = computeNatalPlanets(jsDate)
+
         try {
           await saveChart(user.id, {
             name: `${u.first_name ?? 'My'} Natal Chart`,
@@ -125,9 +129,9 @@ export default function DashboardScreen() {
             birth_lon: u.birth_lon ?? null,
           })
         } catch (e) {
-          // Non-fatal (e.g., unique constraint already satisfied elsewhere)
           console.warn('saveChart failed:', e)
         }
+
         const sun = planets.find(p => p.name === 'Sun')
         const moon = planets.find(p => p.name === 'Moon')
         setSunSign(sun ? `${ZODIAC_GLY[signOf(sun.lon)]} ${ZODIAC[signOf(sun.lon)]}` : null)
@@ -148,8 +152,7 @@ export default function DashboardScreen() {
     return () => { unmounted.current = true }
   }, [])
 
-  useFocusEffect(useCallback(() => {
-    load()}, [load]))
+  useFocusEffect(useCallback(() => { load() }, [load]))
 
   const displayName =
     (profile?.first_name?.trim() || '') +
@@ -168,7 +171,7 @@ export default function DashboardScreen() {
     return (
       <View style={styles.center}>
         <ActivityIndicator />
-        <Text style={{ marginTop: 8 }}>Loading your dashboard…</Text>
+        <Text style={[styles.text, { marginTop: 8 }]}>Loading your dashboard…</Text>
       </View>
     )
   }
@@ -176,7 +179,7 @@ export default function DashboardScreen() {
   if (error) {
     return (
       <View style={styles.center}>
-        <Text style={{ color: 'crimson', marginBottom: 12 }}>{error}</Text>
+        <Text style={styles.errorText}>{error}</Text>
         <Button title="Retry" onPress={load} />
         <View style={{ height: 8 }} />
         <Button title="Sign Out" onPress={signOut} />
@@ -194,25 +197,25 @@ export default function DashboardScreen() {
       {sunSign && (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Your Signs</Text>
-          <Text>☀️ Sun: {sunSign}</Text>
-          <Text>🌙 Moon: {moonSign ?? '—'}</Text>
+          <Text style={styles.text}>☀️ Sun: {sunSign}</Text>
+          <Text style={styles.text}>🌙 Moon: {moonSign ?? '—'}</Text>
         </View>
       )}
 
       {profile ? (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Your Birth Details</Text>
-          <Text>Email: {profile.email ?? '—'}</Text>
-          <Text>Date: {profile.birth_date ?? '—'}</Text>
-          <Text>Time: {prettyTime}</Text>
-          <Text>Location: {profile.birth_location ?? '—'}</Text>
-          <Text>Time Zone: {profile.time_zone ?? '—'}</Text>
+          <Text style={styles.text}>Email: {profile.email ?? '—'}</Text>
+          <Text style={styles.text}>Date: {profile.birth_date ?? '—'}</Text>
+          <Text style={styles.text}>Time: {prettyTime}</Text>
+          <Text style={styles.text}>Location: {profile.birth_location ?? '—'}</Text>
+          <Text style={styles.text}>Time Zone: {profile.time_zone ?? '—'}</Text>
         </View>
       ) : (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Profile</Text>
-          <Text>No profile row found yet.</Text>
-          <Text style={{ opacity: 0.7 }}>
+          <Text style={styles.text}>No profile row found yet.</Text>
+          <Text style={styles.muted}>
             (You’ll get one after confirming email from Sign Up.)
           </Text>
         </View>
@@ -221,31 +224,76 @@ export default function DashboardScreen() {
       <View style={{ height: 12 }} />
 
       <Button
-       title="Edit Birth Details"
-       onPress={() => (nav as any).navigate('CompleteProfile')}
+        title="Edit Birth Details"
+        onPress={() => nav.navigate('CompleteProfile')}
       />
 
       <Button
         title="View Birth Chart"
-        onPress={() => (nav as any).navigate('Chart', { profile })}
+        onPress={() => nav.navigate('Chart', { profile })}
         disabled={!profile || needsProfileCompletion(profile)}
       />
-      <Button title="My Charts" onPress={() => (nav as any).navigate('MyCharts')} />
-      <Button title="Journal" onPress={() => (nav as any).navigate('JournalList')} />
-      <Button title="My Profile" onPress={() => (nav as any).navigate('Profile')} />
+
+      <Button title="My Charts" onPress={() => nav.navigate('MyCharts')} />
+      <Button title="Journal" onPress={() => nav.navigate('JournalList')} />
+      <Button title="My Profile" onPress={() => nav.navigate('Profile')} />
       <Button title="Sign Out" onPress={signOut} />
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  container: { flex: 1, padding: 20, paddingTop: 40 },
-  h1: { fontSize: 22, fontWeight: '600' },
-  sub: { marginTop: 6, marginBottom: 16, opacity: 0.9 },
-  card: {
-    borderWidth: 1, borderColor: '#ddd', borderRadius: 10,
-    padding: 12, backgroundColor: 'transparent', marginBottom: 12
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
-  cardTitle: { fontWeight: '600', marginBottom: 6 },
+
+  container: {
+    flex: 1,
+    padding: 20,
+    paddingTop: 40,
+  },
+
+  text: {
+    color: '#fff',
+  },
+
+  muted: {
+    color: 'rgba(255,255,255,0.75)',
+  },
+
+  errorText: {
+    color: 'crimson',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+
+  h1: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#fff',
+  },
+
+  sub: {
+    marginTop: 6,
+    marginBottom: 16,
+    color: 'rgba(255,255,255,0.85)',
+  },
+
+  card: {
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
+    borderRadius: 12,
+    padding: 14,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    marginBottom: 12,
+  },
+
+  cardTitle: {
+    fontWeight: '700',
+    marginBottom: 6,
+    color: '#fff',
+  },
 })
