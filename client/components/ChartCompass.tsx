@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 12,   // ⬅️ a touch more horizontal padding
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
     gap: 6,
   },
   title: { fontSize: 16, fontWeight: '600', textAlign: 'center', marginBottom: 4 },

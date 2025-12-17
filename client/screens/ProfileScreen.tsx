@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
     borderColor: '#e4e4e4',
     borderRadius: 10,
     padding: 12,
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
     marginBottom: 12,
   },
   cardTitle: { fontWeight: '600', marginBottom: 8, fontSize: 16 },

@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#ddd', padding: 10, borderRadius: 8, alignSelf: 'flex-start', marginBottom: 10
   },
   newBtnText: { fontWeight: '600' },
-  card: { borderWidth: 1, borderColor: '#eee', borderRadius: 10, padding: 12, backgroundColor: '#fff' },
+  card: { borderWidth: 1, borderColor: '#eee', borderRadius: 10, padding: 12, backgroundColor: 'transparent' },
   title: { fontWeight: '700' },
   meta: { marginTop: 6, fontSize: 12, opacity: 0.6 }
 })

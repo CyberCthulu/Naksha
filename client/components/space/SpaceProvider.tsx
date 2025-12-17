@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useMemo, useState } from 'react'
+// components/space/SpaceProvider.tsx
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react'
 
 export type PlanetName =
   | 'Sun' | 'Moon' | 'Mercury' | 'Venus' | 'Mars'
@@ -15,13 +16,13 @@ const SpaceContext = createContext<SpaceState | null>(null)
 export function SpaceProvider({ children }: { children: React.ReactNode }) {
   const [focusedPlanet, setFocusedPlanet] = useState<PlanetName | null>(null)
 
+  // ✅ stable function identities
+  const focusPlanet = useCallback((p: PlanetName) => setFocusedPlanet(p), [])
+  const clearFocus = useCallback(() => setFocusedPlanet(null), [])
+
   const value = useMemo(
-    () => ({
-      focusedPlanet,
-      focusPlanet: (p: PlanetName) => setFocusedPlanet(p),
-      clearFocus: () => setFocusedPlanet(null),
-    }),
-    [focusedPlanet]
+    () => ({ focusedPlanet, focusPlanet, clearFocus }),
+    [focusedPlanet, focusPlanet, clearFocus]
   )
 
   return <SpaceContext.Provider value={value}>{children}</SpaceContext.Provider>

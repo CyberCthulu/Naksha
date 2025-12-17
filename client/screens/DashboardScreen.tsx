@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   sub: { marginTop: 6, marginBottom: 16, opacity: 0.9 },
   card: {
     borderWidth: 1, borderColor: '#ddd', borderRadius: 10,
-    padding: 12, backgroundColor: '#fff', marginBottom: 12
+    padding: 12, backgroundColor: 'transparent', marginBottom: 12
   },
   cardTitle: { fontWeight: '600', marginBottom: 6 },
 })

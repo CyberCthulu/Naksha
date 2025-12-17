@@ -74,7 +74,7 @@ export default function JournalEditorScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: '#fff' },
+  flex: { flex: 1, backgroundColor: 'transparent' },
   container: { flexGrow: 1, padding: 16, paddingTop: 40, gap: 10 },
   h1: { fontSize: 20, fontWeight: '600', marginBottom: 4 },
   titleInput: {

@@ -9,12 +9,13 @@ import {
   Alert,
   Button,
   ActivityIndicator,
+  Pressable,
 } from 'react-native'
 import Svg, { Circle, Line, G, Text as SvgText } from 'react-native-svg'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { ParamListBase } from '@react-navigation/native'
-import { useSpace } from '../components/space/SpaceProvider'
 
+import { useSpace } from '../components/space/SpaceProvider'
 import { birthToUTC } from '../lib/time'
 import {
   computeNatalPlanets,
@@ -29,7 +30,7 @@ import ChartCompass from '../components/ChartCompass'
 import supabase from '../lib/supabase'
 import { saveChart } from '../lib/charts'
 
-// ✅ Import from the lexicon FOLDER barrel (lib/lexicon/index.ts)
+// ✅ lexicon folder barrel
 import {
   zodiacNameFromLongitude,
   signIndexFromLongitude,
@@ -41,21 +42,7 @@ import {
   type AspectType,
 } from '../lib/lexicon'
 
-const ZODIAC_ABBR = [
-  'Ar',
-  'Ta',
-  'Ge',
-  'Cn',
-  'Le',
-  'Vi',
-  'Li',
-  'Sc',
-  'Sg',
-  'Cp',
-  'Aq',
-  'Pi',
-]
-
+const ZODIAC_ABBR = ['Ar', 'Ta', 'Ge', 'Cn', 'Le', 'Vi', 'Li', 'Sc', 'Sg', 'Cp', 'Aq', 'Pi']
 const degInSign = (lon: number) => ((lon % 30) + 30) % 30
 
 const GLYPH: Record<string, string> = {
@@ -127,6 +114,9 @@ export default function ChartScreen({ route }: ChartScreenProps) {
   const savedMeta = saved?.meta || {}
   const { width } = useWindowDimensions()
 
+  // ✅ Space background focus integration
+  const { focusedPlanet, focusPlanet, clearFocus } = useSpace()
+
   const [loading, setLoading] = useState<boolean>(!fromSaved || !saved?.planets)
   const [planets, setPlanets] = useState<PlanetPos[]>(saved?.planets ?? [])
   const [aspects, setAspects] = useState<Aspect[]>(saved?.aspects ?? [])
@@ -153,9 +143,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         <Text style={{ opacity: 0.8, textAlign: 'center' }}>
           Your saved time zone isn’t valid. Please update it in “Complete Profile”.
         </Text>
-        <Text style={{ opacity: 0.6, marginTop: 6 }}>
-          Current value: {String(profile.time_zone)}
-        </Text>
+        <Text style={{ opacity: 0.6, marginTop: 6 }}>Current value: {String(profile.time_zone)}</Text>
       </View>
     )
   }
@@ -169,7 +157,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
 
       let localHouses: HouseCusp[] | null = (saved.houses as HouseCusp[] | null) ?? null
 
-      // If houses weren't saved but we have full birth details + location, recompute
       if (
         !localHouses &&
         profile.birth_date &&
@@ -193,16 +180,13 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     const loadChart = async () => {
       setLoading(true)
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
+        const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
           if (alive) setLoading(false)
           Alert.alert('Not signed in')
           return
         }
 
-        // 1) Try to load saved chart from Supabase
         const { data: existing, error } = await supabase
           .from('charts')
           .select('id, updated_at, chart_data')
@@ -223,7 +207,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
 
           let localHouses: HouseCusp[] | null = (cd.houses as HouseCusp[] | null) ?? null
 
-          // fallback: if houses not stored but we know location, compute them
           if (
             !localHouses &&
             profile.birth_date &&
@@ -240,7 +223,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
           setHouses(localHouses)
           setIsSaved(true)
         } else {
-          // 2) No saved chart → compute and (optionally) auto-save once
           const { jsDate } = birthToUTC(profile.birth_date!, profile.birth_time!, tz)
           const ps = computeNatalPlanets(jsDate)
           const asps = findAspects(ps)
@@ -256,7 +238,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
           setHouses(localHouses)
           setIsSaved(false)
 
-          // Auto-save first time so future loads are instant
           try {
             await saveChart(user.id, {
               name: `${profile.first_name ?? 'My'} Natal Chart`,
@@ -292,6 +273,24 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     tz,
   ])
 
+  // ✅ Default background focus: Sun if possible, else first planet
+  useEffect(() => {
+    if (!planets.length) return
+
+    const sun = planets.find((p) => p.name === 'Sun')
+    const fallback = planets[0]
+    const pk = asPlanetKey(sun?.name ?? fallback?.name ?? '')
+
+    if (pk && !focusedPlanet) focusPlanet(pk)
+
+    // ✅ When leaving ChartScreen, clear background focus
+    return () => {
+      clearFocus()
+    }
+    // intentionally *not* depending on focusedPlanet to avoid bouncing
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planets, focusPlanet, clearFocus])
+
   // Sizing
   const maxChart = 360
   const pad = 16
@@ -303,7 +302,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
   const rPlanets = (rOuter + rInner) / 2
   const rAspect = rInner - 6
 
-  // House ring slightly inside the sign ring
   const rHouseOuter = rInner - 2
   const rHouseInner = rInner - 22
   const rHouseLabel = rHouseInner - 10
@@ -328,9 +326,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
       Alert.alert('Already Saved', 'This chart is already in your library.')
       return
     }
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) return Alert.alert('Not signed in')
     try {
       await saveChart(user.id, {
@@ -403,16 +399,10 @@ export default function ChartScreen({ route }: ChartScreenProps) {
       </View>
 
       <View style={{ alignItems: 'center' }}>
-        <Svg
-          width={size}
-          height={size}
-          viewBox={`${-pad} ${-pad} ${size + pad * 2} ${size + pad * 2}`}
-        >
-          {/* Outer & inner rings */}
+        <Svg width={size} height={size} viewBox={`${-pad} ${-pad} ${size + pad * 2} ${size + pad * 2}`}>
           <Circle cx={cx} cy={cy} r={rOuter} stroke="#ccc" strokeWidth={1} fill="none" />
           <Circle cx={cx} cy={cy} r={rInner} stroke="#eee" strokeWidth={1} fill="none" />
 
-          {/* 12 sign dividers + labels */}
           {Array.from({ length: 12 }).map((_, i) => {
             const ang = i * 30
             const { x: x1, y: y1 } = toXY(ang, rInner)
@@ -428,11 +418,9 @@ export default function ChartScreen({ route }: ChartScreenProps) {
             )
           })}
 
-          {/* House cusps & numbers (Whole Sign) */}
           {houses?.map((h) => {
             const { x: x1, y: y1 } = toXY(h.lon, rHouseInner)
             const { x: x2, y: y2 } = toXY(h.lon, rHouseOuter)
-
             const midLon = h.lon + 15
             const { x: lx, y: ly } = toXY(midLon, rHouseLabel)
 
@@ -446,7 +434,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
             )
           })}
 
-          {/* Aspect lines */}
           {aspects.map((a, idx) => {
             const A = planets.find((p) => p.name === a.a)
             const B = planets.find((p) => p.name === a.b)
@@ -463,14 +450,11 @@ export default function ChartScreen({ route }: ChartScreenProps) {
                 stroke="#777"
                 strokeWidth={aspectStroke[a.type]}
                 opacity={0.85}
-                strokeDasharray={
-                  a.type === 'sextile' ? '4 4' : a.type === 'trine' ? '8 6' : undefined
-                }
+                strokeDasharray={a.type === 'sextile' ? '4 4' : a.type === 'trine' ? '8 6' : undefined}
               />
             )
           })}
 
-          {/* Planets */}
           {planets.map((p) => {
             const { x, y } = toXY(p.lon, rPlanets)
             const glyph = GLYPH[p.name] ?? p.name[0]
@@ -486,7 +470,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         </Svg>
       </View>
 
-      {/* Positions + short meanings (compact: not vertical blocks) */}
       <Text style={styles.h2}>Positions</Text>
       {planets.map((p) => {
         const signIdx = signIndexFromLongitude(p.lon)
@@ -498,20 +481,25 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         const pk = asPlanetKey(p.name)
         const signName = zodiacNameFromLongitude(p.lon)
         const meaning = pk ? getPlanetSignMeaning(pk, signName) : null
+        const isActive = pk != null && focusedPlanet === pk
 
         return (
-          <View key={p.name} style={styles.itemRow}>
+          <Pressable
+            key={p.name}
+            disabled={!pk}
+            onPress={() => pk && focusPlanet(pk)}
+            style={[styles.itemRow, pk && styles.pressableRow, isActive && styles.activeRow]}
+          >
             <Text style={styles.itemLeft}>
               {`${p.name.padEnd(7)} ${ZODIAC_ABBR[signIdx]} ${deg}°${mm}′`}
             </Text>
             <Text style={styles.itemRight} numberOfLines={3}>
               {meaning?.short ?? ''}
             </Text>
-          </View>
+          </Pressable>
         )
       })}
 
-      {/* Houses (Whole Sign) + short meanings (no degrees shown) */}
       <View style={{ height: 16 }} />
       <Text style={styles.h2}>Houses (Whole Sign)</Text>
       {!houses ? (
@@ -526,7 +514,9 @@ export default function ChartScreen({ route }: ChartScreenProps) {
 
           return (
             <View key={`house-row-${h.house}`} style={styles.itemRow}>
-              <Text style={styles.itemLeft}>{`House ${String(h.house).padStart(2, ' ')}  ${ZODIAC_ABBR[signIdx]}`}</Text>
+              <Text style={styles.itemLeft}>
+                {`House ${String(h.house).padStart(2, ' ')}  ${ZODIAC_ABBR[signIdx]}`}
+              </Text>
               <Text style={styles.itemRight} numberOfLines={3}>
                 {meaning?.short ?? ''}
               </Text>
@@ -538,7 +528,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
       <View style={{ height: 16 }} />
       <ChartCompass style={{ marginBottom: 12 }} />
 
-      {/* Aspects + short meanings */}
       <Text style={styles.h2}>Aspects</Text>
       {aspects.length === 0 ? (
         <Text style={styles.muted}>None (within default orbs)</Text>
@@ -551,9 +540,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
             const meaning = at ? getAspectMeaning(at) : null
             return (
               <View key={`${a.a}-${a.b}-${i}`} style={styles.itemRow}>
-                <Text style={styles.itemLeft}>
-                  {`${a.a} ${a.type} ${a.b} (${a.orb.toFixed(2)}°)`}
-                </Text>
+                <Text style={styles.itemLeft}>{`${a.a} ${a.type} ${a.b} (${a.orb.toFixed(2)}°)`}</Text>
                 <Text style={styles.itemRight} numberOfLines={3}>
                   {meaning?.short ?? ''}
                 </Text>
@@ -579,17 +566,19 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     marginBottom: 10,
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
   },
   summaryTitle: { fontWeight: '700', marginBottom: 4 },
-  summaryText: { opacity: 0.85, alignItems: 'center', textAlign: 'center' },
+  summaryText: { opacity: 0.85, textAlign: 'center' },
 
-  // Compact two-column rows so meanings aren’t “stacked”
   itemRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     marginBottom: 8,
   },
+  pressableRow: { borderRadius: 8, paddingVertical: 4 },
+  activeRow: { backgroundColor: 'rgba(0,0,0,0.04)' },
+
   itemLeft: {
     width: 150,
     fontFamily: 'monospace' as any,
