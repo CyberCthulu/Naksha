@@ -1,32 +1,45 @@
 // screens/MyCharts.tsx
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import {
   View,
   Text,
-  StyleSheet,
   ActivityIndicator,
   FlatList,
   TouchableOpacity,
   Alert,
+  StyleSheet,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+
 import supabase from '../lib/supabase'
 import { ChartRow, listCharts, deleteChart } from '../lib/charts'
 
+import { uiStyles } from '../components/ui/uiStyles'
+import { theme } from '../components/ui/theme'
+
 export default function MyChartsScreen() {
+  const nav = useNavigation<any>()
+  const insets = useSafeAreaInsets()
+
+  useLayoutEffect(() => {
+    nav.setOptions({ headerShown: false })
+  }, [nav])
+
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<ChartRow[]>([])
   const [error, setError] = useState<string | null>(null)
-  const nav = useNavigation<any>()
 
   const load = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
+
       const {
         data: { user },
       } = await supabase.auth.getUser()
       if (!user) throw new Error('Not signed in')
+
       const list = await listCharts(user.id)
       setRows(list)
     } catch (e: any) {
@@ -65,6 +78,7 @@ export default function MyChartsScreen() {
       data: { user },
     } = await supabase.auth.getUser()
     if (!user) return
+
     Alert.alert('Delete chart?', row.name, [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -75,7 +89,7 @@ export default function MyChartsScreen() {
             await deleteChart(row.id, user.id)
             load()
           } catch (e: any) {
-            Alert.alert('Delete failed', e.message ?? 'Unknown error')
+            Alert.alert('Delete failed', e?.message ?? 'Unknown error')
           }
         },
       },
@@ -84,50 +98,77 @@ export default function MyChartsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={uiStyles.center}>
         <ActivityIndicator />
-        <Text>Loading charts…</Text>
+        <Text style={[uiStyles.text, { marginTop: 8 }]}>
+          Loading charts…
+        </Text>
       </View>
     )
   }
 
   if (error) {
     return (
-      <View style={styles.center}>
-        <Text style={{ color: 'crimson' }}>{error}</Text>
+      <View style={uiStyles.center}>
+        <Text style={uiStyles.errorText}>{error}</Text>
       </View>
     )
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.h1}>My Charts</Text>
+    <View style={{ flex: 1 }}>
+      {/* Top bar */}
+      <View
+        style={[
+          styles.topRow,
+          { paddingTop: insets.top + 12 },
+        ]}
+      >
+        <TouchableOpacity onPress={() => nav.goBack()}>
+          <Text style={styles.backText}>‹</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.screenTitle}>My Charts</Text>
+
+        <View style={{ width: 24 }} />
+      </View>
+
       {rows.length === 0 ? (
-        <Text style={{ opacity: 0.7 }}>
-          No charts yet. Save one from the chart screen.
-        </Text>
+        <View style={uiStyles.center}>
+          <Text style={uiStyles.muted}>
+            No charts yet. Save one from the chart screen.
+          </Text>
+        </View>
       ) : (
         <FlatList
+          contentContainerStyle={{
+            padding: theme.spacing.screen,
+            paddingBottom: insets.bottom + 24,
+          }}
           data={rows}
           keyExtractor={(r) => String(r.id)}
-          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           renderItem={({ item }) => {
             const meta = item.chart_data?.meta || {}
             const base = [meta.birth_date, meta.birth_time, meta.time_zone]
               .filter(Boolean)
               .join(' · ')
+
             const coords =
               meta.birth_lat != null && meta.birth_lon != null
                 ? ` · (${Number(meta.birth_lat).toFixed(2)}, ${Number(
                     meta.birth_lon
                   ).toFixed(2)})`
                 : ''
-            const loc = meta.birth_location ? `${meta.birth_location} · ` : ''
+
+            const loc = meta.birth_location
+              ? `${meta.birth_location} · `
+              : ''
 
             return (
               <TouchableOpacity
                 onPress={() => openChart(item)}
-                style={styles.row}
+                style={uiStyles.card}
               >
                 <View style={{ flex: 1 }}>
                   <Text style={styles.title}>{item.name}</Text>
@@ -137,9 +178,10 @@ export default function MyChartsScreen() {
                     {coords}
                   </Text>
                 </View>
-                <Text style={styles.delete} onPress={() => remove(item)}>
-                  Delete
-                </Text>
+
+                <TouchableOpacity onPress={() => remove(item)}>
+                  <Text style={styles.delete}>Delete</Text>
+                </TouchableOpacity>
               </TouchableOpacity>
             )
           }}
@@ -150,18 +192,38 @@ export default function MyChartsScreen() {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  container: { flex: 1, padding: 16, paddingTop: 24 },
-  h1: { fontSize: 20, fontWeight: '600', marginBottom: 12 },
-  row: {
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#e6e6e6',
-    borderRadius: 8,
+    paddingHorizontal: theme.spacing.screen,
+    marginBottom: 8,
   },
-  title: { fontWeight: '600' },
-  sub: { opacity: 0.7, marginTop: 2 },
-  delete: { color: 'crimson', marginLeft: 12 },
+  backText: {
+    fontSize: 28,
+    color: theme.colors.text,
+    width: 24,
+  },
+  screenTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
+
+  title: {
+    color: theme.colors.text,
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  sub: {
+    color: theme.colors.muted,
+    marginTop: 4,
+    fontSize: 13,
+  },
+  delete: {
+    color: theme.colors.danger,
+    fontWeight: '600',
+    marginLeft: 12,
+  },
 })
