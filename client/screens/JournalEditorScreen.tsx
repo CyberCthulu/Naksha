@@ -1,14 +1,32 @@
 // screens/JournalEditorScreen.tsx
-import { useState } from 'react'
-import { View, Text, StyleSheet, TextInput, Button, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
+import React, { useLayoutEffect, useState } from 'react'
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native'
 import { useRoute, useNavigation } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+
 import { upsertJournal } from '../lib/journals'
+import { uiStyles } from '../components/ui/uiStyles'
+import { theme } from '../components/ui/theme'
 
 export default function JournalEditorScreen() {
   const nav = useNavigation<any>()
   const route = useRoute<any>()
   const insets = useSafeAreaInsets()
+
+  useLayoutEffect(() => {
+    nav.setOptions({ headerShown: false })
+  }, [nav])
 
   const initialId: number | undefined = route.params?.id
   const initialTitle: string = route.params?.title ?? ''
@@ -42,55 +60,174 @@ export default function JournalEditorScreen() {
     }
   }
 
+  const headerTitle = initialId ? 'Edit entry' : 'New entry'
+
   return (
     <KeyboardAvoidingView
-      style={[styles.flex, { paddingBottom: insets.bottom + 16 }]}
+      style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
     >
-      <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 40 }]}>
-        <Text style={styles.h1}>{initialId ? 'Something to add?' : 'Share your thoughts'}</Text>
+      <View style={{ flex: 1 }}>
+        {/* Top bar */}
+        <View style={[styles.topRow, { paddingTop: insets.top + 12 }]}>
+          <TouchableOpacity onPress={() => nav.goBack()} style={styles.iconBtn}>
+            <Text style={styles.iconText}>‹</Text>
+          </TouchableOpacity>
 
-        <TextInput
-          style={styles.titleInput}
-          placeholder="Title (optional)"
-          value={title}
-          onChangeText={setTitle}
-        />
+          <Text style={styles.screenTitle}>{headerTitle}</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Write your thoughts…"
-          multiline
-          value={content}
-          onChangeText={setContent}
-        />
-      </ScrollView>
+          <TouchableOpacity
+            onPress={onSave}
+            disabled={saving}
+            style={[styles.savePill, saving && { opacity: 0.7 }]}
+          >
+            {saving ? (
+              <ActivityIndicator />
+            ) : (
+              <Text style={styles.savePillText}>Save</Text>
+            )}
+          </TouchableOpacity>
+        </View>
 
-      <View style={[styles.footer, { marginBottom: insets.bottom + 8 }]}>
-        <Button title={saving ? 'Saving…' : 'Save'} onPress={onSave} disabled={saving} />
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{
+            padding: theme.spacing.screen,
+            paddingBottom: insets.bottom + 28,
+            gap: 12,
+          }}
+        >
+          <Text style={styles.h1}>
+            {initialId ? 'Something to add?' : 'Share your thoughts'}
+          </Text>
+
+          {/* Title */}
+          <View style={styles.fieldWrap}>
+            <Text style={styles.label}>Title</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Title (optional)"
+              placeholderTextColor={theme.colors.muted}
+              value={title}
+              onChangeText={setTitle}
+              returnKeyType="next"
+            />
+          </View>
+
+          {/* Content */}
+          <View style={styles.fieldWrap}>
+            <Text style={styles.label}>Entry</Text>
+            <TextInput
+              style={[styles.input, styles.textarea]}
+              placeholder="Write your thoughts…"
+              placeholderTextColor={theme.colors.muted}
+              multiline
+              value={content}
+              onChangeText={setContent}
+              textAlignVertical="top"
+            />
+          </View>
+
+          {/* Bottom Save (extra) */}
+          <TouchableOpacity
+            onPress={onSave}
+            disabled={saving}
+            style={[styles.bigSaveBtn, saving && { opacity: 0.7 }]}
+          >
+            <Text style={styles.bigSaveText}>{saving ? 'Saving…' : 'Save'}</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
     </KeyboardAvoidingView>
   )
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: 'transparent' },
-  container: { flexGrow: 1, padding: 16, paddingTop: 40, gap: 10 },
-  h1: { fontSize: 20, fontWeight: '600', marginBottom: 4 },
-  titleInput: {
-    borderWidth: 1, borderColor: '#ccc', borderRadius: 8,
-    padding: 10,
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.screen,
+    marginBottom: 8,
   },
-  input: {
+  iconBtn: {
+    width: 40,
+    height: 36,
+    justifyContent: 'center',
+  },
+  iconText: {
+    fontSize: 30,
+    color: theme.colors.text,
+  },
+  screenTitle: {
     flex: 1,
-    minHeight: 200,
-    borderWidth: 1, borderColor: '#ccc', borderRadius: 8,
-    padding: 12, textAlignVertical: 'top',
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '700',
+    color: theme.colors.text,
   },
-  footer: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#ddd',
-    padding: 12,
-    backgroundColor: '#fafafa',
+
+  savePill: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: theme.colors.cardBg,
+    minWidth: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  savePillText: {
+    color: theme.colors.text,
+    fontWeight: '800',
+  },
+
+  h1: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginBottom: 4,
+    textAlign: 'left',
+  },
+
+  fieldWrap: {
+    gap: 6,
+  },
+  label: {
+    color: theme.colors.sub,
+    fontWeight: '700',
+  },
+
+  input: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.card,
+    backgroundColor: theme.colors.cardBg,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    color: theme.colors.text,
+    fontSize: 15,
+  },
+  textarea: {
+    minHeight: 220,
+    lineHeight: 20,
+  },
+
+  bigSaveBtn: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.card,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: theme.colors.cardBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bigSaveText: {
+    color: theme.colors.text,
+    fontWeight: '800',
+    fontSize: 16,
   },
 })
