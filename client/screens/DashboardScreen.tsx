@@ -1,7 +1,8 @@
 // screens/DashboardScreen.tsx
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { View, Text, Button, StyleSheet, ActivityIndicator } from 'react-native'
+import { View, Text, Button, ActivityIndicator } from 'react-native'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
+
 import supabase from '../lib/supabase'
 import { signOut } from '../lib/auth'
 
@@ -9,6 +10,9 @@ import { birthToUTC } from '../lib/time'
 import { computeNatalPlanets } from '../lib/astro'
 import { normalizeZone } from '../lib/timezones'
 import { saveChart } from '../lib/charts'
+
+// ✅ shared styles (adjust path if yours differs)
+import { uiStyles } from '../components/ui/uiStyles'
 
 // zodiac helpers
 const ZODIAC = [
@@ -33,7 +37,14 @@ type User = {
 
 function needsProfileCompletion(p: Partial<User> | null | undefined) {
   if (!p) return true
-  return !p.first_name || !p.last_name || !p.birth_date || !p.birth_time || !p.birth_location || !p.time_zone
+  return (
+    !p.first_name ||
+    !p.last_name ||
+    !p.birth_date ||
+    !p.birth_time ||
+    !p.birth_location ||
+    !p.time_zone
+  )
 }
 
 export default function DashboardScreen() {
@@ -57,7 +68,8 @@ export default function DashboardScreen() {
       const { data: { user }, error: userErr } = await supabase.auth.getUser()
       if (userErr) throw userErr
       if (!user) {
-        setSunSign(null); setMoonSign(null)
+        setSunSign(null)
+        setMoonSign(null)
         setError('No active session found.')
         return
       }
@@ -84,7 +96,8 @@ export default function DashboardScreen() {
 
       // 4) If profile incomplete → navigate once and clear signs
       if (needsProfileCompletion(u)) {
-        setSunSign(null); setMoonSign(null)
+        setSunSign(null)
+        setMoonSign(null)
         if (!didNavigateRef.current) {
           nav.navigate('CompleteProfile')
           didNavigateRef.current = true
@@ -95,7 +108,8 @@ export default function DashboardScreen() {
       // 5) Try to load saved chart for (user, birth_date, birth_time, time_zone)
       const tz = normalizeZone(u.time_zone!)
       if (!(tz && u.birth_date && u.birth_time)) {
-        setSunSign(null); setMoonSign(null)
+        setSunSign(null)
+        setMoonSign(null)
         return
       }
 
@@ -140,7 +154,8 @@ export default function DashboardScreen() {
     } catch (e: any) {
       if (!unmounted.current) {
         setError(e?.message ?? 'Failed to load dashboard.')
-        setSunSign(null); setMoonSign(null)
+        setSunSign(null)
+        setMoonSign(null)
       }
     } finally {
       if (!unmounted.current) setLoading(false)
@@ -169,17 +184,17 @@ export default function DashboardScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={uiStyles.center}>
         <ActivityIndicator />
-        <Text style={[styles.text, { marginTop: 8 }]}>Loading your dashboard…</Text>
+        <Text style={[uiStyles.text, { marginTop: 8 }]}>Loading your dashboard…</Text>
       </View>
     )
   }
 
   if (error) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.errorText}>{error}</Text>
+      <View style={uiStyles.center}>
+        <Text style={uiStyles.errorText}>{error}</Text>
         <Button title="Retry" onPress={load} />
         <View style={{ height: 8 }} />
         <Button title="Sign Out" onPress={signOut} />
@@ -188,34 +203,34 @@ export default function DashboardScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.h1}>Welcome to Naksha 🌌</Text>
-      <Text style={styles.sub}>
+    <View style={uiStyles.screen}>
+      <Text style={uiStyles.h1}>Welcome to Naksha 🌌</Text>
+      <Text style={uiStyles.sub}>
         {displayName ? `Hello, ${displayName}!` : 'Hello!'}
       </Text>
 
       {sunSign && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Your Signs</Text>
-          <Text style={styles.text}>☀️ Sun: {sunSign}</Text>
-          <Text style={styles.text}>🌙 Moon: {moonSign ?? '—'}</Text>
+        <View style={uiStyles.card}>
+          <Text style={uiStyles.cardTitle}>Your Signs</Text>
+          <Text style={uiStyles.text}>☀️ Sun: {sunSign}</Text>
+          <Text style={uiStyles.text}>🌙 Moon: {moonSign ?? '—'}</Text>
         </View>
       )}
 
       {profile ? (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Your Birth Details</Text>
-          <Text style={styles.text}>Email: {profile.email ?? '—'}</Text>
-          <Text style={styles.text}>Date: {profile.birth_date ?? '—'}</Text>
-          <Text style={styles.text}>Time: {prettyTime}</Text>
-          <Text style={styles.text}>Location: {profile.birth_location ?? '—'}</Text>
-          <Text style={styles.text}>Time Zone: {profile.time_zone ?? '—'}</Text>
+        <View style={uiStyles.card}>
+          <Text style={uiStyles.cardTitle}>Your Birth Details</Text>
+          <Text style={uiStyles.text}>Email: {profile.email ?? '—'}</Text>
+          <Text style={uiStyles.text}>Date: {profile.birth_date ?? '—'}</Text>
+          <Text style={uiStyles.text}>Time: {prettyTime}</Text>
+          <Text style={uiStyles.text}>Location: {profile.birth_location ?? '—'}</Text>
+          <Text style={uiStyles.text}>Time Zone: {profile.time_zone ?? '—'}</Text>
         </View>
       ) : (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Profile</Text>
-          <Text style={styles.text}>No profile row found yet.</Text>
-          <Text style={styles.muted}>
+        <View style={uiStyles.card}>
+          <Text style={uiStyles.cardTitle}>Profile</Text>
+          <Text style={uiStyles.text}>No profile row found yet.</Text>
+          <Text style={uiStyles.muted}>
             (You’ll get one after confirming email from Sign Up.)
           </Text>
         </View>
@@ -223,10 +238,7 @@ export default function DashboardScreen() {
 
       <View style={{ height: 12 }} />
 
-      <Button
-        title="Edit Birth Details"
-        onPress={() => nav.navigate('CompleteProfile')}
-      />
+      <Button title="Edit Birth Details" onPress={() => nav.navigate('CompleteProfile')} />
 
       <Button
         title="View Birth Chart"
@@ -241,59 +253,3 @@ export default function DashboardScreen() {
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-
-  container: {
-    flex: 1,
-    padding: 20,
-    paddingTop: 40,
-  },
-
-  text: {
-    color: '#fff',
-  },
-
-  muted: {
-    color: 'rgba(255,255,255,0.75)',
-  },
-
-  errorText: {
-    color: 'crimson',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-
-  h1: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#fff',
-  },
-
-  sub: {
-    marginTop: 6,
-    marginBottom: 16,
-    color: 'rgba(255,255,255,0.85)',
-  },
-
-  card: {
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
-    borderRadius: 12,
-    padding: 14,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    marginBottom: 12,
-  },
-
-  cardTitle: {
-    fontWeight: '700',
-    marginBottom: 6,
-    color: '#fff',
-  },
-})
