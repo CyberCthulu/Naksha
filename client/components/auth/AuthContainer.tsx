@@ -23,7 +23,7 @@ export default function AuthContainer({ children }: { children: ReactNode }) {
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={{ gap: 10 }}>
+        <View>
           {children}
         </View>
       </ScrollView>

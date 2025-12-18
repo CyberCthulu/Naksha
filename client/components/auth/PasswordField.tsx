@@ -1,16 +1,32 @@
-// components/auth/PasswordField.tsx
-import { Text, TextInput, StyleSheet, View } from 'react-native'
-export default function PasswordField({ value, onChange }: { value: string; onChange: (s:string)=>void }) {
+import { Text, TextInput, View } from 'react-native'
+import { uiStyles } from '../ui/uiStyles'
+import { theme } from '../ui/theme'
+
+export default function PasswordField({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (s: string) => void
+}) {
   return (
     <View>
-      <Text>Password</Text>
+      <Text style={uiStyles.text}>Password</Text>
       <TextInput
-        style={styles.input}
         secureTextEntry
         value={value}
         onChangeText={onChange}
+        placeholder="••••••••"
+        placeholderTextColor={theme.colors.muted}
+        style={{
+          borderWidth: 1,
+          borderColor: theme.colors.border,
+          borderRadius: theme.radius.card,
+          padding: 10,
+          marginTop: 8,
+          color: theme.colors.text,
+        }}
       />
     </View>
   )
 }
-const styles = StyleSheet.create({ input:{borderWidth:1,borderColor:'#aaa',padding:10,borderRadius:6} })

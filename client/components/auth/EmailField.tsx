@@ -1,17 +1,33 @@
-// components/auth/EmailField.tsx
-import { Text, TextInput, StyleSheet, View } from 'react-native'
-export default function EmailField({ value, onChange }: { value: string; onChange: (s:string)=>void }) {
+import { Text, TextInput, View } from 'react-native'
+import { uiStyles } from '../ui/uiStyles'
+import { theme } from '../ui/theme'
+
+export default function EmailField({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (s: string) => void
+}) {
   return (
     <View>
-      <Text>Email</Text>
+      <Text style={uiStyles.text}>Email</Text>
       <TextInput
-        style={styles.input}
         autoCapitalize="none"
         keyboardType="email-address"
         value={value}
         onChangeText={onChange}
+        placeholder="you@example.com"
+        placeholderTextColor={theme.colors.muted}
+        style={{
+          borderWidth: 1,
+          borderColor: theme.colors.border,
+          borderRadius: theme.radius.card,
+          padding: 10,
+          marginTop: 8,
+          color: theme.colors.text,
+        }}
       />
     </View>
   )
 }
-const styles = StyleSheet.create({ input:{borderWidth:1,borderColor:'#aaa',padding:10,borderRadius:6} })
