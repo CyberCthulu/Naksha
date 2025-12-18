@@ -8,6 +8,10 @@
     "ios": "expo run:ios",
     "web": "expo start --web"
   },
+  
+  "overrides": {
+    "three": "0.182.0"
+  },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
@@ -31,7 +35,7 @@
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
     "react-native-url-polyfill": "^2.0.0",
-    "three": "^0.182.0",
+    "three": "0.182.0",
     "timezone-support": "^3.1.0",
     "zustand": "^5.0.5"
   },
@@ -43,5 +47,7 @@
     "prettier": "^3.5.3",
     "typescript": "~5.9.2"
   },
+  
   "private": true
+  
 }

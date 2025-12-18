@@ -30,9 +30,9 @@ function StarPoints() {
 
 function colorForPlanet(p: string | null) {
   switch (p) {
-    case 'Sun': return '#f4ae09ff'
-    case 'Moon': return '#a09f9fff'
-    case 'Mars': return '#af2c08ff'
+    case 'Sun': return '#f1be47'     
+    case 'Moon': return '#a09f9f'    
+    case 'Mars': return '#af2c08'    
     case 'Jupiter': return '#d2b48c'
     case 'Saturn': return '#d8c07a'
     case 'Uranus': return '#7ad8d8'

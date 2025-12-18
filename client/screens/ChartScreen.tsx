@@ -42,6 +42,10 @@ import {
   type AspectType,
 } from '../lib/lexicon'
 
+// ✅ shared UI theme/styles
+import { uiStyles } from '../components/ui/uiStyles'
+import { theme } from '../components/ui/theme'
+
 const ZODIAC_ABBR = ['Ar', 'Ta', 'Ge', 'Cn', 'Le', 'Vi', 'Li', 'Sc', 'Sg', 'Cp', 'Aq', 'Pi']
 const degInSign = (lon: number) => ((lon % 30) + 30) % 30
 
@@ -126,9 +130,9 @@ export default function ChartScreen({ route }: ChartScreenProps) {
   // Guard: must have core birth info
   if (!profile?.birth_date || !profile?.birth_time || !profile?.time_zone) {
     return (
-      <View style={[styles.container, { alignItems: 'center' }]}>
-        <Text style={styles.h1}>Natal Chart</Text>
-        <Text style={{ opacity: 0.8, textAlign: 'center' }}>
+      <View style={[uiStyles.screen, { alignItems: 'center' }]}>
+        <Text style={uiStyles.h1}>Natal Chart</Text>
+        <Text style={[uiStyles.muted, { textAlign: 'center' }]}>
           Missing birth date, time, or time zone. Please complete your profile.
         </Text>
       </View>
@@ -138,12 +142,14 @@ export default function ChartScreen({ route }: ChartScreenProps) {
   const tz = normalizeZone(profile.time_zone)
   if (!tz) {
     return (
-      <View style={[styles.container, { alignItems: 'center' }]}>
-        <Text style={styles.h1}>Natal Chart</Text>
-        <Text style={{ opacity: 0.8, textAlign: 'center' }}>
+      <View style={[uiStyles.screen, { alignItems: 'center' }]}>
+        <Text style={uiStyles.h1}>Natal Chart</Text>
+        <Text style={[uiStyles.muted, { textAlign: 'center' }]}>
           Your saved time zone isn’t valid. Please update it in “Complete Profile”.
         </Text>
-        <Text style={{ opacity: 0.6, marginTop: 6 }}>Current value: {String(profile.time_zone)}</Text>
+        <Text style={[uiStyles.muted, { marginTop: 6 }]}>
+          Current value: {String(profile.time_zone)}
+        </Text>
       </View>
     )
   }
@@ -180,7 +186,10 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     const loadChart = async () => {
       setLoading(true)
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
         if (!user) {
           if (alive) setLoading(false)
           Alert.alert('Not signed in')
@@ -283,11 +292,9 @@ export default function ChartScreen({ route }: ChartScreenProps) {
 
     if (pk && !focusedPlanet) focusPlanet(pk)
 
-    // ✅ When leaving ChartScreen, clear background focus
     return () => {
       clearFocus()
     }
-    // intentionally *not* depending on focusedPlanet to avoid bouncing
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planets, focusPlanet, clearFocus])
 
@@ -326,8 +333,11 @@ export default function ChartScreen({ route }: ChartScreenProps) {
       Alert.alert('Already Saved', 'This chart is already in your library.')
       return
     }
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
     if (!user) return Alert.alert('Not signed in')
+
     try {
       await saveChart(user.id, {
         name: `${profile.first_name ?? 'My'} Natal Chart`,
@@ -361,21 +371,25 @@ export default function ChartScreen({ route }: ChartScreenProps) {
 
   if (loading) {
     return (
-      <View style={[styles.container, { flex: 1, alignItems: 'center', justifyContent: 'center' }]}>
+      <View style={[uiStyles.center, { flex: 1 }]}>
         <ActivityIndicator size="large" />
-        <Text style={{ marginTop: 8 }}>Loading chart…</Text>
+        <Text style={[uiStyles.text, { marginTop: 8 }]}>Loading chart…</Text>
       </View>
     )
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.h1}>
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={styles.scrollContent} // ✅ flexGrow:1 scrolling-safe
+      keyboardShouldPersistTaps="handled"
+    >
+      <Text style={uiStyles.h1}>
         {`Natal Chart${profile.first_name ? ` — ${profile.first_name}` : ''}`}
       </Text>
 
       {(subtitleLocation || subtitleZone) && (
-        <Text style={styles.sub}>
+        <Text style={uiStyles.sub}>
           {subtitleLocation ? `${subtitleLocation}` : ''}
           {subtitleLocation && subtitleZone ? ' • ' : ''}
           {subtitleZone}
@@ -400,8 +414,8 @@ export default function ChartScreen({ route }: ChartScreenProps) {
 
       <View style={{ alignItems: 'center' }}>
         <Svg width={size} height={size} viewBox={`${-pad} ${-pad} ${size + pad * 2} ${size + pad * 2}`}>
-          <Circle cx={cx} cy={cy} r={rOuter} stroke="#ccc" strokeWidth={1} fill="none" />
-          <Circle cx={cx} cy={cy} r={rInner} stroke="#eee" strokeWidth={1} fill="none" />
+          <Circle cx={cx} cy={cy} r={rOuter} stroke={theme.colors.border} strokeWidth={1} fill="none" />
+          <Circle cx={cx} cy={cy} r={rInner} stroke="rgba(255,255,255,0.25)" strokeWidth={1} fill="none" />
 
           {Array.from({ length: 12 }).map((_, i) => {
             const ang = i * 30
@@ -410,8 +424,8 @@ export default function ChartScreen({ route }: ChartScreenProps) {
             const { x: lx, y: ly } = toXY(ang, rOuter + 12)
             return (
               <G key={`sign-${i}`}>
-                <Line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#bbb" strokeWidth={1} />
-                <SvgText x={lx} y={ly} fontSize={10} textAnchor="middle" dy={3}>
+                <Line x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.35)" strokeWidth={1} />
+                <SvgText x={lx} y={ly} fontSize={10} textAnchor="middle" dy={3} fill={theme.colors.text}>
                   {ZODIAC_ABBR[i]}
                 </SvgText>
               </G>
@@ -426,8 +440,8 @@ export default function ChartScreen({ route }: ChartScreenProps) {
 
             return (
               <G key={`house-${h.house}`}>
-                <Line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#444" strokeWidth={1} opacity={0.9} />
-                <SvgText x={lx} y={ly} fontSize={9} textAnchor="middle" dy={3}>
+                <Line x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.55)" strokeWidth={1} opacity={0.9} />
+                <SvgText x={lx} y={ly} fontSize={9} textAnchor="middle" dy={3} fill={theme.colors.text}>
                   {h.house}
                 </SvgText>
               </G>
@@ -447,7 +461,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
                 y1={y1}
                 x2={x2}
                 y2={y2}
-                stroke="#777"
+                stroke="rgba(255,255,255,0.45)"
                 strokeWidth={aspectStroke[a.type]}
                 opacity={0.85}
                 strokeDasharray={a.type === 'sextile' ? '4 4' : a.type === 'trine' ? '8 6' : undefined}
@@ -460,8 +474,8 @@ export default function ChartScreen({ route }: ChartScreenProps) {
             const glyph = GLYPH[p.name] ?? p.name[0]
             return (
               <G key={p.name}>
-                <Circle cx={x} cy={y} r={9} fill="#222" />
-                <SvgText x={x} y={y} fontSize={9} fill="#fff" textAnchor="middle" dy={3}>
+                <Circle cx={x} cy={y} r={9} fill="rgba(0,0,0,0.55)" stroke={theme.colors.border} strokeWidth={1} />
+                <SvgText x={x} y={y} fontSize={9} fill={theme.colors.text} textAnchor="middle" dy={3}>
                   {glyph}
                 </SvgText>
               </G>
@@ -503,7 +517,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
       <View style={{ height: 16 }} />
       <Text style={styles.h2}>Houses (Whole Sign)</Text>
       {!houses ? (
-        <Text style={styles.muted}>
+        <Text style={uiStyles.muted}>
           Houses require a birth location. Add or update your birth place to view house cusps.
         </Text>
       ) : (
@@ -530,7 +544,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
 
       <Text style={styles.h2}>Aspects</Text>
       {aspects.length === 0 ? (
-        <Text style={styles.muted}>None (within default orbs)</Text>
+        <Text style={uiStyles.muted}>None (within default orbs)</Text>
       ) : (
         aspects
           .slice()
@@ -548,29 +562,35 @@ export default function ChartScreen({ route }: ChartScreenProps) {
             )
           })
       )}
+
+      <View style={{ height: 24 }} />
     </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16 },
-  h1: { fontSize: 18, fontWeight: '600', marginBottom: 4, alignSelf: 'center' },
-  sub: { opacity: 0.7, alignSelf: 'center', marginBottom: 8 },
-  h2: { fontSize: 16, fontWeight: '600', marginTop: 16, alignSelf: 'flex-start' },
-  muted: { opacity: 0.7, alignSelf: 'flex-start' },
+  // ✅ ScrollView-safe (prevents the “no scrolling / sticky” issue)
+  scrollContent: {
+    padding: theme.spacing.screen,
+    paddingTop: theme.spacing.top,
+    paddingBottom: 24,
+    flexGrow: 1,
+  },
+
+  h2: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 16,
+    alignSelf: 'flex-start',
+    color: theme.colors.text,
+  },
 
   summaryCard: {
-    color: '#ffffff',
-    borderWidth: 1,
+    ...uiStyles.card,
     alignItems: 'center',
-    borderColor: '#e6e6e6',
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 10,
-    backgroundColor: 'transparent',
   },
-  summaryTitle: { fontWeight: '700', marginBottom: 4 },
-  summaryText: { opacity: 0.85, textAlign: 'center' },
+  summaryTitle: { fontWeight: '700', marginBottom: 4, color: theme.colors.text },
+  summaryText: { color: theme.colors.sub, textAlign: 'center' },
 
   itemRow: {
     flexDirection: 'row',
@@ -578,16 +598,17 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   pressableRow: { borderRadius: 8, paddingVertical: 4 },
-  activeRow: { backgroundColor: 'rgba(0,0,0,0.04)' },
+  activeRow: { backgroundColor: 'rgba(255,255,255,0.06)' },
 
   itemLeft: {
     width: 150,
     fontFamily: 'monospace' as any,
+    color: theme.colors.text,
   },
   itemRight: {
     flex: 1,
     fontSize: 12,
-    opacity: 0.8,
+    color: theme.colors.sub,
     paddingLeft: 10,
     lineHeight: 16,
   },
