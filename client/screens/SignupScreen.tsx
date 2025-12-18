@@ -1,6 +1,6 @@
 // client/screens/SignupScreen.tsx
 import React, { useEffect, useState } from 'react'
-import { View, Text, Button, StyleSheet, Alert } from 'react-native'
+import { View, Text, Button, Alert } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { signUpWithEmail } from '../lib/auth'
 import { normalizeZone } from '../lib/timezones'
@@ -10,6 +10,9 @@ import AuthContainer from '../components/auth/AuthContainer'
 import EmailField from '../components/auth/EmailField'
 import PasswordField from '../components/auth/PasswordField'
 import ProfileFields from '../components/auth/ProfileFields'
+
+// ✅ shared styles
+import { uiStyles } from '../components/ui/uiStyles'
 
 export default function SignupScreen() {
   const navigation = useNavigation<any>()
@@ -58,8 +61,8 @@ export default function SignupScreen() {
     setSubmitting(true)
 
     // Format values for DB/auth
-    const formattedDate = birthDate.toISOString().split('T')[0]       // YYYY-MM-DD
-    const formattedTime = birthTime.toTimeString().split(' ')[0]      // HH:MM:SS
+    const formattedDate = birthDate.toISOString().split('T')[0] // YYYY-MM-DD
+    const formattedTime = birthTime.toTimeString().split(' ')[0] // HH:MM:SS
 
     const { error } = await signUpWithEmail(email.trim(), password, {
       first_name: firstName || undefined,
@@ -94,10 +97,16 @@ export default function SignupScreen() {
         timeZone={timeZone} setTimeZone={setTimeZone}
       />
 
-      {error !== '' && <Text style={styles.error}>{error}</Text>}
+      {error !== '' && (
+        <Text style={[uiStyles.errorText, { marginTop: 6 }]}>{error}</Text>
+      )}
 
       <View style={{ height: 8 }} />
-      <Button title={submitting ? 'Signing Up…' : 'Sign Up'} onPress={handleSignup} disabled={submitting} />
+      <Button
+        title={submitting ? 'Signing Up…' : 'Sign Up'}
+        onPress={handleSignup}
+        disabled={submitting}
+      />
 
       <View style={{ height: 8 }} />
       <Button
@@ -108,7 +117,3 @@ export default function SignupScreen() {
     </AuthContainer>
   )
 }
-
-const styles = StyleSheet.create({
-  error: { color: 'crimson', marginTop: 6 }
-})
