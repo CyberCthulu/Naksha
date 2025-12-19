@@ -1,15 +1,7 @@
 // components/ChartCompass.tsx
-import React, { useMemo, useState } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  ViewStyle,
-  Modal,
-  Pressable,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native'
+import React, { useState } from 'react'
+import { View, Text, StyleSheet, ViewStyle, Pressable } from 'react-native'
+import Svg, { Line as SvgLine } from 'react-native-svg'
 import { theme } from './ui/theme'
 import { uiStyles } from './ui/uiStyles'
 
@@ -43,154 +35,119 @@ export const SIGN_INFO = [
 
 type Props = {
   style?: ViewStyle
-  /** optional label for the collapsed trigger */
-  triggerLabel?: string
+  defaultOpen?: boolean
 }
 
 type AspectVariant = 'conj' | 'opp' | 'square' | 'trine' | 'sextile'
 type LegendLineProps = { label: string; variant?: AspectVariant }
 
-export default function ChartCompass({ style, triggerLabel = 'Glyph Compass' }: Props) {
-  const [open, setOpen] = useState(false)
-
-  // Tiny summary string so the collapsed card feels useful
-  const summary = useMemo(() => {
-    return 'Tap to view planets, signs, and aspect line styles.'
-  }, [])
+export default function ChartCompass({ style, defaultOpen = false }: Props) {
+  const [open, setOpen] = useState(defaultOpen)
 
   return (
-    <View style={style}>
-      {/* Collapsed trigger card */}
-      <TouchableOpacity activeOpacity={0.85} onPress={() => setOpen(true)} style={styles.triggerCard}>
-        <Text style={styles.triggerTitle}>{triggerLabel}</Text>
-        <Text style={styles.triggerSub}>{summary}</Text>
-      </TouchableOpacity>
+    <View style={[uiStyles.card, styles.card, style]}>
+      {/* Header / Toggle */}
+      <Pressable onPress={() => setOpen((v) => !v)} style={styles.header}>
+        <Text style={styles.title}>Glyph Compass</Text>
+        <Text style={styles.chev}>{open ? '˄' : '˅'}</Text>
+      </Pressable>
 
-      {/* Popup modal */}
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        {/* Backdrop */}
-        <Pressable style={styles.backdrop} onPress={() => setOpen(false)} />
+      <Text style={styles.sub}>
+        Tap to {open ? 'collapse' : 'expand'} (stays inline while you scroll).
+      </Text>
 
-        {/* Sheet */}
-        <View style={styles.sheetWrap}>
-          <View style={styles.sheet}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.title}>Glyph Compass</Text>
-              <TouchableOpacity onPress={() => setOpen(false)} style={styles.closeBtn}>
-                <Text style={styles.closeText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView
-              style={{ maxHeight: 520 }}
-              contentContainerStyle={{ paddingBottom: 14 }}
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Planets */}
-              <Text style={styles.section}>Planets</Text>
-              <View style={styles.grid2}>
-                {Object.entries(PLANET_GLYPH).map(([name, glyph]) => (
-                  <View key={name} style={styles.row}>
-                    <Text style={styles.glyph}>{glyph}</Text>
-                    <Text style={styles.label}>{name}</Text>
-                  </View>
-                ))}
+      {!open ? null : (
+        <>
+          {/* Planets */}
+          <Text style={styles.section}>Planets</Text>
+          <View style={styles.grid2}>
+            {Object.entries(PLANET_GLYPH).map(([name, glyph]) => (
+              <View key={name} style={styles.row}>
+                <Text style={styles.glyph}>{glyph}</Text>
+                <Text style={styles.label}>{name}</Text>
               </View>
-
-              {/* Signs */}
-              <Text style={styles.section}>Signs</Text>
-              <View style={styles.grid2}>
-                {SIGN_INFO.map((s) => (
-                  <View key={s.abbr} style={styles.row}>
-                    <Text style={styles.glyph}>{s.glyph}</Text>
-                    <Text style={styles.label}>{`${s.abbr} · ${s.name}`}</Text>
-                  </View>
-                ))}
-              </View>
-
-              {/* Aspects */}
-              <Text style={styles.section}>Aspects</Text>
-              <View style={styles.grid2}>
-                <LegendLine label="Conjunction · 0°" variant="conj" />
-                <LegendLine label="Opposition · 180°" variant="opp" />
-                <LegendLine label="Square · 90°" variant="square" />
-                <LegendLine label="Trine · 120°" variant="trine" />
-                <LegendLine label="Sextile · 60°" variant="sextile" />
-              </View>
-
-              <Text style={styles.hint}>
-                Tip: Trines are thicker, sextiles are dashed.
-              </Text>
-            </ScrollView>
+            ))}
           </View>
-        </View>
-      </Modal>
+
+          {/* Signs */}
+          <Text style={styles.section}>Signs</Text>
+          <View style={styles.grid2}>
+            {SIGN_INFO.map((s) => (
+              <View key={s.abbr} style={styles.row}>
+                <Text style={styles.glyph}>{s.glyph}</Text>
+                <Text style={styles.label}>{`${s.abbr} · ${s.name}`}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Aspects */}
+          <Text style={styles.section}>Aspects</Text>
+          <View style={styles.grid2}>
+            <LegendLine label="Conjunction · 0°" variant="conj" />
+            <LegendLine label="Opposition · 180°" variant="opp" />
+            <LegendLine label="Square · 90°" variant="square" />
+            <LegendLine label="Trine · 120°" variant="trine" />
+            <LegendLine label="Sextile · 60°" variant="sextile" />
+          </View>
+
+          <Text style={styles.hint}>
+            Tip: sextiles are dashed; trines are thicker.
+          </Text>
+        </>
+      )}
     </View>
   )
 }
 
 function LegendLine({ label, variant = 'conj' }: LegendLineProps) {
-  const lineStyle =
+  // Use SVG so dashed is consistent across platforms
+  const stroke =
+    variant === 'trine'
+      ? 'rgba(255,255,255,0.75)'
+      : 'rgba(255,255,255,0.55)'
+
+  const strokeWidth =
+    variant === 'trine' ? 2.2 : variant === 'square' ? 1.8 : 1.4
+
+  const dash =
     variant === 'sextile'
-      ? [styles.line, { borderStyle: 'dashed' as const }]
+      ? '4 4'
       : variant === 'trine'
-      ? [styles.line, { borderBottomWidth: 2 }]
-      : variant === 'square'
-      ? [styles.line, { borderBottomWidth: 1.5 }]
+      ? undefined
       : variant === 'opp'
-      ? [styles.line, { opacity: 0.85 }]
-      : [styles.line]
+      ? undefined
+      : variant === 'square'
+      ? undefined
+      : undefined
 
   return (
     <View style={styles.row}>
-      <View style={lineStyle} />
+      <Svg width={28} height={14} style={{ marginRight: 8 }}>
+        <SvgLine
+          x1="2"
+          y1="7"
+          x2="26"
+          y2="7"
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeDasharray={dash}
+          strokeLinecap="round"
+        />
+      </Svg>
       <Text style={styles.label}>{label}</Text>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  // collapsed trigger
-  triggerCard: {
-    ...uiStyles.card,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  triggerTitle: {
-    color: theme.colors.text,
-    fontSize: 15,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-  triggerSub: {
-    marginTop: 4,
-    color: theme.colors.sub,
-    fontSize: 12,
-    textAlign: 'center',
+  card: {
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
 
-  // modal
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-  },
-  sheetWrap: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    padding: 14,
-  },
-  sheet: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 14,
-    backgroundColor: 'rgba(0,0,0,0.92)',
-    paddingHorizontal: 12,
-    paddingTop: 12,
-  },
-  sheetHeader: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    paddingBottom: 6,
   },
   title: {
     flex: 1,
@@ -199,16 +156,18 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textAlign: 'center',
   },
-  closeBtn: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeText: {
+  chev: {
+    width: 28,
+    textAlign: 'right',
     color: theme.colors.text,
     fontSize: 18,
     fontWeight: '800',
+  },
+  sub: {
+    color: theme.colors.sub,
+    fontSize: 12,
+    textAlign: 'center',
+    marginBottom: 6,
   },
 
   section: {
@@ -243,14 +202,6 @@ const styles = StyleSheet.create({
     flex: 1,
     flexShrink: 1,
     minWidth: 0,
-  },
-
-  line: {
-    width: 24,
-    height: 0,
-    borderBottomWidth: 1.2,
-    borderColor: 'rgba(255,255,255,0.55)',
-    marginRight: 8,
   },
 
   hint: {
