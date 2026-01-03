@@ -1,7 +1,7 @@
 // components/space/SpaceBackground.tsx
 import React, { useMemo } from 'react'
 import { View, StyleSheet } from 'react-native'
-import { Canvas } from '@react-three/fiber'
+import { Canvas } from '@react-three/fiber/native'
 import * as THREE from 'three'
 import { useSpace } from './SpaceProvider'
 
