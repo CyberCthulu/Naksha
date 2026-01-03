@@ -43,6 +43,7 @@
     "@babel/core": "^7.25.2",
     "@types/luxon": "^3.7.1",
     "@types/react": "~19.1.10",
+    "@types/three": "^0.182.0",
     "eslint": "^9.27.0",
     "prettier": "^3.5.3",
     "typescript": "~5.9.2"
