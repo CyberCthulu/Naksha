@@ -1,6 +1,6 @@
 // screens/DashboardScreen.tsx
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { View, Text, Button, ActivityIndicator } from 'react-native'
+import { View, ActivityIndicator } from 'react-native'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 
 import supabase from '../lib/supabase'
@@ -13,6 +13,12 @@ import { saveChart } from '../lib/charts'
 
 // ✅ shared styles (adjust path if yours differs)
 import { uiStyles } from '../components/ui/uiStyles'
+
+// UI primitives
+import { AppText, MutedText, TitleText } from '../components/ui/AppText'
+import { Card } from '../components/ui/Card'
+import { Screen } from '../components/ui/Screen'
+import { Button } from '../components/ui/Button'
 
 // zodiac helpers
 const ZODIAC = [
@@ -186,7 +192,7 @@ export default function DashboardScreen() {
     return (
       <View style={uiStyles.center}>
         <ActivityIndicator />
-        <Text style={[uiStyles.text, { marginTop: 8 }]}>Loading your dashboard…</Text>
+        <AppText style={{ marginTop: 8 }}>Loading your dashboard…</AppText>
       </View>
     )
   }
@@ -194,7 +200,7 @@ export default function DashboardScreen() {
   if (error) {
     return (
       <View style={uiStyles.center}>
-        <Text style={uiStyles.errorText}>{error}</Text>
+        <AppText style={uiStyles.errorText}>{error}</AppText>
         <Button title="Retry" onPress={load} />
         <View style={{ height: 8 }} />
         <Button title="Sign Out" onPress={signOut} />
@@ -204,52 +210,54 @@ export default function DashboardScreen() {
 
   return (
     <View style={uiStyles.screen}>
-      <Text style={uiStyles.h1}>Welcome to Naksha 🌌</Text>
-      <Text style={uiStyles.sub}>
+      <TitleText style={uiStyles.h1}>Welcome to Naksha 🌌</TitleText>
+      <AppText style={uiStyles.sub}>
         {displayName ? `Hello, ${displayName}!` : 'Hello!'}
-      </Text>
+      </AppText>
 
       {sunSign && (
-        <View style={uiStyles.card}>
-          <Text style={uiStyles.cardTitle}>Your Signs</Text>
-          <Text style={uiStyles.text}>☀️ Sun: {sunSign}</Text>
-          <Text style={uiStyles.text}>🌙 Moon: {moonSign ?? '—'}</Text>
-        </View>
+        <Card>
+          <AppText style={uiStyles.cardTitle}>Your Signs</AppText>
+          <AppText>☀️ Sun: {sunSign}</AppText>
+          <AppText>🌙 Moon: {moonSign ?? '—'}</AppText>
+        </Card>
       )}
 
       {profile ? (
-        <View style={uiStyles.card}>
-          <Text style={uiStyles.cardTitle}>Your Birth Details</Text>
-          <Text style={uiStyles.text}>Email: {profile.email ?? '—'}</Text>
-          <Text style={uiStyles.text}>Date: {profile.birth_date ?? '—'}</Text>
-          <Text style={uiStyles.text}>Time: {prettyTime}</Text>
-          <Text style={uiStyles.text}>Location: {profile.birth_location ?? '—'}</Text>
-          <Text style={uiStyles.text}>Time Zone: {profile.time_zone ?? '—'}</Text>
-        </View>
+        <Card>
+          <AppText style={uiStyles.cardTitle}>Your Birth Details</AppText>
+          <AppText>Email: {profile.email ?? '—'}</AppText>
+          <AppText>Date: {profile.birth_date ?? '—'}</AppText>
+          <AppText>Time: {prettyTime}</AppText>
+          <AppText>Location: {profile.birth_location ?? '—'}</AppText>
+          <AppText>Time Zone: {profile.time_zone ?? '—'}</AppText>
+        </Card>
       ) : (
-        <View style={uiStyles.card}>
-          <Text style={uiStyles.cardTitle}>Profile</Text>
-          <Text style={uiStyles.text}>No profile row found yet.</Text>
-          <Text style={uiStyles.muted}>
+        <Card>
+          <AppText style={uiStyles.cardTitle}>Profile</AppText>
+          <AppText>No profile row found yet.</AppText>
+          <MutedText>
             (You’ll get one after confirming email from Sign Up.)
-          </Text>
-        </View>
+          </MutedText>
+        </Card>
       )}
 
       <View style={{ height: 12 }} />
 
-      <Button title="Edit Birth Details" onPress={() => nav.navigate('CompleteProfile')} />
+      <Button title="Edit Birth Details" variant="ghost" onPress={() => nav.navigate('CompleteProfile')} />
 
       <Button
         title="View Birth Chart"
+        variant="ghost"
         onPress={() => nav.navigate('Chart', { profile })}
         disabled={!profile || needsProfileCompletion(profile)}
+        style={{ marginTop: 8 }}
       />
 
-      <Button title="My Charts" onPress={() => nav.navigate('MyCharts')} />
-      <Button title="Journal" onPress={() => nav.navigate('JournalList')} />
-      <Button title="My Profile" onPress={() => nav.navigate('Profile')} />
-      <Button title="Sign Out" onPress={signOut} />
+      <Button title="My Charts" variant="ghost" onPress={() => nav.navigate('MyCharts')} style={{ marginTop: 8 }} />
+      <Button title="Journal" variant="ghost" onPress={() => nav.navigate('JournalList')} style={{ marginTop: 8 }} />
+      <Button title="My Profile" variant="ghost" onPress={() => nav.navigate('Profile')} style={{ marginTop: 8 }} />
+      <Button title="Sign Out" variant="ghost" onPress={signOut} style={{ marginTop: 8 }} />
     </View>
   )
 }

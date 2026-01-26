@@ -1,11 +1,15 @@
 // screens/LoginScreen.tsx
 import { useState } from 'react'
-import { View, TextInput, Button, Text } from 'react-native'
+import { View, TextInput } from 'react-native'
 import { signInWithEmail } from '../lib/auth'
 
 // ✅ shared styles + theme
 import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
+
+// UI primitives
+import { AppText } from '../components/ui/AppText'
+import { Button } from '../components/ui/Button'
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('')
@@ -27,9 +31,9 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <View style={[uiStyles.screen, { justifyContent: 'center' }]}>
-      <Text style={uiStyles.h1}>Log In</Text>
+      <AppText style={uiStyles.h1}>Log In</AppText>
 
-      <Text style={[uiStyles.text, { marginTop: 12 }]}>Email</Text>
+      <AppText style={{ marginTop: 12 }}>Email</AppText>
       <TextInput
         value={email}
         onChangeText={setEmail}
@@ -48,7 +52,7 @@ export default function LoginScreen({ navigation }: any) {
         }}
       />
 
-      <Text style={uiStyles.text}>Password</Text>
+      <AppText>Password</AppText>
       <TextInput
         value={password}
         onChangeText={setPassword}
@@ -67,18 +71,20 @@ export default function LoginScreen({ navigation }: any) {
       />
 
       {error !== '' && (
-        <Text style={[uiStyles.errorText, { marginBottom: 10 }]}>
+        <AppText style={[uiStyles.errorText, { marginBottom: 10 }]}>
           {error}
-        </Text>
+        </AppText>
       )}
 
-      <Button title="Login" onPress={handleLogin} />
+      <Button title="Login" variant="ghost" onPress={handleLogin} />
 
       <View style={{ height: 10 }} />
 
       <Button
         title="Don't have an account? Sign Up"
+        variant="ghost"
         onPress={() => navigation.navigate('Signup')}
+        style={{ marginTop: 8 }}
       />
     </View>
   )

@@ -1,6 +1,7 @@
 // components/ui/Card.tsx
 import React from 'react'
 import { View, StyleSheet } from 'react-native'
+import { theme } from './theme'
 
 export function Card({ children }: { children: React.ReactNode }) {
   return <View style={styles.card}>{children}</View>
@@ -9,10 +10,10 @@ export function Card({ children }: { children: React.ReactNode }) {
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.35)',
-    borderRadius: 12,
-    padding: 14,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.card,
+    padding: theme.spacing.card,
+    backgroundColor: theme.colors.cardBg,
     marginBottom: 12,
   },
 })

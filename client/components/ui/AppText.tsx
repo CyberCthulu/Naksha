@@ -1,6 +1,7 @@
 // components/ui/AppText.tsx
 import React from 'react'
 import { Text, StyleSheet, TextProps } from 'react-native'
+import { theme } from './theme'
 
 export function AppText(props: TextProps) {
   return <Text {...props} style={[styles.text, props.style]} />
@@ -16,14 +17,14 @@ export function TitleText(props: TextProps) {
 
 const styles = StyleSheet.create({
   text: {
-    color: '#fff',
+    color: theme.colors.text,
     fontSize: 14,
   },
   muted: {
-    color: 'rgba(255,255,255,0.75)',
+    color: theme.colors.muted,
   },
   title: {
-    color: '#fff',
+    color: theme.colors.text,
     fontSize: 22,
     fontWeight: '600',
   },

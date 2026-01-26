@@ -1,6 +1,6 @@
 // client/screens/SignupScreen.tsx
 import React, { useEffect, useState } from 'react'
-import { View, Text, Button, Alert } from 'react-native'
+import { View, Alert } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { signUpWithEmail } from '../lib/auth'
 import { normalizeZone } from '../lib/timezones'
@@ -13,6 +13,10 @@ import ProfileFields from '../components/auth/ProfileFields'
 
 // ✅ shared styles
 import { uiStyles } from '../components/ui/uiStyles'
+
+// UI primitives
+import { AppText } from '../components/ui/AppText'
+import { Button } from '../components/ui/Button'
 
 export default function SignupScreen() {
   const navigation = useNavigation<any>()
@@ -98,12 +102,13 @@ export default function SignupScreen() {
       />
 
       {error !== '' && (
-        <Text style={[uiStyles.errorText, { marginTop: 6 }]}>{error}</Text>
+        <AppText style={[uiStyles.errorText, { marginTop: 6 }]}>{error}</AppText>
       )}
 
       <View style={{ height: 8 }} />
       <Button
         title={submitting ? 'Signing Up…' : 'Sign Up'}
+        variant="ghost"
         onPress={handleSignup}
         disabled={submitting}
       />
@@ -111,8 +116,10 @@ export default function SignupScreen() {
       <View style={{ height: 8 }} />
       <Button
         title="Already have an account? Log In"
+        variant="ghost"
         onPress={() => navigation.replace('Login')}
         disabled={submitting}
+        style={{ marginTop: 8 }}
       />
     </AuthContainer>
   )
