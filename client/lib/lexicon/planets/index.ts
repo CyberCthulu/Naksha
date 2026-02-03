@@ -858,59 +858,95 @@ Learning boundaries is essential. When grounded, your sensitivity becomes a powe
 },
 
 
-    /* ────────────────────────────────────────────────────────────
-   * PLUTO IN SIGNS – placeholders to fill later
-   * ────────────────────────────────────────────────────────── */
-  Pluto: {
-    Aries: {
-      short: '',
-      long: '',
-    },
-    Taurus: {
-      short: '',
-      long: '',
-    },
-    Gemini: {
-      short: '',
-      long: '',
-    },
-    Cancer: {
-      short: '',
-      long: '',
-    },
-    Leo: {
-      short: '',
-      long: '',
-    },
-    Virgo: {
-      short: '',
-      long: '',
-    },
-    Libra: {
-      short: '',
-      long: '',
-    },
-    Scorpio: {
-      short: '',
-      long: '',
-    },
-    Sagittarius: {
-      short: '',
-      long: '',
-    },
-    Capricorn: {
-      short: '',
-      long: '',
-    },
-    Aquarius: {
-      short: '',
-      long: '',
-    },
-    Pisces: {
-      short: '',
-      long: '',
-    },
+/* ────────────────────────────────────────────────────────────
+ * PLUTO IN SIGNS – power, shadow, rebirth, deep transformation
+ * ────────────────────────────────────────────────────────── */
+
+Pluto: {
+  Aries: {
+    short: 'Your transformation comes through reclaiming personal power.',
+    long: `With Pluto in Aries, your life pushes you to confront issues of independence, anger, and self-assertion. You may experience intense struggles around identity or the right to act freely.
+
+Through facing conflict and courageously redefining yourself, you learn that true power comes from conscious action rather than force or reaction.`
   },
+
+  Taurus: {
+    short: 'Your transformation centers on security, values, and self-worth.',
+    long: `Pluto in Taurus brings deep change around money, possessions, and stability. You may experience loss or upheaval that forces you to redefine what truly matters.
+
+By learning to let go of attachment and fear, you discover an unshakable sense of inner value that no external change can take away.`
+  },
+
+  Gemini: {
+    short: 'Your transformation happens through thought, communication, and truth.',
+    long: `With Pluto in Gemini, words and ideas carry enormous power. You may experience mental intensity, obsession with understanding, or transformative conversations.
+
+Your growth lies in using language consciously—speaking truth without manipulation and learning when silence is just as powerful as speech.`
+  },
+
+  Cancer: {
+    short: 'Your transformation runs through emotional security and family patterns.',
+    long: `Pluto in Cancer brings deep healing around family, ancestry, and emotional safety. You may inherit intense emotional patterns or feel responsible for holding others together.
+
+Reclaiming your emotional autonomy allows you to nurture from strength rather than survival, transforming inherited wounds into resilience.`
+  },
+
+  Leo: {
+    short: 'Your transformation centers on identity, creativity, and self-expression.',
+    long: `With Pluto in Leo, issues of recognition, pride, and authenticity are profound. You may experience power struggles around being seen or validated.
+
+True empowerment comes when you express yourself from the heart—creating not to dominate, but to inspire and lead with integrity.`
+  },
+
+  Virgo: {
+    short: 'Your transformation unfolds through service, healing, and self-improvement.',
+    long: `Pluto in Virgo intensifies themes around work, health, and usefulness. You may feel driven to fix, purify, or control systems—sometimes turning that intensity inward.
+
+Learning compassion for imperfection allows your desire to help and heal to become a source of empowerment rather than self-criticism.`
+  },
+
+  Libra: {
+    short: 'Your transformation occurs through relationships and balance of power.',
+    long: `With Pluto in Libra, relationships become arenas for deep psychological change. You may encounter intense partnerships, power struggles, or lessons around equality.
+
+By confronting dependency and control, you learn to form connections rooted in mutual respect and shared strength.`
+  },
+
+  Scorpio: {
+    short: 'You are wired for profound emotional and psychological transformation.',
+    long: `Pluto in Scorpio is at home, amplifying themes of death, rebirth, intimacy, and shadow work. You’re naturally attuned to what others avoid—truth, pain, and emotional depth.
+
+Your power lies in your capacity to face darkness without being consumed by it, emerging again and again renewed and wiser.`
+  },
+
+  Sagittarius: {
+    short: 'Your transformation comes through belief, truth, and expanded understanding.',
+    long: `With Pluto in Sagittarius, your life challenges belief systems, philosophies, and moral truths. You may experience intense shifts in worldview or confront dogma—your own or others’.
+
+True growth arises when you seek truth with humility, allowing wisdom to evolve rather than clinging to absolute certainty.`
+  },
+
+  Capricorn: {
+    short: 'Your transformation centers on authority, ambition, and responsibility.',
+    long: `Pluto in Capricorn brings deep restructuring around power, success, and control. You may encounter intense pressure to achieve or dismantle outdated definitions of authority.
+
+Your empowerment comes from redefining success on your own terms—building structures that reflect integrity, not fear.`
+  },
+
+  Aquarius: {
+    short: 'Your transformation unfolds through society, innovation, and collective change.',
+    long: `With Pluto in Aquarius, power dynamics around groups, technology, and social systems come into focus. You may feel driven to challenge outdated structures or imagine radical futures.
+
+Learning to balance individuality with collective responsibility allows your vision to catalyze meaningful change.`
+  },
+
+  Pisces: {
+    short: 'Your transformation occurs through surrender, compassion, and spiritual depth.',
+    long: `Pluto in Pisces dissolves illusions around control, inviting deep spiritual and emotional rebirth. You may confront themes of loss, sacrifice, or collective suffering.
+
+Through surrender and grounded compassion, you discover a profound inner strength rooted in faith, empathy, and transcendence.`
+  },
+},
 })
 
 export function getPlanetSignMeaning(
