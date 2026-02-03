@@ -585,59 +585,96 @@ The risk is escapism or blind faith. Grounding your compassion in reality allows
 },
 
 
-    /* ────────────────────────────────────────────────────────────
-   * SATURN IN SIGNS – placeholders to fill later
-   * ────────────────────────────────────────────────────────── */
-  Saturn: {
-    Aries: {
-      short: '',
-      long: '',
-    },
-    Taurus: {
-      short: '',
-      long: '',
-    },
-    Gemini: {
-      short: '',
-      long: '',
-    },
-    Cancer: {
-      short: '',
-      long: '',
-    },
-    Leo: {
-      short: '',
-      long: '',
-    },
-    Virgo: {
-      short: '',
-      long: '',
-    },
-    Libra: {
-      short: '',
-      long: '',
-    },
-    Scorpio: {
-      short: '',
-      long: '',
-    },
-    Sagittarius: {
-      short: '',
-      long: '',
-    },
-    Capricorn: {
-      short: '',
-      long: '',
-    },
-    Aquarius: {
-      short: '',
-      long: '',
-    },
-    Pisces: {
-      short: '',
-      long: '',
-    },
+/* ────────────────────────────────────────────────────────────
+ * SATURN IN SIGNS – responsibility, discipline, life lessons
+ * ────────────────────────────────────────────────────────── */
+
+Saturn: {
+  Aries: {
+    short: 'You learn patience, confidence, and self-trust through action.',
+    long: `With Saturn in Aries, lessons revolve around courage and self-assertion. You may have felt blocked or hesitant about taking initiative early in life, learning through trial and error how to trust yourself.
+
+Over time, discipline strengthens your confidence. True leadership emerges when impulsiveness gives way to purposeful action.`
   },
+
+  Taurus: {
+    short: 'You learn security through patience and self-worth.',
+    long: `Saturn in Taurus teaches lessons around stability, resources, and self-value. You may experience delays or pressure related to money, comfort, or feeling safe.
+
+Through persistence and steady effort, you build lasting foundations. Learning that worth is not only material brings deeper fulfillment.`
+  },
+
+  Gemini: {
+    short: 'You learn clarity, focus, and confidence in communication.',
+    long: `With Saturn in Gemini, communication and learning may feel serious or demanding early on. You may have doubted your voice or felt misunderstood.
+
+Mastery comes through practice and structure. Over time, your words gain authority, and your thinking becomes both sharp and reliable.`
+  },
+
+  Cancer: {
+    short: 'You learn emotional responsibility and inner security.',
+    long: `Saturn in Cancer brings lessons around vulnerability, family, and emotional safety. You may have learned early to protect yourself or take on emotional responsibility for others.
+
+With maturity, you develop strong emotional boundaries and become a source of quiet strength and stability for those you care about.`
+  },
+
+  Leo: {
+    short: 'You learn confidence through humility and authenticity.',
+    long: `With Saturn in Leo, self-expression and recognition may feel blocked or delayed. You may question whether it’s safe to be seen or celebrated.
+
+Through patience and self-acceptance, confidence grows naturally. Your leadership becomes grounded, respected, and earned rather than forced.`
+  },
+
+  Virgo: {
+    short: 'You learn self-acceptance beyond perfectionism.',
+    long: `Saturn in Virgo emphasizes responsibility, precision, and service. You may place high standards on yourself, feeling pressure to be useful or flawless.
+
+Over time, wisdom comes from accepting imperfection. Your ability to serve becomes healing rather than self-critical.`
+  },
+
+  Libra: {
+    short: 'You learn balance, commitment, and healthy boundaries in relationships.',
+    long: `With Saturn in Libra, relationships carry weight and lessons. You may feel tested through partnerships or struggle with fairness and decision-making.
+
+Maturity brings the ability to commit wisely, creating relationships built on mutual respect rather than obligation.`
+  },
+
+  Scorpio: {
+    short: 'You learn trust, surrender, and emotional resilience.',
+    long: `Saturn in Scorpio brings intense lessons around control, intimacy, and emotional truth. You may face deep fears related to loss, power, or vulnerability.
+
+Strength develops through facing discomfort directly. Over time, you gain profound emotional wisdom and inner authority.`
+  },
+
+  Sagittarius: {
+    short: 'You learn wisdom through experience rather than belief alone.',
+    long: `With Saturn in Sagittarius, faith and meaning are tested. You may question belief systems or feel restricted in freedom early on.
+
+True wisdom develops when ideals are grounded in real-world experience. Your perspective becomes steady, honest, and deeply informed.`
+  },
+
+  Capricorn: {
+    short: 'You learn mastery, responsibility, and self-respect.',
+    long: `Saturn is at home in Capricorn. Life may feel demanding early, with heavy responsibilities or high expectations.
+
+Through persistence, you gain authority and respect. Success feels deeply earned, and your leadership becomes a model for others.`
+  },
+
+  Aquarius: {
+    short: 'You learn individuality while honoring collective responsibility.',
+    long: `With Saturn in Aquarius, lessons revolve around belonging and authenticity. You may feel like an outsider or struggle to balance independence with community.
+
+Maturity brings the ability to contribute uniquely while remaining connected, turning innovation into meaningful impact.`
+  },
+
+  Pisces: {
+    short: 'You learn boundaries, faith, and emotional grounding.',
+    long: `Saturn in Pisces teaches lessons around sensitivity, compassion, and surrender. You may feel overwhelmed by emotions or uncertain where you end and others begin.
+
+With time, you develop spiritual strength and emotional boundaries, allowing empathy to exist without self-sacrifice.`
+  },
+},
+
 
     /* ────────────────────────────────────────────────────────────
    * URANUS IN SIGNS – placeholders to fill later
