@@ -494,61 +494,96 @@ Anger can dissolve into avoidance or confusion. Developing grounding practices a
 },
 
 
-    /* ────────────────────────────────────────────────────────────
-   * JUPITER IN SIGNS – placeholders to fill later
-   * ────────────────────────────────────────────────────────── */
+/* ────────────────────────────────────────────────────────────
+ * JUPITER IN SIGNS – growth, belief, meaning, optimism
+ * ────────────────────────────────────────────────────────── */
 
-  Jupiter: {
-        Aries: {
-      short: '',
-      long: '',
-    },
-    Taurus: {
-      short: '',
-      long: '',
-    },
-    Gemini: {
-      short: '',
-      long: '',
-    },
-    Cancer: {
-      short: '',
-      long: '',
-    },
-    Leo: {
-      short: '',
-      long: '',
-    },
-    Virgo: {
-      short: '',
-      long: '',
-    },
-    Libra: {
-      short: '',
-      long: '',
-    },
-    Scorpio: {
-      short: '',
-      long: '',
-    },
-    Sagittarius: {
-      short: '',
-      long: '',
-    },
-    Capricorn: {
-      short: '',
-      long: '',
-    },
-    Aquarius: {
-      short: '',
-      long: '',
-    },
-    Pisces: {
-      short: '',
-      long: '',
-    },
+Jupiter: {
+  Aries: {
+    short: 'You grow by taking risks and trusting your courage.',
+    long: `Jupiter in Aries expands through boldness and initiative. You believe in yourself most when you’re moving forward, starting something new, or standing on your own feet. Confidence grows through action.
 
+The challenge is impulsive overconfidence. Learning when to pause and consider others allows your enthusiasm to inspire rather than overwhelm.`
   },
+
+  Taurus: {
+    short: 'You grow through stability, patience, and tangible value.',
+    long: `With Jupiter in Taurus, expansion comes slowly and steadily. You believe in growth that lasts—building security, comfort, and resources over time. Faith is rooted in consistency and reliability.
+
+The growth edge is flexibility. Letting go of what feels safe but limiting allows abundance to keep flowing rather than stagnating.`
+  },
+
+  Gemini: {
+    short: 'You grow by learning, questioning, and exchanging ideas.',
+    long: `Jupiter in Gemini expands through curiosity and communication. You thrive when gathering information, sharing perspectives, and staying mentally engaged. Variety feeds your sense of meaning.
+
+The challenge is superficiality. Focusing your learning helps transform scattered knowledge into true wisdom.`
+  },
+
+  Cancer: {
+    short: 'You grow through emotional connection and belonging.',
+    long: `With Jupiter in Cancer, expansion happens through care, empathy, and emotional security. You believe in the power of nurturing—family, home, and chosen communities are sources of faith.
+
+The work is balancing protection with openness. Growth deepens when you allow emotional risk alongside safety.`
+  },
+
+  Leo: {
+    short: 'You grow through self-expression, creativity, and confidence.',
+    long: `Jupiter in Leo expands through visibility and joy. You believe life is meant to be lived fully and generously, often inspiring others through your enthusiasm and warmth.
+
+The challenge is ego inflation. When confidence is shared rather than centered only on self, your light becomes truly expansive.`
+  },
+
+  Virgo: {
+    short: 'You grow by being useful, skilled, and of service.',
+    long: `With Jupiter in Virgo, expansion comes through refinement and practical contribution. You believe in progress made through effort, precision, and improvement.
+
+The growth edge is releasing perfectionism. Trusting the bigger picture allows you to see how small acts of service create meaningful impact.`
+  },
+
+  Libra: {
+    short: 'You grow through relationships, balance, and fairness.',
+    long: `Jupiter in Libra expands through cooperation and mutual understanding. You believe growth happens when perspectives are shared and harmony is cultivated.
+
+The challenge is indecision or people-pleasing. True expansion comes when you honor your own truth alongside others’.`
+  },
+
+  Scorpio: {
+    short: 'You grow through depth, truth, and transformation.',
+    long: `With Jupiter in Scorpio, expansion comes from facing what others avoid. You believe in emotional honesty, healing, and profound inner change.
+
+The risk is obsession or extremity. Growth becomes sustainable when intensity is paired with trust and emotional release.`
+  },
+
+  Sagittarius: {
+    short: 'You grow through exploration, truth, and big-picture thinking.',
+    long: `Jupiter in Sagittarius is at home here. You expand through travel, philosophy, spirituality, and the search for meaning. Optimism and faith in life are natural strengths.
+
+The challenge is excess or restlessness. Grounding wisdom in lived experience turns belief into genuine understanding.`
+  },
+
+  Capricorn: {
+    short: 'You grow through discipline, responsibility, and achievement.',
+    long: `With Jupiter in Capricorn, expansion is earned through effort and structure. You believe in long-term success and respect systems that reward dedication.
+
+The work is allowing joy alongside ambition. Growth feels richer when achievement is balanced with fulfillment and connection.`
+  },
+
+  Aquarius: {
+    short: 'You grow through innovation, ideas, and collective progress.',
+    long: `Jupiter in Aquarius expands through originality and social awareness. You believe in progress, equality, and the power of new ideas to reshape the future.
+
+The challenge is detachment. Staying emotionally engaged helps your vision remain humane as well as revolutionary.`
+  },
+
+  Pisces: {
+    short: 'You grow through compassion, imagination, and faith.',
+    long: `With Jupiter in Pisces, expansion flows through spirituality, creativity, and empathy. You believe in unseen connections and often trust life to unfold intuitively.
+
+The risk is escapism or blind faith. Grounding your compassion in reality allows your sensitivity to become a true source of wisdom.`
+  },
+},
+
 
     /* ────────────────────────────────────────────────────────────
    * SATURN IN SIGNS – placeholders to fill later
