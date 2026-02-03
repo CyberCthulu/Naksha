@@ -218,7 +218,7 @@ Grounding practices, creative outlets, and healthy emotional boundaries help you
 rather than overwhelm.`,
     },
   },
-  
+
 
 /* ────────────────────────────────────────────────────────────
  * MERCURY IN SIGNS – thinking style, communication, perception
@@ -365,6 +365,7 @@ The challenge is clarity. Grounding your insights in structure helps prevent con
       long: '',
     },
   },
+  
 
     /* ────────────────────────────────────────────────────────────
   * MARS IN SIGNS – placeholders to fill later
