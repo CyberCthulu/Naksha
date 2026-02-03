@@ -276,10 +276,53 @@ rather than overwhelm.`,
 
   Venus: {
     Aries: {
-      short: 'TODO: Venus in Aries short meaning.',
-      long: 'TODO: Venus in Aries long meaning.',
+      short: '',
+      long: '',
     },
-    // ...etc.
+    Taurus: {
+      short: '',
+      long: '',
+    },
+    Gemini: {
+      short: '',
+      long: '',
+    },
+    Cancer: {
+      short: '',
+      long: '',
+    },
+    Leo: {
+      short: '',
+      long: '',
+    },
+    Virgo: {
+      short: '',
+      long: '',
+    },
+    Libra: {
+      short: '',
+      long: '',
+    },
+    Scorpio: {
+      short: '',
+      long: '',
+    },
+    Sagittarius: {
+      short: '',
+      long: '',
+    },
+    Capricorn: {
+      short: '',
+      long: '',
+    },
+    Aquarius: {
+      short: '',
+      long: '',
+    },
+    Pisces: {
+      short: '',
+      long: '',
+    },
   },
 
   Mars: {
