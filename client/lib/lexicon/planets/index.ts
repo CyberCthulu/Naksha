@@ -478,7 +478,54 @@ rather than overwhelm.`,
     },
   },
   Uranus: {
-
+    Aries: {
+      short: '',
+      long: '',
+    },
+    Taurus: {
+      short: '',
+      long: '',
+    },
+    Gemini: {
+      short: '',
+      long: '',
+    },
+    Cancer: {
+      short: '',
+      long: '',
+    },
+    Leo: {
+      short: '',
+      long: '',
+    },
+    Virgo: {
+      short: '',
+      long: '',
+    },
+    Libra: {
+      short: '',
+      long: '',
+    },
+    Scorpio: {
+      short: '',
+      long: '',
+    },
+    Sagittarius: {
+      short: '',
+      long: '',
+    },
+    Capricorn: {
+      short: '',
+      long: '',
+    },
+    Aquarius: {
+      short: '',
+      long: '',
+    },
+    Pisces: {
+      short: '',
+      long: '',
+    },
   },
   Neptune: {
 
