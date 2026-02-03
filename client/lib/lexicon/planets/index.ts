@@ -676,59 +676,96 @@ With time, you develop spiritual strength and emotional boundaries, allowing emp
 },
 
 
-    /* ────────────────────────────────────────────────────────────
-   * URANUS IN SIGNS – placeholders to fill later
-   * ────────────────────────────────────────────────────────── */
-  Uranus: {
-    Aries: {
-      short: '',
-      long: '',
-    },
-    Taurus: {
-      short: '',
-      long: '',
-    },
-    Gemini: {
-      short: '',
-      long: '',
-    },
-    Cancer: {
-      short: '',
-      long: '',
-    },
-    Leo: {
-      short: '',
-      long: '',
-    },
-    Virgo: {
-      short: '',
-      long: '',
-    },
-    Libra: {
-      short: '',
-      long: '',
-    },
-    Scorpio: {
-      short: '',
-      long: '',
-    },
-    Sagittarius: {
-      short: '',
-      long: '',
-    },
-    Capricorn: {
-      short: '',
-      long: '',
-    },
-    Aquarius: {
-      short: '',
-      long: '',
-    },
-    Pisces: {
-      short: '',
-      long: '',
-    },
+/* ────────────────────────────────────────────────────────────
+ * URANUS IN SIGNS – awakening, innovation, breaking patterns
+ * ────────────────────────────────────────────────────────── */
+
+Uranus: {
+  Aries: {
+    short: 'You’re wired to initiate change boldly and independently.',
+    long: `With Uranus in Aries, innovation comes through action. You’re instinctively driven to break new ground, take risks, and act on sudden inspiration.
+
+Your challenge is pacing yourself. When grounded, your courage becomes a catalyst for powerful new beginnings—not just impulsive rebellion.`
   },
+
+  Taurus: {
+    short: 'You’re here to revolutionize values, security, and material systems.',
+    long: `Uranus in Taurus disrupts comfort zones around stability, money, and self-worth. You may experience sudden shifts in what you rely on or value.
+
+Over time, you learn that true security comes from adaptability. Your ability to innovate within practical systems can reshape how stability itself is defined.`
+  },
+
+  Gemini: {
+    short: 'Your mind is fast, unconventional, and naturally inventive.',
+    long: `With Uranus in Gemini, your thinking style is electric and original. You may process information differently than others or jump between ideas rapidly.
+
+Your gift is mental innovation—new ways of communicating, learning, or connecting ideas. Structure helps turn flashes of insight into lasting contributions.`
+  },
+
+  Cancer: {
+    short: 'You’re here to redefine emotional safety and belonging.',
+    long: `Uranus in Cancer brings change to family patterns, emotional bonds, and ideas of home. You may feel different from your roots or experience sudden emotional shifts.
+
+Your path involves creating new models of care and connection—ones that honor individuality without sacrificing emotional truth.`
+  },
+
+  Leo: {
+    short: 'Your self-expression is unique, bold, and impossible to ignore.',
+    long: `With Uranus in Leo, creativity and identity are infused with originality. You’re not here to perform a role—you’re here to reinvent it.
+
+Learning to own your uniqueness without needing constant reaction or shock value allows your authentic brilliance to shine.`
+  },
+
+  Virgo: {
+    short: 'You innovate through systems, work, and practical problem-solving.',
+    long: `Uranus in Virgo awakens new ways of being useful, efficient, and precise. You may question traditional routines or feel called to improve systems that others accept.
+
+Your gift is practical innovation—bringing fresh solutions into everyday life without losing attention to detail.`
+  },
+
+  Libra: {
+    short: 'You’re here to challenge norms around relationships and fairness.',
+    long: `With Uranus in Libra, partnerships may feel unconventional or unpredictable. You seek equality, freedom, and authenticity in connection.
+
+Your growth comes from balancing independence with commitment, creating relationships that evolve rather than conform.`
+  },
+
+  Scorpio: {
+    short: 'You awaken through deep transformation and emotional truth.',
+    long: `Uranus in Scorpio brings sudden insights around power, intimacy, and control. You may experience intense emotional shifts that force growth and renewal.
+
+Your strength lies in your ability to face taboo or hidden truths and emerge transformed, helping others do the same.`
+  },
+
+  Sagittarius: {
+    short: 'You’re here to revolutionize belief systems and worldviews.',
+    long: `With Uranus in Sagittarius, your ideas challenge tradition, dogma, and outdated philosophies. You may feel driven to explore beyond accepted truths.
+
+Your role is expanding perspectives—grounding freedom in wisdom rather than rebellion for its own sake.`
+  },
+
+  Capricorn: {
+    short: 'You’re here to disrupt outdated structures and redefine success.',
+    long: `Uranus in Capricorn shakes up authority, ambition, and institutions. You may feel tension between tradition and innovation in your career or life path.
+
+Your gift is modernizing systems—introducing change that makes structures more humane, flexible, and future-ready.`
+  },
+
+  Aquarius: {
+    short: 'You’re naturally ahead of your time and wired for innovation.',
+    long: `Uranus is at home in Aquarius. You think in systems, futures, and collective progress. You may feel different, detached, or misunderstood early on.
+
+Embracing your originality while staying connected allows your ideas to genuinely improve the world around you.`
+  },
+
+  Pisces: {
+    short: 'You awaken through intuition, spirituality, and imagination.',
+    long: `With Uranus in Pisces, insight comes through dreams, symbolism, and subtle perception. You may experience sudden spiritual awakenings or emotional revelations.
+
+Grounding intuition in reality helps transform inspiration into meaningful creative or healing work.`
+  },
+},
+
 
     /* ────────────────────────────────────────────────────────────
    * NEPTUNE IN SIGNS – placeholders to fill later
