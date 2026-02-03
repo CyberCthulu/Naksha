@@ -327,16 +327,118 @@ rather than overwhelm.`,
 
   Mars: {
     Aries: {
-      short: 'TODO: Mars in Aries short meaning.',
-      long: 'TODO: Mars in Aries long meaning.',
+      short: '',
+      long: '',
+    },
+    Taurus: {
+      short: '',
+      long: '',
+    },
+    Gemini: {
+      short: '',
+      long: '',
+    },
+    Cancer: {
+      short: '',
+      long: '',
+    },
+    Leo: {
+      short: '',
+      long: '',
+    },
+    Virgo: {
+      short: '',
+      long: '',
+    },
+    Libra: {
+      short: '',
+      long: '',
+    },
+    Scorpio: {
+      short: '',
+      long: '',
+    },
+    Sagittarius: {
+      short: '',
+      long: '',
+    },
+    Capricorn: {
+      short: '',
+      long: '',
+    },
+    Aquarius: {
+      short: '',
+      long: '',
+    },
+    Pisces: {
+      short: '',
+      long: '',
     },
   },
 
-  Jupiter: {},
-  Saturn: {},
-  Uranus: {},
-  Neptune: {},
-  Pluto: {},
+  Jupiter: {
+        Aries: {
+      short: '',
+      long: '',
+    },
+    Taurus: {
+      short: '',
+      long: '',
+    },
+    Gemini: {
+      short: '',
+      long: '',
+    },
+    Cancer: {
+      short: '',
+      long: '',
+    },
+    Leo: {
+      short: '',
+      long: '',
+    },
+    Virgo: {
+      short: '',
+      long: '',
+    },
+    Libra: {
+      short: '',
+      long: '',
+    },
+    Scorpio: {
+      short: '',
+      long: '',
+    },
+    Sagittarius: {
+      short: '',
+      long: '',
+    },
+    Capricorn: {
+      short: '',
+      long: '',
+    },
+    Aquarius: {
+      short: '',
+      long: '',
+    },
+    Pisces: {
+      short: '',
+      long: '',
+    },
+
+  },
+  Saturn: {
+
+  },
+  Uranus: {
+
+  },
+  Neptune: {
+
+  },
+  Pluto: {
+
+  },
 })
 
 export function getPlanetSignMeaning(
