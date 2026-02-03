@@ -767,59 +767,96 @@ Grounding intuition in reality helps transform inspiration into meaningful creat
 },
 
 
-    /* ────────────────────────────────────────────────────────────
-   * NEPTUNE IN SIGNS – placeholders to fill later
-   * ────────────────────────────────────────────────────────── */
-  Neptune: {
-    Aries: {
-      short: '',
-      long: '',
-    },
-    Taurus: {
-      short: '',
-      long: '',
-    },
-    Gemini: {
-      short: '',
-      long: '',
-    },
-    Cancer: {
-      short: '',
-      long: '',
-    },
-    Leo: {
-      short: '',
-      long: '',
-    },
-    Virgo: {
-      short: '',
-      long: '',
-    },
-    Libra: {
-      short: '',
-      long: '',
-    },
-    Scorpio: {
-      short: '',
-      long: '',
-    },
-    Sagittarius: {
-      short: '',
-      long: '',
-    },
-    Capricorn: {
-      short: '',
-      long: '',
-    },
-    Aquarius: {
-      short: '',
-      long: '',
-    },
-    Pisces: {
-      short: '',
-      long: '',
-    },
+/* ────────────────────────────────────────────────────────────
+ * NEPTUNE IN SIGNS – dreams, intuition, illusion, spirituality
+ * ────────────────────────────────────────────────────────── */
+
+Neptune: {
+  Aries: {
+    short: 'Your dreams push you toward action and self-discovery.',
+    long: `With Neptune in Aries, inspiration comes in flashes of courage and personal vision. You may idealize independence or feel called to pursue a dream through bold action.
+
+The challenge is clarity—learning when to act on intuition versus impulse. When aligned, you become a pioneer for inspired, purpose-driven change.`
   },
+
+  Taurus: {
+    short: 'You seek spiritual meaning through stability, beauty, and the senses.',
+    long: `Neptune in Taurus blends imagination with the material world. You may idealize comfort, security, or physical pleasure, finding peace in nature, art, or routine.
+
+Your growth comes from grounding dreams in reality—so inspiration nourishes your life rather than blurring your sense of value or worth.`
+  },
+
+  Gemini: {
+    short: 'Your imagination flows through thoughts, words, and ideas.',
+    long: `With Neptune in Gemini, intuition and intellect intertwine. You may feel inspired by language, storytelling, symbolism, or abstract ideas—but also prone to mental fog.
+
+Learning to slow down and listen beneath the noise helps you translate inspiration into meaningful communication.`
+  },
+
+  Cancer: {
+    short: 'You’re deeply intuitive and emotionally sensitive to your surroundings.',
+    long: `Neptune in Cancer heightens empathy and emotional perception. You may absorb feelings from family, environments, or collective moods without realizing it.
+
+Developing emotional boundaries allows your compassion to become a source of strength rather than emotional overwhelm.`
+  },
+
+  Leo: {
+    short: 'You dream of expressing your true self creatively and authentically.',
+    long: `With Neptune in Leo, imagination fuels creativity, romance, and self-expression. You may idealize recognition or feel called to inspire others through art or presence.
+
+Staying connected to your authentic self—rather than an idealized image—helps your creativity shine without distortion.`
+  },
+
+  Virgo: {
+    short: 'You seek meaning through service, healing, and refinement.',
+    long: `Neptune in Virgo brings sensitivity into the realm of work, health, and usefulness. You may feel called to help, heal, or improve systems—but struggle with perfectionism or burnout.
+
+Compassion for yourself is key. When grounded, your intuition becomes practical wisdom and gentle service.`
+  },
+
+  Libra: {
+    short: 'You idealize harmony, connection, and relational balance.',
+    long: `With Neptune in Libra, relationships are infused with romance, empathy, and idealism. You may see the best in others—sometimes to your own detriment.
+
+Learning to maintain clarity and self-definition allows your love and diplomacy to flourish without self-sacrifice.`
+  },
+
+  Scorpio: {
+    short: 'You’re drawn to mystery, transformation, and emotional depth.',
+    long: `Neptune in Scorpio intensifies intuition around power, intimacy, and hidden truths. You may feel magnetically pulled toward deep emotional or spiritual experiences.
+
+The work lies in discernment—learning when to surrender and when to protect your emotional boundaries.`
+  },
+
+  Sagittarius: {
+    short: 'You dream of truth, freedom, and higher meaning.',
+    long: `With Neptune in Sagittarius, spirituality and philosophy are central themes. You may idealize belief systems, teachers, or distant horizons.
+
+Grounding faith in lived experience helps transform inspiration into wisdom rather than blind optimism or escapism.`
+  },
+
+  Capricorn: {
+    short: 'You seek to merge dreams with responsibility and achievement.',
+    long: `Neptune in Capricorn blurs the line between ambition and meaning. You may idealize success or feel disillusioned with traditional definitions of authority and status.
+
+Your path involves redefining success in soulful terms—building structures that support purpose, not just productivity.`
+  },
+
+  Aquarius: {
+    short: 'You dream of collective progress and a more compassionate future.',
+    long: `With Neptune in Aquarius, imagination extends to humanity as a whole. You may feel inspired by social change, innovation, or visionary ideals.
+
+Staying grounded helps ensure your hopes translate into real-world impact rather than remaining abstract or detached.`
+  },
+
+  Pisces: {
+    short: 'You’re deeply intuitive, imaginative, and spiritually sensitive.',
+    long: `Neptune is at home in Pisces, amplifying empathy, creativity, and spiritual awareness. You may feel connected to unseen realms, emotions, or collective suffering.
+
+Learning boundaries is essential. When grounded, your sensitivity becomes a powerful channel for healing, art, and compassion.`
+  },
+},
+
 
     /* ────────────────────────────────────────────────────────────
    * PLUTO IN SIGNS – placeholders to fill later
