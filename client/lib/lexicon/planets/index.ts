@@ -403,60 +403,96 @@ The challenge is discernment—seeing partners clearly rather than through fanta
 
 
 
-    /* ────────────────────────────────────────────────────────────
-  * MARS IN SIGNS – placeholders to fill later
-   * ────────────────────────────────────────────────────────── */
+/* ────────────────────────────────────────────────────────────
+ * MARS IN SIGNS – drive, desire, action, anger, boundaries
+ * ────────────────────────────────────────────────────────── */
 
-  Mars: {
-    Aries: {
-      short: '',
-      long: '',
-    },
-    Taurus: {
-      short: '',
-      long: '',
-    },
-    Gemini: {
-      short: '',
-      long: '',
-    },
-    Cancer: {
-      short: '',
-      long: '',
-    },
-    Leo: {
-      short: '',
-      long: '',
-    },
-    Virgo: {
-      short: '',
-      long: '',
-    },
-    Libra: {
-      short: '',
-      long: '',
-    },
-    Scorpio: {
-      short: '',
-      long: '',
-    },
-    Sagittarius: {
-      short: '',
-      long: '',
-    },
-    Capricorn: {
-      short: '',
-      long: '',
-    },
-    Aquarius: {
-      short: '',
-      long: '',
-    },
-    Pisces: {
-      short: '',
-      long: '',
-    },
+Mars: {
+  Aries: {
+    short: 'You act quickly, assert boldly, and trust your instincts.',
+    long: `Mars in Aries is pure forward motion. You’re driven to act immediately and decisively, often relying on instinct rather than overthinking. Competition, challenge, and momentum fuel your energy.
+
+Anger tends to surface fast but burn out just as quickly. The work is learning when to pause before reacting, so your courage becomes focused leadership rather than impulsive conflict.`
   },
+
+  Taurus: {
+    short: 'You move steadily and resist being rushed or pushed.',
+    long: `With Mars in Taurus, your drive is slow but powerful. Once committed, you’re incredibly persistent and difficult to deter. You prefer tangible progress and tend to conserve energy until it truly matters.
+
+Anger builds gradually and can be stubborn when provoked. Learning flexibility and timely expression helps prevent pressure from turning into resentment.`
+  },
+
+  Gemini: {
+    short: 'You act through ideas, words, and mental agility.',
+    long: `Mars in Gemini channels energy into communication and movement. You’re motivated by curiosity, debate, and variety, often juggling multiple interests at once. Quick thinking and adaptability are key strengths.
+
+Frustration may show up as scattered energy or sharp words. Learning to focus your drive helps turn mental stimulation into meaningful progress.`
+  },
+
+  Cancer: {
+    short: 'You act protectively and are driven by emotional security.',
+    long: `With Mars in Cancer, your actions are influenced by feelings and emotional safety. You’re motivated to protect yourself and those you care about, often acting behind the scenes rather than directly.
+
+Anger can be indirect or suppressed, surfacing later as moodiness. Developing clear boundaries and direct expression allows your drive to feel empowered instead of defensive.`
+  },
+
+  Leo: {
+    short: 'You act confidently and want to be seen for your efforts.',
+    long: `Mars in Leo thrives on passion, creativity, and recognition. You’re motivated by pride and the desire to express yourself boldly. Leadership and performance often come naturally.
+
+Anger may flare when you feel disrespected or overlooked. Channeling your fire into purposeful action rather than ego-driven reaction strengthens your influence.`
+  },
+
+  Virgo: {
+    short: 'You act thoughtfully and are driven to improve and refine.',
+    long: `With Mars in Virgo, your energy is focused on precision and usefulness. You’re motivated by solving problems and making things work better. Effort is often quiet but effective.
+
+Anger can turn inward as self-criticism. Learning to release perfectionism and trust imperfect action helps your drive feel constructive rather than exhausting.`
+  },
+
+  Libra: {
+    short: 'You act diplomatically and seek fairness in conflict.',
+    long: `Mars in Libra prefers cooperation over confrontation. You’re motivated by balance, justice, and mutual respect, often weighing options carefully before acting.
+
+Anger may be delayed or internalized to avoid tension. Developing assertiveness helps you express needs clearly without sacrificing harmony.`
+  },
+
+  Scorpio: {
+    short: 'You act intensely and with deep emotional commitment.',
+    long: `With Mars in Scorpio, your drive is powerful, focused, and relentless. You pursue goals with emotional intensity and rarely act without purpose. Endurance is a defining strength.
+
+Anger can become consuming if held too tightly. Learning to release control and trust transformation allows your drive to be regenerative rather than destructive.`
+  },
+
+  Sagittarius: {
+    short: 'You act boldly and are driven by freedom and meaning.',
+    long: `Mars in Sagittarius seeks movement, exploration, and truth. You’re motivated by big ideas and the desire to expand your horizons. Optimism fuels your action.
+
+Anger may erupt when you feel confined or restricted. Learning follow-through and patience helps turn enthusiasm into lasting achievement.`
+  },
+
+  Capricorn: {
+    short: 'You act strategically and are driven by long-term goals.',
+    long: `With Mars in Capricorn, discipline and ambition define your approach. You’re motivated by achievement and willing to work patiently toward success. Endurance and responsibility are core strengths.
+
+Anger may be suppressed in favor of control. Allowing yourself emotional release alongside determination keeps your drive sustainable.`
+  },
+
+  Aquarius: {
+    short: 'You act independently and are driven by ideals and innovation.',
+    long: `Mars in Aquarius channels energy into originality and change. You’re motivated by ideas, causes, and the desire to challenge outdated systems. Independence is essential to your drive.
+
+Anger may detach into rebellion or aloofness. Learning to stay emotionally present while advocating for change strengthens your impact.`
+  },
+
+  Pisces: {
+    short: 'You act intuitively and are driven by emotion and imagination.',
+    long: `With Mars in Pisces, motivation flows from feeling rather than force. You’re guided by intuition, creativity, and compassion, often acting subtly rather than directly.
+
+Anger can dissolve into avoidance or confusion. Developing grounding practices and clear direction helps your energy manifest with purpose instead of drifting.`
+  },
+},
+
 
     /* ────────────────────────────────────────────────────────────
    * JUPITER IN SIGNS – placeholders to fill later
