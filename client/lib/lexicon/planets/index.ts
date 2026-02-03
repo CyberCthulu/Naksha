@@ -225,10 +225,53 @@ rather than overwhelm.`,
 
   Mercury: {
     Aries: {
-      short: 'TODO: Mercury in Aries short meaning.',
-      long: 'TODO: Mercury in Aries long meaning.',
+      short: '',
+      long: '',
     },
-    // ...add other signs over time
+    Taurus: {
+      short: '',
+      long: '',
+    },
+    Gemini: {
+      short: '',
+      long: '',
+    },
+    Cancer: {
+      short: '',
+      long: '',
+    },
+    Leo: {
+      short: '',
+      long: '',
+    },
+    Virgo: {
+      short: '',
+      long: '',
+    },
+    Libra: {
+      short: '',
+      long: '',
+    },
+    Scorpio: {
+      short: '',
+      long: '',
+    },
+    Sagittarius: {
+      short: '',
+      long: '',
+    },
+    Capricorn: {
+      short: '',
+      long: '',
+    },
+    Aquarius: {
+      short: '',
+      long: '',
+    },
+    Pisces: {
+      short: '',
+      long: '',
+    },
   },
 
   Venus: {
