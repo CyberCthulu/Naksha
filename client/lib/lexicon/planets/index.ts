@@ -218,61 +218,98 @@ Grounding practices, creative outlets, and healthy emotional boundaries help you
 rather than overwhelm.`,
     },
   },
+  
 
-  /* ────────────────────────────────────────────────────────────
-   * MERCURY IN SIGNS – placeholders to fill later
-   * ────────────────────────────────────────────────────────── */
+/* ────────────────────────────────────────────────────────────
+ * MERCURY IN SIGNS – thinking style, communication, perception
+ * ────────────────────────────────────────────────────────── */
 
-  Mercury: {
-    Aries: {
-      short: '',
-      long: '',
-    },
-    Taurus: {
-      short: '',
-      long: '',
-    },
-    Gemini: {
-      short: '',
-      long: '',
-    },
-    Cancer: {
-      short: '',
-      long: '',
-    },
-    Leo: {
-      short: '',
-      long: '',
-    },
-    Virgo: {
-      short: '',
-      long: '',
-    },
-    Libra: {
-      short: '',
-      long: '',
-    },
-    Scorpio: {
-      short: '',
-      long: '',
-    },
-    Sagittarius: {
-      short: '',
-      long: '',
-    },
-    Capricorn: {
-      short: '',
-      long: '',
-    },
-    Aquarius: {
-      short: '',
-      long: '',
-    },
-    Pisces: {
-      short: '',
-      long: '',
-    },
+Mercury: {
+  Aries: {
+    short: 'Your mind is fast, direct, and driven by instinct.',
+    long: `With Mercury in Aries, your thoughts move quickly and decisively. You tend to speak as soon as an idea forms, valuing honesty and speed over polish. You’re mentally courageous—willing to say what others hesitate to—and you often thrive in debates or situations that require rapid decisions.
+
+Your challenge is learning to slow down long enough to listen and refine your ideas. While your mental fire is a strength, impulsive words can sometimes spark unnecessary conflict. When channeled with awareness, your mind becomes a powerful initiator—cutting through confusion and inspiring action.`
   },
+
+  Taurus: {
+    short: 'Your thinking is steady, practical, and grounded in reality.',
+    long: `Mercury in Taurus gives you a deliberate, patient mind. You prefer ideas that are useful, tangible, and proven over abstract theories. Once you form an opinion, it tends to stick—you think things through carefully before speaking.
+
+You communicate best when you have time to process, and you often express yourself clearly and calmly. The growth edge is flexibility: learning when to reconsider or adapt instead of holding onto ideas simply because they feel safe or familiar.`
+  },
+
+  Gemini: {
+    short: 'Your mind is curious, quick, and constantly making connections.',
+    long: `Mercury in Gemini is at home here, bringing mental agility and a hunger for information. You think in webs rather than lines—connecting ideas, people, and perspectives with ease. Conversation, learning, and variety keep your mind alive.
+
+You’re skilled at explaining complex ideas simply, but your challenge is focus. With so many interests, it’s easy to skim the surface rather than dive deep. When you learn to sustain attention, your intellect becomes exceptionally versatile and sharp.`
+  },
+
+  Cancer: {
+    short: 'Your thinking is intuitive, emotional, and memory-driven.',
+    long: `With Mercury in Cancer, your mind is closely tied to your feelings. You remember things emotionally—tone, atmosphere, and personal significance matter more than raw facts. You often sense what’s being said beneath the words.
+
+You communicate best in safe, familiar environments and may be cautious about sharing your thoughts openly. The growth lies in expressing your inner world without retreating into defensiveness, trusting that your emotional intelligence is a strength, not a liability.`
+  },
+
+  Leo: {
+    short: 'Your mind is expressive, confident, and creative.',
+    long: `Mercury in Leo brings a dramatic, heartfelt quality to your thinking and speech. You communicate with warmth and conviction, often using storytelling or creative expression to make your point. You like your ideas to be seen, heard, and appreciated.
+
+Your challenge is staying open to other viewpoints when your pride gets involved. When balanced, your voice becomes inspiring—capable of motivating others through authenticity, enthusiasm, and genuine self-expression.`
+  },
+
+  Virgo: {
+    short: 'Your mind is analytical, precise, and detail-oriented.',
+    long: `Mercury in Virgo sharpens your perception. You naturally notice patterns, inconsistencies, and areas for improvement. Problem-solving, organizing, and refining ideas come easily to you, and you often think in practical steps.
+
+The shadow side can be overthinking or self-criticism. Learning when “good enough” truly is enough allows your mental clarity to serve healing and efficiency rather than anxiety or perfectionism.`
+  },
+
+  Libra: {
+    short: 'Your thinking is balanced, relational, and fairness-oriented.',
+    long: `With Mercury in Libra, your mind seeks harmony. You naturally consider multiple perspectives and often act as a mediator or translator between differing viewpoints. Words matter to you—you strive for diplomacy and grace in communication.
+
+The challenge is decisiveness. Weighing every option can lead to mental hesitation. When you trust your own judgment alongside others’ input, your thinking becomes both fair and effective.`
+  },
+
+  Scorpio: {
+    short: 'Your mind is penetrating, investigative, and emotionally perceptive.',
+    long: `Mercury in Scorpio gives you a mind that cuts beneath the surface. You’re less interested in what’s obvious and more drawn to what’s hidden—motives, power dynamics, emotional truth. You think deeply and intensely.
+
+You may keep your thoughts private, sharing only with those you trust. The work is using your insight constructively rather than defensively. When balanced, your perception becomes a powerful tool for transformation and psychological understanding.`
+  },
+
+  Sagittarius: {
+    short: 'Your thinking is expansive, philosophical, and future-oriented.',
+    long: `With Mercury in Sagittarius, your mind is driven by meaning. You think in big pictures, seeking truth, wisdom, and understanding rather than details. Learning through experience—travel, stories, belief systems—feeds your intellect.
+
+Blunt honesty can be both a strength and a challenge. Refining how you express your truths helps your insights land with inspiration rather than overwhelm.`
+  },
+
+  Capricorn: {
+    short: 'Your mind is structured, strategic, and goal-oriented.',
+    long: `Mercury in Capricorn approaches thinking as a responsibility. You value logic, planning, and long-term usefulness. Your communication tends to be measured and purposeful—you speak when there’s something worth saying.
+
+The challenge is allowing flexibility and creativity into your mental world. When you soften rigid thinking, your intellect becomes a powerful architect—capable of building ideas that endure.`
+  },
+
+  Aquarius: {
+    short: 'Your thinking is innovative, unconventional, and future-focused.',
+    long: `With Mercury in Aquarius, your mind naturally questions norms and explores new ideas. You think in systems, patterns, and concepts that extend beyond personal experience. Originality and independence are key to your mental process.
+
+You may sometimes seem detached, but your thinking often serves a larger vision. Balancing intellect with emotional awareness helps your ideas connect more deeply with others.`
+  },
+
+  Pisces: {
+    short: 'Your mind is imaginative, intuitive, and symbolic.',
+    long: `Mercury in Pisces thinks in images, feelings, and impressions rather than strict logic. You absorb information subtly, often understanding things before you can articulate them. Creativity and intuition guide your mental flow.
+
+The challenge is clarity. Grounding your insights in structure helps prevent confusion or overwhelm. When balanced, your mind becomes a bridge between imagination and meaning, logic and empathy.`
+  },
+},
+
 
     /* ────────────────────────────────────────────────────────────
    * VENUS IN SIGNS – placeholders to fill later
