@@ -220,7 +220,7 @@ rather than overwhelm.`,
   },
 
   /* ────────────────────────────────────────────────────────────
-   * OTHER PLANETS – placeholders to fill later
+   * MERCURY IN SIGNS – placeholders to fill later
    * ────────────────────────────────────────────────────────── */
 
   Mercury: {
@@ -274,6 +274,10 @@ rather than overwhelm.`,
     },
   },
 
+    /* ────────────────────────────────────────────────────────────
+   * VENUS IN SIGNS – placeholders to fill later
+   * ────────────────────────────────────────────────────────── */
+
   Venus: {
     Aries: {
       short: '',
@@ -324,6 +328,10 @@ rather than overwhelm.`,
       long: '',
     },
   },
+
+    /* ────────────────────────────────────────────────────────────
+  * MARS IN SIGNS – placeholders to fill later
+   * ────────────────────────────────────────────────────────── */
 
   Mars: {
     Aries: {
@@ -376,6 +384,10 @@ rather than overwhelm.`,
     },
   },
 
+    /* ────────────────────────────────────────────────────────────
+   * JUPITER IN SIGNS – placeholders to fill later
+   * ────────────────────────────────────────────────────────── */
+
   Jupiter: {
         Aries: {
       short: '',
@@ -427,6 +439,10 @@ rather than overwhelm.`,
     },
 
   },
+
+    /* ────────────────────────────────────────────────────────────
+   * SATURN IN SIGNS – placeholders to fill later
+   * ────────────────────────────────────────────────────────── */
   Saturn: {
     Aries: {
       short: '',
@@ -477,6 +493,10 @@ rather than overwhelm.`,
       long: '',
     },
   },
+
+    /* ────────────────────────────────────────────────────────────
+   * URANUS IN SIGNS – placeholders to fill later
+   * ────────────────────────────────────────────────────────── */
   Uranus: {
     Aries: {
       short: '',
@@ -527,11 +547,113 @@ rather than overwhelm.`,
       long: '',
     },
   },
+
+    /* ────────────────────────────────────────────────────────────
+   * NEPTUNE IN SIGNS – placeholders to fill later
+   * ────────────────────────────────────────────────────────── */
   Neptune: {
-
+    Aries: {
+      short: '',
+      long: '',
+    },
+    Taurus: {
+      short: '',
+      long: '',
+    },
+    Gemini: {
+      short: '',
+      long: '',
+    },
+    Cancer: {
+      short: '',
+      long: '',
+    },
+    Leo: {
+      short: '',
+      long: '',
+    },
+    Virgo: {
+      short: '',
+      long: '',
+    },
+    Libra: {
+      short: '',
+      long: '',
+    },
+    Scorpio: {
+      short: '',
+      long: '',
+    },
+    Sagittarius: {
+      short: '',
+      long: '',
+    },
+    Capricorn: {
+      short: '',
+      long: '',
+    },
+    Aquarius: {
+      short: '',
+      long: '',
+    },
+    Pisces: {
+      short: '',
+      long: '',
+    },
   },
-  Pluto: {
 
+    /* ────────────────────────────────────────────────────────────
+   * PLUTO IN SIGNS – placeholders to fill later
+   * ────────────────────────────────────────────────────────── */
+  Pluto: {
+    Aries: {
+      short: '',
+      long: '',
+    },
+    Taurus: {
+      short: '',
+      long: '',
+    },
+    Gemini: {
+      short: '',
+      long: '',
+    },
+    Cancer: {
+      short: '',
+      long: '',
+    },
+    Leo: {
+      short: '',
+      long: '',
+    },
+    Virgo: {
+      short: '',
+      long: '',
+    },
+    Libra: {
+      short: '',
+      long: '',
+    },
+    Scorpio: {
+      short: '',
+      long: '',
+    },
+    Sagittarius: {
+      short: '',
+      long: '',
+    },
+    Capricorn: {
+      short: '',
+      long: '',
+    },
+    Aquarius: {
+      short: '',
+      long: '',
+    },
+    Pisces: {
+      short: '',
+      long: '',
+    },
   },
 })
 
