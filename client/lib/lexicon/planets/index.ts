@@ -311,61 +311,97 @@ The challenge is clarity. Grounding your insights in structure helps prevent con
 },
 
 
-    /* ────────────────────────────────────────────────────────────
-   * VENUS IN SIGNS – placeholders to fill later
-   * ────────────────────────────────────────────────────────── */
+/* ────────────────────────────────────────────────────────────
+ * VENUS IN SIGNS – love style, attraction, values, pleasure
+ * ────────────────────────────────────────────────────────── */
 
-  Venus: {
-    Aries: {
-      short: '',
-      long: '',
-    },
-    Taurus: {
-      short: '',
-      long: '',
-    },
-    Gemini: {
-      short: '',
-      long: '',
-    },
-    Cancer: {
-      short: '',
-      long: '',
-    },
-    Leo: {
-      short: '',
-      long: '',
-    },
-    Virgo: {
-      short: '',
-      long: '',
-    },
-    Libra: {
-      short: '',
-      long: '',
-    },
-    Scorpio: {
-      short: '',
-      long: '',
-    },
-    Sagittarius: {
-      short: '',
-      long: '',
-    },
-    Capricorn: {
-      short: '',
-      long: '',
-    },
-    Aquarius: {
-      short: '',
-      long: '',
-    },
-    Pisces: {
-      short: '',
-      long: '',
-    },
+Venus: {
+  Aries: {
+    short: 'You love boldly, directly, and with excitement.',
+    long: `With Venus in Aries, attraction is immediate and passionate. You’re drawn to sparks, confidence, and the thrill of pursuit. In love, you value honesty and momentum—relationships need to feel alive, not stagnant.
+
+You tend to fall fast and express affection openly, sometimes impulsively. The challenge is patience: learning that lasting connection doesn’t require constant intensity. When balanced, your love style is courageous, refreshing, and energizing to others.`
   },
-  
+
+  Taurus: {
+    short: 'You love steadily, sensually, and with deep loyalty.',
+    long: `Venus in Taurus is at home here, seeking comfort, security, and physical presence. You value consistency and tend to show love through touch, reliability, and shared pleasures. Once you commit, you’re deeply devoted.
+
+You’re drawn to what feels safe and beautiful, but the growth edge is flexibility—learning when to let go rather than holding on out of comfort alone. Your love is a grounding force when trust is established.`
+  },
+
+  Gemini: {
+    short: 'You love through conversation, curiosity, and mental connection.',
+    long: `With Venus in Gemini, attraction begins in the mind. You’re drawn to wit, ideas, and people who keep you mentally engaged. Variety, humor, and communication are essential to feeling connected.
+
+You may struggle with boredom or restlessness if a relationship becomes too predictable. Learning to stay present rather than constantly seeking novelty allows your playful, curious love style to deepen into something lasting.`
+  },
+
+  Cancer: {
+    short: 'You love protectively, emotionally, and with deep care.',
+    long: `Venus in Cancer seeks emotional safety and closeness. You bond through nurturing, shared memories, and a sense of belonging. Love often feels tied to home, family, or emotional familiarity.
+
+You’re sensitive to shifts in connection and may withdraw if you feel unsafe. The work is trusting that vulnerability doesn’t always lead to loss. When secure, your love is profoundly comforting and loyal.`
+  },
+
+  Leo: {
+    short: 'You love passionately and want to feel chosen and cherished.',
+    long: `With Venus in Leo, love is expressive and wholehearted. You enjoy romance, affection, and feeling special to your partner—and you give generously in return. Creativity and play are important expressions of love for you.
+
+The challenge is separating genuine connection from validation-seeking. When balanced, your warmth and enthusiasm make others feel seen, valued, and inspired to love boldly too.`
+  },
+
+  Virgo: {
+    short: 'You love through care, attentiveness, and meaningful effort.',
+    long: `Venus in Virgo expresses affection through practical acts—helping, listening, and showing up consistently. You value sincerity and integrity over grand gestures, often demonstrating love in subtle but meaningful ways.
+
+You may be selective or cautious in relationships, noticing imperfections easily. Learning to soften self-criticism and accept love without needing to earn it allows your devotion to feel nurturing rather than anxious.`
+  },
+
+  Libra: {
+    short: 'You love harmoniously and seek balance and mutual respect.',
+    long: `Venus in Libra is naturally relationship-oriented. You value fairness, beauty, and emotional reciprocity, often thriving in partnership. Romance, shared aesthetics, and emotional equality matter deeply to you.
+
+The challenge is not losing yourself in the relationship. When you honor your own needs as much as the bond itself, your love becomes graceful, supportive, and deeply connective.`
+  },
+
+  Scorpio: {
+    short: 'You love intensely, deeply, and with emotional commitment.',
+    long: `With Venus in Scorpio, love is never casual. You seek depth, honesty, and emotional fusion, often forming powerful bonds. Trust and loyalty are essential, and betrayal cuts deeply.
+
+You may struggle with control or fear of vulnerability. Growth comes from allowing intimacy without guarding every emotional edge. When aligned, your love is transformative, passionate, and profoundly loyal.`
+  },
+
+  Sagittarius: {
+    short: 'You love freely and are drawn to growth and adventure.',
+    long: `Venus in Sagittarius values honesty, exploration, and shared meaning. You’re attracted to people who expand your worldview and respect your need for independence. Love should feel inspiring, not confining.
+
+Commitment works best when it allows space for growth. Learning to balance freedom with emotional presence helps your love stay expansive without becoming evasive.`
+  },
+
+  Capricorn: {
+    short: 'You love seriously and value commitment and reliability.',
+    long: `With Venus in Capricorn, you approach relationships thoughtfully and with intention. You value maturity, loyalty, and long-term potential over fleeting attraction. Love is something you build, not rush.
+
+You may guard your heart carefully, opening slowly over time. Allowing warmth and vulnerability alongside responsibility helps your love feel emotionally fulfilling, not just secure.`
+  },
+
+  Aquarius: {
+    short: 'You love uniquely and value freedom and authenticity.',
+    long: `Venus in Aquarius is drawn to individuality and unconventional connection. You value friendship, equality, and shared ideals in love, often needing space to remain yourself within a relationship.
+
+Emotional detachment can be a defense. Letting others see your feelings—not just your ideas—creates deeper bonds while preserving your independence.`
+  },
+
+  Pisces: {
+    short: 'You love romantically, compassionately, and without boundaries.',
+    long: `Venus in Pisces loves in an all-encompassing way. You’re deeply empathetic, idealistic, and sensitive to emotional nuance. Love can feel spiritual, artistic, or transcendent.
+
+The challenge is discernment—seeing partners clearly rather than through fantasy. When grounded, your love becomes a source of profound healing, creativity, and unconditional compassion.`
+  },
+},
+
+
 
     /* ────────────────────────────────────────────────────────────
   * MARS IN SIGNS – placeholders to fill later
