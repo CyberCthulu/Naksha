@@ -192,7 +192,7 @@ export default function DashboardScreen() {
     return (
       <View style={uiStyles.center}>
         <ActivityIndicator />
-        <AppText style={{ marginTop: 8 }}>Dashboard is loading...</AppText>
+        <AppText style={[uiStyles.text, { marginTop: 8, textAlign: 'center' }]}> Loading… </AppText>
       </View>
     )
   }

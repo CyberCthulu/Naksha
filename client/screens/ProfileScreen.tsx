@@ -234,7 +234,7 @@ export default function ProfileScreen() {
     return (
       <View style={uiStyles.center}>
         <ActivityIndicator />
-        <Text style={[uiStyles.text, { marginTop: 8 }]}>Loading your profile…</Text>
+        <Text style={[uiStyles.text, { marginTop: 8 }]}> Loading… </Text>
       </View>
     )
   }

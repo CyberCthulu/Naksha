@@ -30,6 +30,9 @@ export {
 
 // Helpers to map longitudes to sign labels
 export {
+  SIGN_MEANINGS,
+  ALL_SIGNS_WITH_MEANINGS,
+  getSignMeaning,
   zodiacNameFromLongitude,
   signIndexFromLongitude,
 } from './signs'
