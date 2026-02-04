@@ -1,14 +1,15 @@
 // components/space/SpaceBackground.tsx
-import React, { useMemo } from 'react'
+import React, { useMemo, useRef } from 'react'
 import { View, StyleSheet } from 'react-native'
-import { Canvas } from '@react-three/fiber/native'
+import { Canvas, useFrame } from '@react-three/fiber/native'
 import * as THREE from 'three'
 import { useSpace } from './SpaceProvider'
 
 function StarPoints() {
+  const pointsRef = useRef<THREE.Points>(null!)
   const geom = useMemo(() => {
     const g = new THREE.BufferGeometry()
-    const count = 1200
+    const count = 5000
     const positions = new Float32Array(count * 3)
 
     for (let i = 0; i < count; i++) {
@@ -21,9 +22,20 @@ function StarPoints() {
     return g
   }, [])
 
+    useFrame((_, delta) => {
+    if (!pointsRef.current) return
+    pointsRef.current.rotation.y += delta * 0.02
+    pointsRef.current.rotation.x += delta * 0.005
+  })
+
   return (
-    <points geometry={geom}>
-      <pointsMaterial size={0.15} sizeAttenuation />
+    <points ref={pointsRef} geometry={geom}>
+      <pointsMaterial
+        size={0.16}
+        sizeAttenuation
+        transparent
+        opacity={0.85}
+      />
     </points>
   )
 }
@@ -64,7 +76,7 @@ function FocusPlanet() {
 export default function SpaceBackground() {
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      <Canvas camera={{ position: [0, 0, 10], fov: 50 }}>
+      <Canvas frameloop="always" camera={{ position: [0, 0, 10], fov: 50 }}>
         <color attach='background' args={['#000']} />
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} intensity={1.0} />
