@@ -1,3 +1,4 @@
+// components/auth/EmailField.tsx
 import { Text, TextInput, View } from 'react-native'
 import { uiStyles } from '../ui/uiStyles'
 import { theme } from '../ui/theme'

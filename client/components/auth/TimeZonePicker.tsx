@@ -1,3 +1,4 @@
+// components/auth/TimeZonePicker.tsx
 import { View, Text, Platform } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import { TIMEZONES } from '../../lib/timezones'

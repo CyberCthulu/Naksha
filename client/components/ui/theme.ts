@@ -1,3 +1,4 @@
+// components/ui/theme.ts
 export const theme = {
   colors: {
     text: '#fff',

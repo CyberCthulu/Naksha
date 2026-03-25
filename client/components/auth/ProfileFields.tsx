@@ -1,3 +1,4 @@
+// components/auth/ProfileFields.tsx
 import { View, TextInput, Text } from 'react-native'
 import DateField from './DateField'
 import TimeField from './TimeField'
