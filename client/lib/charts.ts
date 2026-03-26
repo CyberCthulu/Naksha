@@ -31,7 +31,7 @@ export type BuildChartInput = {
   birth_lon?: number | null   // degrees (east+, west-)
 }
 
-export function BuildChartData(input: BuildChartInput) {
+export function buildChartData(input: BuildChartInput) {
   const tz = normalizeZone(input.time_zone)
   if (!tz) throw new Error('Invalid time zone')
 
@@ -65,7 +65,7 @@ export function BuildChartData(input: BuildChartInput) {
 }
 
 export async function saveChart(userId: string, input: BuildChartInput) {
-  const payload = BuildChartData(input)
+  const payload = buildChartData(input)
 
   const { data, error } = await supabase
     .from('charts')

@@ -1,3 +1,4 @@
+//lib/journals.ts
 import supabase from './supabase'
 
 export type JournalRow = {
