@@ -1,4 +1,3 @@
-// screens/ChartScreen.tsx
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import {
   View,
@@ -21,8 +20,6 @@ import { ParamListBase } from '@react-navigation/native'
 import { useSpace } from '../components/space/SpaceProvider'
 import { birthToUTC } from '../lib/time'
 import {
-  computeNatalPlanets,
-  findAspects,
   computeWholeSignHouses,
   PlanetPos,
   Aspect,
@@ -31,7 +28,7 @@ import {
 import { normalizeZone } from '../lib/timezones'
 import ChartCompass from '../components/ChartCompass'
 import supabase from '../lib/supabase'
-import { saveChart } from '../lib/charts'
+import { saveChart, buildChartData } from '../lib/charts'
 
 // lexicon
 import {
@@ -121,7 +118,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
   const insets = useSafeAreaInsets()
   const { width } = useWindowDimensions()
 
-  // ✅ prevent “double header” clash like ProfileScreen does
   useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false })
   }, [navigation])
@@ -137,12 +133,13 @@ export default function ChartScreen({ route }: ChartScreenProps) {
   const [houses, setHouses] = useState<HouseCusp[] | null>(saved?.houses ?? null)
   const [isSaved, setIsSaved] = useState<boolean>(!!fromSaved)
 
-  // Guard
   if (!profile?.birth_date || !profile?.birth_time || !profile?.time_zone) {
     return (
       <View style={uiStyles.center}>
         <Text style={uiStyles.h1}>Natal Chart</Text>
-        <Text style={uiStyles.muted}>Missing birth date, time, or time zone. Please complete your profile.</Text>
+        <Text style={uiStyles.muted}>
+          Missing birth date, time, or time zone. Please complete your profile.
+        </Text>
       </View>
     )
   }
@@ -152,26 +149,28 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     return (
       <View style={uiStyles.center}>
         <Text style={uiStyles.h1}>Natal Chart</Text>
-        <Text style={uiStyles.muted}>Your saved time zone isn’t valid. Update it in “Complete Profile”.</Text>
+        <Text style={uiStyles.muted}>
+          Your saved time zone isn’t valid. Update it in “Complete Profile”.
+        </Text>
         <Text style={uiStyles.muted}>Current: {String(profile.time_zone)}</Text>
       </View>
     )
   }
 
+  const chartName = `${profile.first_name ?? 'My'} Natal Chart`
+  const birthLat = profile.birth_lat ?? null
+  const birthLon = profile.birth_lon ?? null
+
   const loadChart = useCallback(async () => {
     setLoading(true)
     try {
-      // --- CASE 1: coming from MyCharts with saved payload ---
+      // CASE 1: coming from MyCharts with saved payload
       if (fromSaved && saved?.planets && saved?.aspects) {
         let localHouses: HouseCusp[] | null = (saved.houses as HouseCusp[] | null) ?? null
 
-        if (
-          !localHouses &&
-          profile.birth_lat != null &&
-          profile.birth_lon != null
-        ) {
+        if (!localHouses && birthLat != null && birthLon != null) {
           const { jsDate } = birthToUTC(profile.birth_date!, profile.birth_time!, tz)
-          localHouses = computeWholeSignHouses(jsDate, profile.birth_lat, profile.birth_lon)
+          localHouses = computeWholeSignHouses(jsDate, birthLat, birthLon)
         }
 
         setPlanets(saved.planets)
@@ -181,37 +180,50 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         return
       }
 
-      // --- CASE 2: load from Supabase or compute ---
-      const { data: { user } } = await supabase.auth.getUser()
+      // CASE 2: load from Supabase or compute + save
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
       if (!user) {
         Alert.alert('Not signed in')
         return
       }
 
-      const { data: existing, error } = await supabase
+      let existingQuery = supabase
         .from('charts')
-        .select('chart_data')
+        .select('id, chart_data')
         .eq('user_id', user.id)
         .eq('birth_date', profile.birth_date!)
         .eq('birth_time', profile.birth_time!)
         .eq('time_zone', tz)
-        .maybeSingle()
+
+      if (birthLat == null) {
+        existingQuery = existingQuery.is('birth_lat', null)
+      } else {
+        existingQuery = existingQuery.eq('birth_lat', birthLat)
+      }
+
+      if (birthLon == null) {
+        existingQuery = existingQuery.is('birth_lon', null)
+      } else {
+        existingQuery = existingQuery.eq('birth_lon', birthLon)
+      }
+
+      const { data: existing, error } = await existingQuery.maybeSingle()
 
       if (error) throw error
 
-      if (existing?.chart_data) {
-        const cd = existing.chart_data
+      if (existing) {
+        const cd = existing.chart_data || {}
         const ps: PlanetPos[] = cd.planets ?? []
         const asps: Aspect[] = cd.aspects ?? []
 
         let localHouses: HouseCusp[] | null = (cd.houses as HouseCusp[] | null) ?? null
-        if (
-          !localHouses &&
-          profile.birth_lat != null &&
-          profile.birth_lon != null
-        ) {
+
+        if (!localHouses && birthLat != null && birthLon != null) {
           const { jsDate } = birthToUTC(profile.birth_date!, profile.birth_time!, tz)
-          localHouses = computeWholeSignHouses(jsDate, profile.birth_lat, profile.birth_lon)
+          localHouses = computeWholeSignHouses(jsDate, birthLat, birthLon)
         }
 
         setPlanets(ps)
@@ -219,29 +231,30 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         setHouses(localHouses)
         setIsSaved(true)
       } else {
-        const { jsDate } = birthToUTC(profile.birth_date!, profile.birth_time!, tz)
-        const ps = computeNatalPlanets(jsDate)
-        const asps = findAspects(ps)
+        const payload = buildChartData({
+          name: chartName,
+          birth_date: profile.birth_date!,
+          birth_time: profile.birth_time!,
+          time_zone: tz,
+          birth_lat: birthLat,
+          birth_lon: birthLon,
+        })
 
-        let localHouses: HouseCusp[] | null = null
-        if (profile.birth_lat != null && profile.birth_lon != null) {
-          localHouses = computeWholeSignHouses(jsDate, profile.birth_lat, profile.birth_lon)
-        }
-
-        setPlanets(ps)
-        setAspects(asps)
-        setHouses(localHouses)
+        setPlanets(payload.planets)
+        setAspects(payload.aspects)
+        setHouses(payload.houses)
         setIsSaved(false)
 
         // auto-save best-effort
         try {
           await saveChart(user.id, {
-            name: `${profile.first_name ?? 'My'} Natal Chart`,
+            name: chartName,
             birth_date: profile.birth_date!,
             birth_time: profile.birth_time!,
             time_zone: tz,
-            birth_lat: profile.birth_lat ?? null,
-            birth_lon: profile.birth_lon ?? null,
+            birth_lat: birthLat,
+            birth_lon: birthLon,
+            chart_data: payload,
           })
           setIsSaved(true)
         } catch (e) {
@@ -258,17 +271,16 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     saved,
     profile.birth_date,
     profile.birth_time,
-    profile.birth_lat,
-    profile.birth_lon,
-    profile.first_name,
     tz,
+    chartName,
+    birthLat,
+    birthLon,
   ])
 
   useEffect(() => {
     loadChart()
   }, [loadChart])
 
-  // Default background focus: Sun if possible
   useEffect(() => {
     if (!planets.length) return
     const sun = planets.find((p) => p.name === 'Sun')
@@ -282,7 +294,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planets, focusPlanet, clearFocus])
 
-  // Sizing + geometry
   const maxChart = 360
   const pad = 16
   const size = Math.min(Math.max(280, width - 32), maxChart)
@@ -313,20 +324,43 @@ export default function ChartScreen({ route }: ChartScreenProps) {
   }
 
   const onSavePress = async () => {
-    if (isSaved) return Alert.alert('Already Saved', 'This chart is already in your library.')
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return Alert.alert('Not signed in')
+    if (isSaved) {
+      return Alert.alert('Already Saved', 'This chart is already in your library.')
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return Alert.alert('Not signed in')
+    }
 
     try {
-      await saveChart(user.id, {
-        name: `${profile.first_name ?? 'My'} Natal Chart`,
+      const payload = buildChartData({
+        name: chartName,
         birth_date: profile.birth_date!,
         birth_time: profile.birth_time!,
         time_zone: tz,
-        birth_lat: profile.birth_lat ?? null,
-        birth_lon: profile.birth_lon ?? null,
+        birth_lat: birthLat,
+        birth_lon: birthLon,
       })
+
+      await saveChart(user.id, {
+        name: chartName,
+        birth_date: profile.birth_date!,
+        birth_time: profile.birth_time!,
+        time_zone: tz,
+        birth_lat: birthLat,
+        birth_lon: birthLon,
+        chart_data: payload,
+      })
+
+      setPlanets(payload.planets)
+      setAspects(payload.aspects)
+      setHouses(payload.houses)
       setIsSaved(true)
+
       Alert.alert('Saved', 'Chart saved to your library.')
     } catch (e: any) {
       Alert.alert('Save failed', e?.message ?? 'Unknown error')
@@ -367,7 +401,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
       }}
       keyboardShouldPersistTaps="handled"
     >
-      {/* Top bar (match ProfileScreen) */}
       <View style={styles.topRow}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backText}>‹</Text>
@@ -406,7 +439,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         />
       </View>
 
-      {/* Wheel */}
       <View style={{ alignItems: 'center' }}>
         <Svg
           width={size}
@@ -416,7 +448,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
           <Circle cx={cx} cy={cy} r={rOuter} stroke={theme.colors.border} strokeWidth={1} fill="none" />
           <Circle cx={cx} cy={cy} r={rInner} stroke="rgba(255,255,255,0.25)" strokeWidth={1} fill="none" />
 
-          {/* Sign divisions + labels */}
           {Array.from({ length: 12 }).map((_, i) => {
             const ang = i * 30
             const { x: x1, y: y1 } = toXY(ang, rInner)
@@ -432,7 +463,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
             )
           })}
 
-          {/* Houses (Whole Sign) */}
           {houses?.map((h) => {
             const { x: x1, y: y1 } = toXY(h.lon, rHouseInner)
             const { x: x2, y: y2 } = toXY(h.lon, rHouseOuter)
@@ -449,7 +479,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
             )
           })}
 
-          {/* Aspects */}
           {aspects.map((a, idx) => {
             const A = planets.find((p) => p.name === a.a)
             const B = planets.find((p) => p.name === a.b)
@@ -473,7 +502,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
             )
           })}
 
-          {/* Planets */}
           {planets.map((p) => {
             const { x, y } = toXY(p.lon, rPlanets)
             const glyph = GLYPH[p.name] ?? p.name[0]
@@ -578,7 +606,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
 }
 
 const styles = StyleSheet.create({
-  // in-screen header like ProfileScreen
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -604,7 +631,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
-  rightSlot: { width: 44 }, // balances title centering
+  rightSlot: { width: 44 },
 
   subtitle: {
     color: theme.colors.sub,

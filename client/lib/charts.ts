@@ -64,33 +64,34 @@ export function buildChartData(input: BuildChartInput) {
   }
 }
 
-export async function saveChart(userId: string, input: BuildChartInput) {
-  const payload = buildChartData(input)
-
+export async function saveChart(
+  userId: string,
+  input: {
+    name: string
+    birth_date: string
+    birth_time: string
+    time_zone: string
+    birth_lat?: number | null
+    birth_lon?: number | null
+    chart_data: any
+  }
+) {
   const { data, error } = await supabase
     .from('charts')
     .upsert(
       {
         user_id: userId,
-        name: input.name,
-        birth_date: input.birth_date,
-        birth_time: input.birth_time,
-        time_zone: input.time_zone,
-        birth_lat: input.birth_lat ?? null,
-        birth_lon: input.birth_lon ?? null,
-        chart_data: payload,
-        // optional: if your DB trigger already sets updated_at, you can drop this:
-        updated_at: new Date().toISOString(),
+        ...input,
       },
       {
-        onConflict: 'user_id,birth_date,birth_time,time_zone',
+        onConflict: 'user_id,birth_date,birth_time,time_zone,birth_lat,birth_lon',
       }
     )
-    .select('*')
+    .select()
     .single()
 
   if (error) throw error
-  return data as ChartRow
+  return data
 }
 
 export async function listCharts(userId: string) {
