@@ -26,7 +26,7 @@ import {
   HouseCusp,
 } from '../lib/astro'
 import { normalizeZone } from '../lib/timezones'
-import ChartCompass from '../components/ChartCompass'
+import ChartCompass from '../components/charts/ChartCompass'
 import supabase from '../lib/supabase'
 import { saveChart, buildChartData } from '../lib/charts'
 

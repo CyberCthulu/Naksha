@@ -2,8 +2,8 @@
 import React, { useState } from 'react'
 import { View, Text, StyleSheet, ViewStyle, Pressable } from 'react-native'
 import Svg, { Line as SvgLine } from 'react-native-svg'
-import { theme } from './ui/theme'
-import { uiStyles } from './ui/uiStyles'
+import { theme } from '../ui/theme'
+import { uiStyles } from '../ui/uiStyles'
 
 export const PLANET_GLYPH: Record<string, string> = {
   Sun: '☉',
