@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } fro
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   useWindowDimensions,
   Alert,
@@ -16,10 +15,10 @@ import { ParamListBase } from '@react-navigation/native'
 
 import { useSpace } from '../components/space/SpaceProvider'
 import { birthToUTC } from '../lib/time'
-import { computeWholeSignHouses, PlanetPos, Aspect, HouseCusp } from '../lib/astro'
+import { computeWholeSignHouses, type PlanetPos, type Aspect, type HouseCusp } from '../lib/astro'
 import { normalizeZone } from '../lib/timezones'
 import supabase from '../lib/supabase'
-import { saveChart, buildChartData } from '../lib/charts'
+import { saveChart, buildChartData, type ChartData } from '../lib/charts'
 
 // chart components
 import ChartHeader from '../components/charts/ChartHeader'
@@ -51,12 +50,7 @@ type ProfileForChart = {
   last_name?: string | null
 }
 
-type SavedChartPayload = {
-  meta?: any
-  planets?: PlanetPos[]
-  aspects?: Aspect[]
-  houses?: HouseCusp[] | null
-}
+type SavedChartPayload = ChartData
 
 type RouteParams = {
   profile: ProfileForChart
@@ -92,8 +86,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
   }, [navigation])
 
   const { profile, fromSaved, saved } = route.params as RouteParams
-  const savedMeta = saved?.meta || {}
-
   const { focusedPlanet, focusPlanet, clearFocus } = useSpace()
 
   const [loading, setLoading] = useState<boolean>(!fromSaved || !saved?.planets)
@@ -126,18 +118,21 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     )
   }
 
+  const birthDate = profile.birth_date!
+  const birthTime = profile.birth_time!
   const chartName = `${profile.first_name ?? 'My'} Natal Chart`
   const birthLat = profile.birth_lat ?? null
   const birthLon = profile.birth_lon ?? null
 
   const loadChart = useCallback(async () => {
     setLoading(true)
+
     try {
       if (fromSaved && saved?.planets && saved?.aspects) {
-        let localHouses: HouseCusp[] | null = (saved.houses as HouseCusp[] | null) ?? null
+        let localHouses: HouseCusp[] | null = saved.houses ?? null
 
         if (!localHouses && birthLat != null && birthLon != null) {
-          const { jsDate } = birthToUTC(profile.birth_date!, profile.birth_time!, tz)
+          const { jsDate } = birthToUTC(birthDate, birthTime, tz)
           localHouses = computeWholeSignHouses(jsDate, birthLat, birthLon)
         }
 
@@ -161,8 +156,8 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         .from('charts')
         .select('id, chart_data')
         .eq('user_id', user.id)
-        .eq('birth_date', profile.birth_date!)
-        .eq('birth_time', profile.birth_time!)
+        .eq('birth_date', birthDate)
+        .eq('birth_time', birthTime)
         .eq('time_zone', tz)
 
       if (birthLat == null) {
@@ -182,14 +177,14 @@ export default function ChartScreen({ route }: ChartScreenProps) {
       if (error) throw error
 
       if (existing) {
-        const cd = existing.chart_data || {}
+        const cd = existing.chart_data as ChartData
         const ps: PlanetPos[] = cd.planets ?? []
         const asps: Aspect[] = cd.aspects ?? []
 
-        let localHouses: HouseCusp[] | null = (cd.houses as HouseCusp[] | null) ?? null
+        let localHouses: HouseCusp[] | null = cd.houses ?? null
 
         if (!localHouses && birthLat != null && birthLon != null) {
-          const { jsDate } = birthToUTC(profile.birth_date!, profile.birth_time!, tz)
+          const { jsDate } = birthToUTC(birthDate, birthTime, tz)
           localHouses = computeWholeSignHouses(jsDate, birthLat, birthLon)
         }
 
@@ -200,8 +195,8 @@ export default function ChartScreen({ route }: ChartScreenProps) {
       } else {
         const payload = buildChartData({
           name: chartName,
-          birth_date: profile.birth_date!,
-          birth_time: profile.birth_time!,
+          birth_date: birthDate,
+          birth_time: birthTime,
           time_zone: tz,
           birth_lat: birthLat,
           birth_lon: birthLon,
@@ -214,12 +209,12 @@ export default function ChartScreen({ route }: ChartScreenProps) {
 
         try {
           await saveChart(user.id, {
-            name: chartName,
-            birth_date: profile.birth_date!,
-            birth_time: profile.birth_time!,
-            time_zone: tz,
-            birth_lat: birthLat,
-            birth_lon: birthLon,
+            name: payload.meta.name,
+            birth_date: payload.meta.birth_date,
+            birth_time: payload.meta.birth_time,
+            time_zone: payload.meta.time_zone,
+            birth_lat: payload.meta.birth_lat,
+            birth_lon: payload.meta.birth_lon,
             chart_data: payload,
           })
           setIsSaved(true)
@@ -235,8 +230,8 @@ export default function ChartScreen({ route }: ChartScreenProps) {
   }, [
     fromSaved,
     saved,
-    profile.birth_date,
-    profile.birth_time,
+    birthDate,
+    birthTime,
     tz,
     chartName,
     birthLat,
@@ -249,10 +244,14 @@ export default function ChartScreen({ route }: ChartScreenProps) {
 
   useEffect(() => {
     if (!planets.length) return
+
     const sun = planets.find((p) => p.name === 'Sun')
     const fallback = planets[0]
     const pk = asPlanetKey(sun?.name ?? fallback?.name ?? '')
-    if (pk && !focusedPlanet) focusPlanet(pk)
+
+    if (pk && !focusedPlanet) {
+      focusPlanet(pk)
+    }
 
     return () => {
       clearFocus()
@@ -279,20 +278,20 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     try {
       const payload = buildChartData({
         name: chartName,
-        birth_date: profile.birth_date!,
-        birth_time: profile.birth_time!,
+        birth_date: birthDate,
+        birth_time: birthTime,
         time_zone: tz,
         birth_lat: birthLat,
         birth_lon: birthLon,
       })
 
       await saveChart(user.id, {
-        name: chartName,
-        birth_date: profile.birth_date!,
-        birth_time: profile.birth_time!,
-        time_zone: tz,
-        birth_lat: birthLat,
-        birth_lon: birthLon,
+        name: payload.meta.name,
+        birth_date: payload.meta.birth_date,
+        birth_time: payload.meta.birth_time,
+        time_zone: payload.meta.time_zone,
+        birth_lat: payload.meta.birth_lat,
+        birth_lon: payload.meta.birth_lon,
         chart_data: payload,
       })
 
@@ -307,18 +306,20 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     }
   }
 
-  const subtitleLocation = savedMeta.birth_location ?? profile.birth_location ?? null
-  const subtitleZone = savedMeta.time_zone ?? tz
+  const subtitleLocation = profile.birth_location ?? null
+  const subtitleZone = saved?.meta.time_zone ?? tz
   const subtitleCoords =
-    savedMeta.birth_lat != null && savedMeta.birth_lon != null
-      ? ` (${Number(savedMeta.birth_lat).toFixed(2)}, ${Number(savedMeta.birth_lon).toFixed(2)})`
+    saved?.meta.birth_lat != null && saved?.meta.birth_lon != null
+      ? ` (${Number(saved.meta.birth_lat).toFixed(2)}, ${Number(saved.meta.birth_lon).toFixed(2)})`
       : ''
 
   const sunSummary = useMemo(() => {
     const sun = planets.find((p) => p.name === 'Sun')
     if (!sun) return null
+
     const signName = zodiacNameFromLongitude(sun.lon)
     const meaning = getPlanetSignMeaning('Sun', signName)
+
     return { signName, meaning }
   }, [planets])
 
@@ -386,5 +387,3 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     </ScrollView>
   )
 }
-
-const styles = StyleSheet.create({})
