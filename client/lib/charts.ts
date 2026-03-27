@@ -1,12 +1,32 @@
-// lib/charts.ts
 import supabase from './supabase'
 import {
   computeNatalPlanets,
   findAspects,
   computeWholeSignHouses,
+  PlanetPos,
+  Aspect,
+  HouseCusp,
 } from './astro'
 import { birthToUTC } from './time'
 import { normalizeZone } from './timezones'
+
+export type ChartMeta = {
+  name: string
+  birth_date: string
+  birth_time: string
+  time_zone: string
+  birth_lat: number | null
+  birth_lon: number | null
+  computed_at: string
+  instant_utc: string | null
+}
+
+export type ChartData = {
+  meta: ChartMeta
+  planets: PlanetPos[]
+  aspects: Aspect[]
+  houses: HouseCusp[] | null
+}
 
 export type ChartRow = {
   id: number
@@ -17,21 +37,21 @@ export type ChartRow = {
   time_zone: string | null
   birth_lat: number | null
   birth_lon: number | null
-  chart_data: any
+  chart_data: ChartData
   created_at: string | null
   updated_at: string | null
 }
 
 export type BuildChartInput = {
   name: string
-  birth_date: string          // YYYY-MM-DD
-  birth_time: string          // HH:MM:SS
-  time_zone: string           // IANA
-  birth_lat?: number | null   // degrees
-  birth_lon?: number | null   // degrees (east+, west-)
+  birth_date: string
+  birth_time: string
+  time_zone: string
+  birth_lat?: number | null
+  birth_lon?: number | null
 }
 
-export function buildChartData(input: BuildChartInput) {
+export function buildChartData(input: BuildChartInput): ChartData {
   const tz = normalizeZone(input.time_zone)
   if (!tz) throw new Error('Invalid time zone')
 
@@ -39,9 +59,7 @@ export function buildChartData(input: BuildChartInput) {
   const planets = computeNatalPlanets(jsDate)
   const aspects = findAspects(planets)
 
-  // Only compute houses if we have a location
-  const hasLocation =
-    input.birth_lat != null && input.birth_lon != null
+  const hasLocation = input.birth_lat != null && input.birth_lon != null
 
   const houses = hasLocation
     ? computeWholeSignHouses(jsDate, input.birth_lat!, input.birth_lon!)
@@ -53,8 +71,8 @@ export function buildChartData(input: BuildChartInput) {
       birth_date: input.birth_date,
       birth_time: input.birth_time,
       time_zone: tz,
-      birth_lat: hasLocation ? input.birth_lat : null,
-      birth_lon: hasLocation ? input.birth_lon : null,
+      birth_lat: hasLocation ? input.birth_lat ?? null : null,
+      birth_lon: hasLocation ? input.birth_lon ?? null : null,
       computed_at: new Date().toISOString(),
       instant_utc: dtUTC.toISO(),
     },
@@ -64,18 +82,17 @@ export function buildChartData(input: BuildChartInput) {
   }
 }
 
-export async function saveChart(
-  userId: string,
-  input: {
-    name: string
-    birth_date: string
-    birth_time: string
-    time_zone: string
-    birth_lat?: number | null
-    birth_lon?: number | null
-    chart_data: any
-  }
-) {
+export type SaveChartInput = {
+  name: string
+  birth_date: string
+  birth_time: string
+  time_zone: string
+  birth_lat?: number | null
+  birth_lon?: number | null
+  chart_data: ChartData
+}
+
+export async function saveChart(userId: string, input: SaveChartInput) {
   const { data, error } = await supabase
     .from('charts')
     .upsert(
@@ -87,11 +104,13 @@ export async function saveChart(
         onConflict: 'user_id,birth_date,birth_time,time_zone,birth_lat,birth_lon',
       }
     )
-    .select()
+    .select(
+      'id,user_id,name,chart_data,birth_date,birth_time,time_zone,birth_lat,birth_lon,created_at,updated_at'
+    )
     .single()
 
   if (error) throw error
-  return data
+  return data as ChartRow
 }
 
 export async function listCharts(userId: string) {
@@ -110,7 +129,9 @@ export async function listCharts(userId: string) {
 export async function getChart(id: number, userId: string) {
   const { data, error } = await supabase
     .from('charts')
-    .select('*')
+    .select(
+      'id,user_id,name,chart_data,birth_date,birth_time,time_zone,birth_lat,birth_lon,created_at,updated_at'
+    )
     .eq('id', id)
     .eq('user_id', userId)
     .maybeSingle()
