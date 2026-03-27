@@ -1,4 +1,3 @@
-// screens/MyCharts.tsx
 import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import {
   View,
@@ -8,12 +7,13 @@ import {
   TouchableOpacity,
   Alert,
   StyleSheet,
+  GestureResponderEvent,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import supabase from '../lib/supabase'
-import { ChartRow, listCharts, deleteChart } from '../lib/charts'
+import { type ChartRow, listCharts, deleteChart, type ChartData } from '../lib/charts'
 
 import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
@@ -38,7 +38,10 @@ export default function MyChartsScreen() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not signed in')
+
+      if (!user) {
+        throw new Error('Not signed in')
+      }
 
       const list = await listCharts(user.id)
       setRows(list)
@@ -53,30 +56,34 @@ export default function MyChartsScreen() {
     load()
   }, [load])
 
-  const openChart = (row: ChartRow) => {
-    const data = row.chart_data
-    const meta = data?.meta || {}
+  const openChart = useCallback(
+    (row: ChartRow) => {
+      const data = row.chart_data as ChartData
+      const meta = data.meta
 
-    nav.navigate('Chart', {
-      fromSaved: true,
-      saved: data,
-      profile: {
-        birth_date: meta.birth_date ?? row.birth_date ?? null,
-        birth_time: meta.birth_time ?? row.birth_time ?? null,
-        time_zone: meta.time_zone ?? row.time_zone ?? null,
-        first_name: meta.name ?? null,
-        last_name: null,
-        birth_location: meta.birth_location ?? null,
-        birth_lat: meta.birth_lat ?? row.birth_lat ?? null,
-        birth_lon: meta.birth_lon ?? row.birth_lon ?? null,
-      },
-    })
-  }
+      nav.navigate('Chart', {
+        fromSaved: true,
+        saved: data,
+        profile: {
+          birth_date: meta.birth_date ?? row.birth_date ?? null,
+          birth_time: meta.birth_time ?? row.birth_time ?? null,
+          time_zone: meta.time_zone ?? row.time_zone ?? null,
+          first_name: row.name ?? null,
+          last_name: null,
+          birth_location: null,
+          birth_lat: meta.birth_lat ?? row.birth_lat ?? null,
+          birth_lon: meta.birth_lon ?? row.birth_lon ?? null,
+        },
+      })
+    },
+    [nav]
+  )
 
   const remove = async (row: ChartRow) => {
     const {
       data: { user },
     } = await supabase.auth.getUser()
+
     if (!user) return
 
     Alert.alert('Delete chart?', row.name, [
@@ -99,10 +106,8 @@ export default function MyChartsScreen() {
   if (loading) {
     return (
       <View style={uiStyles.center}>
-        <ActivityIndicator />
-        <Text style={[uiStyles.text, { marginTop: 8 }]}>
-          Loading charts…
-        </Text>
+        <ActivityIndicator size="large" />
+        <Text style={[uiStyles.text, { marginTop: 8 }]}>Loading charts…</Text>
       </View>
     )
   }
@@ -117,7 +122,6 @@ export default function MyChartsScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Top bar */}
       <View
         style={[
           styles.topRow,
@@ -135,9 +139,8 @@ export default function MyChartsScreen() {
 
       {rows.length === 0 ? (
         <View style={uiStyles.center}>
-          <Text style={uiStyles.muted}>
-            No charts yet. Save one from the chart screen.
-          </Text>
+          <Text style={uiStyles.muted}>No charts yet.</Text>
+          <Text style={uiStyles.muted}>Save one from the chart screen to get started.</Text>
         </View>
       ) : (
         <FlatList
@@ -149,21 +152,17 @@ export default function MyChartsScreen() {
           keyExtractor={(r) => String(r.id)}
           ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           renderItem={({ item }) => {
-            const meta = item.chart_data?.meta || {}
+            const data = item.chart_data as ChartData
+            const meta = data.meta
+
             const base = [meta.birth_date, meta.birth_time, meta.time_zone]
               .filter(Boolean)
               .join(' · ')
 
             const coords =
               meta.birth_lat != null && meta.birth_lon != null
-                ? ` · (${Number(meta.birth_lat).toFixed(2)}, ${Number(
-                    meta.birth_lon
-                  ).toFixed(2)})`
+                ? ` · (${Number(meta.birth_lat).toFixed(2)}, ${Number(meta.birth_lon).toFixed(2)})`
                 : ''
-
-            const loc = meta.birth_location
-              ? `${meta.birth_location} · `
-              : ''
 
             return (
               <TouchableOpacity
@@ -173,13 +172,17 @@ export default function MyChartsScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.title}>{item.name}</Text>
                   <Text style={styles.sub}>
-                    {loc}
                     {base}
                     {coords}
                   </Text>
                 </View>
 
-                <TouchableOpacity onPress={() => remove(item)}>
+                <TouchableOpacity
+                  onPress={(e: GestureResponderEvent) => {
+                    e.stopPropagation()
+                    remove(item)
+                  }}
+                >
                   <Text style={styles.delete}>Delete</Text>
                 </TouchableOpacity>
               </TouchableOpacity>
@@ -210,7 +213,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: theme.colors.text,
   },
-
   title: {
     color: theme.colors.text,
     fontWeight: '600',
