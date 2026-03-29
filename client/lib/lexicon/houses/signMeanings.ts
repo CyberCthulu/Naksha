@@ -157,6 +157,78 @@ This placement can support earning through healing, art, imagination, service, o
     },
   },
   3: {
+    Aries: {
+      short: 'You communicate directly, quickly, and with bold, instinctive expression.',
+      long: `With Aries on the 3rd House, your communication style tends to be fast, direct, and assertive. You often speak what comes to mind without much filtering, and others may experience you as confident, candid, or even confrontational at times.
+
+Your thinking process is active and decisive, preferring action over over-analysis. You may learn best by doing, engaging, and testing ideas in real time. Growth comes through developing patience in communication, so your natural boldness becomes clear leadership rather than impulsive reaction.`,
+    },
+    Taurus: {
+      short: 'You communicate steadily, thoughtfully, and with a grounded, practical tone.',
+      long: `With Taurus on the 3rd House, your communication style tends to be calm, measured, and deliberate. You may take your time to process thoughts before expressing them, and others often experience you as steady, reliable, and clear.
+
+You tend to prefer practical, tangible knowledge and may learn best through repetition and consistency. Once you understand something, it tends to stay with you. Growth comes through staying open to new ideas and perspectives, so your grounded thinking does not become resistance to change.`,
+    },
+    Gemini: {
+      short: 'You communicate quickly, curiously, and with natural adaptability and mental agility.',
+      long: `With Gemini on the 3rd House, communication is a central strength. You tend to think, speak, and process information quickly, often moving between topics with ease. Others may experience you as witty, articulate, and mentally sharp.
+
+You thrive on conversation, learning, and exchanging ideas, and you may enjoy writing, speaking, or connecting across different perspectives. The challenge is depth and focus. Growth comes through learning to slow down and stay with ideas long enough to fully develop them.`,
+    },
+    Cancer: {
+      short: 'You communicate with sensitivity, intuition, and emotional awareness.',
+      long: `With Cancer on the 3rd House, your communication style is influenced strongly by emotion and intuition. You may pick up on tone, mood, and unspoken dynamics easily, and your words often carry a caring or protective quality.
+
+You may prefer familiar environments or people when expressing yourself, and your learning style may be tied to emotional connection and memory. Growth comes through balancing emotional awareness with clarity, so feelings enhance communication rather than cloud it.`,
+    },
+    Leo: {
+      short: 'You communicate confidently, expressively, and with a natural sense of presence.',
+      long: `With Leo on the 3rd House, your communication tends to be warm, expressive, and engaging. You may have a natural storytelling ability or a way of speaking that draws attention and holds interest.
+
+You often want your voice to be heard and may take pride in how you express yourself. Learning can feel most alive when it allows for creativity and self-expression. Growth comes through ensuring that communication remains authentic and open, rather than becoming centered only on recognition or performance.`,
+    },
+    Virgo: {
+      short: 'You communicate precisely, analytically, and with strong attention to detail.',
+      long: `With Virgo on the 3rd House, your thinking and communication style tends to be careful, structured, and detail-oriented. You may be skilled at explaining complex ideas clearly, noticing small errors, or refining information into something useful.
+
+You often learn best through analysis, organization, and practical application. However, this placement can also bring overthinking or self-criticism in how you express yourself. Growth comes through trusting your voice and allowing communication to flow without excessive perfectionism.`,
+    },
+    Libra: {
+      short: 'You communicate diplomatically, thoughtfully, and with a focus on balance and harmony.',
+      long: `With Libra on the 3rd House, your communication style tends to be polite, considerate, and aware of others. You may naturally weigh different perspectives and aim to create understanding or agreement.
+
+You often prefer dialogue over conflict and may be skilled in negotiation or mediation. Your learning style may involve comparison, discussion, and shared ideas. Growth comes through expressing your own viewpoint clearly, even when it disrupts harmony.`,
+    },
+    Scorpio: {
+      short: 'You communicate deeply, intentionally, and with a perceptive, probing mind.',
+      long: `With Scorpio on the 3rd House, your communication style tends to be intense, focused, and purposeful. You may not speak unnecessarily, but when you do, your words often carry weight and depth.
+
+You tend to observe closely, read between the lines, and seek truth beneath the surface. Learning may involve investigation, psychology, or uncovering hidden layers. Growth comes through softening control in communication, allowing openness and trust alongside depth.`,
+    },
+    Sagittarius: {
+      short: 'You communicate openly, honestly, and with a broad, philosophical perspective.',
+      long: `With Sagittarius on the 3rd House, your communication style tends to be expansive, direct, and idea-driven. You may enjoy discussing big concepts, beliefs, and visions, and others may experience you as honest, enthusiastic, and sometimes blunt.
+
+You often learn through exploration, teaching, and connecting ideas to a larger meaning. There is a natural desire to understand the “why” behind things. Growth comes through refining your communication, so truth is expressed with both clarity and consideration.`,
+    },
+    Capricorn: {
+      short: 'You communicate seriously, thoughtfully, and with a structured, disciplined approach.',
+      long: `With Capricorn on the 3rd House, your communication style tends to be practical, concise, and purposeful. You may not speak unless there is something meaningful to say, and others may see you as grounded, intelligent, and reliable in your thinking.
+
+You often prefer structured learning and may excel in environments that require discipline and focus. Growth comes through allowing more flexibility and ease in communication, so expression does not feel overly restricted or heavy.`,
+    },
+    Aquarius: {
+      short: 'You communicate uniquely, intellectually, and with an original perspective.',
+      long: `With Aquarius on the 3rd House, your thinking and communication style tends to be innovative, independent, and future-oriented. You may approach ideas from unconventional angles and enjoy exploring concepts that challenge the norm.
+
+You often thrive in discussions that involve innovation, systems, or collective thinking. Others may experience you as insightful, but sometimes detached. Growth comes through integrating emotional presence into your communication, so ideas connect as well as inspire.`,
+    },
+    Pisces: {
+      short: 'You communicate intuitively, imaginatively, and with a fluid, sensitive style.',
+      long: `With Pisces on the 3rd House, your communication style tends to be soft, intuitive, and sometimes abstract. You may express yourself through imagery, feeling, or symbolism rather than strict logic, and others may experience your words as poetic or emotional.
+
+You often learn through intuition, immersion, and creative experience. However, clarity can sometimes be a challenge. Growth comes through grounding your thoughts and expression, so your intuitive understanding can be communicated in a way others can fully grasp.`,
+    },
   },
   4: {
   },
