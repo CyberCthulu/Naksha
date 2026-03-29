@@ -823,6 +823,78 @@ You may be drawn to groups that focus on healing, creativity, or spiritual conne
     },
   },
   12: {
+    Aries: {
+      short: 'Your inner world is driven by hidden intensity, instinct, and a need to act beneath the surface.',
+      long: `With Aries on the 12th House, your subconscious may carry strong impulses, drive, and instinct that are not always expressed openly. You may feel a hidden urge to act, initiate, or assert yourself, even if it is not always visible to others.
+
+There can be tension between action and retreat, where energy builds internally before being released. Growth comes through becoming aware of these inner drives, so your instinctive energy can be expressed consciously rather than unconsciously.`,
+    },
+    Taurus: {
+      short: 'Your inner world seeks peace, stability, and grounding, often retreating into comfort and stillness.',
+      long: `With Taurus on the 12th House, your subconscious may be oriented toward peace, stability, and comfort. You may seek retreat in environments that feel safe, quiet, and grounding.
+
+There can be a tendency to hold onto patterns or attachments beneath the surface, even when they no longer serve you. Growth comes through allowing change within your inner world, so stability becomes supportive rather than restrictive.`,
+    },
+    Gemini: {
+      short: 'Your inner world is active, curious, and filled with thoughts, patterns, and mental movement.',
+      long: `With Gemini on the 12th House, your subconscious may be highly active, filled with thoughts, ideas, and internal dialogue. You may process experiences mentally, even when they are deeply emotional.
+
+There can be hidden patterns of overthinking or scattered mental energy. Growth comes through cultivating stillness and clarity, so your mind becomes a tool rather than a source of confusion.`,
+    },
+    Cancer: {
+      short: 'Your inner world is deeply emotional, sensitive, and shaped by memory and feeling.',
+      long: `With Cancer on the 12th House, your subconscious may carry strong emotional depth, sensitivity, and connection to the past. You may hold onto memories, feelings, or attachments beneath the surface.
+
+There can be a need for emotional retreat and protection. Growth comes through developing emotional awareness and release, so your sensitivity becomes a source of healing rather than hidden weight.`,
+    },
+    Leo: {
+      short: 'Your inner world carries hidden creativity, pride, and a desire for expression that may not always be visible.',
+      long: `With Leo on the 12th House, your subconscious may hold a strong sense of identity, creativity, and desire for expression that is not always openly shown. You may feel a hidden need to be recognized or to express yourself fully.
+
+There can be tension between visibility and retreat. Growth comes through allowing your inner creative energy to surface, so your authentic self can be expressed without fear or suppression.`,
+    },
+    Virgo: {
+      short: 'Your inner world is shaped by analysis, reflection, and a tendency toward hidden self-criticism or refinement.',
+      long: `With Virgo on the 12th House, your subconscious may be focused on analysis, improvement, and reflection. You may carry patterns of self-criticism or a desire to perfect things internally.
+
+There can be a tendency to overanalyze emotions or retreat into thought. Growth comes through practicing self-compassion, so your inner awareness becomes supportive rather than critical.`,
+    },
+    Libra: {
+      short: 'Your inner world seeks balance, harmony, and connection, often processing relationships beneath the surface.',
+      long: `With Libra on the 12th House, your subconscious may be focused on relationships, balance, and harmony. You may process interpersonal dynamics internally and seek peace even in hidden ways.
+
+There can be a tendency to suppress conflict or prioritize harmony beneath the surface. Growth comes through acknowledging your own needs and truth, so balance becomes authentic rather than avoidant.`,
+    },
+    Scorpio: {
+      short: 'Your inner world is intense, private, and deeply transformative, holding powerful hidden emotions.',
+      long: `With Scorpio on the 12th House, your subconscious may be filled with depth, intensity, and transformative energy. You may carry hidden emotions, fears, or desires that are not easily expressed.
+
+There is often a strong connection to the unseen, the psychological, or the mysterious. Growth comes through bringing awareness to these hidden layers, so transformation becomes conscious rather than unconscious.`,
+    },
+    Sagittarius: {
+      short: 'Your inner world seeks meaning, expansion, and truth, often exploring philosophy or belief beneath the surface.',
+      long: `With Sagittarius on the 12th House, your subconscious may be oriented toward meaning, belief, and exploration. You may reflect on philosophy, spirituality, or life direction in a private or internal way.
+
+There can be a desire to understand life at a deeper level, even when withdrawn. Growth comes through grounding your insights, so your inner exploration translates into real-world understanding.`,
+    },
+    Capricorn: {
+      short: 'Your inner world is structured, disciplined, and may carry hidden pressure or responsibility.',
+      long: `With Capricorn on the 12th House, your subconscious may hold patterns of discipline, responsibility, or internal pressure. You may feel a hidden need to control, structure, or manage your inner world.
+
+There can be a tendency to suppress emotion in favor of strength or control. Growth comes through allowing vulnerability and release, so your inner strength includes emotional depth as well as structure.`,
+    },
+    Aquarius: {
+      short: 'Your inner world is unconventional, detached, and filled with unique or abstract patterns of thought.',
+      long: `With Aquarius on the 12th House, your subconscious may operate in unconventional or abstract ways. You may process experiences through ideas, patterns, or detached observation.
+
+There can be a sense of distance from emotion or a tendency to retreat into thought. Growth comes through integrating emotional awareness, so your inner world becomes both insightful and connected.`,
+    },
+    Pisces: {
+      short: 'Your inner world is deeply intuitive, fluid, and connected to emotion, imagination, and the unseen.',
+      long: `With Pisces on the 12th House, this is a natural placement, as Pisces rules this house. Your subconscious may be highly sensitive, intuitive, and connected to deeper emotional or spiritual layers.
+
+You may experience strong imagination, empathy, or connection to the unseen. Boundaries can sometimes blur, leading to overwhelm. Growth comes through grounding and clarity, so your sensitivity becomes a source of insight and healing.`,
+    },
   },
 }
 
