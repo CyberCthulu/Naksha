@@ -1,3 +1,4 @@
+//lib/charts.ts
 import supabase from './supabase'
 import {
   computeNatalPlanets,
