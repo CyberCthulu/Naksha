@@ -20,6 +20,7 @@ export {
 export {
   HOUSE_MEANINGS,
   getHouseMeaning,
+  getHouseSignMeaning,
 } from './houses'
 
 // Aspect meanings

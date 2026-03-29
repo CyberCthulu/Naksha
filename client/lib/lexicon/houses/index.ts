@@ -1,9 +1,8 @@
-// lib/lexicon/houses/index.ts
-import { HouseNumber, Interpretation, maybe } from '../types'
+import { HouseNumber, Interpretation, ZodiacName, maybe } from '../types'
 
 /**
  * Meanings for each house (1–12).
- * These are placeholders — expand later.
+ * These are generic house meanings.
  */
 export const HOUSE_MEANINGS: Record<HouseNumber, Interpretation> = {
   1: {
@@ -69,7 +68,50 @@ It includes karmic patterns, difficult-to-access emotions, and the need for retr
   },
 }
 
-/** Get meaning for a specific house */
+/**
+ * Sign-flavor phrases used to personalize house meanings.
+ * These are intentionally concise so they can blend naturally
+ * with the base house interpretation.
+ */
+const HOUSE_SIGN_FLAVORS: Record<ZodiacName, string> = {
+  Aries: 'with boldness, directness, and a strong instinct to initiate',
+  Taurus: 'with patience, steadiness, and a desire for stability',
+  Gemini: 'through curiosity, conversation, and mental flexibility',
+  Cancer: 'with sensitivity, protectiveness, and emotional awareness',
+  Leo: 'with confidence, warmth, and a desire to express yourself fully',
+  Virgo: 'through analysis, discernment, and practical attention to detail',
+  Libra: 'through balance, relationship-awareness, and a desire for harmony',
+  Scorpio: 'with intensity, privacy, and emotional depth',
+  Sagittarius: 'through exploration, optimism, and a search for meaning',
+  Capricorn: 'with discipline, responsibility, and long-term focus',
+  Aquarius: 'through independence, originality, and a broader perspective',
+  Pisces: 'through intuition, compassion, and imagination',
+}
+
+/** Get generic meaning for a specific house */
 export function getHouseMeaning(house: HouseNumber): Interpretation | null {
   return maybe(HOUSE_MEANINGS[house])
+}
+
+/**
+ * Get a sign-aware meaning for a house.
+ * This builds on the generic house meaning and adds sign flavor,
+ * so the result feels more personalized without needing a full
+ * house-by-sign interpretation database yet.
+ */
+export function getHouseSignMeaning(
+  house: HouseNumber,
+  sign: ZodiacName
+): Interpretation | null {
+  const base = getHouseMeaning(house)
+  if (!base) return null
+
+  const flavor = HOUSE_SIGN_FLAVORS[sign]
+
+  return {
+    short: `${base.short} You tend to approach this area of life ${flavor}.`,
+    long: `${base.long}
+
+With ${sign} on the cusp of this house, you tend to approach this part of life ${flavor}. This sign colors how you experience, express, and develop the themes of this house.`,
+  }
 }
