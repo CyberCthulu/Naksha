@@ -1,3 +1,4 @@
+//components/charts/ChartWheel.tsx
 import React from 'react'
 import Svg, { Circle, Line, G, Text as SvgText } from 'react-native-svg'
 import { Aspect, HouseCusp, PlanetPos } from '../../lib/astro'

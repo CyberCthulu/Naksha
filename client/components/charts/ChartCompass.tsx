@@ -1,4 +1,4 @@
-// components/ChartCompass.tsx
+// components/charts/ChartCompass.tsx
 import React, { useState } from 'react'
 import { View, Text, StyleSheet, ViewStyle, Pressable } from 'react-native'
 import Svg, { Line as SvgLine } from 'react-native-svg'

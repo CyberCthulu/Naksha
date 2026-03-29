@@ -1,3 +1,4 @@
+//components/charts/PlanetPositionsList.tsx
 import React from 'react'
 import { Text, StyleSheet, Pressable, View } from 'react-native'
 import { PlanetPos, PlanetHousePlacement } from '../../lib/astro'

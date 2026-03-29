@@ -1,3 +1,4 @@
+//components/charts/HousesList.tsx
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { HouseCusp } from '../../lib/astro'
