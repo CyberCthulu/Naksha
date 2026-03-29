@@ -749,6 +749,78 @@ Your public image may be seen as sensitive, artistic, or elusive. However, direc
     },
   },
   11: {
+    Aries: {
+      short: 'You engage with friendships, communities, and goals boldly, independently, and with strong initiative.',
+      long: `With Aries on the 11th House, you tend to approach friendships and community involvement with energy, independence, and directness. You may take on leadership roles within groups or feel driven to initiate projects and bring people together around action.
+
+Your long-term goals may be ambitious and self-directed, often requiring courage and momentum. However, impatience or conflict within groups can arise. Growth comes through learning collaboration and patience, so your leadership strengthens rather than disrupts collective efforts.`,
+    },
+    Taurus: {
+      short: 'You engage with friendships, communities, and goals steadily, loyally, and with a focus on stability.',
+      long: `With Taurus on the 11th House, you tend to value stable, long-lasting friendships and communities that feel reliable and grounded. You may prefer smaller, trusted circles over large or constantly changing social environments.
+
+Your long-term goals often focus on building security and tangible results over time. You may take a steady and persistent approach to achieving them. Growth comes through staying open to change and new connections, so your network continues to evolve alongside your goals.`,
+    },
+    Gemini: {
+      short: 'You engage with friendships, communities, and goals through communication, curiosity, and variety.',
+      long: `With Gemini on the 11th House, your social life and community involvement tend to be dynamic and mentally engaging. You may enjoy connecting with a wide range of people and exchanging ideas across different groups.
+
+You often thrive in environments that involve communication, learning, or collaboration. Your goals may shift or evolve as your interests change. Growth comes through focusing your energy, so your many connections and ideas can lead to meaningful outcomes.`,
+    },
+    Cancer: {
+      short: 'You engage with friendships, communities, and goals with care, loyalty, and emotional connection.',
+      long: `With Cancer on the 11th House, your friendships and community ties often carry emotional depth and a sense of belonging. You may treat your friends like family and seek connections that feel safe and supportive.
+
+Your long-term goals may be influenced by emotional needs or a desire to create security for yourself and others. Growth comes through balancing emotional connection with independence, so your sense of belonging does not become overly dependent on others.`,
+    },
+    Leo: {
+      short: 'You engage with friendships, communities, and goals with warmth, confidence, and a desire to contribute visibly.',
+      long: `With Leo on the 11th House, your social presence tends to be expressive, generous, and confident. You may naturally take on visible roles within groups or bring creative energy into your communities.
+
+You often want your contributions to be recognized and appreciated, and you may inspire others through your presence. Your long-term goals may involve creating something meaningful or impactful. Growth comes through aligning your vision with collective needs, so your expression uplifts the group rather than centering only on yourself.`,
+    },
+    Virgo: {
+      short: 'You engage with friendships, communities, and goals thoughtfully, practically, and with a focus on improvement.',
+      long: `With Virgo on the 11th House, your approach to friendships and community involvement tends to be helpful, detail-oriented, and service-driven. You may contribute by organizing, refining, or supporting group efforts in practical ways.
+
+You often value usefulness and may seek to improve systems or contribute meaningfully to shared goals. However, there can be tendencies toward over-criticism or over-analysis. Growth comes through embracing imperfection, so your contributions remain supportive rather than overly critical.`,
+    },
+    Libra: {
+      short: 'You engage with friendships, communities, and goals through balance, cooperation, and harmonious connection.',
+      long: `With Libra on the 11th House, your social life tends to revolve around relationships, collaboration, and shared experiences. You may value fairness, harmony, and mutual respect within groups.
+
+You often excel in environments that require diplomacy or partnership. Your long-term goals may involve creating balance or beauty within the collective. Growth comes through maintaining your own direction, so your vision remains clear even within group dynamics.`,
+    },
+    Scorpio: {
+      short: 'You engage with friendships, communities, and goals intensely, selectively, and with deep emotional investment.',
+      long: `With Scorpio on the 11th House, your approach to friendships and groups tends to be focused, private, and emotionally deep. You may prefer a small number of meaningful connections rather than broad social circles.
+
+You often invest deeply in your goals and may pursue them with intensity and determination. However, power dynamics or trust issues can arise within groups. Growth comes through allowing openness and collaboration, so depth does not become isolation.`,
+    },
+    Sagittarius: {
+      short: 'You engage with friendships, communities, and goals through expansion, exploration, and shared vision.',
+      long: `With Sagittarius on the 11th House, your social life and community involvement tend to be expansive and future-oriented. You may be drawn to diverse groups, cultures, or ideas that broaden your perspective.
+
+You often value freedom and growth within your connections and may pursue goals that involve exploration or collective progress. Growth comes through grounding your vision, so your aspirations translate into tangible outcomes.`,
+    },
+    Capricorn: {
+      short: 'You engage with friendships, communities, and goals with structure, responsibility, and long-term focus.',
+      long: `With Capricorn on the 11th House, your approach to friendships and community tends to be serious, selective, and goal-oriented. You may prefer connections that align with your ambitions or long-term plans.
+
+You often take responsibility within groups and may contribute through leadership or organization. Your goals tend to be practical and structured. Growth comes through allowing flexibility and emotional connection, so relationships are not defined solely by utility or achievement.`,
+    },
+    Aquarius: {
+      short: 'You engage with friendships, communities, and goals independently, innovatively, and with a strong connection to the collective.',
+      long: `With Aquarius on the 11th House, this is a natural placement, as Aquarius rules this house. Your approach to community tends to be progressive, unconventional, and future-focused.
+
+You may be drawn to groups that align with your ideals and value individuality within the collective. You often think in terms of systems, networks, and shared progress. Growth comes through balancing independence with emotional connection, so your involvement remains both authentic and human.`,
+    },
+    Pisces: {
+      short: 'You engage with friendships, communities, and goals with compassion, intuition, and a sense of unity.',
+      long: `With Pisces on the 11th House, your social life and community involvement tend to be guided by empathy, imagination, and a desire for connection beyond surface level.
+
+You may be drawn to groups that focus on healing, creativity, or spiritual connection. However, boundaries within friendships can sometimes blur. Growth comes through grounding your vision and maintaining clarity, so compassion remains sustainable and directed.`,
+    },
   },
   12: {
   },
