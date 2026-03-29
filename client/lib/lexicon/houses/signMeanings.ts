@@ -675,6 +675,78 @@ Learning may come through feeling, inspiration, or direct experience rather than
     },
   },
   10: {
+    Aries: {
+      short: 'You pursue your career and public path with boldness, initiative, and a drive to lead.',
+      long: `With Aries on the 10th House, your public image and career path tend to be shaped by independence, action, and leadership. You may feel driven to take initiative, start projects, or carve your own path rather than follow established routes.
+
+You are often seen as dynamic, assertive, and willing to take risks. There can be a strong desire to achieve quickly and decisively. Growth comes through developing patience and long-term strategy, so your ambition leads to sustained success rather than burnout.`,
+    },
+    Taurus: {
+      short: 'You pursue your career and public path steadily, reliably, and with a focus on long-term stability.',
+      long: `With Taurus on the 10th House, your approach to career and reputation tends to be grounded, consistent, and focused on building something lasting. You may value financial security, stability, and tangible results in your professional life.
+
+You are often seen as dependable and persistent, willing to put in the time needed to achieve your goals. Growth comes through embracing adaptability, so your steady progress is not limited by resistance to change.`,
+    },
+    Gemini: {
+      short: 'You pursue your career and public path through communication, adaptability, and diverse skills.',
+      long: `With Gemini on the 10th House, your career path may involve communication, learning, or multiple areas of interest. You may be drawn to fields that allow you to speak, write, teach, or connect ideas.
+
+Your public image may be versatile and adaptable, though it can sometimes feel scattered. You often thrive in dynamic environments. Growth comes through developing focus and direction, so your many talents can be integrated into a clear path.`,
+    },
+    Cancer: {
+      short: 'You pursue your career and public path with care, sensitivity, and a focus on nurturing and support.',
+      long: `With Cancer on the 10th House, your career may be influenced by emotional intelligence, care, and a desire to support others. You may be drawn to work that involves nurturing, protection, or creating a sense of safety.
+
+Your public image may be perceived as compassionate and supportive. However, emotional sensitivity can influence professional decisions. Growth comes through developing boundaries, so your care for others remains balanced with your own needs.`,
+    },
+    Leo: {
+      short: 'You pursue your career and public path with confidence, creativity, and a desire to be seen and recognized.',
+      long: `With Leo on the 10th House, your public life often involves visibility, leadership, and self-expression. You may be drawn to roles where you can stand out, create, or lead with confidence.
+
+There is often a desire to be recognized for your talents and contributions. You may naturally take on positions of authority or creative direction. Growth comes through grounding your sense of purpose internally, so recognition supports rather than defines your path.`,
+    },
+    Virgo: {
+      short: 'You pursue your career and public path through precision, service, and continuous improvement.',
+      long: `With Virgo on the 10th House, your career path tends to involve attention to detail, analysis, and practical contribution. You may excel in roles that require organization, problem-solving, or refinement of systems.
+
+Your public image may be seen as competent, reliable, and thoughtful. However, there can be pressure to perform perfectly. Growth comes through recognizing your value beyond productivity, so your work remains sustainable and fulfilling.`,
+    },
+    Libra: {
+      short: 'You pursue your career and public path through balance, relationships, and a refined sense of harmony.',
+      long: `With Libra on the 10th House, your professional life may be shaped by relationships, collaboration, and a sense of fairness. You may be drawn to careers that involve diplomacy, art, design, or working with others.
+
+Your public image may be graceful, balanced, and socially aware. You often excel in environments that value cooperation. Growth comes through maintaining your own direction, so your path is not overly shaped by others’ expectations.`,
+    },
+    Scorpio: {
+      short: 'You pursue your career and public path with intensity, strategy, and a focus on transformation and power.',
+      long: `With Scorpio on the 10th House, your career path tends to involve depth, control, and transformation. You may be drawn to fields that require investigation, strategy, or working with complex systems or hidden dynamics.
+
+Your public image may carry a sense of strength, mystery, or authority. You often navigate power and responsibility in significant ways. Growth comes through using your intensity constructively, so your path becomes transformative rather than overwhelming.`,
+    },
+    Sagittarius: {
+      short: 'You pursue your career and public path through expansion, exploration, and a search for meaning.',
+      long: `With Sagittarius on the 10th House, your career may involve travel, teaching, philosophy, or any path that allows for growth and exploration. You may feel drawn to work that expands your perspective and aligns with your beliefs.
+
+Your public image may be optimistic, open, and forward-looking. You often seek meaning in what you do. Growth comes through grounding your vision, so your ambitions translate into real-world impact.`,
+    },
+    Capricorn: {
+      short: 'You pursue your career and public path with discipline, responsibility, and a strong drive for achievement.',
+      long: `With Capricorn on the 10th House, this is a natural placement, as Capricorn rules this house. Your career path tends to be structured, goal-oriented, and focused on long-term success.
+
+You may take your public role seriously and feel a strong sense of duty to achieve. You are often seen as capable and authoritative. Growth comes through balancing ambition with personal fulfillment, so success includes both external achievement and inner satisfaction.`,
+    },
+    Aquarius: {
+      short: 'You pursue your career and public path through innovation, independence, and unconventional approaches.',
+      long: `With Aquarius on the 10th House, your career path may be unique, forward-thinking, or nontraditional. You may be drawn to innovation, technology, or work that contributes to collective progress.
+
+Your public image may be seen as original or different from the norm. You often value independence in your professional life. Growth comes through balancing individuality with consistency, so your path remains both authentic and sustainable.`,
+    },
+    Pisces: {
+      short: 'You pursue your career and public path through intuition, compassion, and creative or spiritual expression.',
+      long: `With Pisces on the 10th House, your career may involve creativity, healing, spirituality, or service. You may feel drawn to paths that allow you to express compassion or imagination.
+
+Your public image may be seen as sensitive, artistic, or elusive. However, direction can sometimes feel unclear. Growth comes through creating structure around your vision, so your path becomes grounded and impactful.`,
+    },
   },
   11: {
   },
