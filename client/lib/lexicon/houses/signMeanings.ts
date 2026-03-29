@@ -601,6 +601,78 @@ Boundaries can sometimes blur, and you may absorb the emotional energy of others
     },
   },
   9: {
+    Aries: {
+      short: 'You pursue knowledge, belief, and truth boldly, independently, and through direct experience.',
+      long: `With Aries on the 9th House, your approach to belief systems and higher learning tends to be active, self-directed, and experiential. You may prefer to discover truth through personal action rather than passive study.
+
+There is often a strong drive to form your own philosophy and challenge existing perspectives. You may be drawn to experiences that test your courage and expand your worldview. Growth comes through cultivating patience and openness, so your pursuit of truth becomes exploration rather than confrontation.`,
+    },
+    Taurus: {
+      short: 'You pursue knowledge, belief, and truth steadily, practically, and with a focus on stability.',
+      long: `With Taurus on the 9th House, your approach to philosophy and learning tends to be grounded, consistent, and rooted in practical understanding. You may prefer beliefs that feel stable, reliable, and applicable to real life.
+
+You often build your worldview slowly over time, integrating knowledge in a way that feels secure and tangible. Growth comes through remaining open to change, so your beliefs evolve rather than become fixed.`,
+    },
+    Gemini: {
+      short: 'You pursue knowledge, belief, and truth through curiosity, communication, and diverse perspectives.',
+      long: `With Gemini on the 9th House, your approach to higher learning and belief systems is flexible, curious, and mentally active. You may explore many ideas, philosophies, or cultures rather than committing to a single path.
+
+You often enjoy learning through conversation, reading, writing, or teaching. There is a natural interest in comparing perspectives. Growth comes through developing depth and integration, so knowledge becomes wisdom rather than scattered information.`,
+    },
+    Cancer: {
+      short: 'You pursue knowledge, belief, and truth through emotional connection, intuition, and personal meaning.',
+      long: `With Cancer on the 9th House, your belief systems may be closely tied to emotion, memory, and personal experience. You may seek philosophies that feel nurturing, protective, and emotionally resonant.
+
+Learning may be influenced by your inner world and intuitive understanding rather than purely abstract reasoning. Growth comes through expanding beyond familiar emotional frameworks, so your worldview can grow without losing its depth.`,
+    },
+    Leo: {
+      short: 'You pursue knowledge, belief, and truth with confidence, passion, and a desire for meaningful self-expression.',
+      long: `With Leo on the 9th House, your approach to philosophy and learning tends to be expressive, creative, and centered around personal meaning. You may be drawn to beliefs that allow you to live boldly and authentically.
+
+There is often a desire to share your understanding with others and to live your truth visibly. Growth comes through remaining open to other perspectives, so confidence does not limit expansion.`,
+    },
+    Virgo: {
+      short: 'You pursue knowledge, belief, and truth through analysis, detail, and practical application.',
+      long: `With Virgo on the 9th House, your approach to higher learning tends to be precise, analytical, and grounded in usefulness. You may prefer structured systems of knowledge that can be applied in real life.
+
+You often seek to refine your understanding and may question ideas until they are clear and functional. Growth comes through embracing broader perspectives, so analysis supports expansion rather than limiting it.`,
+    },
+    Libra: {
+      short: 'You pursue knowledge, belief, and truth through balance, dialogue, and multiple perspectives.',
+      long: `With Libra on the 9th House, your approach to philosophy tends to involve comparison, fairness, and understanding different viewpoints. You may be drawn to systems of thought that emphasize harmony and balance.
+
+You often learn best through discussion and shared exploration. There can be a desire to find the “right” perspective among many. Growth comes through developing a clear personal philosophy, so balance does not become indecision.`,
+    },
+    Scorpio: {
+      short: 'You pursue knowledge, belief, and truth with intensity, depth, and a desire for transformation.',
+      long: `With Scorpio on the 9th House, your approach to belief systems tends to be deep, investigative, and transformative. You may be drawn to subjects that explore hidden truths, psychology, or the nature of power and change.
+
+You often seek truth beneath the surface rather than accepting ideas at face value. Growth comes through allowing flexibility, so your search for truth remains open rather than fixed in intensity.`,
+    },
+    Sagittarius: {
+      short: 'You pursue knowledge, belief, and truth through expansion, exploration, and a natural search for meaning.',
+      long: `With Sagittarius on the 9th House, this is a natural placement, as Sagittarius rules this house. Your approach to learning and belief systems tends to be expansive, optimistic, and meaning-driven.
+
+You may be drawn to travel, philosophy, spirituality, or teaching, and you often seek to understand the bigger picture. Growth comes through grounding your insights, so your beliefs translate into lived wisdom rather than remaining abstract.`,
+    },
+    Capricorn: {
+      short: 'You pursue knowledge, belief, and truth with discipline, structure, and long-term purpose.',
+      long: `With Capricorn on the 9th House, your approach to higher learning tends to be serious, structured, and goal-oriented. You may value systems of knowledge that are practical, proven, and reliable.
+
+You often build your understanding over time and may apply philosophy in a disciplined way. Growth comes through allowing flexibility and openness, so structure does not limit your ability to expand.`,
+    },
+    Aquarius: {
+      short: 'You pursue knowledge, belief, and truth through originality, innovation, and unconventional perspectives.',
+      long: `With Aquarius on the 9th House, your approach to philosophy tends to be independent, forward-thinking, and open to new ideas. You may be drawn to unconventional belief systems or innovative ways of understanding the world.
+
+You often think beyond traditional frameworks and enjoy exploring ideas that challenge norms. Growth comes through integrating emotional and human elements, so intellectual expansion remains connected to lived experience.`,
+    },
+    Pisces: {
+      short: 'You pursue knowledge, belief, and truth through intuition, spirituality, and a sense of unity.',
+      long: `With Pisces on the 9th House, your approach to belief systems tends to be intuitive, imaginative, and spiritually oriented. You may be drawn to philosophies that emphasize compassion, unity, and transcendence.
+
+Learning may come through feeling, inspiration, or direct experience rather than strict logic. Growth comes through grounding your beliefs, so intuition is supported by clarity and integration.`,
+    },
   },
   10: {
   },
