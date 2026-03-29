@@ -1,3 +1,4 @@
+//houses/index.ts
 import { HouseNumber, Interpretation, ZodiacName, maybe } from '../types'
 import { HOUSE_MEANINGS } from './meanings'
 import { HOUSE_SIGN_MEANINGS, HOUSE_SIGN_FLAVORS } from './signMeanings'

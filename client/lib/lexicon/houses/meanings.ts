@@ -1,3 +1,4 @@
+//houses/meanings.ts
 import { HouseNumber, Interpretation } from '../types'
 
 /**

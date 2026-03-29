@@ -1,3 +1,4 @@
+//houses/signMeanings.ts
 import { HouseNumber, Interpretation, ZodiacName } from '../types'
 
 /**
