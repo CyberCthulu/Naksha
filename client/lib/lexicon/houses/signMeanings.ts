@@ -305,6 +305,78 @@ You tend to feel most secure in spaces that allow for peace, imagination, and em
     },
   },
   5: {
+    Aries: {
+      short: 'You express yourself boldly, passionately, and with a strong desire to initiate and create.',
+      long: `With Aries on the 5th House, your creativity and self-expression tend to be dynamic, bold, and action-driven. You may feel most alive when you are initiating something new, taking risks, or putting your energy into something that excites you.
+
+Romance and pleasure may also carry intensity and spontaneity, with a desire for excitement and direct connection. You often prefer experiences that feel alive and immediate. Growth comes through developing patience and consistency, so your creative fire can sustain itself rather than burn out quickly.`,
+    },
+    Taurus: {
+      short: 'You express yourself steadily, sensually, and with a deep appreciation for pleasure and beauty.',
+      long: `With Taurus on the 5th House, your creativity and joy tend to be rooted in the senses, stability, and enjoyment of life’s pleasures. You may be drawn to art, music, food, nature, or anything that feels rich and grounding.
+
+Romance often unfolds slowly and with intention, favoring loyalty and comfort over intensity or chaos. You tend to enjoy what is lasting and tangible. Growth comes through embracing flexibility and spontaneity, so pleasure does not become routine or overly fixed.`,
+    },
+    Gemini: {
+      short: 'You express yourself playfully, intellectually, and through communication and variety.',
+      long: `With Gemini on the 5th House, your creativity and self-expression are closely tied to your mind. You may enjoy writing, speaking, performing, or exploring multiple creative outlets rather than sticking to just one.
+
+You tend to approach romance and joy with curiosity and playfulness, often enjoying connection through conversation and shared ideas. There can be a youthful, light quality to how you express yourself. Growth comes through developing depth and focus, so your creative energy can fully manifest rather than remain scattered.`,
+    },
+    Cancer: {
+      short: 'You express yourself emotionally, nurturingly, and with a deep need for heartfelt connection.',
+      long: `With Cancer on the 5th House, your creativity and joy tend to come from emotional depth, care, and connection. You may be drawn to forms of expression that feel personal, meaningful, and rooted in feeling.
+
+Romance often carries a strong emotional component, with a desire for safety, closeness, and genuine care. You may also express creativity through nurturing others or creating emotionally supportive environments. Growth comes through balancing emotional openness with boundaries, so sensitivity remains a strength rather than a vulnerability.`,
+    },
+    Leo: {
+      short: 'You express yourself confidently, creatively, and with a strong desire to shine and be seen.',
+      long: `With Leo on the 5th House, this is a natural placement, as Leo rules this house. Your creativity and self-expression tend to be vibrant, bold, and central to your identity.
+
+You may feel most alive when you are creating, performing, leading, or expressing your authentic self openly. Romance can be passionate, dramatic, and full of warmth. There is often a desire to be appreciated for who you are. Growth comes through grounding your self-expression in authenticity, so it remains true rather than dependent on recognition.`,
+    },
+    Virgo: {
+      short: 'You express yourself thoughtfully, carefully, and with attention to detail and refinement.',
+      long: `With Virgo on the 5th House, your creativity tends to be precise, skillful, and focused on improvement. You may enjoy refining your craft, developing techniques, or creating something useful and well-structured.
+
+Romance may be expressed through acts of service, care, and thoughtful attention rather than grand gestures. However, there can also be self-criticism or hesitation in fully expressing yourself. Growth comes through allowing imperfection and spontaneity, so your creativity can flow more freely.`,
+    },
+    Libra: {
+      short: 'You express yourself gracefully, artistically, and through connection, beauty, and balance.',
+      long: `With Libra on the 5th House, your creativity and joy are closely tied to aesthetics, harmony, and relationships. You may be drawn to art, design, music, or any form of expression that creates beauty and balance.
+
+Romance often plays a significant role in your life, and you may seek connection that feels equal, harmonious, and mutually appreciative. You tend to express yourself best in partnership or shared experience. Growth comes through maintaining your individuality, so your creativity does not become dependent on others’ presence or approval.`,
+    },
+    Scorpio: {
+      short: 'You express yourself intensely, passionately, and with deep emotional and creative power.',
+      long: `With Scorpio on the 5th House, your creativity and self-expression tend to be powerful, transformative, and emotionally charged. You may be drawn to themes of depth, mystery, or intensity in what you create.
+
+Romance can be passionate and all-consuming, with a desire for deep connection rather than surface-level interaction. You often experience joy through intensity rather than lightness. Growth comes through allowing playfulness and ease, so expression does not become overly serious or controlled.`,
+    },
+    Sagittarius: {
+      short: 'You express yourself freely, expansively, and with a love for adventure and exploration.',
+      long: `With Sagittarius on the 5th House, your creativity and joy are tied to freedom, exploration, and meaning. You may enjoy travel, philosophy, teaching, or any form of expression that expands your perspective.
+
+Romance often feels best when it includes growth, excitement, and shared adventure. You tend to express yourself openly and enthusiastically. Growth comes through grounding your energy, so your creativity and joy can take form rather than remaining purely exploratory.`,
+    },
+    Capricorn: {
+      short: 'You express yourself carefully, purposefully, and with a focus on long-term mastery.',
+      long: `With Capricorn on the 5th House, your creativity and self-expression tend to be structured, disciplined, and intentional. You may approach creative pursuits seriously, with a desire to build skill and create something lasting.
+
+Romance may be approached with caution or responsibility, rather than impulsiveness. You often value stability and commitment over fleeting excitement. Growth comes through allowing yourself to play and enjoy without pressure, so creativity becomes a source of joy rather than obligation.`,
+    },
+    Aquarius: {
+      short: 'You express yourself uniquely, innovatively, and with a desire to break from convention.',
+      long: `With Aquarius on the 5th House, your creativity and self-expression tend to be original, unconventional, and future-oriented. You may enjoy experimenting with new ideas, styles, or forms that challenge traditional norms.
+
+Romance may feel more intellectual or friendship-based, with a need for freedom and individuality within connection. You often express yourself best when you are being fully authentic. Growth comes through connecting emotionally as well as intellectually, so your expression resonates on multiple levels.`,
+    },
+    Pisces: {
+      short: 'You express yourself intuitively, imaginatively, and with a deep emotional and artistic sensitivity.',
+      long: `With Pisces on the 5th House, your creativity tends to be fluid, imaginative, and deeply inspired. You may be drawn to art, music, storytelling, or spiritual expression that allows you to channel feeling and intuition.
+
+Romance can feel dreamy, emotional, and idealistic, with a strong desire for connection beyond the surface. However, boundaries may sometimes blur. Growth comes through grounding your creative and emotional energy, so your expression can take form while still honoring its depth.`,
+    },
   },
   6: {
   },
