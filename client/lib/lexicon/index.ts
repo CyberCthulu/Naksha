@@ -37,3 +37,9 @@ export {
   zodiacNameFromLongitude,
   signIndexFromLongitude,
 } from './signs'
+
+// Helpers for planet-in-house interpretations
+export {
+  PLANET_HOUSE_MEANINGS,
+  getPlanetHouseMeaning,
+} from './planetHouses'

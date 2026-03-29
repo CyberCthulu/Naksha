@@ -3,10 +3,13 @@ import {
   computeNatalPlanets,
   findAspects,
   computeWholeSignHouses,
+  assignPlanetsToWholeSignHouses,
   PlanetPos,
   Aspect,
   HouseCusp,
+  PlanetHousePlacement,
 } from './astro'
+
 import { birthToUTC } from './time'
 import { normalizeZone } from './timezones'
 
@@ -26,6 +29,7 @@ export type ChartData = {
   planets: PlanetPos[]
   aspects: Aspect[]
   houses: HouseCusp[] | null
+  planet_houses: PlanetHousePlacement[] | null
 }
 
 export type ChartRow = {
@@ -64,6 +68,9 @@ export function buildChartData(input: BuildChartInput): ChartData {
   const houses = hasLocation
     ? computeWholeSignHouses(jsDate, input.birth_lat!, input.birth_lon!)
     : null
+  
+  const planet_houses =
+  houses != null ? assignPlanetsToWholeSignHouses(planets, houses) : null
 
   return {
     meta: {
@@ -79,6 +86,7 @@ export function buildChartData(input: BuildChartInput): ChartData {
     planets,
     aspects,
     houses,
+    planet_houses,
   }
 }
 

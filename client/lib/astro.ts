@@ -142,6 +142,41 @@ function localSiderealDegrees(jd: number, lonDeg: number): number {
   return norm360(gmstDegrees(jd) + lonDeg)
 }
 
+
+
+export type PlanetHousePlacement = {
+  name: string
+  house: number
+}
+
+function normalizedSignIndex(lon: number): number {
+  return Math.floor(norm360(lon) / 30)
+}
+
+/**
+ * For Whole Sign houses:
+ * - House 1 starts at the sign of the Ascendant
+ * - Each next house is the next sign
+ * So we can place planets by comparing sign indices.
+ */
+export function assignPlanetsToWholeSignHouses(
+  planets: PlanetPos[],
+  houses: HouseCusp[]
+): PlanetHousePlacement[] {
+  if (!houses.length) return []
+
+  const house1Sign = normalizedSignIndex(houses[0].lon)
+
+  return planets.map((planet) => {
+    const planetSign = normalizedSignIndex(planet.lon)
+    const offset = (planetSign - house1Sign + 12) % 12
+    return {
+      name: planet.name,
+      house: offset + 1,
+    }
+  })
+}
+
 /**
  * Compute Whole-Sign house cusps from birth date/time and location.
  * - Uses an approximate Ascendant formula (good enough for UX)
