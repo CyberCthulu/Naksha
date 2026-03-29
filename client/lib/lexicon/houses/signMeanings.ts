@@ -527,6 +527,78 @@ There can be a desire for unity and emotional merging within partnership. Howeve
     },
   },
   8: {
+    Aries: {
+      short: 'You approach intimacy, transformation, and shared resources with intensity, courage, and direct action.',
+      long: `With Aries on the 8th House, you tend to engage with deep emotional experiences and transformation in a direct and active way. You may confront challenges head-on and feel compelled to move through difficult experiences quickly rather than lingering in them.
+
+There can be intensity in how you approach intimacy and shared resources, with a desire for independence even within deep connection. Growth comes through developing patience and emotional awareness, so transformation unfolds with depth rather than urgency.`,
+    },
+    Taurus: {
+      short: 'You approach intimacy, transformation, and shared resources with caution, stability, and a need for security.',
+      long: `With Taurus on the 8th House, you may approach deep emotional experiences and shared resources with a desire for stability and control. Change can feel uncomfortable, especially when it involves loss or uncertainty.
+
+You may prefer to build trust slowly and value consistency within intimate connections. There can be strong attachment to what is familiar. Growth comes through embracing transformation rather than resisting it, so change becomes a source of strength rather than fear.`,
+    },
+    Gemini: {
+      short: 'You approach intimacy, transformation, and shared resources through curiosity, communication, and mental processing.',
+      long: `With Gemini on the 8th House, you tend to engage with deep topics through the mind. You may seek to understand transformation, intimacy, or emotional complexity by talking about it, analyzing it, or learning about it.
+
+There can be a need to verbalize or intellectualize experiences that are deeply emotional. Growth comes through allowing yourself to feel as well as think, so transformation is experienced fully rather than only understood mentally.`,
+    },
+    Cancer: {
+      short: 'You approach intimacy, transformation, and shared resources with emotional depth, sensitivity, and protectiveness.',
+      long: `With Cancer on the 8th House, your approach to intimacy and transformation is deeply emotional. You may form strong bonds and feel experiences of loss, change, or merging very intensely.
+
+There is often a need for emotional security within deep connections, and you may protect your vulnerability carefully. Growth comes through allowing emotional flow without overprotection, so intimacy becomes a space of trust rather than fear.`,
+    },
+    Leo: {
+      short: 'You approach intimacy, transformation, and shared resources with passion, pride, and strong emotional expression.',
+      long: `With Leo on the 8th House, your experiences of intimacy and transformation tend to be dramatic, passionate, and deeply felt. You may bring intensity and personal identity into shared experiences.
+
+There can be a desire to feel seen and valued within deep emotional bonds. Transformation may come through experiences that challenge your sense of self and pride. Growth comes through allowing vulnerability, so strength includes openness as well as confidence.`,
+    },
+    Virgo: {
+      short: 'You approach intimacy, transformation, and shared resources with analysis, caution, and a desire to understand.',
+      long: `With Virgo on the 8th House, you tend to approach deep emotional experiences with a careful and analytical mindset. You may try to understand, organize, or make sense of complex feelings and situations.
+
+There can be hesitation in fully surrendering to intensity, as you may seek control through understanding. Growth comes through allowing yourself to experience emotion without needing to fully analyze it, so transformation becomes lived rather than dissected.`,
+    },
+    Libra: {
+      short: 'You approach intimacy, transformation, and shared resources through balance, connection, and shared experience.',
+      long: `With Libra on the 8th House, you tend to experience transformation and intimacy through relationship. You may seek fairness, balance, and mutual understanding in deeply shared experiences.
+
+There is often a desire for harmony even within intense emotional situations. However, avoiding conflict can limit depth. Growth comes through embracing the full spectrum of emotion, so connection includes both harmony and truth.`,
+    },
+    Scorpio: {
+      short: 'You approach intimacy, transformation, and shared resources with intensity, depth, and a natural affinity for change.',
+      long: `With Scorpio on the 8th House, this is a natural placement, as Scorpio rules this house. Your relationship with transformation, intimacy, and power tends to be profound and deeply rooted.
+
+You may be drawn to experiences that involve emotional depth, psychological insight, and transformation. There can be strong instincts around control, trust, and vulnerability. Growth comes through balancing power with openness, so transformation becomes a path of empowerment rather than control.`,
+    },
+    Sagittarius: {
+      short: 'You approach intimacy, transformation, and shared resources with openness, exploration, and a search for meaning.',
+      long: `With Sagittarius on the 8th House, you tend to approach deep emotional experiences with a desire to understand their meaning and purpose. You may explore transformation through philosophy, spirituality, or personal growth.
+
+There can be a need to expand through intense experiences rather than be confined by them. Growth comes through staying present with emotional depth, so meaning is grounded in lived experience rather than abstract understanding.`,
+    },
+    Capricorn: {
+      short: 'You approach intimacy, transformation, and shared resources with control, discipline, and long-term perspective.',
+      long: `With Capricorn on the 8th House, you may approach deep emotional experiences and shared resources with caution, structure, and responsibility. You may prefer to maintain control rather than fully surrender to vulnerability.
+
+There can be a strong awareness of boundaries, obligations, and long-term consequences. Growth comes through allowing emotional openness, so strength includes vulnerability and trust rather than only control.`,
+    },
+    Aquarius: {
+      short: 'You approach intimacy, transformation, and shared resources with detachment, originality, and a nontraditional perspective.',
+      long: `With Aquarius on the 8th House, your approach to deep emotional experiences may be unconventional or intellectually oriented. You may process transformation through ideas, systems, or broader perspectives.
+
+There can be a tendency toward detachment when emotions become intense. Growth comes through integrating emotional presence, so insight is paired with genuine connection.`,
+    },
+    Pisces: {
+      short: 'You approach intimacy, transformation, and shared resources with sensitivity, intuition, and emotional merging.',
+      long: `With Pisces on the 8th House, your experiences of intimacy and transformation tend to be fluid, emotional, and deeply intuitive. You may feel a strong sense of merging or connection within deep relationships.
+
+Boundaries can sometimes blur, and you may absorb the emotional energy of others. Growth comes through grounding and clarity, so sensitivity becomes a strength without leading to overwhelm or loss of self.`,
+    },
   },
   9: {
   },
