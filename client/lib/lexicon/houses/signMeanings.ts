@@ -453,6 +453,78 @@ There is often a desire to help, heal, or serve in a compassionate way. However,
     },
   },
   7: {
+    Aries: {
+      short: 'You seek relationships that are dynamic, direct, and full of energy and initiative.',
+      long: `With Aries on the 7th House, you tend to be drawn toward relationships that are active, passionate, and direct. You may attract partners who are assertive, independent, or strong-willed, or you may take on these qualities within partnership yourself.
+
+There is often a desire for excitement and movement in relationships, and you may prefer honesty over subtlety. Conflict can arise quickly but may also resolve quickly. Growth comes through learning cooperation and patience, so independence and partnership can coexist without constant tension.`,
+    },
+    Taurus: {
+      short: 'You seek relationships that are stable, loyal, and grounded in consistency and trust.',
+      long: `With Taurus on the 7th House, you tend to value relationships that provide security, reliability, and long-term stability. You may be drawn to partners who are steady, dependable, and grounded.
+
+There is often a desire to build something lasting, and you may prefer comfort and consistency over unpredictability. However, attachment can become strong, and change may feel difficult. Growth comes through embracing flexibility, so stability does not turn into stagnation.`,
+    },
+    Gemini: {
+      short: 'You seek relationships that are communicative, mentally engaging, and full of variety.',
+      long: `With Gemini on the 7th House, you are often drawn to relationships that involve conversation, curiosity, and intellectual connection. You may value partners who are adaptable, expressive, and mentally stimulating.
+
+There can be a need for variety and movement within relationships, and communication plays a central role in maintaining connection. However, inconsistency or distraction can arise. Growth comes through developing depth and commitment, so connection remains meaningful rather than scattered.`,
+    },
+    Cancer: {
+      short: 'You seek relationships that are emotionally nurturing, protective, and deeply caring.',
+      long: `With Cancer on the 7th House, your approach to partnership is often rooted in emotional connection, care, and security. You may be drawn to partners who are nurturing, supportive, and family-oriented.
+
+Relationships may feel like a place of safety and emotional bonding. However, sensitivity can also lead to defensiveness or emotional dependency. Growth comes through building emotional security within yourself, so connection remains supportive rather than overwhelming.`,
+    },
+    Leo: {
+      short: 'You seek relationships that are warm, expressive, and full of passion and mutual appreciation.',
+      long: `With Leo on the 7th House, you tend to be drawn to relationships that feel vibrant, passionate, and full of life. You may value partners who are confident, expressive, and generous in their affection.
+
+There is often a desire for recognition and appreciation within partnership, and relationships may carry a sense of drama or intensity. Growth comes through grounding connection in authenticity, so appreciation is mutual and not dependent on constant validation.`,
+    },
+    Virgo: {
+      short: 'You seek relationships that are practical, supportive, and focused on growth and improvement.',
+      long: `With Virgo on the 7th House, you tend to approach relationships with a focus on practicality, service, and refinement. You may be drawn to partners who are reliable, thoughtful, and attentive to details.
+
+You may express love through helping, supporting, or improving shared systems. However, there can also be tendencies toward criticism or over-analysis. Growth comes through accepting imperfection, so relationships can feel supportive rather than constantly evaluated.`,
+    },
+    Libra: {
+      short: 'You seek relationships that are balanced, harmonious, and rooted in mutual understanding.',
+      long: `With Libra on the 7th House, this is a natural placement, as Libra rules this house. Relationships are often central to your life, and you may feel a strong pull toward partnership.
+
+You tend to value fairness, cooperation, and mutual respect, and may be skilled at navigating interpersonal dynamics. There is often a desire for harmony and connection. Growth comes through maintaining your individuality, so balance does not come at the cost of your own voice.`,
+    },
+    Scorpio: {
+      short: 'You seek relationships that are intense, transformative, and deeply emotional.',
+      long: `With Scorpio on the 7th House, relationships tend to be experienced with depth, intensity, and emotional power. You may be drawn to partners who are strong, complex, or transformative in some way.
+
+There can be themes of trust, control, vulnerability, and deep bonding. Surface-level connections may feel unsatisfying. Growth comes through allowing openness and trust, so intensity becomes connection rather than conflict or power struggle.`,
+    },
+    Sagittarius: {
+      short: 'You seek relationships that are expansive, adventurous, and rooted in growth and shared vision.',
+      long: `With Sagittarius on the 7th House, you tend to be drawn to relationships that feel open, inspiring, and growth-oriented. You may value partners who are optimistic, philosophical, or connected to a broader perspective.
+
+There is often a desire for freedom within partnership, and relationships may involve travel, learning, or shared exploration. Growth comes through balancing independence with commitment, so connection remains stable as well as expansive.`,
+    },
+    Capricorn: {
+      short: 'You seek relationships that are stable, committed, and built on responsibility and long-term goals.',
+      long: `With Capricorn on the 7th House, you tend to approach relationships seriously and with intention. You may be drawn to partners who are mature, reliable, and focused on building something lasting.
+
+There is often a desire for structure and commitment, and relationships may develop slowly over time. However, emotional expression can sometimes feel restricted. Growth comes through allowing vulnerability and warmth, so connection includes both strength and emotional depth.`,
+    },
+    Aquarius: {
+      short: 'You seek relationships that are independent, unconventional, and rooted in authenticity and freedom.',
+      long: `With Aquarius on the 7th House, your approach to partnership tends to be unique and less bound by traditional expectations. You may be drawn to relationships that allow for individuality, freedom, and mutual respect.
+
+You often value intellectual connection and shared ideals, and may approach relationships as friendships first. However, emotional detachment can sometimes arise. Growth comes through integrating emotional presence, so independence does not replace genuine intimacy.`,
+    },
+    Pisces: {
+      short: 'You seek relationships that are compassionate, intuitive, and deeply emotional or spiritual.',
+      long: `With Pisces on the 7th House, your approach to relationships tends to be sensitive, empathetic, and idealistic. You may be drawn to partners who feel deeply, creatively, or spiritually connected.
+
+There can be a desire for unity and emotional merging within partnership. However, boundaries may blur, leading to confusion or over-giving. Growth comes through establishing clear boundaries, so compassion remains balanced and sustainable within connection.`,
+    },
   },
   8: {
   },
