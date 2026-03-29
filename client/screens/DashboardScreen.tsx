@@ -1,31 +1,22 @@
-// screens/DashboardScreen.tsx
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { View, ActivityIndicator } from 'react-native'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 
 import supabase from '../lib/supabase'
 import { signOut } from '../lib/auth'
-
-import { birthToUTC } from '../lib/time'
-import { computeNatalPlanets } from '../lib/astro'
 import { normalizeZone } from '../lib/timezones'
-import { saveChart } from '../lib/charts'
+import { saveChart, buildChartData } from '../lib/charts'
 
-// ✅ shared styles (adjust path if yours differs)
 import { uiStyles } from '../components/ui/uiStyles'
-
-// UI primitives
 import { AppText, MutedText, TitleText } from '../components/ui/AppText'
 import { Card } from '../components/ui/Card'
-import { Screen } from '../components/ui/Screen'
 import { Button } from '../components/ui/Button'
 
-// zodiac helpers
 const ZODIAC = [
-  'Aries','Taurus','Gemini','Cancer','Leo','Virgo',
-  'Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces',
+  'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+  'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces',
 ]
-const ZODIAC_GLY = ['♈︎','♉︎','♊︎','♋︎','♌︎','♍︎','♎︎','♏︎','♐︎','♑︎','♒︎','♓︎']
+const ZODIAC_GLY = ['♈︎', '♉︎', '♊︎', '♋︎', '♌︎', '♍︎', '♎︎', '♏︎', '♐︎', '♑︎', '♒︎', '♓︎']
 const signOf = (lon: number) => Math.floor((((lon % 360) + 360) % 360) / 30)
 
 type User = {
@@ -70,9 +61,13 @@ export default function DashboardScreen() {
       setLoading(true)
       setError(null)
 
-      // 1) Session
-      const { data: { user }, error: userErr } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error: userErr,
+      } = await supabase.auth.getUser()
+
       if (userErr) throw userErr
+
       if (!user) {
         setSunSign(null)
         setMoonSign(null)
@@ -80,7 +75,6 @@ export default function DashboardScreen() {
         return
       }
 
-      // 2) Ensure profile row exists (once)
       if (!didEnsureOnce.current) {
         await supabase.from('users').upsert(
           { id: user.id, email: user.email ?? null },
@@ -89,21 +83,21 @@ export default function DashboardScreen() {
         didEnsureOnce.current = true
       }
 
-      // 3) Load profile
       const { data, error: profErr } = await supabase
         .from('users')
         .select('*')
         .eq('id', user.id)
         .maybeSingle()
+
       if (profErr) throw profErr
 
       const u = (data as User) ?? null
       setProfile(u)
 
-      // 4) If profile incomplete → navigate once and clear signs
       if (needsProfileCompletion(u)) {
         setSunSign(null)
         setMoonSign(null)
+
         if (!didNavigateRef.current) {
           nav.navigate('CompleteProfile')
           didNavigateRef.current = true
@@ -111,7 +105,6 @@ export default function DashboardScreen() {
         return
       }
 
-      // 5) Try to load saved chart for (user, birth_date, birth_time, time_zone)
       const tz = normalizeZone(u.time_zone!)
       if (!(tz && u.birth_date && u.birth_time)) {
         setSunSign(null)
@@ -130,30 +123,39 @@ export default function DashboardScreen() {
 
       if (existing?.chart_data?.planets) {
         const planets = existing.chart_data.planets as { name: string; lon: number }[]
-        const sun = planets.find(p => p.name === 'Sun')
-        const moon = planets.find(p => p.name === 'Moon')
+
+        const sun = planets.find((p) => p.name === 'Sun')
+        const moon = planets.find((p) => p.name === 'Moon')
+
         setSunSign(sun ? `${ZODIAC_GLY[signOf(sun.lon)]} ${ZODIAC[signOf(sun.lon)]}` : null)
         setMoonSign(moon ? `${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}` : null)
       } else {
-        // 6) Compute once and save for future loads
-        const { jsDate } = birthToUTC(u.birth_date, u.birth_time, tz)
-        const planets = computeNatalPlanets(jsDate)
+        const payload = buildChartData({
+          name: `${u.first_name ?? 'My'} Natal Chart`,
+          birth_date: u.birth_date,
+          birth_time: u.birth_time,
+          time_zone: tz,
+          birth_lat: u.birth_lat ?? null,
+          birth_lon: u.birth_lon ?? null,
+        })
 
         try {
           await saveChart(user.id, {
-            name: `${u.first_name ?? 'My'} Natal Chart`,
-            birth_date: u.birth_date,
-            birth_time: u.birth_time,
-            time_zone: tz,
-            birth_lat: u.birth_lat ?? null,
-            birth_lon: u.birth_lon ?? null,
+            name: payload.meta.name,
+            birth_date: payload.meta.birth_date,
+            birth_time: payload.meta.birth_time,
+            time_zone: payload.meta.time_zone,
+            birth_lat: payload.meta.birth_lat,
+            birth_lon: payload.meta.birth_lon,
+            chart_data: payload,
           })
         } catch (e) {
           console.warn('saveChart failed:', e)
         }
 
-        const sun = planets.find(p => p.name === 'Sun')
-        const moon = planets.find(p => p.name === 'Moon')
+        const sun = payload.planets.find((p) => p.name === 'Sun')
+        const moon = payload.planets.find((p) => p.name === 'Moon')
+
         setSunSign(sun ? `${ZODIAC_GLY[signOf(sun.lon)]} ${ZODIAC[signOf(sun.lon)]}` : null)
         setMoonSign(moon ? `${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}` : null)
       }
@@ -170,10 +172,16 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     unmounted.current = false
-    return () => { unmounted.current = true }
+    return () => {
+      unmounted.current = true
+    }
   }, [])
 
-  useFocusEffect(useCallback(() => { load() }, [load]))
+  useFocusEffect(
+    useCallback(() => {
+      load()
+    }, [load])
+  )
 
   const displayName =
     (profile?.first_name?.trim() || '') +
@@ -192,7 +200,9 @@ export default function DashboardScreen() {
     return (
       <View style={uiStyles.center}>
         <ActivityIndicator />
-        <AppText style={[uiStyles.text, { marginTop: 8, textAlign: 'center' }]}> Loading… </AppText>
+        <AppText style={[uiStyles.text, { marginTop: 8, textAlign: 'center' }]}>
+          Loading…
+        </AppText>
       </View>
     )
   }
@@ -244,7 +254,11 @@ export default function DashboardScreen() {
 
       <View style={{ height: 12 }} />
 
-      <Button title="Edit Birth Details" variant="ghost" onPress={() => nav.navigate('CompleteProfile')} />
+      <Button
+        title="Edit Birth Details"
+        variant="ghost"
+        onPress={() => nav.navigate('CompleteProfile')}
+      />
 
       <Button
         title="View Birth Chart"
@@ -254,10 +268,33 @@ export default function DashboardScreen() {
         style={{ marginTop: 8 }}
       />
 
-      <Button title="My Charts" variant="ghost" onPress={() => nav.navigate('MyCharts')} style={{ marginTop: 8 }} />
-      <Button title="Journal" variant="ghost" onPress={() => nav.navigate('JournalList')} style={{ marginTop: 8 }} />
-      <Button title="My Profile" variant="ghost" onPress={() => nav.navigate('Profile')} style={{ marginTop: 8 }} />
-      <Button title="Sign Out" variant="ghost" onPress={signOut} style={{ marginTop: 8 }} />
+      <Button
+        title="My Charts"
+        variant="ghost"
+        onPress={() => nav.navigate('MyCharts')}
+        style={{ marginTop: 8 }}
+      />
+
+      <Button
+        title="Journal"
+        variant="ghost"
+        onPress={() => nav.navigate('JournalList')}
+        style={{ marginTop: 8 }}
+      />
+
+      <Button
+        title="My Profile"
+        variant="ghost"
+        onPress={() => nav.navigate('Profile')}
+        style={{ marginTop: 8 }}
+      />
+
+      <Button
+        title="Sign Out"
+        variant="ghost"
+        onPress={signOut}
+        style={{ marginTop: 8 }}
+      />
     </View>
   )
 }
