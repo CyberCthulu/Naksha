@@ -379,6 +379,78 @@ Romance can feel dreamy, emotional, and idealistic, with a strong desire for con
     },
   },
   6: {
+    Aries: {
+      short: 'You approach work, routines, and health with urgency, independence, and high energy.',
+      long: `With Aries on the 6th House, your approach to daily life tends to be active, direct, and fast-paced. You may prefer to work independently and feel most productive when you can take initiative and move quickly.
+
+Routine can feel restrictive unless it allows for action and flexibility. You may thrive in environments that require decisiveness and physical or mental engagement. Growth comes through developing consistency and patience, so your energy can be sustained rather than burned through in bursts.`,
+    },
+    Taurus: {
+      short: 'You approach work, routines, and health steadily, patiently, and with a focus on stability.',
+      long: `With Taurus on the 6th House, your daily life tends to benefit from consistency, structure, and a calm, grounded rhythm. You may prefer predictable routines and environments that feel stable and secure.
+
+You often work best when you can build something slowly over time rather than rushing. There may also be a connection between physical comfort and productivity. Growth comes through staying adaptable, so your routine supports you without becoming rigid or resistant to change.`,
+    },
+    Gemini: {
+      short: 'You approach work, routines, and health through variety, adaptability, and mental engagement.',
+      long: `With Gemini on the 6th House, your daily life tends to be dynamic and mentally active. You may enjoy multitasking, switching between tasks, and engaging with different types of information or communication.
+
+Routine may feel limiting if it becomes repetitive, and you often function best when there is variety and movement in your day. Growth comes through creating structure within flexibility, so your productivity remains consistent rather than scattered.`,
+    },
+    Cancer: {
+      short: 'You approach work, routines, and health with sensitivity, care, and emotional awareness.',
+      long: `With Cancer on the 6th House, your daily life is often influenced by your emotional state. You may work best in environments that feel supportive, safe, and nurturing.
+
+There can be a strong instinct to care for others through your work or routines. Health and well-being may also be closely tied to emotional balance. Growth comes through creating emotional boundaries and stable routines, so your sensitivity supports your productivity rather than disrupting it.`,
+    },
+    Leo: {
+      short: 'You approach work, routines, and health with pride, creativity, and a desire to express yourself.',
+      long: `With Leo on the 6th House, your daily work and routines often carry a sense of identity and self-expression. You may want your work to feel meaningful and allow you to shine in some way.
+
+You tend to bring warmth, creativity, and presence into what you do, even in everyday tasks. However, routine may feel draining if it lacks purpose or recognition. Growth comes through finding intrinsic motivation, so your sense of worth in your work is not dependent on external validation.`,
+    },
+    Virgo: {
+      short: 'You approach work, routines, and health with precision, discipline, and strong attention to detail.',
+      long: `With Virgo on the 6th House, this is a natural placement, as Virgo rules this house. Your approach to daily life tends to be organized, analytical, and improvement-focused.
+
+You may excel at refining systems, solving problems, and maintaining efficient routines. There is often a strong awareness of health, habits, and productivity. However, this can also bring overthinking or perfectionism. Growth comes through balancing discipline with self-compassion, so your routine supports rather than pressures you.`,
+    },
+    Libra: {
+      short: 'You approach work, routines, and health through balance, cooperation, and harmonious environments.',
+      long: `With Libra on the 6th House, your daily life tends to be influenced by relationships and the need for balance. You may work best in environments that feel fair, cooperative, and aesthetically pleasing.
+
+You may prefer shared responsibilities or collaborative work rather than working in isolation. Health and routine may benefit from equilibrium and moderation. Growth comes through maintaining your own structure and boundaries, so balance does not depend entirely on external harmony.`,
+    },
+    Scorpio: {
+      short: 'You approach work, routines, and health intensely, privately, and with deep focus.',
+      long: `With Scorpio on the 6th House, your approach to daily life tends to be focused, serious, and emotionally invested. You may prefer working behind the scenes or in environments that require depth, strategy, or transformation.
+
+There can be an all-or-nothing approach to routine, where you commit deeply or withdraw entirely. Health may also be tied to emotional intensity or stress. Growth comes through creating sustainable habits and releasing the need for control, so your discipline becomes empowering rather than consuming.`,
+    },
+    Sagittarius: {
+      short: 'You approach work, routines, and health with freedom, exploration, and a need for meaning.',
+      long: `With Sagittarius on the 6th House, your daily life tends to function best when it feels expansive and meaningful. You may resist rigid routines and prefer work that allows for growth, learning, or movement.
+
+You often thrive when your day-to-day activities connect to a larger purpose or vision. Health may benefit from activity, outdoor movement, or exploration. Growth comes through building structure alongside freedom, so your routine supports your vision rather than limiting it.`,
+    },
+    Capricorn: {
+      short: 'You approach work, routines, and health with discipline, responsibility, and long-term focus.',
+      long: `With Capricorn on the 6th House, your daily life tends to be structured, goal-oriented, and grounded in responsibility. You may take your work seriously and feel a strong sense of duty in your routines.
+
+You often have the ability to build consistent habits and maintain discipline over time. However, there can also be pressure or overwork. Growth comes through allowing rest and flexibility, so productivity remains sustainable rather than rigid or exhausting.`,
+    },
+    Aquarius: {
+      short: 'You approach work, routines, and health independently, innovatively, and in unconventional ways.',
+      long: `With Aquarius on the 6th House, your daily life may not follow traditional structures. You may prefer unconventional routines or systems that allow for independence and innovation.
+
+You often work best when you can think differently and approach problems from unique angles. However, consistency can sometimes be a challenge. Growth comes through building reliable systems that still allow for individuality, so your routine supports your uniqueness rather than restricting it.`,
+    },
+    Pisces: {
+      short: 'You approach work, routines, and health intuitively, fluidly, and with sensitivity.',
+      long: `With Pisces on the 6th House, your daily life may feel less structured and more influenced by intuition, emotion, or inspiration. You may struggle with rigid routines but thrive in environments that allow flexibility and flow.
+
+There is often a desire to help, heal, or serve in a compassionate way. However, boundaries around time, energy, and health can blur. Growth comes through creating gentle structure and clear boundaries, so your sensitivity becomes a strength rather than a source of overwhelm.`,
+    },
   },
   7: {
   },
