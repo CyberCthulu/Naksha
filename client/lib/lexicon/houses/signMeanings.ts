@@ -231,6 +231,78 @@ You often learn through intuition, immersion, and creative experience. However, 
     },
   },
   4: {
+    Aries: {
+      short: 'Your inner foundation is shaped by independence, action, and a strong need to lead your own life.',
+      long: `With Aries on the 4th House, your emotional foundation tends to be active, independent, and self-directed. You may have grown up in an environment that required you to be strong, assertive, or self-reliant early on.
+
+There is often a deep inner drive to carve out your own path and define “home” on your own terms. You may feel most secure when you have autonomy and the ability to act freely. Growth comes through learning how to balance independence with emotional openness, so strength does not turn into isolation.`,
+    },
+    Taurus: {
+      short: 'Your inner foundation is shaped by stability, comfort, and a deep need for security.',
+      long: `With Taurus on the 4th House, your sense of home and emotional grounding is tied to stability, consistency, and physical comfort. You may value a peaceful, steady environment and feel most at ease when life is predictable and secure.
+
+There is often a strong attachment to familiar places, routines, or family traditions. You may take pride in building a stable home over time. Growth comes through allowing change when needed, so your sense of security remains supportive rather than limiting.`,
+    },
+    Gemini: {
+      short: 'Your inner foundation is shaped by movement, communication, and mental stimulation.',
+      long: `With Gemini on the 4th House, your home environment and emotional roots may have been dynamic, communicative, or constantly changing. You may associate security with connection, conversation, and the ability to think and express freely.
+
+There can be a need for variety within your personal space, and you may feel most at home where there is mental engagement. Growth comes through developing emotional depth and stability, so your inner world is not overly dependent on constant stimulation or change.`,
+    },
+    Cancer: {
+      short: 'Your inner foundation is deeply emotional, nurturing, and rooted in care and protection.',
+      long: `With Cancer on the 4th House, this is a natural placement, as Cancer rules this house. Your sense of home, family, and emotional grounding tends to be deeply important to your identity.
+
+You may be highly sensitive to your environment and feel a strong need to create a safe, nurturing space for yourself and others. Family bonds and emotional memory can run deep. Growth comes through developing boundaries, so care and connection do not become overprotection or emotional overwhelm.`,
+    },
+    Leo: {
+      short: 'Your inner foundation is shaped by pride, warmth, and a desire to create a meaningful, expressive home.',
+      long: `With Leo on the 4th House, your home and inner world often carry a sense of identity, pride, and creative expression. You may want your living space to reflect who you are and feel like a place where your authentic self can shine.
+
+There may have been strong personalities or a desire for recognition within your early environment. You tend to feel most secure when your inner world is honored and expressed. Growth comes through grounding your sense of worth internally, so it does not rely solely on external validation within family or home dynamics.`,
+    },
+    Virgo: {
+      short: 'Your inner foundation is shaped by order, responsibility, and a need for practical stability.',
+      long: `With Virgo on the 4th House, your home environment may have emphasized structure, responsibility, or attention to detail. You may feel most secure when your space is organized, functional, and well-managed.
+
+There is often a desire to improve or refine your living environment and create a sense of usefulness within the home. However, this can also bring pressure or perfectionism. Growth comes through allowing your home to be a place of rest, not just responsibility, so peace can exist alongside order.`,
+    },
+    Libra: {
+      short: 'Your inner foundation is shaped by harmony, balance, and a need for peaceful relationships at home.',
+      long: `With Libra on the 4th House, your sense of emotional security is closely tied to harmony and balance within your home environment. You may value beauty, fairness, and cooperation, and feel most at ease when your surroundings are calm and aesthetically pleasing.
+
+Relationships within the home play a significant role in shaping your inner world. You may naturally try to mediate or maintain peace. Growth comes through asserting your own needs clearly, so harmony does not come at the cost of your authenticity.`,
+    },
+    Scorpio: {
+      short: 'Your inner foundation is shaped by intensity, depth, and powerful emotional undercurrents.',
+      long: `With Scorpio on the 4th House, your early environment and emotional roots may have been intense, private, or transformative. You may carry deep emotional layers and a strong instinct to protect your inner world.
+
+Home may feel like a place of depth, secrecy, or emotional truth rather than surface-level comfort. You often seek authenticity and emotional power in your private life. Growth comes through allowing trust and vulnerability, so your inner world becomes a source of strength rather than guarded isolation.`,
+    },
+    Sagittarius: {
+      short: 'Your inner foundation is shaped by freedom, growth, and a need for space and exploration.',
+      long: `With Sagittarius on the 4th House, your sense of home may be tied to movement, expansion, or a broader sense of belonging rather than a single fixed place. You may have experienced a home environment that encouraged exploration, belief systems, or personal growth.
+
+You tend to feel most secure when you have space to grow and are not confined. Home may feel more like a philosophy or direction than a physical location. Growth comes through creating a stable inner base, so freedom and grounding can coexist.`,
+    },
+    Capricorn: {
+      short: 'Your inner foundation is shaped by responsibility, discipline, and a need for structure and stability.',
+      long: `With Capricorn on the 4th House, your early environment may have involved responsibility, pressure, or a strong focus on stability and long-term security. You may have learned early on to be disciplined, controlled, or self-reliant.
+
+You often seek to build a solid and enduring foundation in your personal life. However, emotional expression may feel restricted at times. Growth comes through allowing vulnerability and warmth into your inner world, so strength includes emotional depth as well as structure.`,
+    },
+    Aquarius: {
+      short: 'Your inner foundation is shaped by independence, uniqueness, and a nontraditional sense of home.',
+      long: `With Aquarius on the 4th House, your home environment or emotional roots may have felt unconventional, unpredictable, or different from the norm. You may define “home” in your own unique way rather than following traditional expectations.
+
+You tend to need freedom and individuality within your private life and may feel most secure when you can be fully yourself. Growth comes through building emotional connection alongside independence, so detachment does not replace true belonging.`,
+    },
+    Pisces: {
+      short: 'Your inner foundation is shaped by sensitivity, intuition, and a deeply emotional inner world.',
+      long: `With Pisces on the 4th House, your emotional roots may feel fluid, sensitive, and deeply intuitive. You may have experienced a home environment that was compassionate, spiritual, or at times unclear or boundaryless.
+
+You tend to feel most secure in spaces that allow for peace, imagination, and emotional depth. However, boundaries can sometimes blur. Growth comes through grounding your inner world, so your sensitivity becomes a source of strength rather than confusion or overwhelm.`,
+    },
   },
   5: {
   },
