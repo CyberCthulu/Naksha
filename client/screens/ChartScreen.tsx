@@ -15,7 +15,13 @@ import { ParamListBase } from '@react-navigation/native'
 
 import { useSpace } from '../components/space/SpaceProvider'
 import { birthToUTC } from '../lib/time'
-import { computeWholeSignHouses, type PlanetPos, type Aspect, type HouseCusp } from '../lib/astro'
+import {
+  computeWholeSignHouses,
+  type PlanetPos,
+  type Aspect,
+  type HouseCusp,
+  type PlanetHousePlacement,
+} from '../lib/astro'
 import { normalizeZone } from '../lib/timezones'
 import supabase from '../lib/supabase'
 import { saveChart, buildChartData, type ChartData } from '../lib/charts'
@@ -92,6 +98,9 @@ export default function ChartScreen({ route }: ChartScreenProps) {
   const [planets, setPlanets] = useState<PlanetPos[]>(saved?.planets ?? [])
   const [aspects, setAspects] = useState<Aspect[]>(saved?.aspects ?? [])
   const [houses, setHouses] = useState<HouseCusp[] | null>(saved?.houses ?? null)
+  const [planetHouses, setPlanetHouses] = useState<PlanetHousePlacement[] | null>(
+    saved?.planet_houses ?? null
+  )
   const [isSaved, setIsSaved] = useState<boolean>(!!fromSaved)
 
   if (!profile?.birth_date || !profile?.birth_time || !profile?.time_zone) {
@@ -139,6 +148,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         setPlanets(saved.planets)
         setAspects(saved.aspects)
         setHouses(localHouses)
+        setPlanetHouses(saved.planet_houses ?? null)
         setIsSaved(true)
         return
       }
@@ -180,6 +190,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         const cd = existing.chart_data as ChartData
         const ps: PlanetPos[] = cd.planets ?? []
         const asps: Aspect[] = cd.aspects ?? []
+        const ph: PlanetHousePlacement[] | null = cd.planet_houses ?? null
 
         let localHouses: HouseCusp[] | null = cd.houses ?? null
 
@@ -191,6 +202,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         setPlanets(ps)
         setAspects(asps)
         setHouses(localHouses)
+        setPlanetHouses(ph)
         setIsSaved(true)
       } else {
         const payload = buildChartData({
@@ -205,6 +217,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         setPlanets(payload.planets)
         setAspects(payload.aspects)
         setHouses(payload.houses)
+        setPlanetHouses(payload.planet_houses)
         setIsSaved(false)
 
         try {
@@ -298,6 +311,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
       setPlanets(payload.planets)
       setAspects(payload.aspects)
       setHouses(payload.houses)
+      setPlanetHouses(payload.planet_houses)
       setIsSaved(true)
 
       Alert.alert('Saved', 'Chart saved to your library.')
@@ -371,6 +385,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
 
       <PlanetPositionsList
         planets={planets}
+        planetHouses={planetHouses}
         focusedPlanet={focusedPlanet}
         onFocusPlanet={focusPlanet}
       />

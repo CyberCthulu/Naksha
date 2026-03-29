@@ -1,11 +1,13 @@
 import React from 'react'
-import { Text, Pressable, StyleSheet } from 'react-native'
-import { PlanetPos } from '../../lib/astro'
+import { View, Text, StyleSheet, Pressable } from 'react-native'
+import { PlanetPos, PlanetHousePlacement } from '../../lib/astro'
 import {
-  zodiacNameFromLongitude,
   signIndexFromLongitude,
+  zodiacNameFromLongitude,
   getPlanetSignMeaning,
+  getPlanetHouseMeaning,
   type PlanetKey,
+  type HouseNumber,
 } from '../../lib/lexicon'
 import { theme } from '../ui/theme'
 
@@ -29,14 +31,42 @@ function asPlanetKey(name: string): PlanetKey | null {
   return (allowed as string[]).includes(name) ? (name as PlanetKey) : null
 }
 
+function asHouseNumber(n: number): HouseNumber | null {
+  return n >= 1 && n <= 12 ? (n as HouseNumber) : null
+}
+
+function buildPlanetSummary(
+  planetName: string,
+  lon: number,
+  planetHouses: PlanetHousePlacement[] | null
+): string {
+  const pk = asPlanetKey(planetName)
+  if (!pk) return ''
+
+  const signName = zodiacNameFromLongitude(lon)
+  const signMeaning = getPlanetSignMeaning(pk, signName)
+
+  const placement = planetHouses?.find((p) => p.name === planetName)
+  const houseNumber = placement ? asHouseNumber(placement.house) : null
+  const houseMeaning = houseNumber ? getPlanetHouseMeaning(pk, houseNumber) : null
+
+  if (signMeaning?.short && houseMeaning?.short) {
+    return `${signMeaning.short} ${houseMeaning.short}`
+  }
+
+  return signMeaning?.short ?? houseMeaning?.short ?? ''
+}
+
 type Props = {
   planets: PlanetPos[]
+  planetHouses: PlanetHousePlacement[] | null
   focusedPlanet: PlanetKey | null
   onFocusPlanet: (planet: PlanetKey) => void
 }
 
 export default function PlanetPositionsList({
   planets,
+  planetHouses,
   focusedPlanet,
   onFocusPlanet,
 }: Props) {
@@ -52,9 +82,8 @@ export default function PlanetPositionsList({
         const mm = String(min).padStart(2, '0')
 
         const pk = asPlanetKey(p.name)
-        const signName = zodiacNameFromLongitude(p.lon)
-        const meaning = pk ? getPlanetSignMeaning(pk, signName) : null
         const isActive = pk != null && focusedPlanet === pk
+        const summary = buildPlanetSummary(p.name, p.lon, planetHouses)
 
         return (
           <Pressable
@@ -66,8 +95,8 @@ export default function PlanetPositionsList({
             <Text style={styles.itemLeft}>
               {`${p.name.padEnd(7)} ${ZODIAC_ABBR[signIdx]} ${deg}°${mm}′`}
             </Text>
-            <Text style={styles.itemRight} numberOfLines={3}>
-              {meaning?.short ?? ''}
+            <Text style={styles.itemRight} numberOfLines={4}>
+              {summary}
             </Text>
           </Pressable>
         )
