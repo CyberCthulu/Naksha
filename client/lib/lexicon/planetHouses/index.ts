@@ -1,3 +1,4 @@
+//lib/lexicon/planetHouses/index.ts
 import { HouseNumber, Interpretation, PlanetKey, maybe } from '../types'
 
 export type PlanetHouseLexicon = Partial<

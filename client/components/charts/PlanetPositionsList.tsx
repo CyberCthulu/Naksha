@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, StyleSheet, Pressable } from 'react-native'
+import { Text, StyleSheet, Pressable, View } from 'react-native'
 import { PlanetPos, PlanetHousePlacement } from '../../lib/astro'
 import {
   signIndexFromLongitude,
@@ -85,6 +85,9 @@ export default function PlanetPositionsList({
         const isActive = pk != null && focusedPlanet === pk
         const summary = buildPlanetSummary(p.name, p.lon, planetHouses)
 
+        const placement = planetHouses?.find((ph) => ph.name === p.name)
+        const houseLabel = placement ? `H${placement.house}` : ''
+
         return (
           <Pressable
             key={p.name}
@@ -92,9 +95,16 @@ export default function PlanetPositionsList({
             onPress={() => pk && onFocusPlanet(pk)}
             style={[styles.itemRow, pk && styles.pressableRow, isActive && styles.activeRow]}
           >
-            <Text style={styles.itemLeft}>
-              {`${p.name.padEnd(7)} ${ZODIAC_ABBR[signIdx]} ${deg}°${mm}′`}
-            </Text>
+            <View style={styles.itemLeft}>
+              <Text style={styles.itemLeftText}>{p.name}</Text>
+              <Text style={styles.itemLeftText}>
+                {`${ZODIAC_ABBR[signIdx]} ${deg}°${mm}′`}
+              </Text>
+              {!!houseLabel && (
+                <Text style={styles.itemLeftText}>{houseLabel}</Text>
+              )}
+            </View>
+
             <Text style={styles.itemRight} numberOfLines={4}>
               {summary}
             </Text>
@@ -126,8 +136,12 @@ const styles = StyleSheet.create({
   },
   itemLeft: {
     width: 150,
+  },
+  itemLeftText: {
     fontFamily: 'monospace' as any,
     color: theme.colors.text,
+    fontSize: 14,
+    lineHeight: 22,
   },
   itemRight: {
     flex: 1,

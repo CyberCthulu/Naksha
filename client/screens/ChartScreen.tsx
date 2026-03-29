@@ -17,6 +17,7 @@ import { useSpace } from '../components/space/SpaceProvider'
 import { birthToUTC } from '../lib/time'
 import {
   computeWholeSignHouses,
+  assignPlanetsToWholeSignHouses,
   type PlanetPos,
   type Aspect,
   type HouseCusp,
@@ -145,10 +146,14 @@ export default function ChartScreen({ route }: ChartScreenProps) {
           localHouses = computeWholeSignHouses(jsDate, birthLat, birthLon)
         }
 
+        const localPlanetHouses: PlanetHousePlacement[] | null =
+          saved.planet_houses ??
+          (localHouses ? assignPlanetsToWholeSignHouses(saved.planets, localHouses) : null)
+
         setPlanets(saved.planets)
         setAspects(saved.aspects)
         setHouses(localHouses)
-        setPlanetHouses(saved.planet_houses ?? null)
+        setPlanetHouses(localPlanetHouses)
         setIsSaved(true)
         return
       }
@@ -190,7 +195,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         const cd = existing.chart_data as ChartData
         const ps: PlanetPos[] = cd.planets ?? []
         const asps: Aspect[] = cd.aspects ?? []
-        const ph: PlanetHousePlacement[] | null = cd.planet_houses ?? null
 
         let localHouses: HouseCusp[] | null = cd.houses ?? null
 
@@ -198,6 +202,10 @@ export default function ChartScreen({ route }: ChartScreenProps) {
           const { jsDate } = birthToUTC(birthDate, birthTime, tz)
           localHouses = computeWholeSignHouses(jsDate, birthLat, birthLon)
         }
+
+        const ph: PlanetHousePlacement[] | null =
+          cd.planet_houses ??
+          (localHouses ? assignPlanetsToWholeSignHouses(ps, localHouses) : null)
 
         setPlanets(ps)
         setAspects(asps)
