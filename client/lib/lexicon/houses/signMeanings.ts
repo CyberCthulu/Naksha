@@ -82,6 +82,28 @@ You are often most alive when you are free to be fully yourself. The growth edge
 You often move through life by sensing rather than forcing. Growth comes through grounding your sensitivity with stronger boundaries, so intuition becomes a gift rather than a source of overwhelm.`,
     },
   },
+  2: {
+  },
+  3: {
+  },
+  4: {
+  },
+  5: {
+  },
+  6: {
+  },
+  7: {
+  },
+  8: {
+  },
+  9: {
+  },
+  10: {
+  },
+  11: {
+  },
+  12: {
+  },
 }
 
 /**
