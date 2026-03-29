@@ -3,7 +3,8 @@ import { View, Text, StyleSheet } from 'react-native'
 import { HouseCusp } from '../../lib/astro'
 import {
   signIndexFromLongitude,
-  getHouseMeaning,
+  zodiacNameFromLongitude,
+  getHouseSignMeaning,
   type HouseNumber,
 } from '../../lib/lexicon'
 import { theme } from '../ui/theme'
@@ -31,15 +32,16 @@ export default function HousesList({ houses }: Props) {
       ) : (
         houses.map((h) => {
           const signIdx = signIndexFromLongitude(h.lon)
+          const signName = zodiacNameFromLongitude(h.lon)
           const hn = asHouseNumber(h.house)
-          const meaning = hn ? getHouseMeaning(hn) : null
+          const meaning = hn ? getHouseSignMeaning(hn, signName) : null
 
           return (
             <View key={`house-row-${h.house}`} style={styles.itemRow}>
               <Text style={styles.itemLeft}>
                 {`House ${String(h.house).padStart(2, ' ')}  ${ZODIAC_ABBR[signIdx]}`}
               </Text>
-              <Text style={styles.itemRight} numberOfLines={3}>
+              <Text style={styles.itemRight} numberOfLines={4}>
                 {meaning?.short ?? ''}
               </Text>
             </View>
