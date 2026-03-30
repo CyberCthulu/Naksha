@@ -1,4 +1,4 @@
-//components/charts/PlanetPositionsList.tsx
+// components/charts/PlanetPositionsList.tsx
 import React from 'react'
 import { Text, StyleSheet, Pressable, View } from 'react-native'
 import { PlanetPos, PlanetHousePlacement } from '../../lib/astro'
@@ -12,7 +12,20 @@ import {
 } from '../../lib/lexicon'
 import { theme } from '../ui/theme'
 
-const ZODIAC_ABBR = ['Ar', 'Ta', 'Ge', 'Cn', 'Le', 'Vi', 'Li', 'Sc', 'Sg', 'Cp', 'Aq', 'Pi']
+const ZODIAC_ABBR = [
+  'Ar',
+  'Ta',
+  'Ge',
+  'Cn',
+  'Le',
+  'Vi',
+  'Li',
+  'Sc',
+  'Sg',
+  'Cp',
+  'Aq',
+  'Pi',
+]
 
 const degInSign = (lon: number) => ((lon % 30) + 30) % 30
 
@@ -69,7 +82,9 @@ function buildPlanetSummary(
 
   const placement = planetHouses?.find((p) => p.name === planetName)
   const houseNumber = placement ? asHouseNumber(placement.house) : null
-  const houseMeaning = houseNumber ? getPlanetHouseMeaning(pk, houseNumber) : null
+  const houseMeaning = houseNumber
+    ? getPlanetHouseMeaning(pk, houseNumber)
+    : null
 
   if (signMeaning?.short && houseMeaning?.short) {
     const signPart = trimPeriod(signMeaning.short)
@@ -82,6 +97,30 @@ function buildPlanetSummary(
   if (houseMeaning?.short) return houseMeaning.short
 
   return ''
+}
+
+function formatPlanetPosition(lon: number) {
+  let signIdx = signIndexFromLongitude(lon)
+  const degFloat = degInSign(lon)
+
+  let deg = Math.floor(degFloat)
+  let min = Math.round((degFloat - deg) * 60)
+
+  if (min === 60) {
+    deg += 1
+    min = 0
+  }
+
+  if (deg === 30) {
+    deg = 0
+    signIdx = (signIdx + 1) % 12
+  }
+
+  return {
+    signIdx,
+    deg,
+    min,
+  }
 }
 
 type Props = {
@@ -102,16 +141,7 @@ export default function PlanetPositionsList({
       <Text style={styles.h2}>Positions</Text>
 
       {planets.map((p) => {
-        const signIdx = signIndexFromLongitude(p.lon)
-        const degFloat = degInSign(p.lon)
-        let deg = Math.floor(degFloat)
-        let min = Math.round((degFloat - deg) * 60)
-
-        if (min === 60) {
-        deg += 1
-        min = 0
-        }
-        
+        const { signIdx, deg, min } = formatPlanetPosition(p.lon)
         const mm = String(min).padStart(2, '0')
 
         const pk = asPlanetKey(p.name)
@@ -126,7 +156,11 @@ export default function PlanetPositionsList({
             key={p.name}
             disabled={!pk}
             onPress={() => pk && onFocusPlanet(pk)}
-            style={[styles.itemRow, pk && styles.pressableRow, isActive && styles.activeRow]}
+            style={[
+              styles.itemRow,
+              pk && styles.pressableRow,
+              isActive && styles.activeRow,
+            ]}
           >
             <View style={styles.itemLeft}>
               <Text style={styles.itemLeftText}>{p.name}</Text>
