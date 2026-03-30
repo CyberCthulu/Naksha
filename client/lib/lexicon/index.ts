@@ -1,5 +1,4 @@
 // lib/lexicon/index.ts
-//
 // Barrel file for the lexicon system.
 // Other parts of the app should import from here instead of reaching
 // into subfolders directly, e.g.:
