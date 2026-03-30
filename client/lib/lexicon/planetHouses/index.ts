@@ -1,3 +1,4 @@
+//lib/lexicon/planetHouses/index.ts
 import { HouseNumber, PlanetKey, maybe } from '../types'
 import { PLANET_HOUSE_MEANINGS } from './meanings'
 
