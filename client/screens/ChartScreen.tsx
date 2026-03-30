@@ -34,12 +34,15 @@ import PlanetPositionsList from '../components/charts/PlanetPositionsList'
 import HousesList from '../components/charts/HousesList'
 import AspectsList from '../components/charts/AspectsList'
 import ChartCompass from '../components/charts/ChartCompass'
+import InterpretationCard from '../components/charts/InterpretationCard'
 
 // lexicon
 import {
   zodiacNameFromLongitude,
   getPlanetSignMeaning,
+  getPlanetHouseMeaning,
   type PlanetKey,
+  type HouseNumber,
 } from '../lib/lexicon'
 
 // shared UI
@@ -81,6 +84,58 @@ function asPlanetKey(name: string): PlanetKey | null {
     'Pluto',
   ]
   return (allowed as string[]).includes(name) ? (name as PlanetKey) : null
+}
+
+function asHouseNumber(n: number): HouseNumber | null {
+  return n >= 1 && n <= 12 ? (n as HouseNumber) : null
+}
+
+function trimPeriod(text: string): string {
+  return text.trim().replace(/[.!?]+$/, '')
+}
+
+function toClause(text: string): string {
+  const trimmed = trimPeriod(text)
+
+  if (!trimmed) return ''
+
+  if (trimmed.startsWith('Your ')) {
+    return `your ${trimmed.slice(5)}`
+  }
+
+  if (trimmed.startsWith('You ')) {
+    return `you ${trimmed.slice(4)}`
+  }
+
+  return trimmed.charAt(0).toLowerCase() + trimmed.slice(1)
+}
+
+function buildPlanetSummary(
+  planetName: string,
+  lon: number,
+  planetHouses: PlanetHousePlacement[] | null
+): string {
+  const pk = asPlanetKey(planetName)
+  if (!pk) return ''
+
+  const signName = zodiacNameFromLongitude(lon)
+  const signMeaning = getPlanetSignMeaning(pk, signName)
+
+  const placement = planetHouses?.find((p) => p.name === planetName)
+  const houseNumber = placement ? asHouseNumber(placement.house) : null
+  const houseMeaning = houseNumber ? getPlanetHouseMeaning(pk, houseNumber) : null
+
+  if (signMeaning?.short && houseMeaning?.short) {
+    const signPart = trimPeriod(signMeaning.short)
+    const housePart = toClause(houseMeaning.short)
+
+    return `${signPart}. This tends to show up most clearly when ${housePart}.`
+  }
+
+  if (signMeaning?.short) return signMeaning.short
+  if (houseMeaning?.short) return houseMeaning.short
+
+  return ''
 }
 
 export default function ChartScreen({ route }: ChartScreenProps) {
@@ -345,6 +400,33 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     return { signName, meaning }
   }, [planets])
 
+  const focusedPlanetData = useMemo(() => {
+    if (!focusedPlanet) return null
+
+    const planet = planets.find((p) => p.name === focusedPlanet)
+    if (!planet) return null
+
+    const signName = zodiacNameFromLongitude(planet.lon)
+    const signMeaning = getPlanetSignMeaning(focusedPlanet, signName)
+
+    const placement = planetHouses?.find((ph) => ph.name === focusedPlanet)
+    const houseNumber = placement ? asHouseNumber(placement.house) : null
+    const houseMeaning = houseNumber
+      ? getPlanetHouseMeaning(focusedPlanet, houseNumber)
+      : null
+
+    const summary = buildPlanetSummary(focusedPlanet, planet.lon, planetHouses)
+
+    return {
+      planet,
+      signName,
+      signMeaning,
+      houseNumber,
+      houseMeaning,
+      summary,
+    }
+  }, [focusedPlanet, planets, planetHouses])
+
   if (loading) {
     return (
       <View style={uiStyles.center}>
@@ -397,6 +479,32 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         focusedPlanet={focusedPlanet}
         onFocusPlanet={focusPlanet}
       />
+
+      {focusedPlanetData && (
+        <InterpretationCard
+          title={focusedPlanetData.planet.name}
+          subtitle={`${focusedPlanetData.signName}${
+            focusedPlanetData.houseNumber
+              ? ` · House ${focusedPlanetData.houseNumber}`
+              : ''
+          }`}
+          summary={focusedPlanetData.summary}
+          blocks={[
+            {
+              title: `${focusedPlanet} in ${focusedPlanetData.signName}`,
+              interpretation: focusedPlanetData.signMeaning,
+              mode: 'long',
+            },
+            {
+              title: focusedPlanetData.houseNumber
+                ? `${focusedPlanet} in House ${focusedPlanetData.houseNumber}`
+                : undefined,
+              interpretation: focusedPlanetData.houseMeaning,
+              mode: 'long',
+            },
+          ]}
+        />
+      )}
 
       <View style={{ height: 16 }} />
 
