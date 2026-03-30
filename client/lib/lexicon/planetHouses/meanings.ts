@@ -307,18 +307,78 @@ There can be a tendency toward sacrifice, longing, or blurred boundaries in love
   },
 
   Mars: {
-    1: { short: '', long: `` },
-    2: { short: '', long: `` },
-    3: { short: '', long: `` },
-    4: { short: '', long: `` },
-    5: { short: '', long: `` },
-    6: { short: '', long: `` },
-    7: { short: '', long: `` },
-    8: { short: '', long: `` },
-    9: { short: '', long: `` },
-    10: { short: '', long: `` },
-    11: { short: '', long: `` },
-    12: { short: '', long: `` },
+    1: {
+      short: 'You express energy, drive, and assertiveness directly through your identity and presence.',
+      long: `With Mars in the 1st House, your energy is immediate, visible, and action-oriented. You may come across as assertive, bold, or physically expressive, with a natural drive to take initiative.
+
+There is often strong willpower and a desire to act independently. However, impatience or impulsiveness can arise. Growth comes through directing your energy with intention, so your strength becomes focused action rather than reactive force.`,
+    },
+    2: {
+      short: 'You direct your energy toward building resources, stability, and material security.',
+      long: `With Mars in the 2nd House, your drive is often focused on earning, building, and securing resources. You may feel motivated to create financial stability and tangible results through effort and persistence.
+
+There can be determination around values and possessions, but also potential conflict around money or self-worth. Growth comes through aligning action with true values, so effort leads to meaningful and sustainable results.`,
+    },
+    3: {
+      short: 'You express energy through communication, thinking, and mental activity.',
+      long: `With Mars in the 3rd House, your drive tends to move through your mind and communication. You may think quickly, speak directly, and engage actively in conversations or debates.
+
+There can be strong opinions and a desire to express ideas assertively. However, arguments or impatience in communication may arise. Growth comes through channeling mental energy constructively, so your words become powerful rather than reactive.`,
+    },
+    4: {
+      short: 'You direct your energy inward, toward home, family, and your emotional foundation.',
+      long: `With Mars in the 4th House, your drive may be expressed in your private life or within your home environment. There can be strong emotional energy tied to family, roots, or personal security.
+
+You may feel motivated to build a stable foundation or protect what matters to you. However, internal tension or conflict within the home may arise. Growth comes through processing emotional energy consciously, so it becomes strength rather than internal pressure.`,
+    },
+    5: {
+      short: 'You express energy through creativity, passion, romance, and bold self-expression.',
+      long: `With Mars in the 5th House, your drive tends to be creative, expressive, and passionate. You may pursue what excites you with intensity, whether in art, romance, or personal projects.
+
+There is often a strong desire to take risks and express yourself fully. Romance may be fiery and dynamic. Growth comes through balancing passion with consistency, so your creative energy can sustain itself over time.`,
+    },
+    6: {
+      short: 'You direct your energy toward work, routines, and improving daily systems.',
+      long: `With Mars in the 6th House, your drive is often focused on productivity, efficiency, and daily responsibilities. You may work hard, take initiative in your routines, and strive to improve systems around you.
+
+There can be strong motivation to stay active and engaged, but also potential for stress or burnout. Growth comes through balancing effort with rest, so your energy remains sustainable and effective.`,
+    },
+    7: {
+      short: 'You express energy through relationships, partnership dynamics, and direct interaction with others.',
+      long: `With Mars in the 7th House, your drive often emerges within relationships. You may attract strong, assertive partners or engage in dynamic, sometimes challenging interactions.
+
+There can be passion and intensity in partnerships, but also conflict if energy is not balanced. Growth comes through developing cooperation and mutual respect, so relationships become a space for growth rather than constant tension.`,
+    },
+    8: {
+      short: 'You direct your energy toward transformation, intimacy, and deep emotional experiences.',
+      long: `With Mars in the 8th House, your drive tends to be intense, focused, and transformative. You may pursue deep emotional or psychological experiences and feel compelled to understand what lies beneath the surface.
+
+There can be strong willpower in matters of intimacy, shared resources, or personal transformation. However, control or power struggles may arise. Growth comes through channeling intensity into conscious transformation, so your energy empowers rather than overwhelms.`,
+    },
+    9: {
+      short: 'You express energy through exploration, belief, and the pursuit of knowledge and meaning.',
+      long: `With Mars in the 9th House, your drive is often directed toward expansion, learning, and exploration. You may feel motivated to travel, study, or pursue experiences that broaden your perspective.
+
+There can be strong conviction in your beliefs and a desire to defend or express them. Growth comes through remaining open-minded, so your passion for truth does not become rigidity.`,
+    },
+    10: {
+      short: 'You direct your energy toward achievement, ambition, and your public path or career.',
+      long: `With Mars in the 10th House, your drive is often focused on success, achievement, and making an impact in the world. You may be highly motivated in your career and willing to take initiative to reach your goals.
+
+There can be strong ambition and leadership ability, but also pressure or conflict in professional settings. Growth comes through aligning ambition with purpose, so your actions lead to meaningful and sustainable success.`,
+    },
+    11: {
+      short: 'You express energy through groups, friendships, and pursuing collective goals.',
+      long: `With Mars in the 11th House, your drive often emerges in social settings, group efforts, or shared visions. You may feel motivated to take action within communities or toward long-term goals.
+
+There can be leadership within groups, but also potential for conflict if dynamics become unbalanced. Growth comes through channeling your energy into constructive collaboration, so your drive supports collective progress.`,
+    },
+    12: {
+      short: 'Your energy operates beneath the surface, often expressed privately or through inner processes.',
+      long: `With Mars in the 12th House, your drive may be less visible and more internalized. You may act behind the scenes or feel your energy move through subconscious or emotional layers.
+
+There can be hidden tension or difficulty expressing anger directly. However, this placement can also support spiritual discipline or deep inner work. Growth comes through becoming aware of your internal energy, so it can be expressed consciously rather than remaining suppressed.`,
+    },
   },
 
   Jupiter: {
