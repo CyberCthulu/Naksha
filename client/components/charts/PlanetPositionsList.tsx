@@ -36,6 +36,26 @@ function asHouseNumber(n: number): HouseNumber | null {
   return n >= 1 && n <= 12 ? (n as HouseNumber) : null
 }
 
+function trimPeriod(text: string): string {
+  return text.trim().replace(/[.!?]+$/, '')
+}
+
+function toClause(text: string): string {
+  const trimmed = trimPeriod(text)
+
+  if (!trimmed) return ''
+
+  if (trimmed.startsWith('Your ')) {
+    return `your ${trimmed.slice(5)}`
+  }
+
+  if (trimmed.startsWith('You ')) {
+    return `you ${trimmed.slice(4)}`
+  }
+
+  return trimmed.charAt(0).toLowerCase() + trimmed.slice(1)
+}
+
 function buildPlanetSummary(
   planetName: string,
   lon: number,
@@ -52,10 +72,16 @@ function buildPlanetSummary(
   const houseMeaning = houseNumber ? getPlanetHouseMeaning(pk, houseNumber) : null
 
   if (signMeaning?.short && houseMeaning?.short) {
-    return `${signMeaning.short} ${houseMeaning.short}`
+    const signPart = trimPeriod(signMeaning.short)
+    const housePart = toClause(houseMeaning.short)
+
+    return `${signPart}. This tends to show up most clearly when ${housePart}.`
   }
 
-  return signMeaning?.short ?? houseMeaning?.short ?? ''
+  if (signMeaning?.short) return signMeaning.short
+  if (houseMeaning?.short) return houseMeaning.short
+
+  return ''
 }
 
 type Props = {
@@ -78,8 +104,14 @@ export default function PlanetPositionsList({
       {planets.map((p) => {
         const signIdx = signIndexFromLongitude(p.lon)
         const degFloat = degInSign(p.lon)
-        const deg = Math.floor(degFloat)
-        const min = Math.round((degFloat - deg) * 60)
+        let deg = Math.floor(degFloat)
+        let min = Math.round((degFloat - deg) * 60)
+
+        if (min === 60) {
+        deg += 1
+        min = 0
+        }
+        
         const mm = String(min).padStart(2, '0')
 
         const pk = asPlanetKey(p.name)
