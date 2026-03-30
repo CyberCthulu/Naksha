@@ -232,18 +232,78 @@ There can be strong imagination, intuition, or sensitivity to hidden patterns. H
   },
 
   Venus: {
-    1: { short: '', long: `` },
-    2: { short: '', long: `` },
-    3: { short: '', long: `` },
-    4: { short: '', long: `` },
-    5: { short: '', long: `` },
-    6: { short: '', long: `` },
-    7: { short: '', long: `` },
-    8: { short: '', long: `` },
-    9: { short: '', long: `` },
-    10: { short: '', long: `` },
-    11: { short: '', long: `` },
-    12: { short: '', long: `` },
+    1: {
+      short: 'You express charm, attraction, and beauty naturally through your presence and identity.',
+      long: `With Venus in the 1st House, your energy often comes across as pleasant, attractive, and harmonious. You may naturally draw others toward you through your demeanor, style, or way of being.
+
+There is often a strong connection between your identity and your sense of beauty or relationship to others. You may value being liked or appreciated. Growth comes through developing self-worth that is independent of external validation, so your charm reflects authenticity rather than adaptation.`,
+    },
+    2: {
+      short: 'You find pleasure and value in stability, comfort, and building material and emotional security.',
+      long: `With Venus in the 2nd House, your relationship to love, pleasure, and beauty is closely tied to value and stability. You may enjoy comfort, quality, and the tangible aspects of life, including finances and possessions.
+
+There is often a strong appreciation for what feels secure and lasting. You may also attract resources or value through your natural sense of harmony. Growth comes through balancing attachment with flow, so enjoyment does not become dependency on material or external conditions.`,
+    },
+    3: {
+      short: 'You express love and attraction through communication, connection, and shared ideas.',
+      long: `With Venus in the 3rd House, your relational style often centers around communication, curiosity, and mental connection. You may enjoy conversation, writing, or exchanging ideas as a way of bonding with others.
+
+There is often charm in how you speak and connect, and you may attract others through your words or intellect. Growth comes through developing emotional depth, so connection goes beyond surface-level interaction into meaningful understanding.`,
+    },
+    4: {
+      short: 'You find love and pleasure in home, emotional security, and close personal bonds.',
+      long: `With Venus in the 4th House, your sense of love and harmony is often tied to your home, family, and inner emotional world. You may feel most at ease in environments that are comfortable, nurturing, and emotionally safe.
+
+There is often a deep appreciation for private connection and meaningful bonds. You may express affection through care and creating a sense of belonging. Growth comes through balancing inner and outer connection, so your emotional world remains supportive without becoming overly enclosed.`,
+    },
+    5: {
+      short: 'You express love and attraction through creativity, romance, and joyful self-expression.',
+      long: `With Venus in the 5th House, your relational style tends to be expressive, playful, and romantic. You may enjoy creativity, art, and experiences that allow you to feel alive and fully present.
+
+There is often a strong desire for romance, admiration, and enjoyment in connection. You may express love through creativity and passion. Growth comes through grounding your desires, so pleasure becomes sustainable rather than dependent on constant excitement or validation.`,
+    },
+    6: {
+      short: 'You express love through care, support, and practical acts of service in daily life.',
+      long: `With Venus in the 6th House, your approach to love and harmony often shows through practical care, helpfulness, and attention to detail. You may express affection by supporting others, improving situations, or contributing in meaningful ways.
+
+There can be a desire for balance and harmony within daily routines and work environments. However, love may become tied to usefulness. Growth comes through recognizing your worth beyond what you do, so relationships remain mutual rather than service-based alone.`,
+    },
+    7: {
+      short: 'You naturally seek harmony, balance, and connection within relationships and partnerships.',
+      long: `With Venus in the 7th House, this is a natural placement, as Venus rules this house. Your approach to love and connection is centered around partnership, harmony, and mutual understanding.
+
+You may value relationships highly and seek balance, fairness, and cooperation in your connections. There is often a natural ability to attract partners and maintain harmony. Growth comes through maintaining your individuality, so connection enhances rather than defines your identity.`,
+    },
+    8: {
+      short: 'You experience love and attraction deeply, intensely, and through emotional and transformative bonds.',
+      long: `With Venus in the 8th House, your approach to love tends to be intense, emotional, and deeply connected. You may seek relationships that involve transformation, intimacy, and profound emotional bonding.
+
+There can be strong attraction, passion, and a desire for depth rather than surface-level connection. However, attachment or power dynamics may arise. Growth comes through cultivating trust and balance, so intimacy becomes empowering rather than consuming.`,
+    },
+    9: {
+      short: 'You express love through shared beliefs, exploration, and expanding experiences together.',
+      long: `With Venus in the 9th House, your approach to love and connection often involves growth, learning, and shared exploration. You may be drawn to partners who expand your worldview or align with your beliefs.
+
+There is often a love of travel, philosophy, or cultural connection within relationships. You may value freedom and expansion in love. Growth comes through grounding connection, so relationships remain stable as well as expansive.`,
+    },
+    10: {
+      short: 'You express love and value through your career, public image, and achievements.',
+      long: `With Venus in the 10th House, your sense of attraction and value may be tied to your public life, career, or reputation. You may be drawn to partners who are established, successful, or aligned with your ambitions.
+
+There is often a natural charm in professional settings, and relationships may influence your public path. Growth comes through aligning love with authenticity, so your connections support your true self rather than only your status or image.`,
+    },
+    11: {
+      short: 'You express love through friendship, shared goals, and connection within communities.',
+      long: `With Venus in the 11th House, your approach to love often begins with friendship, shared ideals, and mutual interests. You may value connection within groups or communities and feel drawn to relationships that align with your vision for the future.
+
+There is often ease in social settings and a natural ability to connect with others. Growth comes through maintaining emotional depth, so relationships go beyond shared ideas into meaningful connection.`,
+    },
+    12: {
+      short: 'You experience love in subtle, private, and deeply emotional or spiritual ways.',
+      long: `With Venus in the 12th House, your approach to love may be inward, sensitive, and sometimes hidden. You may experience deep compassion, idealism, or spiritual connection in relationships.
+
+There can be a tendency toward sacrifice, longing, or blurred boundaries in love. You may feel drawn to connections that are difficult to define. Growth comes through developing clarity and self-worth, so love becomes grounded and reciprocal rather than elusive or self-sacrificing.`,
+    },
   },
 
   Mars: {
