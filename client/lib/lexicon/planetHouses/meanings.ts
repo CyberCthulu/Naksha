@@ -82,18 +82,78 @@ There is often a rich inner world here, along with sensitivity to what is unspok
   },
 
   Moon: {
-    1: { short: '', long: `` },
-    2: { short: '', long: `` },
-    3: { short: '', long: `` },
-    4: { short: '', long: `` },
-    5: { short: '', long: `` },
-    6: { short: '', long: `` },
-    7: { short: '', long: `` },
-    8: { short: '', long: `` },
-    9: { short: '', long: `` },
-    10: { short: '', long: `` },
-    11: { short: '', long: `` },
-    12: { short: '', long: `` },
+    1: {
+      short: 'Your emotions are visible, instinctive, and closely tied to your identity and presence.',
+      long: `With the Moon in the 1st House, your emotional world tends to be close to the surface. You may experience feelings quickly and express them naturally, often wearing your mood or inner state outwardly.
+
+There is a strong connection between your identity and your emotional landscape, and others may perceive you as sensitive, responsive, or intuitive. Your instincts guide how you move through life. Growth comes through developing emotional awareness and stability, so your sensitivity becomes a source of strength rather than reactivity.`,
+    },
+    2: {
+      short: 'Your emotions are tied to security, stability, and your sense of self-worth.',
+      long: `With the Moon in the 2nd House, your emotional well-being is often connected to your sense of security, both material and internal. You may feel most at ease when your environment is stable and your needs are met consistently.
+
+There can be a strong link between emotional state and finances, possessions, or personal values. You may seek comfort through what feels tangible and reliable. Growth comes through building inner security alongside outer stability, so your sense of worth is not dependent solely on external conditions.`,
+    },
+    3: {
+      short: 'Your emotions are processed through thought, communication, and mental activity.',
+      long: `With the Moon in the 3rd House, your emotional world tends to move through your mind. You may process feelings by talking, writing, or thinking things through, often needing expression to understand what you feel.
+
+There can be emotional sensitivity around communication and environment. You may pick up on subtle cues in conversations or surroundings. Growth comes through balancing thinking and feeling, so your emotions are experienced directly rather than only analyzed.`,
+    },
+    4: {
+      short: 'Your emotions are deeply rooted in home, family, and your inner foundation.',
+      long: `With the Moon in the 4th House, this is a natural placement, as the Moon rules this house. Your emotional life tends to be deeply connected to your roots, family, and sense of home.
+
+You may have strong emotional memory and a deep need for safety, comfort, and belonging. Your inner world is rich and influential. Growth comes through building emotional security within yourself, so your foundation remains stable regardless of external circumstances.`,
+    },
+    5: {
+      short: 'Your emotions express themselves through creativity, joy, and romantic or playful experiences.',
+      long: `With the Moon in the 5th House, your emotional world tends to be expressive, creative, and connected to joy. You may feel deeply through artistic expression, romance, or experiences that allow you to be fully yourself.
+
+There can be a desire to feel emotionally seen and appreciated. Your moods may fluctuate with creative or romantic experiences. Growth comes through grounding your emotional state, so expression remains authentic rather than dependent on external validation.`,
+    },
+    6: {
+      short: 'Your emotions are tied to daily routines, work, and your physical and mental well-being.',
+      long: `With the Moon in the 6th House, your emotional state is often influenced by your daily life, habits, and environment. You may feel more stable when your routines are consistent and your responsibilities are managed.
+
+There can be sensitivity to stress, work conditions, or physical health. You may also care deeply about being useful or supportive. Growth comes through developing healthy routines and boundaries, so your emotional well-being is supported rather than drained by daily demands.`,
+    },
+    7: {
+      short: 'Your emotions are shaped through relationships, connection, and emotional mirroring.',
+      long: `With the Moon in the 7th House, your emotional life is closely tied to your relationships. You may seek emotional fulfillment through connection and feel strongly influenced by the moods or needs of others.
+
+Partnerships can play a central role in your emotional development, offering both support and reflection. Growth comes through maintaining emotional awareness of yourself, so your needs remain clear even within close relationships.`,
+    },
+    8: {
+      short: 'Your emotions are intense, deep, and connected to transformation, intimacy, and vulnerability.',
+      long: `With the Moon in the 8th House, your emotional world tends to be profound, complex, and transformative. You may feel deeply and experience strong emotional bonds, especially in intimate or shared situations.
+
+There can be sensitivity around trust, loss, or emotional merging. You may be drawn to depth rather than surface-level connection. Growth comes through developing emotional resilience and openness, so intensity becomes a source of insight rather than overwhelm.`,
+    },
+    9: {
+      short: 'Your emotions are tied to belief, meaning, and the need for expansion and understanding.',
+      long: `With the Moon in the 9th House, your emotional well-being is often connected to your sense of meaning, belief, and growth. You may feel most at ease when exploring new ideas, philosophies, or experiences.
+
+There can be a need for emotional expansion through learning, travel, or spiritual exploration. Your feelings may be influenced by your worldview. Growth comes through grounding your emotional experiences, so meaning is integrated into daily life rather than remaining abstract.`,
+    },
+    10: {
+      short: 'Your emotions are connected to your public life, career, and sense of purpose.',
+      long: `With the Moon in the 10th House, your emotional life may be closely tied to your career, public role, or sense of achievement. You may feel a strong need to be recognized or to create a meaningful contribution in the world.
+
+Others may perceive you as caring, responsive, or emotionally engaged in your work. However, emotional fulfillment may fluctuate with external success. Growth comes through developing inner emotional stability, so your sense of purpose is not dependent solely on external validation.`,
+    },
+    11: {
+      short: 'Your emotions are shaped through friendships, community, and shared goals.',
+      long: `With the Moon in the 11th House, your emotional life is often influenced by your social connections and sense of belonging within groups. You may feel supported through friendships and shared vision.
+
+There can be a strong need for emotional connection within community or collective environments. Your feelings may fluctuate with social dynamics. Growth comes through maintaining a sense of self within the group, so belonging enhances rather than defines your emotional state.`,
+    },
+    12: {
+      short: 'Your emotions are deep, private, and connected to the subconscious and unseen layers of experience.',
+      long: `With the Moon in the 12th House, your emotional world may be subtle, complex, and not always fully visible to others. You may feel deeply but process emotions internally or in solitude.
+
+There can be strong intuition, empathy, and sensitivity to unseen influences. At times, emotions may feel overwhelming or difficult to define. Growth comes through developing awareness and grounding, so your inner world becomes a source of healing rather than confusion.`,
+    },
   },
 
   Mercury: {
