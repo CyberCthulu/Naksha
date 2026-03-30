@@ -157,18 +157,78 @@ There can be strong intuition, empathy, and sensitivity to unseen influences. At
   },
 
   Mercury: {
-    1: { short: '', long: `` },
-    2: { short: '', long: `` },
-    3: { short: '', long: `` },
-    4: { short: '', long: `` },
-    5: { short: '', long: `` },
-    6: { short: '', long: `` },
-    7: { short: '', long: `` },
-    8: { short: '', long: `` },
-    9: { short: '', long: `` },
-    10: { short: '', long: `` },
-    11: { short: '', long: `` },
-    12: { short: '', long: `` },
+    1: {
+      short: 'Your thinking and communication are immediate, visible, and central to how you present yourself.',
+      long: `With Mercury in the 1st House, your mind and communication style are closely tied to your identity and presence. You may come across as articulate, curious, and mentally active, often expressing your thoughts quickly and directly.
+
+There is often a strong need to understand and explain yourself, and others may notice your intelligence or conversational style right away. Growth comes through developing focus and depth, so your quick thinking becomes integrated clarity rather than constant mental movement.`,
+    },
+    2: {
+      short: 'Your thinking is grounded in values, practicality, and how you build and manage resources.',
+      long: `With Mercury in the 2nd House, your mind tends to focus on practical matters such as finances, resources, and personal values. You may think in terms of usefulness, stability, and how to create tangible results.
+
+There can be skill in managing money, organizing resources, or making thoughtful decisions around value. Your words may carry weight when it comes to what matters. Growth comes through expanding beyond purely practical thinking, so your intellect can explore as well as stabilize.`,
+    },
+    3: {
+      short: 'Your thinking and communication are quick, curious, and highly active.',
+      long: `With Mercury in the 3rd House, this is a natural placement, as Mercury rules this house. Your mind tends to be fast, adaptable, and engaged with learning, communication, and information exchange.
+
+You may excel in speaking, writing, teaching, or connecting ideas. There is often a strong curiosity and desire to understand many things. Growth comes through cultivating focus and depth, so your intelligence becomes structured knowledge rather than scattered information.`,
+    },
+    4: {
+      short: 'Your thinking is shaped by your inner world, memories, and emotional foundation.',
+      long: `With Mercury in the 4th House, your mind tends to turn inward. You may think deeply about your past, your roots, and your inner emotional landscape.
+
+There can be a reflective or private quality to your communication, and you may express yourself most clearly in safe or familiar environments. Growth comes through balancing inner reflection with outward expression, so your thoughts are shared as well as understood.`,
+    },
+    5: {
+      short: 'Your thinking expresses itself creatively, playfully, and through self-expression.',
+      long: `With Mercury in the 5th House, your mind tends to be expressive, creative, and oriented toward sharing ideas in engaging ways. You may enjoy storytelling, humor, performance, or creative communication.
+
+There is often a playful quality to how you think and speak, and you may feel most alive when expressing yourself openly. Growth comes through grounding your ideas, so creativity leads to meaningful output rather than remaining purely expressive.`,
+    },
+    6: {
+      short: 'Your thinking is analytical, precise, and focused on solving problems and improving systems.',
+      long: `With Mercury in the 6th House, your mind tends to operate in a detailed, structured, and practical way. You may excel at organizing information, solving problems, and refining systems in your daily life.
+
+There is often a strong focus on efficiency, health, or work-related thinking. However, overthinking or mental stress can arise. Growth comes through balancing analysis with mental rest, so your precision remains a strength rather than a burden.`,
+    },
+    7: {
+      short: 'Your thinking develops through dialogue, relationships, and exchanging perspectives with others.',
+      long: `With Mercury in the 7th House, your communication style is often shaped through interaction with others. You may think best through conversation, negotiation, or shared dialogue.
+
+There can be a strong ability to understand multiple perspectives and communicate in a balanced way. However, indecision may arise when trying to consider everything equally. Growth comes through developing a clear personal viewpoint, so communication remains grounded in your own truth.`,
+    },
+    8: {
+      short: 'Your thinking is deep, investigative, and drawn to hidden or complex subjects.',
+      long: `With Mercury in the 8th House, your mind tends to seek depth, truth, and understanding beneath the surface. You may be drawn to psychology, strategy, mystery, or subjects that involve transformation and hidden dynamics.
+
+Your communication may be intense, focused, or purposeful. You often prefer meaningful conversation over small talk. Growth comes through allowing openness and flexibility, so your depth of thought remains expansive rather than fixed.`,
+    },
+    9: {
+      short: 'Your thinking is expansive, philosophical, and oriented toward meaning and big ideas.',
+      long: `With Mercury in the 9th House, your mind tends to focus on philosophy, belief systems, and higher learning. You may enjoy exploring ideas that expand your worldview and connect to larger meaning.
+
+There is often a natural interest in teaching, writing, or sharing knowledge. However, ideas can remain abstract if not grounded. Growth comes through integrating your insights into practical understanding, so your knowledge becomes lived wisdom.`,
+    },
+    10: {
+      short: 'Your thinking and communication are tied to your career, reputation, and public role.',
+      long: `With Mercury in the 10th House, your mind is often directed toward goals, achievement, and how you are perceived publicly. You may communicate in a way that is structured, purposeful, and aligned with your ambitions.
+
+There can be skill in strategy, planning, or professional communication. Your words may carry authority in your field. Growth comes through balancing ambition with authenticity, so your communication reflects your true perspective rather than only external expectations.`,
+    },
+    11: {
+      short: 'Your thinking is innovative, future-oriented, and shaped by groups, networks, and shared ideas.',
+      long: `With Mercury in the 11th House, your mind tends to operate in a forward-thinking and collective way. You may be drawn to ideas that involve progress, innovation, or social connection.
+
+You often think well within groups or networks and may enjoy exchanging ideas with others who share your vision. Growth comes through focusing your ideas, so your vision becomes actionable rather than purely conceptual.`,
+    },
+    12: {
+      short: 'Your thinking is introspective, intuitive, and connected to the subconscious or unseen.',
+      long: `With Mercury in the 12th House, your mind may operate in subtle, intuitive, or inward ways. You may think deeply, reflect privately, or process information beneath the surface of awareness.
+
+There can be strong imagination, intuition, or sensitivity to hidden patterns. However, clarity may sometimes feel elusive. Growth comes through grounding your thoughts and expressing them clearly, so your inner understanding can be shared and applied.`,
+    },
   },
 
   Venus: {
