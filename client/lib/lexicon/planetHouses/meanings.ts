@@ -457,18 +457,78 @@ There can be a sense of quiet growth or hidden support in your life. Growth come
   },
 
   Saturn: {
-    1: { short: '', long: `` },
-    2: { short: '', long: `` },
-    3: { short: '', long: `` },
-    4: { short: '', long: `` },
-    5: { short: '', long: `` },
-    6: { short: '', long: `` },
-    7: { short: '', long: `` },
-    8: { short: '', long: `` },
-    9: { short: '', long: `` },
-    10: { short: '', long: `` },
-    11: { short: '', long: `` },
-    12: { short: '', long: `` },
+    1: {
+      short: 'Your identity develops through discipline, responsibility, and overcoming self-doubt.',
+      long: `With Saturn in the 1st House, your sense of self often develops through challenge, responsibility, and gradual self-definition. You may feel a strong awareness of yourself early on, sometimes accompanied by pressure or self-consciousness.
+
+There can be a tendency toward seriousness or restraint in how you present yourself. However, this placement also brings the potential for deep self-mastery and resilience. Growth comes through building confidence over time, so your identity becomes grounded in strength rather than shaped by limitation.`,
+    },
+    2: {
+      short: 'You develop self-worth and stability through discipline, effort, and long-term responsibility.',
+      long: `With Saturn in the 2nd House, your relationship to money, resources, and self-worth often involves lessons of patience and responsibility. You may feel the need to work hard to build stability or overcome early limitations around security.
+
+There can be caution or fear around finances, but also strong potential for long-term success through persistence. Growth comes through recognizing your inherent value, so self-worth is not defined solely by what you build externally.`,
+    },
+    3: {
+      short: 'Your thinking and communication develop through structure, discipline, and careful expression.',
+      long: `With Saturn in the 3rd House, your mental processes and communication style may be serious, focused, and deliberate. You may take time to express yourself or feel pressure to communicate clearly and correctly.
+
+There can be early challenges around learning or expression, but also strong potential for disciplined thinking and deep understanding. Growth comes through trusting your voice, so structure supports your communication rather than restricting it.`,
+    },
+    4: {
+      short: 'Your emotional foundation develops through responsibility, structure, and building inner stability.',
+      long: `With Saturn in the 4th House, your sense of home, family, and emotional security may involve responsibility, pressure, or early maturity. You may feel the need to create stability where it was lacking.
+
+There can be a strong drive to build a solid foundation, though emotional expression may feel restricted at times. Growth comes through allowing vulnerability and emotional openness, so your inner world becomes as strong as your outer structure.`,
+    },
+    5: {
+      short: 'Your creativity and self-expression develop through discipline, effort, and overcoming hesitation.',
+      long: `With Saturn in the 5th House, your approach to creativity, joy, and self-expression may feel structured or restrained. You may take your creative pursuits seriously and work hard to develop your abilities.
+
+There can be hesitation in expressing yourself or fear of judgment. However, this placement offers the potential for mastery through persistence. Growth comes through allowing yourself to play and express freely, so discipline supports creativity rather than limiting it.`,
+    },
+    6: {
+      short: 'Your growth comes through discipline in work, routines, and developing strong daily systems.',
+      long: `With Saturn in the 6th House, your approach to work, health, and routine is often structured, disciplined, and responsibility-driven. You may take your duties seriously and feel a strong need to maintain order in your daily life.
+
+There can be pressure around productivity or perfection, but also the ability to build highly effective systems. Growth comes through balancing discipline with self-care, so your routines remain sustainable and supportive.`,
+    },
+    7: {
+      short: 'Your growth in relationships comes through commitment, responsibility, and long-term partnership.',
+      long: `With Saturn in the 7th House, relationships may feel serious, significant, and tied to responsibility or commitment. You may approach partnership with caution or take time to fully trust and connect.
+
+There can be lessons around boundaries, commitment, and mutual responsibility. While relationships may develop slowly, they often carry depth and longevity. Growth comes through opening to connection while maintaining structure, so partnership becomes both stable and fulfilling.`,
+    },
+    8: {
+      short: 'Your growth comes through facing deep fears, transformation, and learning to trust vulnerability.',
+      long: `With Saturn in the 8th House, your experience of intimacy, transformation, and shared resources may involve challenge or caution. You may feel the need to control or protect yourself in deep emotional situations.
+
+There can be lessons around trust, power, and vulnerability, often requiring you to face fears directly. Growth comes through allowing transformation to occur gradually, so control becomes strength rather than restriction.`,
+    },
+    9: {
+      short: 'Your beliefs and worldview develop through discipline, experience, and structured understanding.',
+      long: `With Saturn in the 9th House, your approach to philosophy, belief, and learning may be serious, structured, and experience-based. You may question beliefs deeply and seek truth through discipline rather than blind acceptance.
+
+There can be a gradual development of wisdom over time. Growth comes through remaining open to expansion, so structure supports your worldview without limiting it.`,
+    },
+    10: {
+      short: 'Your career and public path develop through discipline, responsibility, and long-term achievement.',
+      long: `With Saturn in the 10th House, this is a natural placement, as Saturn rules this house. Your career path often involves responsibility, ambition, and a strong drive to achieve.
+
+You may take your public role seriously and work steadily toward long-term goals. There can be pressure or delay, but also the potential for significant success through persistence. Growth comes through aligning ambition with purpose, so achievement becomes meaningful rather than burdensome.`,
+    },
+    11: {
+      short: 'Your growth in community and goals comes through responsibility, structure, and long-term vision.',
+      long: `With Saturn in the 11th House, your approach to friendships, networks, and long-term goals may be serious and selective. You may value meaningful connections over large social circles.
+
+There can be responsibility within groups or a focus on building structured goals over time. Growth comes through allowing openness and flexibility, so your vision remains expansive while grounded.`,
+    },
+    12: {
+      short: 'Your growth comes through inner discipline, confronting hidden fears, and developing spiritual strength.',
+      long: `With Saturn in the 12th House, your challenges and growth often occur beneath the surface. You may carry hidden fears, responsibilities, or subconscious patterns that require deep inner work.
+
+There can be a sense of isolation or internal pressure, but also the potential for profound spiritual strength and resilience. Growth comes through bringing awareness to your inner world, so what is hidden becomes a source of mastery rather than limitation.`,
+    },
   },
 
   Uranus: {
