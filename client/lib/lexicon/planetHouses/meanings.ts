@@ -382,18 +382,78 @@ There can be hidden tension or difficulty expressing anger directly. However, th
   },
 
   Jupiter: {
-    1: { short: '', long: `` },
-    2: { short: '', long: `` },
-    3: { short: '', long: `` },
-    4: { short: '', long: `` },
-    5: { short: '', long: `` },
-    6: { short: '', long: `` },
-    7: { short: '', long: `` },
-    8: { short: '', long: `` },
-    9: { short: '', long: `` },
-    10: { short: '', long: `` },
-    11: { short: '', long: `` },
-    12: { short: '', long: `` },
+    1: {
+      short: 'You express growth, optimism, and expansion naturally through your identity and presence.',
+      long: `With Jupiter in the 1st House, your energy often comes across as expansive, optimistic, and growth-oriented. You may naturally project confidence, generosity, or a sense of possibility.
+
+There is often a desire to grow, explore, and develop yourself continuously. Others may experience you as uplifting or encouraging. Growth comes through grounding your expansion, so optimism is paired with awareness and direction.`,
+    },
+    2: {
+      short: 'You experience growth and opportunity through values, resources, and building stability.',
+      long: `With Jupiter in the 2nd House, your sense of expansion often relates to finances, possessions, and personal values. You may have opportunities to grow materially or develop a strong sense of abundance.
+
+There can be generosity and a broad approach to resources, though overextension may occur. Growth comes through aligning abundance with responsibility, so expansion becomes sustainable rather than excessive.`,
+    },
+    3: {
+      short: 'You grow through learning, communication, and expanding your mental world.',
+      long: `With Jupiter in the 3rd House, your expansion tends to occur through knowledge, communication, and curiosity. You may enjoy learning, teaching, or sharing ideas across different environments.
+
+There is often a broad-minded approach to thinking and a desire to understand many perspectives. Growth comes through developing focus, so your intellectual expansion becomes integrated wisdom rather than scattered information.`,
+    },
+    4: {
+      short: 'You experience growth through home, family, and building a strong inner foundation.',
+      long: `With Jupiter in the 4th House, your sense of expansion is often connected to your home, roots, and emotional foundation. You may experience growth through family, living environment, or inner development.
+
+There can be a desire to create a supportive and abundant home life. Emotional security may expand over time. Growth comes through balancing inner and outer expansion, so your foundation remains stable as it grows.`,
+    },
+    5: {
+      short: 'You grow through creativity, joy, self-expression, and embracing life fully.',
+      long: `With Jupiter in the 5th House, your expansion is often tied to creativity, pleasure, and self-expression. You may feel most alive when engaging in activities that bring joy and allow you to express yourself freely.
+
+There can be a natural enthusiasm for romance, art, or creative pursuits. Growth comes through balancing enjoyment with intention, so your expansion remains meaningful rather than excessive.`,
+    },
+    6: {
+      short: 'You grow through work, discipline, and improving daily routines and systems.',
+      long: `With Jupiter in the 6th House, your expansion tends to occur through daily effort, work, and self-improvement. You may find opportunities in service, productivity, or developing effective routines.
+
+There can be growth in health, habits, or practical contribution. However, overcommitment may arise. Growth comes through maintaining balance, so your desire to improve does not lead to burnout.`,
+    },
+    7: {
+      short: 'You grow through relationships, partnership, and shared experiences with others.',
+      long: `With Jupiter in the 7th House, your expansion often comes through relationships and partnerships. You may attract opportunities through others or grow significantly through connection.
+
+There is often a generous and open approach to relationships, with a desire for mutual growth. Growth comes through maintaining balance, so expansion in partnership supports both individuals equally.`,
+    },
+    8: {
+      short: 'You grow through transformation, intimacy, and deep emotional or psychological exploration.',
+      long: `With Jupiter in the 8th House, your expansion tends to occur through deep experiences, transformation, and shared resources. You may gain insight through exploring emotional, psychological, or spiritual depths.
+
+There can be opportunities for growth through joint ventures or transformative events. Growth comes through integrating depth with wisdom, so expansion is guided rather than overwhelming.`,
+    },
+    9: {
+      short: 'You grow through philosophy, travel, higher learning, and the search for truth.',
+      long: `With Jupiter in the 9th House, this is a natural placement, as Jupiter rules this house. Your expansion is strongly tied to learning, belief systems, travel, and the pursuit of meaning.
+
+You may feel drawn to explore different cultures, philosophies, or spiritual paths. There is often a natural optimism and desire for understanding. Growth comes through grounding your beliefs, so your expansion becomes lived wisdom rather than abstraction.`,
+    },
+    10: {
+      short: 'You grow through career, achievement, and your role in the public world.',
+      long: `With Jupiter in the 10th House, your expansion often occurs through your career, reputation, and public life. You may experience opportunities for growth in leadership, achievement, or recognition.
+
+There can be a sense of purpose tied to making an impact in the world. Growth comes through aligning success with integrity, so expansion in your public life reflects your deeper values.`,
+    },
+    11: {
+      short: 'You grow through friendships, community, and contributing to collective goals.',
+      long: `With Jupiter in the 11th House, your expansion tends to occur through networks, groups, and shared vision. You may benefit from connections with others and opportunities within communities.
+
+There is often a desire to contribute to something larger than yourself. Growth comes through focusing your vision, so collective expansion becomes tangible and effective.`,
+    },
+    12: {
+      short: 'You grow through inner work, spirituality, and connection to the unseen.',
+      long: `With Jupiter in the 12th House, your expansion often occurs through inner development, spirituality, and reflection. You may gain insight through solitude, intuition, or connection to deeper layers of experience.
+
+There can be a sense of quiet growth or hidden support in your life. Growth comes through grounding your inner wisdom, so your expansion becomes both meaningful and applicable.`,
+    },
   },
 
   Saturn: {
