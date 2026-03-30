@@ -1,31 +1,41 @@
-//components/charts/InterpretationCard.tsx
+// components/charts/InterpretationCard.tsx
 
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
+import { Interpretation } from '../../lib/lexicon'
 import { theme } from '../ui/theme'
 import { uiStyles } from '../ui/uiStyles'
 
-type Section = {
+type InterpretationBlock = {
   title?: string
-  content: string
+  interpretation?: Interpretation | null
+  mode?: 'short' | 'long'
 }
 
 type Props = {
   title: string
   subtitle?: string | null
   summary?: string | null
-  sections?: Section[]
+  blocks?: InterpretationBlock[]
 }
 
 export default function InterpretationCard({
   title,
   subtitle = null,
   summary = null,
-  sections = [],
+  blocks = [],
 }: Props) {
-  const visibleSections = sections.filter(
-    (section) => section.content && section.content.trim().length > 0
-  )
+  const visibleBlocks = blocks.filter((block) => {
+    if (!block.interpretation) return false
+
+    const mode = block.mode ?? 'long'
+    const content =
+      mode === 'short'
+        ? block.interpretation.short
+        : block.interpretation.long
+
+    return !!content?.trim()
+  })
 
   return (
     <View style={[uiStyles.card, styles.card]}>
@@ -33,23 +43,32 @@ export default function InterpretationCard({
 
       {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
 
-      {!!summary && (
+      {!!summary?.trim() && (
         <View style={styles.summaryBlock}>
           <Text style={styles.summaryText}>{summary}</Text>
         </View>
       )}
 
-      {visibleSections.map((section, index) => (
-        <View
-          key={`${section.title ?? 'section'}-${index}`}
-          style={index > 0 ? styles.sectionSpacing : undefined}
-        >
-          {!!section.title && (
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-          )}
-          <Text style={styles.bodyText}>{section.content}</Text>
-        </View>
-      ))}
+      {visibleBlocks.map((block, index) => {
+        const mode = block.mode ?? 'long'
+        const content =
+          mode === 'short'
+            ? block.interpretation?.short ?? ''
+            : block.interpretation?.long ?? ''
+
+        return (
+          <View
+            key={`${block.title ?? 'block'}-${index}`}
+            style={index > 0 ? styles.blockSpacing : undefined}
+          >
+            {!!block.title && (
+              <Text style={styles.blockTitle}>{block.title}</Text>
+            )}
+
+            <Text style={styles.bodyText}>{content}</Text>
+          </View>
+        )
+      })}
     </View>
   )
 }
@@ -83,10 +102,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
-  sectionSpacing: {
+  blockSpacing: {
     marginTop: 14,
   },
-  sectionTitle: {
+  blockTitle: {
     color: theme.colors.text,
     fontSize: 15,
     fontWeight: '700',
