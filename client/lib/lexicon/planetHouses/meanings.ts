@@ -532,18 +532,78 @@ There can be a sense of isolation or internal pressure, but also the potential f
   },
 
   Uranus: {
-    1: { short: '', long: `` },
-    2: { short: '', long: `` },
-    3: { short: '', long: `` },
-    4: { short: '', long: `` },
-    5: { short: '', long: `` },
-    6: { short: '', long: `` },
-    7: { short: '', long: `` },
-    8: { short: '', long: `` },
-    9: { short: '', long: `` },
-    10: { short: '', long: `` },
-    11: { short: '', long: `` },
-    12: { short: '', long: `` },
+    1: {
+      short: 'Your identity expresses itself through uniqueness, independence, and unpredictability.',
+      long: `With Uranus in the 1st House, your presence often feels original, unconventional, and difficult to define. You may resist being boxed into a fixed identity and instead evolve constantly.
+
+There is often a strong drive toward independence and authenticity, even if it sets you apart from others. You may experience sudden shifts in how you present yourself or how others perceive you. Growth comes through grounding your individuality, so your uniqueness becomes a consistent force rather than constant instability.`,
+    },
+    2: {
+      short: 'Your values and resources are shaped by independence, change, and unconventional approaches.',
+      long: `With Uranus in the 2nd House, your relationship to money, resources, and values may be unpredictable or unconventional. You may experience sudden changes in finances or develop unique ways of earning and sustaining yourself.
+
+There is often a desire for financial independence and freedom from traditional structures. Growth comes through creating stability within change, so your independence does not lead to inconsistency.`,
+    },
+    3: {
+      short: 'Your thinking and communication are innovative, unconventional, and fast-moving.',
+      long: `With Uranus in the 3rd House, your mind tends to operate in original and unexpected ways. You may think quickly, generate new ideas, and approach communication from unique perspectives.
+
+There can be flashes of insight and sudden shifts in thinking. You may be drawn to technology, innovation, or alternative ways of learning. Growth comes through organizing your thoughts, so your brilliance can be communicated clearly and effectively.`,
+    },
+    4: {
+      short: 'Your inner foundation and home life are shaped by change, independence, and nontraditional structures.',
+      long: `With Uranus in the 4th House, your experience of home, family, or emotional grounding may be unconventional or subject to change. You may define “home” in a unique way or feel the need for freedom within your personal space.
+
+There can be unpredictability in your roots or emotional environment. Growth comes through building inner stability, so external change does not disrupt your sense of grounding.`,
+    },
+    5: {
+      short: 'Your creativity and self-expression are original, experimental, and unpredictable.',
+      long: `With Uranus in the 5th House, your creative energy tends to be innovative, unconventional, and often ahead of its time. You may enjoy experimenting with new forms of expression or breaking traditional norms.
+
+Romance and pleasure may also be unpredictable, with sudden attractions or shifts in interest. Growth comes through channeling your originality into consistent creative output, so your ideas can fully manifest.`,
+    },
+    6: {
+      short: 'Your approach to work, routines, and health is unconventional, flexible, and subject to sudden change.',
+      long: `With Uranus in the 6th House, your daily life may not follow traditional structures. You may prefer flexible routines or innovative approaches to work and health.
+
+There can be sudden changes in work environments or habits. You often thrive when allowed freedom and autonomy in your daily systems. Growth comes through building adaptable structure, so your routine supports you without restricting your independence.`,
+    },
+    7: {
+      short: 'Your relationships are unconventional, dynamic, and influenced by a need for freedom and authenticity.',
+      long: `With Uranus in the 7th House, your approach to partnership tends to be unique and often unpredictable. You may attract unconventional partners or experience sudden shifts in relationships.
+
+There is often a strong need for independence within connection, and traditional relationship structures may feel limiting. Growth comes through balancing freedom with commitment, so relationships remain both authentic and stable.`,
+    },
+    8: {
+      short: 'Your experience of transformation and intimacy is intense, sudden, and often awakening in nature.',
+      long: `With Uranus in the 8th House, your encounters with deep emotional experiences, transformation, or shared resources may be sudden and powerful. You may experience unexpected changes that shift your perspective profoundly.
+
+There can be a strong drive to understand hidden dynamics and explore transformation in unconventional ways. Growth comes through grounding your experiences, so sudden change becomes integrated awakening rather than disruption.`,
+    },
+    9: {
+      short: 'Your beliefs and worldview are unconventional, innovative, and open to radical perspectives.',
+      long: `With Uranus in the 9th House, your approach to philosophy, belief, and learning tends to be independent and forward-thinking. You may challenge traditional belief systems and explore new or alternative ways of understanding the world.
+
+There can be sudden shifts in perspective or moments of insight that reshape your worldview. Growth comes through integrating your ideas, so your vision becomes both expansive and grounded.`,
+    },
+    10: {
+      short: 'Your career and public path are unconventional, innovative, and subject to sudden changes.',
+      long: `With Uranus in the 10th House, your career path may be unique, unpredictable, or nontraditional. You may be drawn to innovation, technology, or roles that allow for independence and originality.
+
+There can be sudden shifts in direction or unexpected opportunities. Your public image may stand out as different from the norm. Growth comes through building consistency within change, so your path remains both authentic and sustainable.`,
+    },
+    11: {
+      short: 'Your connections and goals are shaped by innovation, independence, and progressive ideals.',
+      long: `With Uranus in the 11th House, this is a natural placement, as Uranus rules this house. Your approach to friendships, groups, and future vision tends to be progressive, innovative, and forward-thinking.
+
+You may be drawn to unconventional communities or causes that align with your ideals. There is often a strong sense of individuality within the collective. Growth comes through grounding your vision, so your ideas lead to real-world impact.`,
+    },
+    12: {
+      short: 'Your inner world is influenced by sudden insights, intuition, and unconventional subconscious patterns.',
+      long: `With Uranus in the 12th House, your subconscious may operate in unexpected and intuitive ways. You may experience sudden insights, flashes of awareness, or shifts in inner perception.
+
+There can be a sense of unpredictability in your inner world or a connection to deeper, unseen patterns. Growth comes through grounding your awareness, so insight becomes integrated understanding rather than fleeting realization.`,
+    },
   },
 
   Neptune: {
