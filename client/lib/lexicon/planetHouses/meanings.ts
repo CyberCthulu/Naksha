@@ -682,17 +682,77 @@ You may have strong imagination, empathy, or spiritual awareness. There can also
   },
 
   Pluto: {
-    1: { short: '', long: `` },
-    2: { short: '', long: `` },
-    3: { short: '', long: `` },
-    4: { short: '', long: `` },
-    5: { short: '', long: `` },
-    6: { short: '', long: `` },
-    7: { short: '', long: `` },
-    8: { short: '', long: `` },
-    9: { short: '', long: `` },
-    10: { short: '', long: `` },
-    11: { short: '', long: `` },
-    12: { short: '', long: `` },
+    1: {
+      short: 'Your identity is intense, transformative, and shaped by deep personal evolution.',
+      long: `With Pluto in the 1st House, your presence often carries intensity, depth, and a sense of power. You may undergo significant personal transformations throughout your life, reshaping your identity multiple times.
+
+Others may perceive you as strong, private, or difficult to fully understand. There is often a drive to understand yourself at a deep level and to evolve continuously. Growth comes through embracing transformation consciously, so your power becomes self-directed rather than reactive.`,
+    },
+    2: {
+      short: 'Your values and resources are shaped by intensity, transformation, and deep shifts in self-worth.',
+      long: `With Pluto in the 2nd House, your relationship to money, possessions, and self-worth may involve significant transformation. You may experience cycles of gain and loss that reshape how you understand value.
+
+There can be strong attachment or control around resources, as well as deep lessons around self-worth. Growth comes through redefining value from within, so your sense of worth becomes stable regardless of external fluctuations.`,
+    },
+    3: {
+      short: 'Your thinking and communication are deep, intense, and focused on uncovering truth.',
+      long: `With Pluto in the 3rd House, your mind tends to operate with depth, intensity, and a desire to uncover hidden truths. You may think deeply, question everything, and communicate with purpose.
+
+There can be a powerful influence in your words, as well as a tendency toward secrecy or control in communication. Growth comes through openness and flexibility, so your insight can be shared without becoming rigid or guarded.`,
+    },
+    4: {
+      short: 'Your inner foundation is shaped by deep emotional transformation and powerful roots.',
+      long: `With Pluto in the 4th House, your emotional foundation and family experience may involve intensity, transformation, or deep psychological patterns. You may carry strong emotional depth connected to your past.
+
+There can be a need to rebuild or redefine what “home” means to you. Growth comes through healing and transforming your inner world, so your foundation becomes a source of strength rather than inherited patterns.`,
+    },
+    5: {
+      short: 'Your creativity and self-expression are intense, transformative, and deeply personal.',
+      long: `With Pluto in the 5th House, your approach to creativity, joy, and self-expression tends to be powerful and emotionally charged. You may create from a place of depth, passion, and transformation.
+
+Romance and personal expression can carry intensity, with strong emotional investment. Growth comes through allowing play and lightness, so your creative power remains expansive rather than consuming.`,
+    },
+    6: {
+      short: 'Your work, routines, and daily life are shaped by deep transformation and intense focus.',
+      long: `With Pluto in the 6th House, your approach to work, health, and routine may involve cycles of transformation and deep focus. You may feel driven to improve, control, or master your daily systems.
+
+There can be intensity in your work environment or habits. Growth comes through releasing control where needed, so transformation leads to sustainable improvement rather than pressure.`,
+    },
+    7: {
+      short: 'Your relationships are intense, transformative, and involve deep emotional or power dynamics.',
+      long: `With Pluto in the 7th House, your approach to partnership tends to involve depth, intensity, and transformation. You may attract powerful or complex relationships that challenge and reshape you.
+
+There can be themes of control, trust, and vulnerability within connection. Growth comes through developing balance and mutual empowerment, so relationships become transformative without becoming destructive.`,
+    },
+    8: {
+      short: 'Your experience of transformation, intimacy, and power is profound, intense, and deeply evolutionary.',
+      long: `With Pluto in the 8th House, this is a natural placement, as Pluto rules this house. Your life may involve deep transformation, emotional intensity, and profound experiences of change.
+
+You may be drawn to understanding power, psychology, and what lies beneath the surface. There is often strong resilience and capacity for rebirth. Growth comes through embracing transformation consciously, so your depth becomes a source of empowerment rather than overwhelm.`,
+    },
+    9: {
+      short: 'Your beliefs and worldview are shaped by deep transformation and a search for truth.',
+      long: `With Pluto in the 9th House, your approach to philosophy and belief systems tends to be intense and transformative. You may question deeply, seeking truth beyond surface-level understanding.
+
+There can be powerful shifts in your worldview over time. Growth comes through remaining open, so transformation in belief leads to expanded awareness rather than rigid conviction.`,
+    },
+    10: {
+      short: 'Your career and public path are shaped by power, transformation, and significant impact.',
+      long: `With Pluto in the 10th House, your public life and career may involve power, influence, and transformation. You may feel driven to make a significant impact or to work in areas that involve deep change.
+
+There can be intensity around ambition, control, or reputation. Growth comes through aligning power with purpose, so your influence becomes constructive and meaningful.`,
+    },
+    11: {
+      short: 'Your connections and goals are intense, transformative, and tied to collective change.',
+      long: `With Pluto in the 11th House, your involvement with groups, friendships, and long-term goals may involve depth and transformation. You may be drawn to powerful communities or causes that aim to create change.
+
+There can be intensity in social dynamics or strong influence within groups. Growth comes through collaboration and shared empowerment, so transformation within the collective remains balanced.`,
+    },
+    12: {
+      short: 'Your inner world is deeply transformative, hidden, and connected to profound subconscious processes.',
+      long: `With Pluto in the 12th House, your subconscious may carry deep emotional layers, hidden power, and transformative potential. You may undergo significant inner evolution, often beneath the surface.
+
+There can be themes of confronting hidden fears, releasing past patterns, and accessing deep inner strength. Growth comes through conscious awareness of your inner world, so transformation becomes healing rather than unconscious repetition.`,
+    },
   },
 }
