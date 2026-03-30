@@ -607,18 +607,78 @@ There can be a sense of unpredictability in your inner world or a connection to 
   },
 
   Neptune: {
-    1: { short: '', long: `` },
-    2: { short: '', long: `` },
-    3: { short: '', long: `` },
-    4: { short: '', long: `` },
-    5: { short: '', long: `` },
-    6: { short: '', long: `` },
-    7: { short: '', long: `` },
-    8: { short: '', long: `` },
-    9: { short: '', long: `` },
-    10: { short: '', long: `` },
-    11: { short: '', long: `` },
-    12: { short: '', long: `` },
+    1: {
+      short: 'Your identity is fluid, intuitive, and often difficult to define clearly.',
+      long: `With Neptune in the 1st House, your sense of self may feel flexible, sensitive, or hard to pin down. You may naturally adapt to your environment or reflect the energy around you.
+
+There can be strong intuition, imagination, and empathy in how you move through life. Others may perceive you as elusive, creative, or spiritually oriented. Growth comes through developing a clear sense of self, so your fluid identity becomes a strength rather than confusion.`,
+    },
+    2: {
+      short: 'Your values and resources are influenced by intuition, idealism, and shifting boundaries.',
+      long: `With Neptune in the 2nd House, your relationship to money, possessions, and value may feel fluid or unclear at times. You may value meaning, beauty, or spirituality more than material stability.
+
+There can be generosity or difficulty setting boundaries around resources. Financial situations may fluctuate or feel uncertain. Growth comes through developing clarity and structure, so your values support both your inner world and practical needs.`,
+    },
+    3: {
+      short: 'Your thinking and communication are intuitive, imaginative, and sometimes unclear or abstract.',
+      long: `With Neptune in the 3rd House, your mind tends to operate through imagery, intuition, and impression rather than strict logic. You may communicate in creative, poetic, or symbolic ways.
+
+There can be strong imagination and sensitivity in how you perceive your environment. However, confusion or misunderstanding may arise. Growth comes through grounding your thoughts, so your insights can be clearly expressed and understood.`,
+    },
+    4: {
+      short: 'Your inner foundation is sensitive, intuitive, and shaped by emotional and spiritual undercurrents.',
+      long: `With Neptune in the 4th House, your sense of home and emotional grounding may feel fluid, idealized, or difficult to define. You may have a deep emotional or spiritual connection to your roots, even if they feel unclear.
+
+There can be a desire for a peaceful, almost ideal home environment, but also confusion or lack of boundaries. Growth comes through creating clarity and stability, so your inner world becomes a place of grounding rather than uncertainty.`,
+    },
+    5: {
+      short: 'Your creativity and expression are imaginative, inspired, and emotionally or spiritually driven.',
+      long: `With Neptune in the 5th House, your creative expression tends to be highly imaginative, intuitive, and inspired. You may be drawn to art, music, storytelling, or forms of expression that evoke feeling and transcendence.
+
+Romance may feel idealistic or dreamy, with a desire for deep emotional or spiritual connection. However, projection or illusion can arise. Growth comes through grounding your creativity and relationships, so inspiration becomes something you can sustain and embody.`,
+    },
+    6: {
+      short: 'Your approach to work and routine is fluid, intuitive, and sometimes difficult to structure.',
+      long: `With Neptune in the 6th House, your daily life may feel less structured and more influenced by intuition or shifting energy. You may struggle with rigid routines but thrive in environments that allow flexibility and meaning.
+
+There can be sensitivity to work environments or health patterns. Growth comes through creating gentle structure and clear boundaries, so your daily life supports your well-being rather than dissolving into inconsistency.`,
+    },
+    7: {
+      short: 'Your relationships are idealistic, intuitive, and may involve projection or blurred boundaries.',
+      long: `With Neptune in the 7th House, your approach to relationships tends to be romantic, idealistic, and emotionally or spiritually driven. You may seek deep connection and unity with others.
+
+However, there can be a tendency to project ideals onto partners or overlook reality. Boundaries may blur. Growth comes through developing clarity and discernment, so love remains compassionate without losing grounding.`,
+    },
+    8: {
+      short: 'Your experience of intimacy and transformation is intuitive, emotional, and deeply mysterious.',
+      long: `With Neptune in the 8th House, your connection to intimacy, transformation, and shared experiences tends to be subtle and profound. You may feel drawn to the unseen, the emotional depths, or spiritual aspects of transformation.
+
+There can be sensitivity around trust and shared resources, as well as a tendency toward confusion or idealization. Growth comes through grounding your emotional and intuitive experiences, so transformation becomes clear and empowering.`,
+    },
+    9: {
+      short: 'Your beliefs and worldview are intuitive, spiritual, and shaped by imagination and meaning.',
+      long: `With Neptune in the 9th House, your approach to philosophy and belief systems tends to be intuitive, imaginative, and spiritually oriented. You may be drawn to ideas that transcend logic and connect to a deeper sense of meaning.
+
+There can be inspiration in your worldview, but also potential for confusion or lack of direction. Growth comes through grounding your beliefs, so your vision becomes integrated and applicable.`,
+    },
+    10: {
+      short: 'Your career and public image are shaped by intuition, creativity, and a sense of purpose or calling.',
+      long: `With Neptune in the 10th House, your public path may feel guided by intuition, creativity, or a deeper sense of purpose. You may be drawn to work that involves art, healing, or spiritual contribution.
+
+Your public image may appear elusive or idealized. However, direction may sometimes feel unclear. Growth comes through building structure around your vision, so your path becomes both meaningful and grounded.`,
+    },
+    11: {
+      short: 'Your connections and goals are influenced by idealism, compassion, and a vision of collective unity.',
+      long: `With Neptune in the 11th House, your approach to friendships and community tends to be compassionate, imaginative, and idealistic. You may feel drawn to groups that share a vision of healing, unity, or creativity.
+
+There can be inspiration in collective work, but also blurred boundaries within friendships. Growth comes through maintaining clarity, so your vision for the collective becomes effective rather than diffuse.`,
+    },
+    12: {
+      short: 'Your inner world is deeply intuitive, spiritual, and connected to the unseen and subconscious.',
+      long: `With Neptune in the 12th House, this is a natural placement, as Neptune rules this house. Your inner world tends to be highly sensitive, intuitive, and connected to deeper layers of experience.
+
+You may have strong imagination, empathy, or spiritual awareness. There can also be difficulty distinguishing between intuition and illusion. Growth comes through grounding your inner awareness, so your sensitivity becomes a source of clarity and healing rather than confusion.`,
+    },
   },
 
   Pluto: {
