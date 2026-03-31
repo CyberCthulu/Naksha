@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import {
   Modal,
   View,
@@ -43,23 +43,95 @@ export default function PlanetInterpretationModal({
 }: Props) {
   const pagerRef = useRef<PagerView>(null)
   const hasMountedRef = useRef(false)
+  const isInternalJumpRef = useRef(false)
+
+  const pagerPages = useMemo<InterpretationPage[]>(() => {
+    if (pages.length <= 1) return pages
+    return [pages[pages.length - 1], ...pages, pages[0]]
+  }, [pages])
+
+  const toPagerIndex = (realIndex: number) => {
+    if (pages.length <= 1) return 0
+    return realIndex + 1
+  }
+
+  const toRealIndex = (pagerIndex: number) => {
+    if (pages.length <= 1) return 0
+    if (pagerIndex === 0) return pages.length - 1
+    if (pagerIndex === pagerPages.length - 1) return 0
+    return pagerIndex - 1
+  }
 
   useEffect(() => {
     if (!visible || !pages.length) return
 
+    const targetPagerIndex = toPagerIndex(currentIndex)
+
     if (!hasMountedRef.current) {
       hasMountedRef.current = true
+      requestAnimationFrame(() => {
+        pagerRef.current?.setPageWithoutAnimation(targetPagerIndex)
+      })
       return
     }
 
-    pagerRef.current?.setPageWithoutAnimation(currentIndex)
+    if (isInternalJumpRef.current) {
+      isInternalJumpRef.current = false
+      return
+    }
+
+    pagerRef.current?.setPageWithoutAnimation(targetPagerIndex)
   }, [visible, currentIndex, pages.length])
 
   useEffect(() => {
     if (!visible) {
       hasMountedRef.current = false
+      isInternalJumpRef.current = false
     }
   }, [visible])
+
+  const handlePrevPress = () => {
+    if (!pages.length) return
+    onChangeIndex(currentIndex === 0 ? pages.length - 1 : currentIndex - 1)
+  }
+
+  const handleNextPress = () => {
+    if (!pages.length) return
+    onChangeIndex(currentIndex === pages.length - 1 ? 0 : currentIndex + 1)
+  }
+
+  const handlePageSelected = (event: { nativeEvent: { position: number } }) => {
+    if (!pages.length) return
+
+    const pagerIndex = event.nativeEvent.position
+
+    if (pages.length <= 1) {
+      onChangeIndex(0)
+      return
+    }
+
+    if (pagerIndex === 0) {
+      isInternalJumpRef.current = true
+      onChangeIndex(pages.length - 1)
+
+      requestAnimationFrame(() => {
+        pagerRef.current?.setPageWithoutAnimation(pages.length)
+      })
+      return
+    }
+
+    if (pagerIndex === pagerPages.length - 1) {
+      isInternalJumpRef.current = true
+      onChangeIndex(0)
+
+      requestAnimationFrame(() => {
+        pagerRef.current?.setPageWithoutAnimation(1)
+      })
+      return
+    }
+
+    onChangeIndex(toRealIndex(pagerIndex))
+  }
 
   return (
     <Modal
@@ -73,15 +145,8 @@ export default function PlanetInterpretationModal({
 
         <View style={styles.sheet}>
           <View style={styles.headerRow}>
-            {/* LEFT (PREV) */}
             <Pressable
-              onPress={() =>
-                onChangeIndex(
-                  currentIndex === 0
-                    ? pages.length - 1
-                    : currentIndex - 1
-                )
-              }
+              onPress={handlePrevPress}
               style={styles.navButton}
               disabled={pages.length <= 1}
             >
@@ -98,15 +163,8 @@ export default function PlanetInterpretationModal({
             <Text style={styles.headerTitle}>Interpretation</Text>
 
             <View style={styles.headerActions}>
-              {/* RIGHT (NEXT) */}
               <Pressable
-                onPress={() =>
-                  onChangeIndex(
-                    currentIndex === pages.length - 1
-                      ? 0
-                      : currentIndex + 1
-                  )
-                }
+                onPress={handleNextPress}
                 style={styles.navButton}
                 disabled={pages.length <= 1}
               >
@@ -126,40 +184,15 @@ export default function PlanetInterpretationModal({
             </View>
           </View>
 
-          {!!pages.length && (
+          {!!pagerPages.length && (
             <PagerView
               ref={pagerRef}
               style={styles.pager}
-              initialPage={currentIndex}
-              onPageSelected={(event) => {
-                const position = event.nativeEvent.position
-
-                onChangeIndex(position)
-
-                // Wrap forward (last → first)
-                if (
-                  position === pages.length - 1 &&
-                  currentIndex === pages.length - 2
-                ) {
-                  requestAnimationFrame(() => {
-                    pagerRef.current?.setPageWithoutAnimation(0)
-                    onChangeIndex(0)
-                  })
-                }
-
-                // Wrap backward (first → last)
-                if (position === 0 && currentIndex === 1) {
-                  requestAnimationFrame(() => {
-                    pagerRef.current?.setPageWithoutAnimation(
-                      pages.length - 1
-                    )
-                    onChangeIndex(pages.length - 1)
-                  })
-                }
-              }}
+              initialPage={toPagerIndex(currentIndex)}
+              onPageSelected={handlePageSelected}
             >
-              {pages.map((page) => (
-                <View key={page.key} style={styles.page}>
+              {pagerPages.map((page, index) => (
+                <View key={`${page.key}-${index}`} style={styles.page}>
                   <ScrollView
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
