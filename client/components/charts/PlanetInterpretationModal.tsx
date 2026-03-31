@@ -74,11 +74,11 @@ export default function PlanetInterpretationModal({
         <View style={styles.sheet}>
           <View style={styles.headerRow}>
             <Pressable
-              onPress={() =>
-                onChangeIndex(
-                  currentIndex === 0 ? pages.length - 1 : currentIndex - 1
-                )
-              }
+onPress={() =>
+  onChangeIndex(
+    currentIndex === pages.length - 1 ? 0 : currentIndex + 1
+  )
+}
               style={styles.navButton}
               disabled={pages.length <= 1}
             >
@@ -124,7 +124,6 @@ export default function PlanetInterpretationModal({
             <>
               <View style={styles.metaRow}>
                 <Text style={styles.metaText}>
-                  {currentIndex + 1} / {pages.length}
                 </Text>
               </View>
 
