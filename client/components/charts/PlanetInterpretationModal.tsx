@@ -73,12 +73,15 @@ export default function PlanetInterpretationModal({
 
         <View style={styles.sheet}>
           <View style={styles.headerRow}>
+            {/* LEFT (PREV) */}
             <Pressable
-onPress={() =>
-  onChangeIndex(
-    currentIndex === pages.length - 1 ? 0 : currentIndex + 1
-  )
-}
+              onPress={() =>
+                onChangeIndex(
+                  currentIndex === 0
+                    ? pages.length - 1
+                    : currentIndex - 1
+                )
+              }
               style={styles.navButton}
               disabled={pages.length <= 1}
             >
@@ -95,10 +98,13 @@ onPress={() =>
             <Text style={styles.headerTitle}>Interpretation</Text>
 
             <View style={styles.headerActions}>
+              {/* RIGHT (NEXT) */}
               <Pressable
                 onPress={() =>
                   onChangeIndex(
-                    currentIndex === pages.length - 1 ? 0 : currentIndex + 1
+                    currentIndex === pages.length - 1
+                      ? 0
+                      : currentIndex + 1
                   )
                 }
                 style={styles.navButton}
@@ -121,56 +127,53 @@ onPress={() =>
           </View>
 
           {!!pages.length && (
-            <>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaText}>
-                </Text>
-              </View>
+            <PagerView
+              ref={pagerRef}
+              style={styles.pager}
+              initialPage={currentIndex}
+              onPageSelected={(event) => {
+                const position = event.nativeEvent.position
 
-              <PagerView
-                ref={pagerRef}
-                style={styles.pager}
-                initialPage={currentIndex}
-onPageSelected={(event) => {
-  const position = event.nativeEvent.position
+                onChangeIndex(position)
 
-  // Normal update
-  onChangeIndex(position)
+                // Wrap forward (last → first)
+                if (
+                  position === pages.length - 1 &&
+                  currentIndex === pages.length - 2
+                ) {
+                  requestAnimationFrame(() => {
+                    pagerRef.current?.setPageWithoutAnimation(0)
+                    onChangeIndex(0)
+                  })
+                }
 
-  // Wrap forward (last → first)
-  if (position === pages.length - 1 && currentIndex === pages.length - 2) {
-    requestAnimationFrame(() => {
-      pagerRef.current?.setPageWithoutAnimation(0)
-      onChangeIndex(0)
-    })
-  }
-
-  // Wrap backward (first → last)
-  if (position === 0 && currentIndex === 1) {
-    requestAnimationFrame(() => {
-      pagerRef.current?.setPageWithoutAnimation(pages.length - 1)
-      onChangeIndex(pages.length - 1)
-    })
-  }
-}}
-              >
-                {pages.map((page) => (
-                  <View key={page.key} style={styles.page}>
-                    <ScrollView
-                      contentContainerStyle={styles.scrollContent}
-                      showsVerticalScrollIndicator={false}
-                    >
-                      <InterpretationCard
-                        title={page.title}
-                        subtitle={page.subtitle}
-                        summary={page.summary}
-                        blocks={page.blocks}
-                      />
-                    </ScrollView>
-                  </View>
-                ))}
-              </PagerView>
-            </>
+                // Wrap backward (first → last)
+                if (position === 0 && currentIndex === 1) {
+                  requestAnimationFrame(() => {
+                    pagerRef.current?.setPageWithoutAnimation(
+                      pages.length - 1
+                    )
+                    onChangeIndex(pages.length - 1)
+                  })
+                }
+              }}
+            >
+              {pages.map((page) => (
+                <View key={page.key} style={styles.page}>
+                  <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    <InterpretationCard
+                      title={page.title}
+                      subtitle={page.subtitle}
+                      summary={page.summary}
+                      blocks={page.blocks}
+                    />
+                  </ScrollView>
+                </View>
+              ))}
+            </PagerView>
           )}
         </View>
       </View>
@@ -241,14 +244,6 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontSize: 20,
     fontWeight: '700',
-  },
-  metaRow: {
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  metaText: {
-    color: theme.colors.sub,
-    fontSize: 12,
   },
   pager: {
     flex: 1,
