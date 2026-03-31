@@ -395,6 +395,34 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     saved?.meta.birth_lat != null && saved?.meta.birth_lon != null
       ? ` (${Number(saved.meta.birth_lat).toFixed(2)}, ${Number(saved.meta.birth_lon).toFixed(2)})`
       : ''
+const orderedPlanetKeys = useMemo<PlanetKey[]>(
+  () =>
+    planets
+      .map((p) => asPlanetKey(p.name))
+      .filter((p): p is PlanetKey => p != null),
+  [planets]
+)
+
+const handleNextPlanet = () => {
+  if (!focusedPlanet || orderedPlanetKeys.length === 0) return
+
+  const currentIndex = orderedPlanetKeys.indexOf(focusedPlanet)
+  if (currentIndex === -1) return
+
+  const nextIndex = (currentIndex + 1) % orderedPlanetKeys.length
+  focusPlanet(orderedPlanetKeys[nextIndex])
+}
+
+const handlePrevPlanet = () => {
+  if (!focusedPlanet || orderedPlanetKeys.length === 0) return
+
+  const currentIndex = orderedPlanetKeys.indexOf(focusedPlanet)
+  if (currentIndex === -1) return
+
+  const prevIndex =
+    (currentIndex - 1 + orderedPlanetKeys.length) % orderedPlanetKeys.length
+  focusPlanet(orderedPlanetKeys[prevIndex])
+}
 
   const sunSummary = useMemo(() => {
     const sun = planets.find((p) => p.name === 'Sun')
@@ -501,6 +529,8 @@ export default function ChartScreen({ route }: ChartScreenProps) {
       <PlanetInterpretationModal
         visible={planetModalVisible && !!focusedPlanetData}
         onClose={() => setPlanetModalVisible(false)}
+        onNext={handleNextPlanet}
+        onPrev={handlePrevPlanet}
         title={focusedPlanetData?.planet.name ?? ''}
         subtitle={
           focusedPlanetData

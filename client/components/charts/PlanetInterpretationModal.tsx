@@ -1,5 +1,4 @@
-//components/charts/PlanetInterpretationModal.tsx
-import React from 'react'
+import React, { useMemo } from 'react'
 import {
   Modal,
   View,
@@ -7,6 +6,7 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
+  PanResponder,
 } from 'react-native'
 import { theme } from '../ui/theme'
 import InterpretationCard from './InterpretationCard'
@@ -25,6 +25,8 @@ type Props = {
   summary?: string | null
   blocks?: Block[]
   onClose: () => void
+  onNext?: () => void
+  onPrev?: () => void
 }
 
 export default function PlanetInterpretationModal({
@@ -34,7 +36,36 @@ export default function PlanetInterpretationModal({
   summary = null,
   blocks = [],
   onClose,
+  onNext,
+  onPrev,
 }: Props) {
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+          const horizontal = Math.abs(gestureState.dx)
+          const vertical = Math.abs(gestureState.dy)
+
+          return horizontal > 20 && horizontal > vertical * 1.2
+        },
+        onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+          const horizontal = Math.abs(gestureState.dx)
+          const vertical = Math.abs(gestureState.dy)
+
+          return horizontal > 20 && horizontal > vertical * 1.2
+        },
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderRelease: (_, gestureState) => {
+          if (gestureState.dx <= -50) {
+            onNext?.()
+          } else if (gestureState.dx >= 50) {
+            onPrev?.()
+          }
+        },
+      }),
+    [onNext, onPrev]
+  )
+
   return (
     <Modal
       visible={visible}
@@ -48,24 +79,25 @@ export default function PlanetInterpretationModal({
         <View style={styles.sheet}>
           <View style={styles.headerRow}>
             <View style={styles.headerSpacer} />
-
             <Text style={styles.headerTitle}>Interpretation</Text>
-
             <Pressable onPress={onClose} style={styles.closeButton}>
               <Text style={styles.closeText}>✕</Text>
             </Pressable>
           </View>
 
           <ScrollView
+            disableScrollViewPanResponder
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            <InterpretationCard
-              title={title}
-              subtitle={subtitle}
-              summary={summary}
-              blocks={blocks}
-            />
+            <View {...panResponder.panHandlers}>
+              <InterpretationCard
+                title={title}
+                subtitle={subtitle}
+                summary={summary}
+                blocks={blocks}
+              />
+            </View>
           </ScrollView>
         </View>
       </View>
