@@ -38,7 +38,7 @@ export default function InterpretationCard({
   })
 
   return (
-    <View style={[uiStyles.card, styles.card]}>
+    <View style={[styles.card]}>
       <Text style={styles.title}>{title}</Text>
 
       {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
