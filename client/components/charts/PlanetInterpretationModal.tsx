@@ -132,9 +132,28 @@ export default function PlanetInterpretationModal({
                 ref={pagerRef}
                 style={styles.pager}
                 initialPage={currentIndex}
-                onPageSelected={(event) => {
-                  onChangeIndex(event.nativeEvent.position)
-                }}
+onPageSelected={(event) => {
+  const position = event.nativeEvent.position
+
+  // Normal update
+  onChangeIndex(position)
+
+  // Wrap forward (last → first)
+  if (position === pages.length - 1 && currentIndex === pages.length - 2) {
+    requestAnimationFrame(() => {
+      pagerRef.current?.setPageWithoutAnimation(0)
+      onChangeIndex(0)
+    })
+  }
+
+  // Wrap backward (first → last)
+  if (position === 0 && currentIndex === 1) {
+    requestAnimationFrame(() => {
+      pagerRef.current?.setPageWithoutAnimation(pages.length - 1)
+      onChangeIndex(pages.length - 1)
+    })
+  }
+}}
               >
                 {pages.map((page) => (
                   <View key={page.key} style={styles.page}>
