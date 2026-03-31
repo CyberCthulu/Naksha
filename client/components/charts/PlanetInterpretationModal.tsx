@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useRef } from 'react'
 import {
   Modal,
   View,
@@ -6,8 +6,8 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
-  PanResponder,
 } from 'react-native'
+import PagerView from 'react-native-pager-view'
 import { theme } from '../ui/theme'
 import InterpretationCard from './InterpretationCard'
 import { Interpretation } from '../../lib/lexicon'
@@ -18,53 +18,48 @@ type Block = {
   mode?: 'short' | 'long'
 }
 
-type Props = {
-  visible: boolean
+export type InterpretationPage = {
+  key: string
   title: string
   subtitle?: string | null
   summary?: string | null
   blocks?: Block[]
+}
+
+type Props = {
+  visible: boolean
+  pages: InterpretationPage[]
+  currentIndex: number
+  onChangeIndex: (index: number) => void
   onClose: () => void
-  onNext?: () => void
-  onPrev?: () => void
 }
 
 export default function PlanetInterpretationModal({
   visible,
-  title,
-  subtitle = null,
-  summary = null,
-  blocks = [],
+  pages,
+  currentIndex,
+  onChangeIndex,
   onClose,
-  onNext,
-  onPrev,
 }: Props) {
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_, gestureState) => {
-          const horizontal = Math.abs(gestureState.dx)
-          const vertical = Math.abs(gestureState.dy)
+  const pagerRef = useRef<PagerView>(null)
+  const hasMountedRef = useRef(false)
 
-          return horizontal > 20 && horizontal > vertical * 1.2
-        },
-        onMoveShouldSetPanResponderCapture: (_, gestureState) => {
-          const horizontal = Math.abs(gestureState.dx)
-          const vertical = Math.abs(gestureState.dy)
+  useEffect(() => {
+    if (!visible || !pages.length) return
 
-          return horizontal > 20 && horizontal > vertical * 1.2
-        },
-        onPanResponderTerminationRequest: () => false,
-        onPanResponderRelease: (_, gestureState) => {
-          if (gestureState.dx <= -50) {
-            onNext?.()
-          } else if (gestureState.dx >= 50) {
-            onPrev?.()
-          }
-        },
-      }),
-    [onNext, onPrev]
-  )
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true
+      return
+    }
+
+    pagerRef.current?.setPageWithoutAnimation(currentIndex)
+  }, [visible, currentIndex, pages.length])
+
+  useEffect(() => {
+    if (!visible) {
+      hasMountedRef.current = false
+    }
+  }, [visible])
 
   return (
     <Modal
@@ -78,27 +73,87 @@ export default function PlanetInterpretationModal({
 
         <View style={styles.sheet}>
           <View style={styles.headerRow}>
-            <View style={styles.headerSpacer} />
-            <Text style={styles.headerTitle}>Interpretation</Text>
-            <Pressable onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeText}>✕</Text>
+            <Pressable
+              onPress={() =>
+                onChangeIndex(
+                  currentIndex === 0 ? pages.length - 1 : currentIndex - 1
+                )
+              }
+              style={styles.navButton}
+              disabled={pages.length <= 1}
+            >
+              <Text
+                style={[
+                  styles.navText,
+                  pages.length <= 1 && styles.navTextDisabled,
+                ]}
+              >
+                ‹
+              </Text>
             </Pressable>
+
+            <Text style={styles.headerTitle}>Interpretation</Text>
+
+            <View style={styles.headerActions}>
+              <Pressable
+                onPress={() =>
+                  onChangeIndex(
+                    currentIndex === pages.length - 1 ? 0 : currentIndex + 1
+                  )
+                }
+                style={styles.navButton}
+                disabled={pages.length <= 1}
+              >
+                <Text
+                  style={[
+                    styles.navText,
+                    pages.length <= 1 && styles.navTextDisabled,
+                  ]}
+                >
+                  ›
+                </Text>
+              </Pressable>
+
+              <Pressable onPress={onClose} style={styles.closeButton}>
+                <Text style={styles.closeText}>✕</Text>
+              </Pressable>
+            </View>
           </View>
 
-          <ScrollView
-            disableScrollViewPanResponder
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-            <View {...panResponder.panHandlers}>
-              <InterpretationCard
-                title={title}
-                subtitle={subtitle}
-                summary={summary}
-                blocks={blocks}
-              />
-            </View>
-          </ScrollView>
+          {!!pages.length && (
+            <>
+              <View style={styles.metaRow}>
+                <Text style={styles.metaText}>
+                  {currentIndex + 1} / {pages.length}
+                </Text>
+              </View>
+
+              <PagerView
+                ref={pagerRef}
+                style={styles.pager}
+                initialPage={currentIndex}
+                onPageSelected={(event) => {
+                  onChangeIndex(event.nativeEvent.position)
+                }}
+              >
+                {pages.map((page) => (
+                  <View key={page.key} style={styles.page}>
+                    <ScrollView
+                      contentContainerStyle={styles.scrollContent}
+                      showsVerticalScrollIndicator={false}
+                    >
+                      <InterpretationCard
+                        title={page.title}
+                        subtitle={page.subtitle}
+                        summary={page.summary}
+                        blocks={page.blocks}
+                      />
+                    </ScrollView>
+                  </View>
+                ))}
+              </PagerView>
+            </>
+          )}
         </View>
       </View>
     </Modal>
@@ -115,7 +170,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sheet: {
-    maxHeight: '82%',
+    height: '82%',
     backgroundColor: 'rgba(10,10,10,0.96)',
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
@@ -130,10 +185,7 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  headerSpacer: {
-    width: 40,
+    marginBottom: 6,
   },
   headerTitle: {
     flex: 1,
@@ -141,6 +193,25 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontSize: 16,
     fontWeight: '700',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  navButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navText: {
+    color: theme.colors.text,
+    fontSize: 28,
+    fontWeight: '500',
+    lineHeight: 28,
+  },
+  navTextDisabled: {
+    opacity: 0.3,
   },
   closeButton: {
     width: 40,
@@ -153,7 +224,21 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
   },
+  metaRow: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  metaText: {
+    color: theme.colors.sub,
+    fontSize: 12,
+  },
+  pager: {
+    flex: 1,
+  },
+  page: {
+    flex: 1,
+  },
   scrollContent: {
-    paddingBottom: 12,
+    paddingBottom: 24,
   },
 })

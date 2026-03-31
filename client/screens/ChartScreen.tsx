@@ -34,7 +34,9 @@ import PlanetPositionsList from '../components/charts/PlanetPositionsList'
 import HousesList from '../components/charts/HousesList'
 import AspectsList from '../components/charts/AspectsList'
 import ChartCompass from '../components/charts/ChartCompass'
-import PlanetInterpretationModal from '../components/charts/PlanetInterpretationModal'
+import PlanetInterpretationModal, {
+  type InterpretationPage,
+} from '../components/charts/PlanetInterpretationModal'
 
 // lexicon
 import {
@@ -83,6 +85,7 @@ function asPlanetKey(name: string): PlanetKey | null {
     'Neptune',
     'Pluto',
   ]
+
   return (allowed as string[]).includes(name) ? (name as PlanetKey) : null
 }
 
@@ -384,10 +387,13 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     }
   }
 
-  const handleFocusPlanet = (planet: PlanetKey) => {
-    focusPlanet(planet)
-    setPlanetModalVisible(true)
-  }
+  const handleFocusPlanet = useCallback(
+    (planet: PlanetKey) => {
+      focusPlanet(planet)
+      setPlanetModalVisible(true)
+    },
+    [focusPlanet]
+  )
 
   const subtitleLocation = profile.birth_location ?? null
   const subtitleZone = saved?.meta.time_zone ?? tz
@@ -395,34 +401,73 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     saved?.meta.birth_lat != null && saved?.meta.birth_lon != null
       ? ` (${Number(saved.meta.birth_lat).toFixed(2)}, ${Number(saved.meta.birth_lon).toFixed(2)})`
       : ''
-const orderedPlanetKeys = useMemo<PlanetKey[]>(
-  () =>
-    planets
-      .map((p) => asPlanetKey(p.name))
-      .filter((p): p is PlanetKey => p != null),
-  [planets]
-)
 
-const handleNextPlanet = () => {
-  if (!focusedPlanet || orderedPlanetKeys.length === 0) return
+  const orderedPlanetKeys = useMemo<PlanetKey[]>(
+    () =>
+      planets
+        .map((p) => asPlanetKey(p.name))
+        .filter((p): p is PlanetKey => p != null),
+    [planets]
+  )
 
-  const currentIndex = orderedPlanetKeys.indexOf(focusedPlanet)
-  if (currentIndex === -1) return
+  const interpretationPages = useMemo<InterpretationPage[]>(() => {
+    const pages: InterpretationPage[] = []
 
-  const nextIndex = (currentIndex + 1) % orderedPlanetKeys.length
-  focusPlanet(orderedPlanetKeys[nextIndex])
-}
+    for (const planetKey of orderedPlanetKeys) {
+      const planet = planets.find((p) => p.name === planetKey)
+      if (!planet) continue
 
-const handlePrevPlanet = () => {
-  if (!focusedPlanet || orderedPlanetKeys.length === 0) return
+      const signName = zodiacNameFromLongitude(planet.lon)
+      const signMeaning = getPlanetSignMeaning(planetKey, signName)
 
-  const currentIndex = orderedPlanetKeys.indexOf(focusedPlanet)
-  if (currentIndex === -1) return
+      const placement = planetHouses?.find((ph) => ph.name === planetKey)
+      const houseNumber = placement ? asHouseNumber(placement.house) : null
+      const houseMeaning = houseNumber
+        ? getPlanetHouseMeaning(planetKey, houseNumber)
+        : null
 
-  const prevIndex =
-    (currentIndex - 1 + orderedPlanetKeys.length) % orderedPlanetKeys.length
-  focusPlanet(orderedPlanetKeys[prevIndex])
-}
+      pages.push({
+        key: planetKey,
+        title: planet.name,
+        subtitle: `${signName}${houseNumber ? ` · House ${houseNumber}` : ''}`,
+        summary: buildPlanetSummary(planetKey, planet.lon, planetHouses),
+        blocks: [
+          {
+            title: `${planet.name} in ${signName}`,
+            interpretation: signMeaning ?? null,
+            mode: 'long',
+          },
+          {
+            title:
+              houseNumber != null
+                ? `${planet.name} in House ${houseNumber}`
+                : undefined,
+            interpretation: houseMeaning ?? null,
+            mode: 'long',
+          },
+        ],
+      })
+    }
+
+    return pages
+  }, [orderedPlanetKeys, planets, planetHouses])
+
+  const currentPlanetIndex = useMemo(() => {
+    if (!focusedPlanet) return 0
+
+    const index = orderedPlanetKeys.indexOf(focusedPlanet)
+    return index >= 0 ? index : 0
+  }, [focusedPlanet, orderedPlanetKeys])
+
+  const handleChangePlanetIndex = useCallback(
+    (index: number) => {
+      const nextPlanet = orderedPlanetKeys[index]
+      if (nextPlanet) {
+        focusPlanet(nextPlanet)
+      }
+    },
+    [orderedPlanetKeys, focusPlanet]
+  )
 
   const sunSummary = useMemo(() => {
     const sun = planets.find((p) => p.name === 'Sun')
@@ -433,33 +478,6 @@ const handlePrevPlanet = () => {
 
     return { signName, meaning }
   }, [planets])
-
-  const focusedPlanetData = useMemo(() => {
-    if (!focusedPlanet) return null
-
-    const planet = planets.find((p) => p.name === focusedPlanet)
-    if (!planet) return null
-
-    const signName = zodiacNameFromLongitude(planet.lon)
-    const signMeaning = getPlanetSignMeaning(focusedPlanet, signName)
-
-    const placement = planetHouses?.find((ph) => ph.name === focusedPlanet)
-    const houseNumber = placement ? asHouseNumber(placement.house) : null
-    const houseMeaning = houseNumber
-      ? getPlanetHouseMeaning(focusedPlanet, houseNumber)
-      : null
-
-    const summary = buildPlanetSummary(focusedPlanet, planet.lon, planetHouses)
-
-    return {
-      planet,
-      signName,
-      signMeaning,
-      houseNumber,
-      houseMeaning,
-      summary,
-    }
-  }, [focusedPlanet, planets, planetHouses])
 
   if (loading) {
     return (
@@ -527,38 +545,11 @@ const handlePrevPlanet = () => {
       </ScrollView>
 
       <PlanetInterpretationModal
-        visible={planetModalVisible && !!focusedPlanetData}
+        visible={planetModalVisible && interpretationPages.length > 0}
+        pages={interpretationPages}
+        currentIndex={currentPlanetIndex}
+        onChangeIndex={handleChangePlanetIndex}
         onClose={() => setPlanetModalVisible(false)}
-        onNext={handleNextPlanet}
-        onPrev={handlePrevPlanet}
-        title={focusedPlanetData?.planet.name ?? ''}
-        subtitle={
-          focusedPlanetData
-            ? `${focusedPlanetData.signName}${
-                focusedPlanetData.houseNumber
-                  ? ` · House ${focusedPlanetData.houseNumber}`
-                  : ''
-              }`
-            : null
-        }
-        summary={focusedPlanetData?.summary ?? null}
-        blocks={[
-          {
-            title: focusedPlanetData
-              ? `${focusedPlanetData.planet.name} in ${focusedPlanetData.signName}`
-              : undefined,
-            interpretation: focusedPlanetData?.signMeaning ?? null,
-            mode: 'long',
-          },
-          {
-            title:
-              focusedPlanetData?.houseNumber != null
-                ? `${focusedPlanetData.planet.name} in House ${focusedPlanetData.houseNumber}`
-                : undefined,
-            interpretation: focusedPlanetData?.houseMeaning ?? null,
-            mode: 'long',
-          },
-        ]}
       />
     </>
   )

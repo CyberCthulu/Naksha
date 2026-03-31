@@ -4,7 +4,6 @@ import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { Interpretation } from '../../lib/lexicon'
 import { theme } from '../ui/theme'
-import { uiStyles } from '../ui/uiStyles'
 
 type InterpretationBlock = {
   title?: string
