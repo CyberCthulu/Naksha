@@ -1,3 +1,4 @@
+//components/charts/PlanetInterpretationModal.tsx
 import React from 'react'
 import {
   Modal,

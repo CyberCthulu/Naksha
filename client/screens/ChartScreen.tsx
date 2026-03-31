@@ -34,7 +34,7 @@ import PlanetPositionsList from '../components/charts/PlanetPositionsList'
 import HousesList from '../components/charts/HousesList'
 import AspectsList from '../components/charts/AspectsList'
 import ChartCompass from '../components/charts/ChartCompass'
-import InterpretationCard from '../components/charts/InterpretationCard'
+import PlanetInterpretationModal from '../components/charts/PlanetInterpretationModal'
 
 // lexicon
 import {
@@ -158,6 +158,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     saved?.planet_houses ?? null
   )
   const [isSaved, setIsSaved] = useState<boolean>(!!fromSaved)
+  const [planetModalVisible, setPlanetModalVisible] = useState(false)
 
   if (!profile?.birth_date || !profile?.birth_time || !profile?.time_zone) {
     return (
@@ -183,8 +184,8 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     )
   }
 
-  const birthDate = profile.birth_date!
-  const birthTime = profile.birth_time!
+  const birthDate = profile.birth_date
+  const birthTime = profile.birth_time
   const chartName = `${profile.first_name ?? 'My'} Natal Chart`
   const birthLat = profile.birth_lat ?? null
   const birthLon = profile.birth_lon ?? null
@@ -383,6 +384,11 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     }
   }
 
+  const handleFocusPlanet = (planet: PlanetKey) => {
+    focusPlanet(planet)
+    setPlanetModalVisible(true)
+  }
+
   const subtitleLocation = profile.birth_location ?? null
   const subtitleZone = saved?.meta.time_zone ?? tz
   const subtitleCoords =
@@ -437,84 +443,93 @@ export default function ChartScreen({ route }: ChartScreenProps) {
   }
 
   return (
-    <ScrollView
-      style={{ flex: 1 }}
-      contentContainerStyle={{
-        padding: theme.spacing.screen,
-        paddingTop: insets.top + 12,
-        paddingBottom: insets.bottom + 28,
-      }}
-      keyboardShouldPersistTaps="handled"
-    >
-      <ChartHeader
-        onBack={() => navigation.goBack()}
-        title="Natal Chart"
-        subtitleLocation={subtitleLocation}
-        subtitleZone={subtitleZone}
-        subtitleCoords={subtitleCoords}
-        sunTitle={sunSummary ? `Sun in ${sunSummary.signName}` : null}
-        sunShortMeaning={sunSummary?.meaning?.short ?? null}
-      />
-
-      <View style={{ alignItems: 'center', marginBottom: 10 }}>
-        <Button
-          title={isSaved ? 'Already Saved' : 'Save Chart Data'}
-          onPress={onSavePress}
-          disabled={isSaved}
+    <>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          padding: theme.spacing.screen,
+          paddingTop: insets.top + 12,
+          paddingBottom: insets.bottom + 28,
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <ChartHeader
+          onBack={() => navigation.goBack()}
+          title="Natal Chart"
+          subtitleLocation={subtitleLocation}
+          subtitleZone={subtitleZone}
+          subtitleCoords={subtitleCoords}
+          sunTitle={sunSummary ? `Sun in ${sunSummary.signName}` : null}
+          sunShortMeaning={sunSummary?.meaning?.short ?? null}
         />
-      </View>
 
-      <View style={{ alignItems: 'center' }}>
-        <ChartWheel
-          size={size}
+        <View style={{ alignItems: 'center', marginBottom: 10 }}>
+          <Button
+            title={isSaved ? 'Already Saved' : 'Save Chart Data'}
+            onPress={onSavePress}
+            disabled={isSaved}
+          />
+        </View>
+
+        <View style={{ alignItems: 'center' }}>
+          <ChartWheel
+            size={size}
+            planets={planets}
+            aspects={aspects}
+            houses={houses}
+          />
+        </View>
+
+        <PlanetPositionsList
           planets={planets}
-          aspects={aspects}
-          houses={houses}
+          planetHouses={planetHouses}
+          focusedPlanet={focusedPlanet}
+          onFocusPlanet={handleFocusPlanet}
         />
-      </View>
 
-      <PlanetPositionsList
-        planets={planets}
-        planetHouses={planetHouses}
-        focusedPlanet={focusedPlanet}
-        onFocusPlanet={focusPlanet}
-      />
+        <View style={{ height: 16 }} />
 
-      {focusedPlanetData && (
-        <InterpretationCard
-          title={focusedPlanetData.planet.name}
-          subtitle={`${focusedPlanetData.signName}${
-            focusedPlanetData.houseNumber
-              ? ` · House ${focusedPlanetData.houseNumber}`
-              : ''
-          }`}
-          summary={focusedPlanetData.summary}
-          blocks={[
-            {
-              title: `${focusedPlanet} in ${focusedPlanetData.signName}`,
-              interpretation: focusedPlanetData.signMeaning,
-              mode: 'long',
-            },
-            {
-              title: focusedPlanetData.houseNumber
-                ? `${focusedPlanet} in House ${focusedPlanetData.houseNumber}`
+        <HousesList houses={houses} />
+
+        <View style={{ height: 16 }} />
+
+        <ChartCompass style={{ marginBottom: 12 }} />
+
+        <AspectsList aspects={aspects} />
+      </ScrollView>
+
+      <PlanetInterpretationModal
+        visible={planetModalVisible && !!focusedPlanetData}
+        onClose={() => setPlanetModalVisible(false)}
+        title={focusedPlanetData?.planet.name ?? ''}
+        subtitle={
+          focusedPlanetData
+            ? `${focusedPlanetData.signName}${
+                focusedPlanetData.houseNumber
+                  ? ` · House ${focusedPlanetData.houseNumber}`
+                  : ''
+              }`
+            : null
+        }
+        summary={focusedPlanetData?.summary ?? null}
+        blocks={[
+          {
+            title: focusedPlanetData
+              ? `${focusedPlanetData.planet.name} in ${focusedPlanetData.signName}`
+              : undefined,
+            interpretation: focusedPlanetData?.signMeaning ?? null,
+            mode: 'long',
+          },
+          {
+            title:
+              focusedPlanetData?.houseNumber != null
+                ? `${focusedPlanetData.planet.name} in House ${focusedPlanetData.houseNumber}`
                 : undefined,
-              interpretation: focusedPlanetData.houseMeaning,
-              mode: 'long',
-            },
-          ]}
-        />
-      )}
-
-      <View style={{ height: 16 }} />
-
-      <HousesList houses={houses} />
-
-      <View style={{ height: 16 }} />
-
-      <ChartCompass style={{ marginBottom: 12 }} />
-
-      <AspectsList aspects={aspects} />
-    </ScrollView>
+            interpretation: focusedPlanetData?.houseMeaning ?? null,
+            mode: 'long',
+          },
+        ]}
+      />
+    </>
   )
 }
