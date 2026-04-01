@@ -1,6 +1,6 @@
-//components/charts/HousesList.tsx
+// components/charts/HousesList.tsx
 import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { HouseCusp } from '../../lib/astro'
 import {
   signIndexFromLongitude,
@@ -19,9 +19,15 @@ function asHouseNumber(n: number): HouseNumber | null {
 
 type Props = {
   houses: HouseCusp[] | null
+  focusedHouse: HouseNumber | null
+  onFocusHouse: (house: HouseNumber) => void
 }
 
-export default function HousesList({ houses }: Props) {
+export default function HousesList({
+  houses,
+  focusedHouse,
+  onFocusHouse,
+}: Props) {
   return (
     <>
       <Text style={styles.h2}>Houses (Whole Sign)</Text>
@@ -36,16 +42,26 @@ export default function HousesList({ houses }: Props) {
           const signName = zodiacNameFromLongitude(h.lon)
           const hn = asHouseNumber(h.house)
           const meaning = hn ? getHouseSignMeaning(hn, signName) : null
+          const isActive = hn != null && focusedHouse === hn
 
           return (
-            <View key={`house-row-${h.house}`} style={styles.itemRow}>
+            <Pressable
+              key={`house-row-${h.house}`}
+              disabled={!hn}
+              onPress={() => hn && onFocusHouse(hn)}
+              style={[
+                styles.itemRow,
+                hn && styles.pressableRow,
+                isActive && styles.activeRow,
+              ]}
+            >
               <Text style={styles.itemLeft}>
                 {`House ${String(h.house).padStart(2, ' ')}  ${ZODIAC_ABBR[signIdx]}`}
               </Text>
               <Text style={styles.itemRight} numberOfLines={4}>
                 {meaning?.short ?? ''}
               </Text>
-            </View>
+            </Pressable>
           )
         })
       )}
@@ -64,6 +80,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     marginBottom: 8,
+  },
+  pressableRow: {
+    borderRadius: 8,
+    paddingVertical: 4,
+  },
+  activeRow: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
   itemLeft: {
     width: 150,
