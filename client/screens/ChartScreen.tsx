@@ -34,20 +34,17 @@ import PlanetPositionsList from '../components/charts/PlanetPositionsList'
 import HousesList from '../components/charts/HousesList'
 import AspectsList from '../components/charts/AspectsList'
 import ChartCompass from '../components/charts/ChartCompass'
-import PlanetInterpretationModal, {
-  type InterpretationPage,
-} from '../components/charts/PlanetInterpretationModal'
-import HouseInterpretationModal, {
-  type HouseInterpretationPage,
-} from '../components/charts/HouseInterpretationModal'
+import InterpretationModal from '../components/charts/InterpretationModal'
+import type { InterpretationPage } from '../components/charts/interpretationTypes'
+
+// interpretation helpers
+import { asPlanetKey, asHouseNumber } from '../lib/chartInterpretation'
+import { buildPlanetPages, buildHousePages } from '../lib/chartPageBuilders'
 
 // lexicon
 import {
   zodiacNameFromLongitude,
   getPlanetSignMeaning,
-  getPlanetHouseMeaning,
-  getHouseMeaning,
-  getHouseSignMeaning,
   type PlanetKey,
   type HouseNumber,
 } from '../lib/lexicon'
@@ -77,74 +74,10 @@ type RouteParams = {
 
 type ChartScreenProps = NativeStackScreenProps<ParamListBase, 'Chart'>
 
-function asPlanetKey(name: string): PlanetKey | null {
-  const allowed: PlanetKey[] = [
-    'Sun',
-    'Moon',
-    'Mercury',
-    'Venus',
-    'Mars',
-    'Jupiter',
-    'Saturn',
-    'Uranus',
-    'Neptune',
-    'Pluto',
-  ]
-
-  return (allowed as string[]).includes(name) ? (name as PlanetKey) : null
-}
-
-function asHouseNumber(n: number): HouseNumber | null {
-  return n >= 1 && n <= 12 ? (n as HouseNumber) : null
-}
-
-function trimPeriod(text: string): string {
-  return text.trim().replace(/[.!?]+$/, '')
-}
-
-function toClause(text: string): string {
-  const trimmed = trimPeriod(text)
-
-  if (!trimmed) return ''
-
-  if (trimmed.startsWith('Your ')) {
-    return `your ${trimmed.slice(5)}`
-  }
-
-  if (trimmed.startsWith('You ')) {
-    return `you ${trimmed.slice(4)}`
-  }
-
-  return trimmed.charAt(0).toLowerCase() + trimmed.slice(1)
-}
-
-function buildPlanetSummary(
-  planetName: string,
-  lon: number,
-  planetHouses: PlanetHousePlacement[] | null
-): string {
-  const pk = asPlanetKey(planetName)
-  if (!pk) return ''
-
-  const signName = zodiacNameFromLongitude(lon)
-  const signMeaning = getPlanetSignMeaning(pk, signName)
-
-  const placement = planetHouses?.find((p) => p.name === planetName)
-  const houseNumber = placement ? asHouseNumber(placement.house) : null
-  const houseMeaning = houseNumber ? getPlanetHouseMeaning(pk, houseNumber) : null
-
-  if (signMeaning?.short && houseMeaning?.short) {
-    const signPart = trimPeriod(signMeaning.short)
-    const housePart = toClause(houseMeaning.short)
-
-    return `${signPart}. This tends to show up most clearly when ${housePart}.`
-  }
-
-  if (signMeaning?.short) return signMeaning.short
-  if (houseMeaning?.short) return houseMeaning.short
-
-  return ''
-}
+type FocusTarget =
+  | { kind: 'planet'; key: PlanetKey }
+  | { kind: 'house'; key: HouseNumber }
+  | null
 
 export default function ChartScreen({ route }: ChartScreenProps) {
   const navigation = useNavigation<any>()
@@ -167,9 +100,8 @@ export default function ChartScreen({ route }: ChartScreenProps) {
   )
   const [isSaved, setIsSaved] = useState<boolean>(!!fromSaved)
 
-  const [planetModalVisible, setPlanetModalVisible] = useState(false)
-  const [focusedHouse, setFocusedHouse] = useState<HouseNumber | null>(null)
-  const [houseModalVisible, setHouseModalVisible] = useState(false)
+  const [focusOn, setFocusOn] = useState<FocusTarget>(null)
+  const [interpretationVisible, setInterpretationVisible] = useState(false)
 
   if (!profile?.birth_date || !profile?.birth_time || !profile?.time_zone) {
     return (
@@ -398,14 +330,15 @@ export default function ChartScreen({ route }: ChartScreenProps) {
   const handleFocusPlanet = useCallback(
     (planet: PlanetKey) => {
       focusPlanet(planet)
-      setPlanetModalVisible(true)
+      setFocusOn({ kind: 'planet', key: planet })
+      setInterpretationVisible(true)
     },
     [focusPlanet]
   )
 
   const handleFocusHouse = useCallback((house: HouseNumber) => {
-    setFocusedHouse(house)
-    setHouseModalVisible(true)
+    setFocusOn({ kind: 'house', key: house })
+    setInterpretationVisible(true)
   }, [])
 
   const subtitleLocation = profile.birth_location ?? null
@@ -423,120 +356,74 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     [planets]
   )
 
-  const interpretationPages = useMemo<InterpretationPage[]>(() => {
-    const pages: InterpretationPage[] = []
-
-    for (const planetKey of orderedPlanetKeys) {
-      const planet = planets.find((p) => p.name === planetKey)
-      if (!planet) continue
-
-      const signName = zodiacNameFromLongitude(planet.lon)
-      const signMeaning = getPlanetSignMeaning(planetKey, signName)
-
-      const placement = planetHouses?.find((ph) => ph.name === planetKey)
-      const houseNumber = placement ? asHouseNumber(placement.house) : null
-      const houseMeaning = houseNumber
-        ? getPlanetHouseMeaning(planetKey, houseNumber)
-        : null
-
-      pages.push({
-        key: planetKey,
-        title: planet.name,
-        subtitle: `${signName}${houseNumber ? ` · House ${houseNumber}` : ''}`,
-        summary: buildPlanetSummary(planetKey, planet.lon, planetHouses),
-        blocks: [
-          {
-            title: `${planet.name} in ${signName}`,
-            interpretation: signMeaning ?? null,
-            mode: 'long',
-          },
-          {
-            title:
-              houseNumber != null
-                ? `${planet.name} in House ${houseNumber}`
-                : undefined,
-            interpretation: houseMeaning ?? null,
-            mode: 'long',
-          },
-        ],
-      })
-    }
-
-    return pages
-  }, [orderedPlanetKeys, planets, planetHouses])
-
-  const currentPlanetIndex = useMemo(() => {
-    if (!focusedPlanet) return 0
-
-    const index = orderedPlanetKeys.indexOf(focusedPlanet)
-    return index >= 0 ? index : 0
-  }, [focusedPlanet, orderedPlanetKeys])
-
-  const handleChangePlanetIndex = useCallback(
-    (index: number) => {
-      const nextPlanet = orderedPlanetKeys[index]
-      if (nextPlanet) {
-        focusPlanet(nextPlanet)
-      }
-    },
-    [orderedPlanetKeys, focusPlanet]
+  const planetPages = useMemo<InterpretationPage[]>(
+    () => buildPlanetPages(planets, orderedPlanetKeys, planetHouses),
+    [planets, orderedPlanetKeys, planetHouses]
   )
 
-  const housePages = useMemo<HouseInterpretationPage[]>(() => {
-    if (!houses) return []
+  const housePages = useMemo<InterpretationPage[]>(
+    () => buildHousePages(houses),
+    [houses]
+  )
 
-    return houses
-      .map((h) => {
-        const houseNumber = asHouseNumber(h.house)
-        if (!houseNumber) return null
+  const activePages = useMemo<InterpretationPage[]>(() => {
+    if (!focusOn) return []
+    return focusOn.kind === 'planet' ? planetPages : housePages
+  }, [focusOn, planetPages, housePages])
 
-        const signName = zodiacNameFromLongitude(h.lon)
-        const genericMeaning = getHouseMeaning(houseNumber)
-        const signMeaning = getHouseSignMeaning(houseNumber, signName)
+  const modalHeaderTitle = useMemo(() => {
+    if (!focusOn) return 'Interpretation'
+    return focusOn.kind === 'planet'
+      ? 'Planet Interpretation'
+      : 'House Interpretation'
+  }, [focusOn])
 
-        return {
-          key: `house-${houseNumber}`,
-          title: `House ${houseNumber}`,
-          subtitle: signName,
-          summary: signMeaning?.short ?? genericMeaning?.short ?? null,
-          blocks: [
-            {
-              title: `House ${houseNumber}`,
-              interpretation: genericMeaning,
-              mode: 'long',
-            },
-            {
-              title: `${signName} on House ${houseNumber}`,
-              interpretation: signMeaning,
-              mode: 'long',
-            },
-          ],
-        }
-      })
-      .filter(Boolean) as HouseInterpretationPage[]
-  }, [houses])
+  const currentInterpretationIndex = useMemo(() => {
+    if (!focusOn) return 0
 
-  const currentHouseIndex = useMemo(() => {
-    if (!focusedHouse) return 0
+    if (focusOn.kind === 'planet') {
+      const index = planetPages.findIndex((page) => page.key === focusOn.key)
+      return index >= 0 ? index : 0
+    }
 
-    const index = housePages.findIndex((page) => page.key === `house-${focusedHouse}`)
+    const index = housePages.findIndex(
+      (page) => page.key === `house-${focusOn.key}`
+    )
     return index >= 0 ? index : 0
-  }, [focusedHouse, housePages])
+  }, [focusOn, planetPages, housePages])
 
-  const handleChangeHouseIndex = useCallback(
+  const handleChangeInterpretationIndex = useCallback(
     (index: number) => {
+      if (!focusOn) return
+
+      if (focusOn.kind === 'planet') {
+        const nextPage = planetPages[index]
+        if (!nextPage) return
+
+        const nextPlanet = asPlanetKey(nextPage.key)
+        if (!nextPlanet) return
+
+        focusPlanet(nextPlanet)
+        setFocusOn({ kind: 'planet', key: nextPlanet })
+        return
+      }
+
       const nextPage = housePages[index]
       if (!nextPage) return
 
       const nextHouseNumber = Number(nextPage.key.replace('house-', ''))
       const nextHouse = asHouseNumber(nextHouseNumber)
+      if (!nextHouse) return
 
-      if (nextHouse) {
-        setFocusedHouse(nextHouse)
-      }
+      setFocusOn({ kind: 'house', key: nextHouse })
     },
-    [housePages]
+    [focusOn, planetPages, housePages, focusPlanet]
   )
+
+  const focusedHouse =
+    focusOn?.kind === 'house'
+      ? focusOn.key
+      : null
 
   const sunSummary = useMemo(() => {
     const sun = planets.find((p) => p.name === 'Sun')
@@ -617,20 +504,13 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         <AspectsList aspects={aspects} />
       </ScrollView>
 
-      <PlanetInterpretationModal
-        visible={planetModalVisible && interpretationPages.length > 0}
-        pages={interpretationPages}
-        currentIndex={currentPlanetIndex}
-        onChangeIndex={handleChangePlanetIndex}
-        onClose={() => setPlanetModalVisible(false)}
-      />
-
-      <HouseInterpretationModal
-        visible={houseModalVisible && housePages.length > 0}
-        pages={housePages}
-        currentIndex={currentHouseIndex}
-        onChangeIndex={handleChangeHouseIndex}
-        onClose={() => setHouseModalVisible(false)}
+      <InterpretationModal
+        visible={interpretationVisible && activePages.length > 0}
+        headerTitle={modalHeaderTitle}
+        pages={activePages}
+        currentIndex={currentInterpretationIndex}
+        onChangeIndex={handleChangeInterpretationIndex}
+        onClose={() => setInterpretationVisible(false)}
       />
     </>
   )
