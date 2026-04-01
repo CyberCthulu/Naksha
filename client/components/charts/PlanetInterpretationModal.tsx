@@ -1,3 +1,5 @@
+//components/charts/PlanetInterpretationModal.tsx
+
 import React, { useEffect, useMemo, useRef } from 'react'
 import {
   Modal,

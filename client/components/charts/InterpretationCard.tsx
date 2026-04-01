@@ -1,5 +1,4 @@
 // components/charts/InterpretationCard.tsx
-
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { Interpretation } from '../../lib/lexicon'
