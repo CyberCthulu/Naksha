@@ -37,12 +37,17 @@ import ChartCompass from '../components/charts/ChartCompass'
 import PlanetInterpretationModal, {
   type InterpretationPage,
 } from '../components/charts/PlanetInterpretationModal'
+import HouseInterpretationModal, {
+  type HouseInterpretationPage,
+} from '../components/charts/HouseInterpretationModal'
 
 // lexicon
 import {
   zodiacNameFromLongitude,
   getPlanetSignMeaning,
   getPlanetHouseMeaning,
+  getHouseMeaning,
+  getHouseSignMeaning,
   type PlanetKey,
   type HouseNumber,
 } from '../lib/lexicon'
@@ -161,7 +166,10 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     saved?.planet_houses ?? null
   )
   const [isSaved, setIsSaved] = useState<boolean>(!!fromSaved)
+
   const [planetModalVisible, setPlanetModalVisible] = useState(false)
+  const [focusedHouse, setFocusedHouse] = useState<HouseNumber | null>(null)
+  const [houseModalVisible, setHouseModalVisible] = useState(false)
 
   if (!profile?.birth_date || !profile?.birth_time || !profile?.time_zone) {
     return (
@@ -395,6 +403,11 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     [focusPlanet]
   )
 
+  const handleFocusHouse = useCallback((house: HouseNumber) => {
+    setFocusedHouse(house)
+    setHouseModalVisible(true)
+  }, [])
+
   const subtitleLocation = profile.birth_location ?? null
   const subtitleZone = saved?.meta.time_zone ?? tz
   const subtitleCoords =
@@ -469,6 +482,62 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     [orderedPlanetKeys, focusPlanet]
   )
 
+  const housePages = useMemo<HouseInterpretationPage[]>(() => {
+    if (!houses) return []
+
+    return houses
+      .map((h) => {
+        const houseNumber = asHouseNumber(h.house)
+        if (!houseNumber) return null
+
+        const signName = zodiacNameFromLongitude(h.lon)
+        const genericMeaning = getHouseMeaning(houseNumber)
+        const signMeaning = getHouseSignMeaning(houseNumber, signName)
+
+        return {
+          key: `house-${houseNumber}`,
+          title: `House ${houseNumber}`,
+          subtitle: signName,
+          summary: signMeaning?.short ?? genericMeaning?.short ?? null,
+          blocks: [
+            {
+              title: `House ${houseNumber}`,
+              interpretation: genericMeaning,
+              mode: 'long',
+            },
+            {
+              title: `${signName} on House ${houseNumber}`,
+              interpretation: signMeaning,
+              mode: 'long',
+            },
+          ],
+        }
+      })
+      .filter(Boolean) as HouseInterpretationPage[]
+  }, [houses])
+
+  const currentHouseIndex = useMemo(() => {
+    if (!focusedHouse) return 0
+
+    const index = housePages.findIndex((page) => page.key === `house-${focusedHouse}`)
+    return index >= 0 ? index : 0
+  }, [focusedHouse, housePages])
+
+  const handleChangeHouseIndex = useCallback(
+    (index: number) => {
+      const nextPage = housePages[index]
+      if (!nextPage) return
+
+      const nextHouseNumber = Number(nextPage.key.replace('house-', ''))
+      const nextHouse = asHouseNumber(nextHouseNumber)
+
+      if (nextHouse) {
+        setFocusedHouse(nextHouse)
+      }
+    },
+    [housePages]
+  )
+
   const sunSummary = useMemo(() => {
     const sun = planets.find((p) => p.name === 'Sun')
     if (!sun) return null
@@ -535,7 +604,11 @@ export default function ChartScreen({ route }: ChartScreenProps) {
 
         <View style={{ height: 16 }} />
 
-        <HousesList houses={houses} />
+        <HousesList
+          houses={houses}
+          focusedHouse={focusedHouse}
+          onFocusHouse={handleFocusHouse}
+        />
 
         <View style={{ height: 16 }} />
 
@@ -550,6 +623,14 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         currentIndex={currentPlanetIndex}
         onChangeIndex={handleChangePlanetIndex}
         onClose={() => setPlanetModalVisible(false)}
+      />
+
+      <HouseInterpretationModal
+        visible={houseModalVisible && housePages.length > 0}
+        pages={housePages}
+        currentIndex={currentHouseIndex}
+        onChangeIndex={handleChangeHouseIndex}
+        onClose={() => setHouseModalVisible(false)}
       />
     </>
   )
