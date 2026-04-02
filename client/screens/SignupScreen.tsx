@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react'
 import { View, Alert } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { signUpWithEmail } from '../lib/auth'
-import { normalizeZone } from '../lib/timezones'
+import { normalizeZone, getDeviceTimeZoneNormalized } from '../lib/timezones'
+import { formatDateForDb, formatTimeForDb } from '../lib/time'
 
 // Auth UI components
 import AuthContainer from '../components/auth/AuthContainer'
@@ -37,8 +38,7 @@ export default function SignupScreen() {
 
   // Default to device zone (normalized)
   useEffect(() => {
-    const detected = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
-    setTimeZone(normalizeZone(detected) || 'Etc/UTC')
+    setTimeZone(getDeviceTimeZoneNormalized())
   }, [])
 
   const handleSignup = async () => {
@@ -65,8 +65,8 @@ export default function SignupScreen() {
     setSubmitting(true)
 
     // Format values for DB/auth
-    const formattedDate = birthDate.toISOString().split('T')[0] // YYYY-MM-DD
-    const formattedTime = birthTime.toTimeString().split(' ')[0] // HH:MM:SS
+    const formattedDate = formatDateForDb(birthDate)
+    const formattedTime = formatTimeForDb(birthTime)
 
     const { error } = await signUpWithEmail(email.trim(), password, {
       first_name: firstName || undefined,

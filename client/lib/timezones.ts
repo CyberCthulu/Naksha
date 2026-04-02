@@ -30,3 +30,8 @@ export function normalizeZone(raw:string | null | undefined): string | null {
   if (mapped) return mapped;
   return isValidTimeZone(z) ? z : null;
 }
+
+export function getDeviceTimeZoneNormalized(): string {
+  const detected = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+  return normalizeZone(detected) || 'Etc/UTC'
+}

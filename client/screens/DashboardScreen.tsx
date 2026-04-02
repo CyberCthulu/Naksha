@@ -9,6 +9,7 @@ import { saveChart, buildChartData } from '../lib/charts'
 
 import { uiStyles } from '../components/ui/uiStyles'
 import { AppText, MutedText, TitleText } from '../components/ui/AppText'
+import { formatShortTimeFromHHMM } from '../lib/time'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 
@@ -187,14 +188,7 @@ export default function DashboardScreen() {
     (profile?.first_name?.trim() || '') +
     (profile?.last_name ? ` ${profile.last_name}` : '')
 
-  const prettyTime = (() => {
-    const t = profile?.birth_time
-    if (!t) return '—'
-    const [h, m] = t.split(':')
-    const d = new Date()
-    d.setHours(parseInt(h || '0', 10), parseInt(m || '0', 10), 0, 0)
-    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-  })()
+  const prettyTime = formatShortTimeFromHHMM(profile?.birth_time)
 
   if (loading) {
     return (

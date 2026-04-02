@@ -12,3 +12,20 @@ export function birthToUTC(date: string, time: string, ianaZone: string) {
   // astronomy-engine wants a JS Date or numbers
   return { jsDate: dtUTC.toJSDate(), dtUTC }
 }
+
+// Format helpers used across screens
+export function formatDateForDb(d: Date) {
+  return d.toISOString().split('T')[0]
+}
+
+export function formatTimeForDb(d: Date) {
+  return d.toTimeString().split(' ')[0]
+}
+
+export function formatShortTimeFromHHMM(timeStr: string | null | undefined) {
+  if (!timeStr) return '—'
+  const [h, m] = String(timeStr).split(':')
+  const d = new Date()
+  d.setHours(parseInt(h || '0', 10), parseInt(m || '0', 10), 0, 0)
+  return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+}

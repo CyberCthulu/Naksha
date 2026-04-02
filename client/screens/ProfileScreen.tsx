@@ -17,6 +17,7 @@ import { signOut } from '../lib/auth'
 
 import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
+import { formatShortTimeFromHHMM } from '../lib/time'
 
 type DBUser = {
   id: string
@@ -168,14 +169,7 @@ export default function ProfileScreen() {
     return (fn + (ln ? ` ${ln}` : '')).trim() || 'Your Name'
   })()
 
-  const prettyBirthTime = (() => {
-    const t = userProfile?.birth_time
-    if (!t) return '—'
-    const [h, m] = String(t).split(':')
-    const d = new Date()
-    d.setHours(parseInt(h || '0', 10), parseInt(m || '0', 10), 0, 0)
-    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-  })()
+  const prettyBirthTime = formatShortTimeFromHHMM(userProfile?.birth_time)
 
   const onEditProfile = () => {
     navigation.navigate('CompleteProfile')

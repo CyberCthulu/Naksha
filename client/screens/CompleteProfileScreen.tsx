@@ -12,7 +12,8 @@ import { useNavigation } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import supabase from '../lib/supabase'
-import { normalizeZone } from '../lib/timezones'
+import { normalizeZone, getDeviceTimeZoneNormalized } from '../lib/timezones'
+import { formatDateForDb, formatTimeForDb } from '../lib/time'
 import { geocodePlace } from '../lib/geocode'
 
 // Shared auth UI
@@ -59,8 +60,7 @@ export default function CompleteProfileScreen() {
 
   // Default picker to device zone (normalized)
   useEffect(() => {
-    const detected = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
-    setTimeZone(normalizeZone(detected) || 'Etc/UTC')
+    setTimeZone(getDeviceTimeZoneNormalized())
   }, [])
 
   // Prefill from users table
@@ -146,8 +146,8 @@ export default function CompleteProfileScreen() {
 
     setSaving(true)
     try {
-      const formattedDate = birthDate.toISOString().split('T')[0] // YYYY-MM-DD
-      const formattedTime = birthTime.toTimeString().split(' ')[0] // HH:MM:SS
+      const formattedDate = formatDateForDb(birthDate)
+      const formattedTime = formatTimeForDb(birthTime)
 
       const {
         data: { user },
