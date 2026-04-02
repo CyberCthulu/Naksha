@@ -38,8 +38,11 @@ import InterpretationModal from '../components/charts/InterpretationModal'
 import type { InterpretationPage } from '../components/charts/interpretationTypes'
 
 // interpretation helpers
-import { asPlanetKey, asHouseNumber } from '../lib/chartInterpretation'
+import { asPlanetKey } from '../lib/chartInterpretation'
 import { buildPlanetPages, buildHousePages } from '../lib/chartPageBuilders'
+
+// hook
+import useChartInterpretation from '../hooks/useChartInterpretation'
 
 // lexicon
 import {
@@ -74,11 +77,6 @@ type RouteParams = {
 
 type ChartScreenProps = NativeStackScreenProps<ParamListBase, 'Chart'>
 
-type FocusTarget =
-  | { kind: 'planet'; key: PlanetKey }
-  | { kind: 'house'; key: HouseNumber }
-  | null
-
 export default function ChartScreen({ route }: ChartScreenProps) {
   const navigation = useNavigation<any>()
   const insets = useSafeAreaInsets()
@@ -99,9 +97,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     saved?.planet_houses ?? null
   )
   const [isSaved, setIsSaved] = useState<boolean>(!!fromSaved)
-
-  const [focusOn, setFocusOn] = useState<FocusTarget>(null)
-  const [interpretationVisible, setInterpretationVisible] = useState(false)
 
   if (!profile?.birth_date || !profile?.birth_time || !profile?.time_zone) {
     return (
@@ -327,20 +322,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     }
   }
 
-  const handleFocusPlanet = useCallback(
-    (planet: PlanetKey) => {
-      focusPlanet(planet)
-      setFocusOn({ kind: 'planet', key: planet })
-      setInterpretationVisible(true)
-    },
-    [focusPlanet]
-  )
-
-  const handleFocusHouse = useCallback((house: HouseNumber) => {
-    setFocusOn({ kind: 'house', key: house })
-    setInterpretationVisible(true)
-  }, [])
-
   const subtitleLocation = profile.birth_location ?? null
   const subtitleZone = saved?.meta.time_zone ?? tz
   const subtitleCoords =
@@ -366,64 +347,21 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     [houses]
   )
 
-  const activePages = useMemo<InterpretationPage[]>(() => {
-    if (!focusOn) return []
-    return focusOn.kind === 'planet' ? planetPages : housePages
-  }, [focusOn, planetPages, housePages])
-
-  const modalHeaderTitle = useMemo(() => {
-    if (!focusOn) return 'Interpretation'
-    return focusOn.kind === 'planet'
-      ? 'Planet Interpretation'
-      : 'House Interpretation'
-  }, [focusOn])
-
-  const currentInterpretationIndex = useMemo(() => {
-    if (!focusOn) return 0
-
-    if (focusOn.kind === 'planet') {
-      const index = planetPages.findIndex((page) => page.key === focusOn.key)
-      return index >= 0 ? index : 0
-    }
-
-    const index = housePages.findIndex(
-      (page) => page.key === `house-${focusOn.key}`
-    )
-    return index >= 0 ? index : 0
-  }, [focusOn, planetPages, housePages])
-
-  const handleChangeInterpretationIndex = useCallback(
-    (index: number) => {
-      if (!focusOn) return
-
-      if (focusOn.kind === 'planet') {
-        const nextPage = planetPages[index]
-        if (!nextPage) return
-
-        const nextPlanet = asPlanetKey(nextPage.key)
-        if (!nextPlanet) return
-
-        focusPlanet(nextPlanet)
-        setFocusOn({ kind: 'planet', key: nextPlanet })
-        return
-      }
-
-      const nextPage = housePages[index]
-      if (!nextPage) return
-
-      const nextHouseNumber = Number(nextPage.key.replace('house-', ''))
-      const nextHouse = asHouseNumber(nextHouseNumber)
-      if (!nextHouse) return
-
-      setFocusOn({ kind: 'house', key: nextHouse })
-    },
-    [focusOn, planetPages, housePages, focusPlanet]
-  )
-
-  const focusedHouse =
-    focusOn?.kind === 'house'
-      ? focusOn.key
-      : null
+  const {
+    interpretationVisible,
+    activePages,
+    modalHeaderTitle,
+    currentInterpretationIndex,
+    focusedHouse,
+    openPlanetInterpretation,
+    openHouseInterpretation,
+    handleChangeInterpretationIndex,
+    closeInterpretation,
+  } = useChartInterpretation({
+    focusPlanet,
+    planetPages,
+    housePages,
+  })
 
   const sunSummary = useMemo(() => {
     const sun = planets.find((p) => p.name === 'Sun')
@@ -486,7 +424,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
           planets={planets}
           planetHouses={planetHouses}
           focusedPlanet={focusedPlanet}
-          onFocusPlanet={handleFocusPlanet}
+          onFocusPlanet={openPlanetInterpretation}
         />
 
         <View style={{ height: 16 }} />
@@ -494,7 +432,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         <HousesList
           houses={houses}
           focusedHouse={focusedHouse}
-          onFocusHouse={handleFocusHouse}
+          onFocusHouse={openHouseInterpretation}
         />
 
         <View style={{ height: 16 }} />
@@ -510,7 +448,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         pages={activePages}
         currentIndex={currentInterpretationIndex}
         onChangeIndex={handleChangeInterpretationIndex}
-        onClose={() => setInterpretationVisible(false)}
+        onClose={closeInterpretation}
       />
     </>
   )
