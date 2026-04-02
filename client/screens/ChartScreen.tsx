@@ -1,12 +1,11 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useMemo } from 'react'
 import {
   View,
   Text,
   ScrollView,
   useWindowDimensions,
-  Alert,
-  Button,
   ActivityIndicator,
+  Button,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -14,18 +13,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { ParamListBase } from '@react-navigation/native'
 
 import { useSpace } from '../components/space/SpaceProvider'
-import { birthToUTC } from '../lib/time'
-import {
-  computeWholeSignHouses,
-  assignPlanetsToWholeSignHouses,
-  type PlanetPos,
-  type Aspect,
-  type HouseCusp,
-  type PlanetHousePlacement,
-} from '../lib/astro'
+import type { ChartData } from '../lib/charts'
 import { normalizeZone } from '../lib/timezones'
-import supabase from '../lib/supabase'
-import { saveChart, buildChartData, type ChartData } from '../lib/charts'
 
 // chart components
 import ChartHeader from '../components/charts/ChartHeader'
@@ -41,15 +30,15 @@ import type { InterpretationPage } from '../components/charts/interpretationType
 import { asPlanetKey } from '../lib/chartInterpretation'
 import { buildPlanetPages, buildHousePages } from '../lib/chartPageBuilders'
 
-// hook
+// hooks
 import useChartInterpretation from '../hooks/useChartInterpretation'
+import useChartData from '../hooks/useChartData'
 
 // lexicon
 import {
   zodiacNameFromLongitude,
   getPlanetSignMeaning,
   type PlanetKey,
-  type HouseNumber,
 } from '../lib/lexicon'
 
 // shared UI
@@ -89,15 +78,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
   const { profile, fromSaved, saved } = route.params as RouteParams
   const { focusedPlanet, focusPlanet, clearFocus } = useSpace()
 
-  const [loading, setLoading] = useState<boolean>(!fromSaved || !saved?.planets)
-  const [planets, setPlanets] = useState<PlanetPos[]>(saved?.planets ?? [])
-  const [aspects, setAspects] = useState<Aspect[]>(saved?.aspects ?? [])
-  const [houses, setHouses] = useState<HouseCusp[] | null>(saved?.houses ?? null)
-  const [planetHouses, setPlanetHouses] = useState<PlanetHousePlacement[] | null>(
-    saved?.planet_houses ?? null
-  )
-  const [isSaved, setIsSaved] = useState<boolean>(!!fromSaved)
-
   if (!profile?.birth_date || !profile?.birth_time || !profile?.time_zone) {
     return (
       <View style={uiStyles.center}>
@@ -110,6 +90,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
   }
 
   const tz = normalizeZone(profile.time_zone)
+
   if (!tz) {
     return (
       <View style={uiStyles.center}>
@@ -122,140 +103,20 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     )
   }
 
-  const birthDate = profile.birth_date
-  const birthTime = profile.birth_time
-  const chartName = `${profile.first_name ?? 'My'} Natal Chart`
-  const birthLat = profile.birth_lat ?? null
-  const birthLon = profile.birth_lon ?? null
-
-  const loadChart = useCallback(async () => {
-    setLoading(true)
-
-    try {
-      if (fromSaved && saved?.planets && saved?.aspects) {
-        let localHouses: HouseCusp[] | null = saved.houses ?? null
-
-        if (!localHouses && birthLat != null && birthLon != null) {
-          const { jsDate } = birthToUTC(birthDate, birthTime, tz)
-          localHouses = computeWholeSignHouses(jsDate, birthLat, birthLon)
-        }
-
-        const localPlanetHouses: PlanetHousePlacement[] | null =
-          saved.planet_houses ??
-          (localHouses ? assignPlanetsToWholeSignHouses(saved.planets, localHouses) : null)
-
-        setPlanets(saved.planets)
-        setAspects(saved.aspects)
-        setHouses(localHouses)
-        setPlanetHouses(localPlanetHouses)
-        setIsSaved(true)
-        return
-      }
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        Alert.alert('Not signed in')
-        return
-      }
-
-      let existingQuery = supabase
-        .from('charts')
-        .select('id, chart_data')
-        .eq('user_id', user.id)
-        .eq('birth_date', birthDate)
-        .eq('birth_time', birthTime)
-        .eq('time_zone', tz)
-
-      if (birthLat == null) {
-        existingQuery = existingQuery.is('birth_lat', null)
-      } else {
-        existingQuery = existingQuery.eq('birth_lat', birthLat)
-      }
-
-      if (birthLon == null) {
-        existingQuery = existingQuery.is('birth_lon', null)
-      } else {
-        existingQuery = existingQuery.eq('birth_lon', birthLon)
-      }
-
-      const { data: existing, error } = await existingQuery.maybeSingle()
-
-      if (error) throw error
-
-      if (existing) {
-        const cd = existing.chart_data as ChartData
-        const ps: PlanetPos[] = cd.planets ?? []
-        const asps: Aspect[] = cd.aspects ?? []
-
-        let localHouses: HouseCusp[] | null = cd.houses ?? null
-
-        if (!localHouses && birthLat != null && birthLon != null) {
-          const { jsDate } = birthToUTC(birthDate, birthTime, tz)
-          localHouses = computeWholeSignHouses(jsDate, birthLat, birthLon)
-        }
-
-        const ph: PlanetHousePlacement[] | null =
-          cd.planet_houses ??
-          (localHouses ? assignPlanetsToWholeSignHouses(ps, localHouses) : null)
-
-        setPlanets(ps)
-        setAspects(asps)
-        setHouses(localHouses)
-        setPlanetHouses(ph)
-        setIsSaved(true)
-      } else {
-        const payload = buildChartData({
-          name: chartName,
-          birth_date: birthDate,
-          birth_time: birthTime,
-          time_zone: tz,
-          birth_lat: birthLat,
-          birth_lon: birthLon,
-        })
-
-        setPlanets(payload.planets)
-        setAspects(payload.aspects)
-        setHouses(payload.houses)
-        setPlanetHouses(payload.planet_houses)
-        setIsSaved(false)
-
-        try {
-          await saveChart(user.id, {
-            name: payload.meta.name,
-            birth_date: payload.meta.birth_date,
-            birth_time: payload.meta.birth_time,
-            time_zone: payload.meta.time_zone,
-            birth_lat: payload.meta.birth_lat,
-            birth_lon: payload.meta.birth_lon,
-            chart_data: payload,
-          })
-          setIsSaved(true)
-        } catch (e) {
-          console.warn('Auto-save failed:', e)
-        }
-      }
-    } catch (e: any) {
-      Alert.alert('Error loading chart', e?.message ?? 'Unknown error')
-    } finally {
-      setLoading(false)
-    }
-  }, [
+  const {
+    loading,
+    planets,
+    aspects,
+    houses,
+    planetHouses,
+    isSaved,
+    saveCurrentChart,
+  } = useChartData({
+    profile,
     fromSaved,
     saved,
-    birthDate,
-    birthTime,
     tz,
-    chartName,
-    birthLat,
-    birthLon,
-  ])
-
-  useEffect(() => {
-    loadChart()
-  }, [loadChart])
+  })
 
   useEffect(() => {
     if (!planets.length) return
@@ -276,51 +137,6 @@ export default function ChartScreen({ route }: ChartScreenProps) {
 
   const maxChart = 360
   const size = Math.min(Math.max(280, width - 32), maxChart)
-
-  const onSavePress = async () => {
-    if (isSaved) {
-      return Alert.alert('Already Saved', 'This chart is already in your library.')
-    }
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return Alert.alert('Not signed in')
-    }
-
-    try {
-      const payload = buildChartData({
-        name: chartName,
-        birth_date: birthDate,
-        birth_time: birthTime,
-        time_zone: tz,
-        birth_lat: birthLat,
-        birth_lon: birthLon,
-      })
-
-      await saveChart(user.id, {
-        name: payload.meta.name,
-        birth_date: payload.meta.birth_date,
-        birth_time: payload.meta.birth_time,
-        time_zone: payload.meta.time_zone,
-        birth_lat: payload.meta.birth_lat,
-        birth_lon: payload.meta.birth_lon,
-        chart_data: payload,
-      })
-
-      setPlanets(payload.planets)
-      setAspects(payload.aspects)
-      setHouses(payload.houses)
-      setPlanetHouses(payload.planet_houses)
-      setIsSaved(true)
-
-      Alert.alert('Saved', 'Chart saved to your library.')
-    } catch (e: any) {
-      Alert.alert('Save failed', e?.message ?? 'Unknown error')
-    }
-  }
 
   const subtitleLocation = profile.birth_location ?? null
   const subtitleZone = saved?.meta.time_zone ?? tz
@@ -406,7 +222,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         <View style={{ alignItems: 'center', marginBottom: 10 }}>
           <Button
             title={isSaved ? 'Already Saved' : 'Save Chart Data'}
-            onPress={onSavePress}
+            onPress={saveCurrentChart}
             disabled={isSaved}
           />
         </View>
