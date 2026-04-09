@@ -1,201 +1,165 @@
 # Naksha
 
-Naksha is an AI-powered astrology app designed to help users generate, explore, and save natal charts. Beyond just charts, Naksha aims to evolve into a spiritual planning tool that leverages modern technology and traditional wisdom. The name "Naksha" (meaning "map" or "blueprint" in Sanskrit) reflects our vision: mapping the cosmic blueprint of human lives through accessible, intuitive tools.
+Naksha is a mobile-first astrology app focused on helping users generate natal charts, explore interpretations, save readings, and journal personal reflections.
 
-This project is still in its **early planning and scaffolding phase**. We're laying strong architectural foundations so we can scale thoughtfully as features come online. This README will evolve as the codebase grows.
-
----
-
-## Project Vision (Early Planning)
-
-* **Purpose:** Create a user-first astrology app that merges ancient charting wisdom with modern, AI-assisted insights.
-* **Core Idea:** Give users access to their natal charts and interpretative tools via a mobile-native, smooth UI — enhanced by personalized AI guidance.
-* **Philosophy:** Balance structure with spirituality — clean code, strong backend, intuitive frontend, real astrological value.
-* **Planned Modules:**
-
-  * Chart generation from birth data
-  * Visual astrology wheel
-  * Daily/weekly guidance system
-  * Chart history & journaling
-  * AI integration for spiritual coaching
-
-This README is written with a forward-looking mindset: even though not all features exist yet, we want to define the vision clearly for ourselves and collaborators.
+The app is built with **Expo + React Native** in the `client/` directory and uses **Supabase** for backend services (auth + database).
 
 ---
 
 ## Table of Contents
 
-1. [Features](#features)
-2. [Tech Stack](#tech-stack)
-3. [Directory Structure](#directory-structure)
-4. [Getting Started](#getting-started)
-
-   * [Prerequisites](#prerequisites)
-   * [Installation](#installation)
-   * [Running Locally](#running-locally)
-5. [Configuration](#configuration)
-6. [Testing](#testing)
-7. [Deployment](#deployment)
-8. [Contributing](#contributing)
-9. [License](#license)
+1. [Project Overview](#project-overview)
+2. [Current Status](#current-status)
+3. [Architecture](#architecture)
+4. [Tech Stack](#tech-stack)
+5. [Repository Structure](#repository-structure)
+6. [Features](#features)
+7. [Supabase Backend](#supabase-backend)
+8. [Environment Variables](#environment-variables)
+9. [Getting Started](#getting-started)
+10. [Run Commands](#run-commands)
+11. [Known Notes](#known-notes)
+12. [Roadmap](#roadmap)
+13. [Contributing](#contributing)
+14. [License](#license)
 
 ---
 
-## Features (Planned for MVP)
+## Project Overview
 
-* **User Authentication**: Email/password sign-up, login, and secure sessions using JWT.
-* **Chart Generation**: Fetch natal chart data from an astrology API and render as an interactive wheel.
-* **Storage & History**: Save generated charts to a user profile for later reference.
-* **Profile Management**: Edit user information and manage saved readings.
-* **Responsive UI**: Mobile-first design with React Native components.
+**Naksha** (Sanskrit: map / blueprint) is designed to combine traditional astrological structure with modern mobile UX and AI-assisted interpretation workflows.
+
+Core product goals:
+
+- Chart generation from birth data
+- Visual natal chart exploration
+- Interpretive text by sign/house/aspect logic
+- Persistent chart history
+- Reflective journaling for user growth
+
+---
+
+## Current Status
+
+This project is actively in development and already includes a functioning mobile app with:
+
+- Email/password auth flow
+- Profile completion (birth details + timezone + location geocoding)
+- Natal chart generation and display
+- Saved charts list with delete/open
+- Journal list and editor
+- Profile settings and preferences scaffolding
+
+Some modules are intentionally still in-progress or placeholder-only.
+
+---
+
+## Architecture
+
+### Frontend (Mobile App)
+
+- Location: `client/`
+- Framework: Expo + React Native + TypeScript
+- Navigation: React Navigation (native stack)
+- UI: Reusable UI and domain components under `components/`
+- Domain logic: chart computation/interpretation/time/timezone helpers in `lib/`
+- State/hook composition: feature hooks under `hooks/`
+
+### Backend
+
+- Platform: **Supabase**
+- Auth: Supabase Auth
+- Data: Supabase Postgres tables (e.g. users, charts, journals, subscriptions, purchases)
+- Client SDK: `@supabase/supabase-js`
+- Supabase client setup: `client/lib/supabase.ts`
 
 ---
 
 ## Tech Stack
 
-| Layer       | Technology                 |
-| ----------- | -------------------------- |
-| Frontend    | React Native               |
-| Backend     | Node.js, Express           |
-| Database    | PostgreSQL (via Sequelize) |
-| Auth        | JSON Web Tokens (JWT)      |
-| CI/CD       | GitHub Actions             |
-| Docs & Wiki | GitHub Wiki                |
+| Layer | Technology |
+|------|------------|
+| Mobile App | Expo, React Native |
+| Language | TypeScript |
+| Navigation | React Navigation |
+| Backend Services | Supabase |
+| Database | Supabase Postgres |
+| Auth | Supabase Auth |
+| Astro Calculation | `astronomy-engine` + internal helpers |
+| Rendering | React Native + SVG |
 
 ---
 
-## Directory Structure
+## Repository Structure
 
-```
-/ (root)
-├─ backend/             # Express API server
-│   ├─ src/
-│   ├─ tests/
-│   ├─ .env.example
-│   └─ package.json
-├─ frontend/            # React Native app
-│   ├─ src/
-│   ├─ __tests__/
-│   ├─ app.json
-│   └─ package.json
-├─ docs/                # Architecture diagrams, API specs
-├─ .gitignore
+```text
+/
+├─ client/
+│  ├─ App.tsx
+│  ├─ index.ts
+│  ├─ app.json
+│  ├─ package.json
+│  ├─ tsconfig.json
+│  ├─ screens/              # Route-level screens
+│  ├─ components/           # Reusable UI + feature components
+│  ├─ hooks/                # Feature hooks (chart data, interpretation, etc.)
+│  ├─ lib/                  # Domain/business logic + Supabase + helpers
+│  ├─ assets/
+│  └─ android/
 ├─ README.md
-└─ LICENSE
-```
+└─ COPYRIGHT.txt
 
----
+Features
+Authentication
+Sign up with email/password
 
-## Getting Started
+Check-email confirmation flow
 
-### Prerequisites
+Deep-link callback handling for auth completion
 
-* Node.js >= 16
-* npm or Yarn
-* PostgreSQL instance
-* (Optional) Expo CLI for React Native testing
+Sign in/out session support
 
-### Installation
+Profile
+First/last name, birth date/time/location, timezone
 
-1. **Clone the repo**
+Timezone normalization helpers
 
-   ```bash
-   git clone https://github.com/CyberCthulu/Naksha.git
-   cd Naksha
-   ```
+Location geocoding (OpenCage)
 
-2. **Install dependencies**
+Charting
+Natal planetary positions
 
-   ```bash
-   # Backend
-   cd backend && npm install
+Aspect computation
 
-   # Frontend
-   cd ../frontend && npm install
-   ```
+Whole-sign houses (when location data available)
 
-### Running Locally
+Interactive chart view + interpretation modal
 
-1. **Configure environment**
+Save chart data to Supabase
 
-   * Copy `.env.example` to `.env` in each of `/backend` and `/frontend` (if needed) and fill in values.
+Journaling
+Create/edit/delete journal entries
 
-2. **Start backend**
+Journal list with timestamps
 
-   ```bash
-   cd backend
-   npm run dev
-   ```
+Lightweight personal reflection workflow
 
-3. **Start frontend**
+Account Area
+Profile view/edit routing
 
-   ```bash
-   cd frontend
-   npm run start
-   ```
+Preferences scaffolding (house system/zodiac/orb modes)
 
-4. **Open the app**
+Subscription/purchase display scaffolding
 
-   * For web preview (Expo Web): `npm run web`
-   * On simulator/device: scan the QR code with Expo Go.
+Supabase Backend
+Naksha currently relies on Supabase for:
 
----
+User authentication/session handling
 
-## Configuration
+User profile persistence
 
-See `/backend/.env.example` and `/frontend/.env.example` for all required environment variables. Typical keys include:
+Saved chart storage
 
-```
-# Backend
-DATABASE_URL=postgres://user:pass@localhost:5432/naksha
-JWT_SECRET=your_jwt_secret
-ASTRO_API_KEY=your_astrology_service_key
+Journal entries
 
-# Frontend
-API_BASE_URL=http://localhost:4000
-```
-
----
-
-## Testing
-
-* **Backend unit tests**: `cd backend && npm test`
-* **Frontend component tests**: `cd frontend && npm test`
-
----
-
-## Deployment
-
-We use GitHub Actions for CI/CD:
-
-1. Pushing to `main` triggers:
-
-   * Lint & test
-   * Build Docker images
-   * Deploy to staging environment
-2. Creating a release tag (`vX.Y.Z`) deploys to production.
-
-Refer to `.github/workflows/` for workflow definitions.
-
----
-
-## Contributing
-
-1. Fork the repo.
-2. Create a branch: `git checkout -b feat/my-new-feature`
-3. Commit your changes: `git commit -m 'feat: add new feature'`
-4. Push to your branch: `git push origin feat/my-new-feature`
-5. Open a Pull Request and request a review.
-
-Be sure to update tests where applicable.
-
----
-
-## License
-
-This project is currently closed-source. All rights reserved to the creators.  
-No copying, distribution, or commercial use is permitted without explicit permission.
-
----
-
-*Built by Rudra Virudra Chaudhary (aka Rudy) and CyberCthulu team.*
+Subscription/purchase records (where available)
