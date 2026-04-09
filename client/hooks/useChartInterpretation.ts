@@ -1,3 +1,4 @@
+//hooks/useChartInterpretation.ts
 import { useCallback, useMemo, useState } from 'react'
 import type { InterpretationPage } from '../components/charts/interpretationTypes'
 import { asPlanetKey, asHouseNumber } from '../lib/chartInterpretation'

@@ -1,3 +1,4 @@
+//components/charts/AspectsList.tsx
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { Aspect } from '../../lib/astro'

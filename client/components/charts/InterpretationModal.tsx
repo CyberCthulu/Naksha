@@ -1,3 +1,4 @@
+//components/charts/InterpretationModal.tsx
 import React, { useEffect, useMemo, useRef } from 'react'
 import {
   Modal,

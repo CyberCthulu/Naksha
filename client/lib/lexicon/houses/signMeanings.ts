@@ -1,4 +1,4 @@
-//houses/signMeanings.ts
+//lib/lexicon/houses/signMeanings.ts
 import { HouseNumber, Interpretation, ZodiacName } from '../types'
 
 /**
