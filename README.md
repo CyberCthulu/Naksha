@@ -163,3 +163,76 @@ Saved chart storage
 Journal entries
 
 Subscription/purchase records (where available)
+
+Suggested backend repo hygiene (recommended)
+If you want reproducible DB evolution in Git, add:
+
+supabase/ directory
+
+SQL migrations
+
+seed scripts
+
+RLS policy definitions
+
+Right now, SQL may exist only in your Supabase project unless explicitly checked into this repo.
+
+Environment Variables
+Set these in your Expo environment for client/:
+
+EXPO_PUBLIC_SUPABASE_URL
+
+EXPO_PUBLIC_SUPABASE_ANON_KEY
+
+EXPO_PUBLIC_OPENCAGE_KEY (for geocoding birth location)
+
+Example (conceptual):
+
+EXPO_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
+EXPO_PUBLIC_OPENCAGE_KEY=<opencage-key>
+Getting Started
+Prerequisites
+Node.js 18+
+
+npm
+
+Expo CLI via npx expo ...
+
+Install
+cd client
+npm install
+Run Commands
+From client/:
+
+npm run start     # Expo dev server
+npm run android   # Android
+npm run ios       # iOS
+npm run web       # Web
+Known Notes
+Some files/modules are placeholders for upcoming features.
+
+Some profile preferences are UI-first scaffolding and may be expanded in later chart engine updates.
+
+Ensure deep-link scheme in Expo config and Supabase redirect URLs match your auth flow.
+
+Roadmap
+Potential near-term improvements:
+
+Commit Supabase migrations + RLS policies into repo
+
+Fully typed navigation params across all screens
+
+Remove duplicate helper logic and centralize in shared libs
+
+Add test coverage (unit + integration)
+
+Add CI checks (lint/typecheck/tests)
+
+Expand chat/subscription modules from scaffold to production
+
+License
+This project is currently closed-source.
+All rights reserved to the creators.
+No copying, distribution, or commercial use without explicit permission.
+
