@@ -1,4 +1,3 @@
-// components/auth/TimeZonePicker.tsx
 import { View, Text, Platform } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import { TIMEZONES } from '../../lib/timezones'
@@ -14,7 +13,9 @@ export default function TimeZonePicker({
 }) {
   return (
     <View>
-      <Text style={uiStyles.text}>Time Zone</Text>
+      <Text style={[uiStyles.text, { marginBottom: 8, fontWeight: '600' }]}>
+        Time Zone
+      </Text>
 
       <View
         style={{
@@ -22,7 +23,6 @@ export default function TimeZonePicker({
           borderColor: theme.colors.border,
           borderRadius: theme.radius.card,
           overflow: 'hidden',
-          marginTop: 8,
         }}
       >
         <Picker
@@ -30,7 +30,9 @@ export default function TimeZonePicker({
           onValueChange={onChange}
           style={{
             color: theme.colors.text,
-            ...(Platform.OS === 'android' ? { backgroundColor: 'transparent' } : null),
+            ...(Platform.OS === 'android'
+              ? { backgroundColor: 'transparent' }
+              : null),
           }}
           itemStyle={Platform.OS === 'ios' ? { color: theme.colors.text } : undefined}
           dropdownIconColor={Platform.OS === 'android' ? theme.colors.text : undefined}

@@ -1,4 +1,3 @@
-// components/auth/PasswordField.tsx
 import { Text, TextInput, View } from 'react-native'
 import { uiStyles } from '../ui/uiStyles'
 import { theme } from '../ui/theme'
@@ -11,8 +10,11 @@ export default function PasswordField({
   onChange: (s: string) => void
 }) {
   return (
-    <View>
-      <Text style={uiStyles.text}>Password</Text>
+    <View style={{ marginBottom: 6 }}>
+      <Text style={[uiStyles.text, { marginBottom: 8, fontWeight: '600' }]}>
+        Password
+      </Text>
+
       <TextInput
         secureTextEntry
         value={value}
@@ -23,9 +25,10 @@ export default function PasswordField({
           borderWidth: 1,
           borderColor: theme.colors.border,
           borderRadius: theme.radius.card,
-          padding: 10,
-          marginTop: 8,
+          paddingVertical: 14,
+          paddingHorizontal: 12,
           color: theme.colors.text,
+          fontSize: 16,
         }}
       />
     </View>

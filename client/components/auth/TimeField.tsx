@@ -1,4 +1,3 @@
-// components/auth/TimeField.tsx
 import { useState } from 'react'
 import { View, Text, Platform, Pressable } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
@@ -18,7 +17,9 @@ export default function TimeField({
 
   return (
     <View>
-      <Text style={uiStyles.text}>{label}</Text>
+      <Text style={[uiStyles.text, { marginBottom: 8, fontWeight: '600' }]}>
+        {label}
+      </Text>
 
       <Pressable
         onPress={() => setOpen(true)}
@@ -26,11 +27,11 @@ export default function TimeField({
           borderWidth: 1,
           borderColor: theme.colors.border,
           borderRadius: theme.radius.card,
-          padding: 10,
-          marginTop: 8,
+          paddingVertical: 14,
+          paddingHorizontal: 12,
         }}
       >
-        <Text style={value ? uiStyles.text : uiStyles.muted}>
+        <Text style={value ? [uiStyles.text, { fontSize: 16 }] : [uiStyles.muted, { fontSize: 16 }]}>
           {value ? value.toLocaleTimeString() : 'Select Time'}
         </Text>
       </Pressable>
