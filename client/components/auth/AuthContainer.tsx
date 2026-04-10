@@ -8,7 +8,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { uiStyles } from '../ui/uiStyles'
+import { theme } from '../ui/theme'
 
 type Props = {
   children: ReactNode
@@ -29,19 +29,17 @@ export default function AuthContainer({
     >
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={[
-          uiStyles.screen,
-          {
-            flexGrow: 1,
-            paddingTop: insets.top + 16,
-            paddingBottom: Math.max(insets.bottom, 16) + 24,
-            justifyContent: centered ? 'center' : 'flex-start',
-          },
-        ]}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: theme.spacing.screen,
+          paddingTop: insets.top + 16,
+          paddingBottom: insets.bottom + 24,
+          justifyContent: centered ? 'center' : 'flex-start',
+        }}
         keyboardShouldPersistTaps="handled"
         contentInsetAdjustmentBehavior="always"
       >
-        <View style={{ gap: 10 }}>{children}</View>
+        <View>{children}</View>
       </ScrollView>
     </KeyboardAvoidingView>
   )
