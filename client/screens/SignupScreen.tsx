@@ -1,4 +1,3 @@
-// client/screens/SignupScreen.tsx
 import React, { useEffect, useState } from 'react'
 import { View, Alert } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
@@ -6,37 +5,30 @@ import { signUpWithEmail } from '../lib/auth'
 import { normalizeZone, getDeviceTimeZoneNormalized } from '../lib/timezones'
 import { formatDateForDb, formatTimeForDb } from '../lib/time'
 
-// Auth UI components
 import AuthContainer from '../components/auth/AuthContainer'
 import EmailField from '../components/auth/EmailField'
 import PasswordField from '../components/auth/PasswordField'
 import ProfileFields from '../components/auth/ProfileFields'
 
-// ✅ shared styles
 import { uiStyles } from '../components/ui/uiStyles'
-
-// UI primitives
 import { AppText } from '../components/ui/AppText'
 import { Button } from '../components/ui/Button'
 
 export default function SignupScreen() {
   const navigation = useNavigation<any>()
 
-  // Account
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  // Profile fields
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [birthDate, setBirthDate] = useState<Date | null>(null)
   const [birthTime, setBirthTime] = useState<Date | null>(null)
   const [birthLocation, setBirthLocation] = useState('')
-  const [timeZone, setTimeZone] = useState('Etc/UTC') // IANA
+  const [timeZone, setTimeZone] = useState('Etc/UTC')
 
-  // Default to device zone (normalized)
   useEffect(() => {
     setTimeZone(getDeviceTimeZoneNormalized())
   }, [])
@@ -44,17 +36,16 @@ export default function SignupScreen() {
   const handleSignup = async () => {
     if (submitting) return
 
-    // Basic validation
     if (!email.trim() || !password.trim()) {
       setError('Email and password are required.')
       return
     }
+
     if (!birthDate || !birthTime) {
       setError('Please select both birth date and time.')
       return
     }
 
-    // Normalize and verify TZ
     const normalized = normalizeZone(timeZone)
     if (!normalized) {
       Alert.alert('Invalid Time Zone', 'Please pick a valid time zone.')
@@ -64,7 +55,6 @@ export default function SignupScreen() {
     setError('')
     setSubmitting(true)
 
-    // Format values for DB/auth
     const formattedDate = formatDateForDb(birthDate)
     const formattedTime = formatTimeForDb(birthTime)
 
@@ -74,7 +64,7 @@ export default function SignupScreen() {
       birth_date: formattedDate,
       birth_time: formattedTime,
       birth_location: birthLocation || undefined,
-      time_zone: normalized, // ✅ save normalized IANA
+      time_zone: normalized,
     })
 
     setSubmitting(false)
@@ -89,23 +79,39 @@ export default function SignupScreen() {
 
   return (
     <AuthContainer>
+      <View style={{ marginBottom: 18 }}>
+        <AppText style={uiStyles.h1}>Create your account</AppText>
+        <AppText style={[uiStyles.sub, { marginBottom: 0 }]}>
+          Add your birth details to generate your natal chart.
+        </AppText>
+      </View>
+
       <EmailField value={email} onChange={setEmail} />
       <PasswordField value={password} onChange={setPassword} />
 
       <ProfileFields
-        firstName={firstName} setFirstName={setFirstName}
-        lastName={lastName} setLastName={setLastName}
-        birthDate={birthDate} setBirthDate={setBirthDate}
-        birthTime={birthTime} setBirthTime={setBirthTime}
-        birthLocation={birthLocation} setBirthLocation={setBirthLocation}
-        timeZone={timeZone} setTimeZone={setTimeZone}
+        firstName={firstName}
+        setFirstName={setFirstName}
+        lastName={lastName}
+        setLastName={setLastName}
+        birthDate={birthDate}
+        setBirthDate={setBirthDate}
+        birthTime={birthTime}
+        setBirthTime={setBirthTime}
+        birthLocation={birthLocation}
+        setBirthLocation={setBirthLocation}
+        timeZone={timeZone}
+        setTimeZone={setTimeZone}
       />
 
       {error !== '' && (
-        <AppText style={[uiStyles.errorText, { marginTop: 6 }]}>{error}</AppText>
+        <AppText style={[uiStyles.errorText, { marginTop: 4, marginBottom: 4 }]}>
+          {error}
+        </AppText>
       )}
 
-      <View style={{ height: 8 }} />
+      <View style={{ height: 12 }} />
+
       <Button
         title={submitting ? 'Signing Up…' : 'Sign Up'}
         variant="ghost"
@@ -113,13 +119,13 @@ export default function SignupScreen() {
         disabled={submitting}
       />
 
-      <View style={{ height: 8 }} />
+      <View style={{ height: 10 }} />
+
       <Button
         title="Already have an account? Log In"
         variant="ghost"
         onPress={() => navigation.replace('Login')}
         disabled={submitting}
-        style={{ marginTop: 8 }}
       />
     </AuthContainer>
   )
