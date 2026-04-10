@@ -1,13 +1,13 @@
 // screens/LoginScreen.tsx
 import { useState } from 'react'
-import { View, TextInput } from 'react-native'
+import { View } from 'react-native'
 import { signInWithEmail } from '../lib/auth'
 
-// ✅ shared styles + theme
-import { uiStyles } from '../components/ui/uiStyles'
-import { theme } from '../components/ui/theme'
+import AuthContainer from '../components/auth/AuthContainer'
+import EmailField from '../components/auth/EmailField'
+import PasswordField from '../components/auth/PasswordField'
 
-// UI primitives
+import { uiStyles } from '../components/ui/uiStyles'
 import { AppText } from '../components/ui/AppText'
 import { Button } from '../components/ui/Button'
 
@@ -30,45 +30,11 @@ export default function LoginScreen({ navigation }: any) {
   }
 
   return (
-    <View style={[uiStyles.screen, { justifyContent: 'center' }]}>
+    <AuthContainer centered>
       <AppText style={uiStyles.h1}>Log In</AppText>
 
-      <AppText style={{ marginTop: 12 }}>Email</AppText>
-      <TextInput
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        placeholder="you@example.com"
-        placeholderTextColor={theme.colors.muted}
-        style={{
-          borderWidth: 1,
-          borderColor: theme.colors.border,
-          borderRadius: theme.radius.card,
-          padding: 10,
-          marginTop: 8,
-          marginBottom: 10,
-          color: theme.colors.text,
-        }}
-      />
-
-      <AppText>Password</AppText>
-      <TextInput
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        placeholder="••••••••"
-        placeholderTextColor={theme.colors.muted}
-        style={{
-          borderWidth: 1,
-          borderColor: theme.colors.border,
-          borderRadius: theme.radius.card,
-          padding: 10,
-          marginTop: 8,
-          marginBottom: 10,
-          color: theme.colors.text,
-        }}
-      />
+      <EmailField value={email} onChange={setEmail} />
+      <PasswordField value={password} onChange={setPassword} />
 
       {error !== '' && (
         <AppText style={[uiStyles.errorText, { marginBottom: 10 }]}>
@@ -86,6 +52,6 @@ export default function LoginScreen({ navigation }: any) {
         onPress={() => navigation.navigate('Signup')}
         style={{ marginTop: 8 }}
       />
-    </View>
+    </AuthContainer>
   )
 }
