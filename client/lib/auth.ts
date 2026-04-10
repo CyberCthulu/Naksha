@@ -1,4 +1,3 @@
-// lib/auth.ts
 import * as Linking from 'expo-linking'
 import supabase from './supabase'
 
@@ -9,17 +8,19 @@ import supabase from './supabase'
  */
 function getRedirectTo() {
   const url = Linking.createURL('/auth/callback')
-  console.log("🔗 Supabase emailRedirectTo:", url)
+  console.log('🔗 Supabase emailRedirectTo:', url)
   return url
 }
 
 export type ProfileMeta = {
   first_name?: string
   last_name?: string
-  birth_date?: string      // 'YYYY-MM-DD'
-  birth_time?: string      // 'HH:MM:SS'
+  birth_date?: string
+  birth_time?: string
   birth_location?: string
   time_zone?: string
+  birth_lat?: number
+  birth_lon?: number
 }
 
 export async function signUpWithEmail(
@@ -32,7 +33,6 @@ export async function signUpWithEmail(
     password,
     options: {
       emailRedirectTo: getRedirectTo(),
-      // 👇 THIS is the key: send profile data with the auth user
       data: meta,
     },
   })

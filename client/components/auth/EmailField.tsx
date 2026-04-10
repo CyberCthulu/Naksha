@@ -1,37 +1,22 @@
-import { Text, TextInput, View } from 'react-native'
-import { uiStyles } from '../ui/uiStyles'
-import { theme } from '../ui/theme'
+//components/auth/EmailField.tsx
+import FormField from '../ui/FormField'
+import TextField from '../ui/TextField'
 
-export default function EmailField({
-  value,
-  onChange,
-}: {
+type Props = {
   value: string
   onChange: (s: string) => void
-}) {
-  return (
-    <View style={{ marginBottom: 6 }}>
-      <Text style={[uiStyles.text, { marginBottom: 8, fontWeight: '600' }]}>
-        Email
-      </Text>
+}
 
-      <TextInput
+export default function EmailField({ value, onChange }: Props) {
+  return (
+    <FormField label="Email">
+      <TextField
         autoCapitalize="none"
         keyboardType="email-address"
         value={value}
         onChangeText={onChange}
         placeholder="you@example.com"
-        placeholderTextColor={theme.colors.muted}
-        style={{
-          borderWidth: 1,
-          borderColor: theme.colors.border,
-          borderRadius: theme.radius.card,
-          paddingVertical: 14,
-          paddingHorizontal: 12,
-          color: theme.colors.text,
-          fontSize: 16,
-        }}
       />
-    </View>
+    </FormField>
   )
 }

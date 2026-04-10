@@ -1,9 +1,13 @@
-import { View, TextInput, Text } from 'react-native'
+//components/auth/ProfileFields.tsx
+import { View } from 'react-native'
 import DateField from './DateField'
 import TimeField from './TimeField'
 import TimeZonePicker from './TimeZonePicker'
+import LocationAutocompleteField from './LocationAutocompleteField'
+import FormField from '../ui/FormField'
+import TextField from '../ui/TextField'
+import { AppText } from '../ui/AppText'
 import { uiStyles } from '../ui/uiStyles'
-import { theme } from '../ui/theme'
 
 type Props = {
   firstName: string
@@ -20,17 +24,9 @@ type Props = {
   setTimeZone: (v: string) => void
   birthLat?: number | null
   birthLon?: number | null
+  setBirthLat?: (v: number | null) => void
+  setBirthLon?: (v: number | null) => void
 }
-
-const inputStyle = {
-  borderWidth: 1,
-  borderColor: theme.colors.border,
-  borderRadius: theme.radius.card,
-  paddingVertical: 14,
-  paddingHorizontal: 12,
-  color: theme.colors.text,
-  fontSize: 16,
-} as const
 
 export default function ProfileFields({
   firstName,
@@ -47,34 +43,26 @@ export default function ProfileFields({
   setTimeZone,
   birthLat,
   birthLon,
+  setBirthLat,
+  setBirthLon,
 }: Props) {
   return (
-    <View style={{ gap: 14 }}>
-      <View>
-        <Text style={[uiStyles.text, { marginBottom: 8, fontWeight: '600' }]}>
-          First Name
-        </Text>
-        <TextInput
-          style={inputStyle}
+    <View>
+      <FormField label="First Name">
+        <TextField
           value={firstName}
           onChangeText={setFirstName}
           placeholder="First name"
-          placeholderTextColor={theme.colors.muted}
         />
-      </View>
+      </FormField>
 
-      <View>
-        <Text style={[uiStyles.text, { marginBottom: 8, fontWeight: '600' }]}>
-          Last Name
-        </Text>
-        <TextInput
-          style={inputStyle}
+      <FormField label="Last Name">
+        <TextField
           value={lastName}
           onChangeText={setLastName}
           placeholder="Last name"
-          placeholderTextColor={theme.colors.muted}
         />
-      </View>
+      </FormField>
 
       <DateField
         label="Birth Date"
@@ -88,23 +76,24 @@ export default function ProfileFields({
         onChange={(d) => setBirthTime(d)}
       />
 
-      <View>
-        <Text style={[uiStyles.text, { marginBottom: 8, fontWeight: '600' }]}>
-          Birth Location
-        </Text>
-        <TextInput
-          style={inputStyle}
-          value={birthLocation}
-          onChangeText={setBirthLocation}
-          placeholder="City, State/Country"
-          placeholderTextColor={theme.colors.muted}
-        />
-      </View>
+      <LocationAutocompleteField
+        value={birthLocation}
+        onChange={(next) => {
+          setBirthLocation(next)
+          setBirthLat?.(null)
+          setBirthLon?.(null)
+        }}
+        onSelectLocation={(result) => {
+          setBirthLocation(result.name)
+          setBirthLat?.(result.lat)
+          setBirthLon?.(result.lon)
+        }}
+      />
 
       {birthLat != null && birthLon != null && (
-        <Text style={uiStyles.muted}>
+        <AppText style={[uiStyles.muted, { marginBottom: 16 }]}>
           Resolved: {birthLocation} ({birthLat.toFixed(4)}, {birthLon.toFixed(4)})
-        </Text>
+        </AppText>
       )}
 
       <TimeZonePicker value={timeZone} onChange={setTimeZone} />

@@ -1,4 +1,3 @@
-// screens/SignupScreen.tsx
 import React, { useEffect, useState } from 'react'
 import { View, Alert } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
@@ -29,6 +28,8 @@ export default function SignupScreen() {
   const [birthTime, setBirthTime] = useState<Date | null>(null)
   const [birthLocation, setBirthLocation] = useState('')
   const [timeZone, setTimeZone] = useState('Etc/UTC')
+  const [birthLat, setBirthLat] = useState<number | null>(null)
+  const [birthLon, setBirthLon] = useState<number | null>(null)
 
   useEffect(() => {
     setTimeZone(getDeviceTimeZoneNormalized())
@@ -66,6 +67,8 @@ export default function SignupScreen() {
       birth_time: formattedTime,
       birth_location: birthLocation || undefined,
       time_zone: normalized,
+      birth_lat: birthLat ?? undefined,
+      birth_lon: birthLon ?? undefined,
     })
 
     setSubmitting(false)
@@ -103,6 +106,10 @@ export default function SignupScreen() {
         setBirthLocation={setBirthLocation}
         timeZone={timeZone}
         setTimeZone={setTimeZone}
+        birthLat={birthLat}
+        birthLon={birthLon}
+        setBirthLat={setBirthLat}
+        setBirthLon={setBirthLon}
       />
 
       {error !== '' && (
