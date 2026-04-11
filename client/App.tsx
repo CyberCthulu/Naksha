@@ -82,7 +82,7 @@ export default function App() {
     <SpaceProvider>
       <View style={{ flex: 1, backgroundColor: '#000' }}>
         {/* Background layer */}
-        <SpaceBackground />
+        {/* <SpaceBackground /> */}
 
         {/* Foreground app */}
         <AuthContext.Provider value={{ user }}>
