@@ -1,4 +1,3 @@
-import * as Linking from 'expo-linking'
 import supabase from './supabase'
 
 /**
@@ -7,7 +6,7 @@ import supabase from './supabase'
  * In a built app, this resolves to your scheme, e.g. naksha://auth/callback
  */
 function getRedirectTo() {
-  const url = Linking.createURL('/auth/callback')
+  const url = 'naksha://auth/callback'
   console.log('🔗 Supabase emailRedirectTo:', url)
   return url
 }
