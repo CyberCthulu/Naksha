@@ -34,6 +34,19 @@ type User = {
   birth_lon: number | null
 }
 
+function profileFromMetadata(md: any) {
+  return {
+    first_name: md?.first_name ?? null,
+    last_name: md?.last_name ?? null,
+    birth_date: md?.birth_date ?? null,
+    birth_time: md?.birth_time ?? null,
+    birth_location: md?.birth_location ?? null,
+    time_zone: md?.time_zone ?? null,
+    birth_lat: typeof md?.birth_lat === 'number' ? md.birth_lat : null,
+    birth_lon: typeof md?.birth_lon === 'number' ? md.birth_lon : null,
+  }
+}
+
 function needsProfileCompletion(p: Partial<User> | null | undefined) {
   if (!p) return true
   return (
@@ -93,8 +106,33 @@ export default function DashboardScreen() {
 
       if (profErr) throw profErr
 
-      const u = (data as User) ?? null
+      let u = (data as User) ?? null
       setProfile(u)
+
+      if (needsProfileCompletion(u)) {
+        const mdProfile = profileFromMetadata(user.user_metadata)
+        if (!needsProfileCompletion(mdProfile)) {
+          const { data: merged, error: mergeErr } = await supabase
+            .from('users')
+            .upsert(
+              {
+                id: user.id,
+                email: user.email ?? null,
+                ...mdProfile,
+              },
+              { onConflict: 'id' }
+            )
+            .select('*')
+            .maybeSingle()
+
+          if (mergeErr) throw mergeErr
+          if (merged) {
+            const mergedUser = merged as User
+            setProfile(mergedUser)
+            u = mergedUser
+          }
+        }
+      }
 
       if (needsProfileCompletion(u)) {
         setSunSign(null)

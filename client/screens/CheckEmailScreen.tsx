@@ -18,12 +18,16 @@ import { theme } from '../components/ui/theme'
 
 type RouteParams = Partial<{
   email: string
-  firstName: string
-  lastName: string
-  birthDate: string
-  birthTime: string
-  birthLocation: string
-  timeZone: string
+  profile: {
+    first_name: string | null
+    last_name: string | null
+    birth_date: string | null
+    birth_time: string | null
+    birth_location: string | null
+    time_zone: string | null
+    birth_lat: number | null
+    birth_lon: number | null
+  }
 }>
 
 export default function CheckEmailScreen() {
@@ -78,33 +82,31 @@ export default function CheckEmailScreen() {
       } = await supabase.auth.getUser()
 
       if (userError || !user) {
-        Alert.alert('Still waiting…', 'Please confirm your email first, then try again.')
+        Alert.alert(
+          'Still waiting…',
+          'If you already confirmed your email, log in once and then continue.'
+        )
+        navigation.replace('Login')
         return
       }
 
-      // Only save profile fields if they were provided (older flow).
-      // Your current SignupScreen often only passes { email }, so we keep this safe.
-      const hasProfilePayload =
-        params.firstName ||
-        params.lastName ||
-        params.birthDate ||
-        params.birthTime ||
-        params.birthLocation ||
-        params.timeZone
+      const profile = params.profile
 
-      if (hasProfilePayload) {
+      if (profile) {
         const { error: upsertErr } = await supabase
           .from('users')
           .upsert(
             {
               id: user.id,
               email: user.email ?? null,
-              first_name: params.firstName ?? null,
-              last_name: params.lastName ?? null,
-              birth_date: params.birthDate ?? null,
-              birth_time: params.birthTime ?? null,
-              birth_location: params.birthLocation ?? null,
-              time_zone: params.timeZone ?? null,
+              first_name: profile.first_name,
+              last_name: profile.last_name,
+              birth_date: profile.birth_date,
+              birth_time: profile.birth_time,
+              birth_location: profile.birth_location,
+              time_zone: profile.time_zone,
+              birth_lat: profile.birth_lat,
+              birth_lon: profile.birth_lon,
             },
             { onConflict: 'id' }
           )

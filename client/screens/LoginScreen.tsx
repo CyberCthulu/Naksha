@@ -15,9 +15,14 @@ export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const handleLogin = async () => {
-    const { error } = await signInWithEmail(email, password)
+    if (submitting) return
+    setSubmitting(true)
+    const { error } = await signInWithEmail(email.trim(), password)
+    setSubmitting(false)
+
     if (error) {
       if (error.message.includes('Email not confirmed')) {
         setError('Please verify your email before logging in.')
@@ -42,7 +47,12 @@ export default function LoginScreen({ navigation }: any) {
         </AppText>
       )}
 
-      <Button title="Login" variant="ghost" onPress={handleLogin} />
+      <Button
+        title={submitting ? 'Logging In…' : 'Login'}
+        variant="ghost"
+        onPress={handleLogin}
+        disabled={submitting}
+      />
 
       <View style={{ height: 10 }} />
 
@@ -51,6 +61,7 @@ export default function LoginScreen({ navigation }: any) {
         variant="ghost"
         onPress={() => navigation.navigate('Signup')}
         style={{ marginTop: 8 }}
+        disabled={submitting}
       />
     </AuthContainer>
   )
