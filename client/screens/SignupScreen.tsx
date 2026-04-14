@@ -78,7 +78,19 @@ export default function SignupScreen() {
       return
     }
 
-    navigation.replace('CheckEmail', { email })
+    navigation.replace('CheckEmail', {
+      email: email.trim(),
+      profile: {
+        first_name: firstName || null,
+        last_name: lastName || null,
+        birth_date: formattedDate,
+        birth_time: formattedTime,
+        birth_location: birthLocation || null,
+        time_zone: normalized,
+        birth_lat: birthLat ?? null,
+        birth_lon: birthLon ?? null,
+      },
+    })
   }
 
   return (
