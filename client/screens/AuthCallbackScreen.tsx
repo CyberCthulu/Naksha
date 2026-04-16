@@ -4,13 +4,30 @@ import { View, Text, ActivityIndicator, StyleSheet } from 'react-native'
 import * as ExpoLinking from 'expo-linking'
 import supabase from '../lib/supabase'
 
+type VerifyType = 'email' | 'recovery' | 'invite' | 'email_change'
+
 export default function AuthCallbackScreen({ navigation }: any) {
   const handledOnce = useRef(false)
 
   useEffect(() => {
-    const finish = (ok: boolean) => {
-      console.log('✅ Auth callback finish:', ok)
-      navigation.replace(ok ? 'Dashboard' : 'Login')
+    const finish = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      console.log('✅ Auth callback done, session user:', session?.user?.email ?? null)
+
+      if (session?.user) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Dashboard' }],
+        })
+      } else {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        })
+      }
     }
 
     const handleUrl = async (incomingUrl?: string | null) => {
@@ -22,13 +39,35 @@ export default function AuthCallbackScreen({ navigation }: any) {
         console.log('🔗 callback incoming url:', url)
 
         if (!url) {
-          finish(false)
+          await finish()
           return
         }
 
         const parsed = ExpoLinking.parse(url)
         console.log('🔍 parsed callback url:', JSON.stringify(parsed, null, 2))
 
+        const tokenHash =
+          typeof parsed.queryParams?.token_hash === 'string'
+            ? parsed.queryParams.token_hash
+            : undefined
+
+        const type =
+          typeof parsed.queryParams?.type === 'string'
+            ? (parsed.queryParams.type as VerifyType)
+            : undefined
+
+        if (tokenHash && type) {
+          console.log('🟡 verifying OTP with token_hash...')
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type,
+          })
+          console.log('🟢 verifyOtp error:', error?.message ?? null)
+          await finish()
+          return
+        }
+
+        // Fallbacks kept in case other auth flows still use them
         const code =
           typeof parsed.queryParams?.code === 'string'
             ? parsed.queryParams.code
@@ -38,7 +77,7 @@ export default function AuthCallbackScreen({ navigation }: any) {
           console.log('🟡 exchanging code for session...')
           const { error } = await supabase.auth.exchangeCodeForSession(code)
           console.log('🟢 exchange result error:', error?.message ?? null)
-          finish(!error)
+          await finish()
           return
         }
 
@@ -54,29 +93,21 @@ export default function AuthCallbackScreen({ navigation }: any) {
           const access_token = params.get('access_token') ?? undefined
           const refresh_token = params.get('refresh_token') ?? undefined
 
-          console.log('🟡 access token present:', !!access_token)
-          console.log('🟡 refresh token present:', !!refresh_token)
-
           if (access_token && refresh_token) {
             const { error } = await supabase.auth.setSession({
               access_token,
               refresh_token,
             })
             console.log('🟢 setSession error:', error?.message ?? null)
-            finish(!error)
+            await finish()
             return
           }
         }
 
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-
-        console.log('🔐 fallback session user:', session?.user?.email ?? null)
-        finish(!!session)
+        await finish()
       } catch (e) {
         console.log('🔥 AuthCallbackScreen crash:', e)
-        finish(false)
+        await finish()
       }
     }
 
@@ -93,19 +124,11 @@ export default function AuthCallbackScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" />
-      <Text style={styles.text}>Verifying your account…</Text>
+      <Text>Verifying your account…</Text>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  text: {
-    marginTop: 12,
-  },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 })

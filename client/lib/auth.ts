@@ -1,10 +1,5 @@
 import supabase from './supabase'
 
-/**
- * Builds the deep link that Supabase will use in its verification email.
- * In dev (Expo), this resolves to an exp:// URL.
- * In a built app, this resolves to your scheme, e.g. naksha://auth/callback
- */
 function getRedirectTo() {
   const url = 'naksha://auth/callback'
   console.log('🔗 Supabase emailRedirectTo:', url)
@@ -44,6 +39,14 @@ export async function resendSignupEmail(email: string) {
     options: {
       emailRedirectTo: getRedirectTo(),
     },
+  })
+}
+
+export async function verifySignupOtp(email: string, token: string) {
+  return await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: 'email',
   })
 }
 

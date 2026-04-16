@@ -1,4 +1,3 @@
-// screens/CheckEmailScreen.tsx
 import React, { useLayoutEffect, useMemo, useState } from 'react'
 import {
   View,
@@ -7,10 +6,11 @@ import {
   Alert,
   TouchableOpacity,
   ActivityIndicator,
+  TextInput,
 } from 'react-native'
 import { useRoute, useNavigation } from '@react-navigation/native'
 import supabase from '../lib/supabase'
-import { resendSignupEmail } from '../lib/auth'
+import { resendSignupEmail, verifySignupOtp } from '../lib/auth'
 
 import AuthContainer from '../components/auth/AuthContainer'
 import { uiStyles } from '../components/ui/uiStyles'
@@ -41,14 +41,15 @@ export default function CheckEmailScreen() {
   const params = (route.params ?? {}) as RouteParams
   const email = params.email ?? ''
 
+  const [code, setCode] = useState('')
   const [resending, setResending] = useState(false)
-  const [continuing, setContinuing] = useState(false)
+  const [verifying, setVerifying] = useState(false)
 
   const initialMessage = useMemo(() => {
     if (!email) {
-      return 'We’ve sent a confirmation email. Please verify your email to continue.'
+      return 'We sent you a confirmation code. Enter it below to verify your email and continue.'
     }
-    return `We’ve sent a confirmation email to ${email}. Please verify your email to continue.`
+    return `We sent a confirmation code to ${email}. Enter it below to verify your email and continue.`
   }, [email])
 
   const [message, setMessage] = useState(initialMessage)
@@ -62,19 +63,39 @@ export default function CheckEmailScreen() {
     try {
       setResending(true)
       const { error } = await resendSignupEmail(email)
+
       if (error) {
         Alert.alert('Resend Failed', error.message)
       } else {
-        setMessage('Verification email resent. Please check your inbox again.')
+        setMessage('Confirmation code resent. Please check your inbox again.')
       }
     } finally {
       setResending(false)
     }
   }
 
-  const handleContinue = async () => {
+  const handleVerify = async () => {
+    const trimmedCode = code.trim()
+
+    if (!email) {
+      Alert.alert('Missing email', 'We could not find the email for this signup flow.')
+      return
+    }
+
+    if (!trimmedCode) {
+      Alert.alert('Missing code', 'Enter the confirmation code from your email.')
+      return
+    }
+
     try {
-      setContinuing(true)
+      setVerifying(true)
+
+      const { error: verifyError } = await verifySignupOtp(email, trimmedCode)
+
+      if (verifyError) {
+        Alert.alert('Verification Failed', verifyError.message)
+        return
+      }
 
       const {
         data: { user },
@@ -83,8 +104,8 @@ export default function CheckEmailScreen() {
 
       if (userError || !user) {
         Alert.alert(
-          'Still waiting…',
-          'If you already confirmed your email, log in once and then continue.'
+          'Verification incomplete',
+          'Your email was verified, but we could not start your session. Please log in.'
         )
         navigation.replace('Login')
         return
@@ -117,15 +138,17 @@ export default function CheckEmailScreen() {
         }
       }
 
-      navigation.replace('Dashboard')
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Dashboard' }],
+      })
     } finally {
-      setContinuing(false)
+      setVerifying(false)
     }
   }
 
   return (
     <AuthContainer>
-      {/* Top bar */}
       <View style={styles.topRow}>
         <TouchableOpacity
           onPress={() => navigation.replace('Login')}
@@ -140,20 +163,30 @@ export default function CheckEmailScreen() {
       </View>
 
       <View style={uiStyles.card}>
-        <Text style={styles.title}>Check your inbox</Text>
+        <Text style={styles.title}>Enter your confirmation code</Text>
         <Text style={styles.message}>{message}</Text>
 
-        <View style={{ height: 10 }} />
+        <TextInput
+          value={code}
+          onChangeText={setCode}
+          placeholder="123456"
+          placeholderTextColor={theme.colors.muted}
+          keyboardType="number-pad"
+          autoCapitalize="none"
+          autoCorrect={false}
+          maxLength={6}
+          style={styles.codeInput}
+        />
 
         <TouchableOpacity
-          style={[styles.primaryBtn, continuing && { opacity: 0.7 }]}
-          onPress={handleContinue}
-          disabled={continuing}
+          style={[styles.primaryBtn, verifying && { opacity: 0.7 }]}
+          onPress={handleVerify}
+          disabled={verifying}
         >
-          {continuing ? (
+          {verifying ? (
             <ActivityIndicator />
           ) : (
-            <Text style={styles.primaryBtnText}>Continue to App</Text>
+            <Text style={styles.primaryBtnText}>Verify Code</Text>
           )}
         </TouchableOpacity>
 
@@ -174,7 +207,7 @@ export default function CheckEmailScreen() {
         <TouchableOpacity
           style={styles.linkBtn}
           onPress={() => navigation.replace('Login')}
-          disabled={continuing || resending}
+          disabled={verifying || resending}
         >
           <Text style={styles.linkBtnText}>Back to Login</Text>
         </TouchableOpacity>
@@ -218,6 +251,21 @@ const styles = StyleSheet.create({
     color: theme.colors.sub,
     textAlign: 'center',
     lineHeight: 20,
+    marginBottom: 14,
+  },
+
+  codeInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.card,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    color: theme.colors.text,
+    textAlign: 'center',
+    fontSize: 22,
+    letterSpacing: 6,
+    backgroundColor: theme.colors.cardBg,
   },
 
   primaryBtn: {
