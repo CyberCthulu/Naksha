@@ -184,9 +184,9 @@ export default function CheckEmailScreen() {
           disabled={verifying}
         >
           {verifying ? (
-            <ActivityIndicator />
+             <Text style={styles.primaryBtnText}>Verifying your code…</Text>
           ) : (
-            <Text style={styles.primaryBtnText}>Verify Code</Text>
+             <Text style={styles.primaryBtnText}>Verify Code</Text>
           )}
         </TouchableOpacity>
 
