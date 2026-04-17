@@ -1,4 +1,4 @@
-//screens/DashboardScreen.tsx
+// screens/DashboardScreen.tsx
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { View, ActivityIndicator } from 'react-native'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
@@ -18,7 +18,9 @@ const ZODIAC = [
   'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
   'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces',
 ]
+
 const ZODIAC_GLY = ['♈︎', '♉︎', '♊︎', '♋︎', '♌︎', '♍︎', '♎︎', '♏︎', '♐︎', '♑︎', '♒︎', '♓︎']
+
 const signOf = (lon: number) => Math.floor((((lon % 360) + 360) % 360) / 30)
 
 type User = {
@@ -49,6 +51,7 @@ function profileFromMetadata(md: any) {
 
 function needsProfileCompletion(p: Partial<User> | null | undefined) {
   if (!p) return true
+
   return (
     !p.first_name ||
     !p.last_name ||
@@ -67,14 +70,27 @@ export default function DashboardScreen() {
   const [moonSign, setMoonSign] = useState<string | null>(null)
 
   const nav = useNavigation<any>()
+
   const didEnsureOnce = useRef(false)
   const didNavigateRef = useRef(false)
   const unmounted = useRef(false)
+  const loadingRef = useRef(false)
+  const lastLoadAtRef = useRef(0)
 
   const load = useCallback(async () => {
+    const now = Date.now()
+
+    if (loadingRef.current) return
+    if (now - lastLoadAtRef.current < 500) return
+
+    loadingRef.current = true
+    lastLoadAtRef.current = now
+
     try {
-      setLoading(true)
-      setError(null)
+      if (!unmounted.current) {
+        setLoading(true)
+        setError(null)
+      }
 
       const {
         data: { user },
@@ -84,6 +100,7 @@ export default function DashboardScreen() {
       if (userErr) throw userErr
 
       if (!user) {
+        setProfile(null)
         setSunSign(null)
         setMoonSign(null)
         setError('No active session found.')
@@ -91,10 +108,13 @@ export default function DashboardScreen() {
       }
 
       if (!didEnsureOnce.current) {
-        await supabase.from('users').upsert(
-          { id: user.id, email: user.email ?? null },
-          { onConflict: 'id' }
-        )
+        await supabase
+          .from('users')
+          .upsert(
+            { id: user.id, email: user.email ?? null },
+            { onConflict: 'id' }
+          )
+
         didEnsureOnce.current = true
       }
 
@@ -111,6 +131,7 @@ export default function DashboardScreen() {
 
       if (needsProfileCompletion(u)) {
         const mdProfile = profileFromMetadata(user.user_metadata)
+
         if (!needsProfileCompletion(mdProfile)) {
           const { data: merged, error: mergeErr } = await supabase
             .from('users')
@@ -126,6 +147,7 @@ export default function DashboardScreen() {
             .maybeSingle()
 
           if (mergeErr) throw mergeErr
+
           if (merged) {
             const mergedUser = merged as User
             setProfile(mergedUser)
@@ -139,9 +161,10 @@ export default function DashboardScreen() {
         setMoonSign(null)
 
         if (!didNavigateRef.current) {
-          nav.navigate('CompleteProfile')
           didNavigateRef.current = true
+          nav.navigate('CompleteProfile')
         }
+
         return
       }
 
@@ -167,38 +190,48 @@ export default function DashboardScreen() {
         const sun = planets.find((p) => p.name === 'Sun')
         const moon = planets.find((p) => p.name === 'Moon')
 
-        setSunSign(sun ? `${ZODIAC_GLY[signOf(sun.lon)]} ${ZODIAC[signOf(sun.lon)]}` : null)
-        setMoonSign(moon ? `${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}` : null)
-      } else {
-        const payload = buildChartData({
-          name: `${u.first_name ?? 'My'} Natal Chart`,
-          birth_date: u.birth_date,
-          birth_time: u.birth_time,
-          time_zone: tz,
-          birth_lat: u.birth_lat ?? null,
-          birth_lon: u.birth_lon ?? null,
-        })
+        setSunSign(
+          sun ? `${ZODIAC_GLY[signOf(sun.lon)]} ${ZODIAC[signOf(sun.lon)]}` : null
+        )
+        setMoonSign(
+          moon ? `${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}` : null
+        )
 
-        try {
-          await saveChart(user.id, {
-            name: payload.meta.name,
-            birth_date: payload.meta.birth_date,
-            birth_time: payload.meta.birth_time,
-            time_zone: payload.meta.time_zone,
-            birth_lat: payload.meta.birth_lat,
-            birth_lon: payload.meta.birth_lon,
-            chart_data: payload,
-          })
-        } catch (e) {
-          console.warn('saveChart failed:', e)
-        }
-
-        const sun = payload.planets.find((p) => p.name === 'Sun')
-        const moon = payload.planets.find((p) => p.name === 'Moon')
-
-        setSunSign(sun ? `${ZODIAC_GLY[signOf(sun.lon)]} ${ZODIAC[signOf(sun.lon)]}` : null)
-        setMoonSign(moon ? `${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}` : null)
+        return
       }
+
+      const payload = buildChartData({
+        name: `${u.first_name ?? 'My'} Natal Chart`,
+        birth_date: u.birth_date,
+        birth_time: u.birth_time,
+        time_zone: tz,
+        birth_lat: u.birth_lat ?? null,
+        birth_lon: u.birth_lon ?? null,
+      })
+
+      try {
+        await saveChart(user.id, {
+          name: payload.meta.name,
+          birth_date: payload.meta.birth_date,
+          birth_time: payload.meta.birth_time,
+          time_zone: payload.meta.time_zone,
+          birth_lat: payload.meta.birth_lat,
+          birth_lon: payload.meta.birth_lon,
+          chart_data: payload,
+        })
+      } catch (e) {
+        console.warn('Auto-save failed:', e)
+      }
+
+      const sun = payload.planets.find((p) => p.name === 'Sun')
+      const moon = payload.planets.find((p) => p.name === 'Moon')
+
+      setSunSign(
+        sun ? `${ZODIAC_GLY[signOf(sun.lon)]} ${ZODIAC[signOf(sun.lon)]}` : null
+      )
+      setMoonSign(
+        moon ? `${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}` : null
+      )
     } catch (e: any) {
       if (!unmounted.current) {
         setError(e?.message ?? 'Failed to load dashboard.')
@@ -206,12 +239,17 @@ export default function DashboardScreen() {
         setMoonSign(null)
       }
     } finally {
-      if (!unmounted.current) setLoading(false)
+      loadingRef.current = false
+
+      if (!unmounted.current) {
+        setLoading(false)
+      }
     }
   }, [nav])
 
   useEffect(() => {
     unmounted.current = false
+
     return () => {
       unmounted.current = true
     }
@@ -219,6 +257,7 @@ export default function DashboardScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      didNavigateRef.current = false
       load()
     }, [load])
   )
@@ -254,6 +293,7 @@ export default function DashboardScreen() {
   return (
     <View style={uiStyles.screen}>
       <TitleText style={uiStyles.h1}>Welcome to Naksha 🌌</TitleText>
+
       <AppText style={uiStyles.sub}>
         {displayName ? `Hello, ${displayName}!` : 'Hello!'}
       </AppText>
@@ -279,9 +319,7 @@ export default function DashboardScreen() {
         <Card>
           <AppText style={uiStyles.cardTitle}>Profile</AppText>
           <AppText>No profile row found yet.</AppText>
-          <MutedText>
-            (You’ll get one after confirming email from Sign Up.)
-          </MutedText>
+          <MutedText>(You’ll get one after confirming email from Sign Up.)</MutedText>
         </Card>
       )}
 
