@@ -137,11 +137,12 @@ export default function CheckEmailScreen() {
           return
         }
       }
-
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Dashboard' }],
-      })
+      setMessage('Email Verified.')
+      return
+      // navigation.reset({
+      //   index: 0,
+      //   routes: [{ name: 'Dashboard' }],
+      // })
     } finally {
       setVerifying(false)
     }

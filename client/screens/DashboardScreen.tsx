@@ -1,6 +1,6 @@
 // screens/DashboardScreen.tsx
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { View, ActivityIndicator } from 'react-native'
+import { View, ActivityIndicator, InteractionManager } from 'react-native'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 
 import supabase from '../lib/supabase'
@@ -257,8 +257,13 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       didNavigateRef.current = false
-      load()
-    }, [load])
+      
+      const task = InteractionManager.runAfterInteractions(() => {
+        load()
+    }) 
+    
+      return () => task.cancel()
+  }, [load])
   )
 
   const displayName =
