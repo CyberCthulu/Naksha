@@ -110,7 +110,7 @@ export async function saveChart(userId: string, input: SaveChartInput) {
         ...input,
       },
       {
-        onConflict: 'user_id,birth_date,birth_time,time_zone,birth_lat,birth_lon',
+        onConflict: 'user_id,birth_date,birth_time,time_zone',
       }
     )
     .select(
