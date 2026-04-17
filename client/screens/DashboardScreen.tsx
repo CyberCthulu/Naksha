@@ -127,7 +127,6 @@ export default function DashboardScreen() {
       if (profErr) throw profErr
 
       let u = (data as User) ?? null
-      setProfile(u)
 
       if (needsProfileCompletion(u)) {
         const mdProfile = profileFromMetadata(user.user_metadata)
@@ -149,12 +148,12 @@ export default function DashboardScreen() {
           if (mergeErr) throw mergeErr
 
           if (merged) {
-            const mergedUser = merged as User
-            setProfile(mergedUser)
-            u = mergedUser
+            u = merged as User
           }
         }
       }
+
+      setProfile(u)
 
       if (needsProfileCompletion(u)) {
         setSunSign(null)
@@ -266,14 +265,16 @@ export default function DashboardScreen() {
     (profile?.first_name?.trim() || '') +
     (profile?.last_name ? ` ${profile.last_name}` : '')
 
-  const prettyTime = formatShortTimeFromHHMM(profile?.birth_time)
+  const prettyTime = profile?.birth_time
+    ? formatShortTimeFromHHMM(profile.birth_time)
+    : '—'
 
   if (loading) {
     return (
       <View style={uiStyles.center}>
         <ActivityIndicator />
         <AppText style={[uiStyles.text, { marginTop: 8, textAlign: 'center' }]}>
-          Loading Dashboard…
+          Loading your dashboard…
         </AppText>
       </View>
     )
