@@ -21,6 +21,12 @@ type Props = {
   placeholder?: string
 }
 
+function formatCoords(lat: unknown, lon: unknown): string | null {
+  if (typeof lat !== 'number' || typeof lon !== 'number') return null
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null
+  return `${lat.toFixed(4)}, ${lon.toFixed(4)}`
+}
+
 export default function LocationAutocompleteField({
   label = 'Birth Location',
   value,
@@ -118,21 +124,25 @@ export default function LocationAutocompleteField({
 
       {showResults && results.length > 0 && (
         <View style={styles.dropdown}>
-          {results.map((item, index) => (
-            <TouchableOpacity
-              key={`${item.name}-${item.lat}-${item.lon}-${index}`}
-              onPress={() => handleSelect(item)}
-              style={[
-                styles.resultRow,
-                index < results.length - 1 && styles.resultDivider,
-              ]}
-            >
-              <AppText style={styles.resultTitle}>{item.name}</AppText>
-              <MutedText style={styles.resultCoords}>
-                {item.lat.toFixed(4)}, {item.lon.toFixed(4)}
-              </MutedText>
-            </TouchableOpacity>
-          ))}
+          {results.map((item, index) => {
+            const coords = formatCoords(item.lat, item.lon)
+
+            return (
+              <TouchableOpacity
+                key={`${item.name}-${item.lat}-${item.lon}-${index}`}
+                onPress={() => handleSelect(item)}
+                style={[
+                  styles.resultRow,
+                  index < results.length - 1 && styles.resultDivider,
+                ]}
+              >
+                <AppText style={styles.resultTitle}>{item.name}</AppText>
+                {!!coords && (
+                  <MutedText style={styles.resultCoords}>{coords}</MutedText>
+                )}
+              </TouchableOpacity>
+            )
+          })}
         </View>
       )}
     </FormField>

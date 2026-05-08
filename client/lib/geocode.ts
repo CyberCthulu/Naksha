@@ -5,7 +5,13 @@ export type GeocodeResult = {
   name: string; // "Redwood City, California, United States"
   lat: number;
   lon: number;
+  timeZone?: string | null;
 };
+
+function toFiniteNumber(value: unknown): number | null {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? n : null;
+}
 
 function buildGeocodeError(status: number, statusText: string, message?: string): string {
   if (status === 401) {
@@ -24,7 +30,7 @@ export async function geocodePlace(q: string): Promise<GeocodeResult[]> {
 
   const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(
     q,
-  )}&key=${OPENCAGE_KEY}&limit=5&no_annotations=1`;
+  )}&key=${OPENCAGE_KEY}&limit=5`;
 
   const res = await fetch(url);
 
@@ -44,10 +50,21 @@ export async function geocodePlace(q: string): Promise<GeocodeResult[]> {
   }
 
   const json = await res.json();
+  const results: any[] = Array.isArray(json.results) ? json.results : [];
 
-  return (json.results || []).map((r: any) => ({
-    name: r.formatted,
-    lat: r.geometry.lat,
-    lon: r.geometry.lng,
-  }));
+  return results.reduce<GeocodeResult[]>((acc, r: any) => {
+    const lat = toFiniteNumber(r?.geometry?.lat);
+    const lon = toFiniteNumber(r?.geometry?.lng);
+    const name = typeof r?.formatted === 'string' ? r.formatted : '';
+
+    if (!name || lat == null || lon == null) return acc;
+
+    const timeZone =
+      typeof r?.annotations?.timezone?.name === 'string'
+        ? r.annotations.timezone.name
+        : null;
+
+    acc.push({ name, lat, lon, timeZone });
+    return acc;
+  }, []);
 }

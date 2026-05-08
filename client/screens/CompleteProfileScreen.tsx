@@ -138,7 +138,7 @@ export default function CompleteProfileScreen() {
       return
     }
 
-    const normalized = normalizeZone(timeZone)
+    let normalized = normalizeZone(timeZone)
     if (!normalized) {
       Alert.alert('Invalid Time Zone', 'Please pick a valid time zone.')
       return
@@ -164,10 +164,17 @@ export default function CompleteProfileScreen() {
             'Could not resolve birth location. Please refine it (e.g., "Redwood City, CA").'
           )
         }
-        lat = results[0].lat
-        lon = results[0].lon
+        const result = results[0]
+        lat = result.lat
+        lon = result.lon
         setBirthLat(lat)
         setBirthLon(lon)
+
+        const geocodedZone = normalizeZone(result.timeZone)
+        if (geocodedZone) {
+          normalized = geocodedZone
+          setTimeZone(geocodedZone)
+        }
       }
 
       const { error: upErr } = await supabase

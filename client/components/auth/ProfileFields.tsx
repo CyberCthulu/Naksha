@@ -8,6 +8,7 @@ import FormField from '../ui/FormField'
 import TextField from '../ui/TextField'
 import { AppText } from '../ui/AppText'
 import { uiStyles } from '../ui/uiStyles'
+import { normalizeZone } from '../../lib/timezones'
 
 type Props = {
   firstName: string
@@ -87,6 +88,9 @@ export default function ProfileFields({
           setBirthLocation(result.name)
           setBirthLat?.(result.lat)
           setBirthLon?.(result.lon)
+
+          const normalized = normalizeZone(result.timeZone)
+          if (normalized) setTimeZone(normalized)
         }}
       />
 
