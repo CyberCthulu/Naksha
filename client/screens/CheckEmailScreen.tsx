@@ -30,6 +30,29 @@ type RouteParams = Partial<{
   }
 }>
 
+type ProfileForRouting = {
+  first_name: string | null
+  last_name: string | null
+  birth_date: string | null
+  birth_time: string | null
+  birth_location: string | null
+  time_zone: string | null
+}
+
+const PROFILE_SELECT =
+  'first_name,last_name,birth_date,birth_time,birth_location,time_zone'
+
+function isProfileComplete(profile: ProfileForRouting | null | undefined) {
+  return !!(
+    profile?.first_name &&
+    profile.last_name &&
+    profile.birth_date &&
+    profile.birth_time &&
+    profile.birth_location &&
+    profile.time_zone
+  )
+}
+
 export default function CheckEmailScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute<any>()
@@ -98,6 +121,20 @@ export default function CheckEmailScreen() {
       }
 
       const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
+      if (sessionError || !session?.user) {
+        Alert.alert(
+          'Verification incomplete',
+          'Your email was verified, but we could not start your session. Please log in.'
+        )
+        navigation.replace('Login')
+        return
+      }
+
+      const {
         data: { user },
         error: userError,
       } = await supabase.auth.getUser()
@@ -112,9 +149,10 @@ export default function CheckEmailScreen() {
       }
 
       const profile = params.profile
+      let savedProfile: ProfileForRouting | null = null
 
       if (profile) {
-        const { error: upsertErr } = await supabase
+        const { data: upsertedProfile, error: upsertErr } = await supabase
           .from('users')
           .upsert(
             {
@@ -131,18 +169,41 @@ export default function CheckEmailScreen() {
             },
             { onConflict: 'id' }
           )
+          .select(PROFILE_SELECT)
+          .maybeSingle()
 
         if (upsertErr) {
           Alert.alert('Save Failed', upsertErr.message)
           return
         }
+
+        savedProfile = upsertedProfile as ProfileForRouting | null
+      } else {
+        const { data: existingProfile, error: profileErr } = await supabase
+          .from('users')
+          .select(PROFILE_SELECT)
+          .eq('id', user.id)
+          .maybeSingle()
+
+        if (profileErr) {
+          Alert.alert('Save Failed', profileErr.message)
+          return
+        }
+
+        savedProfile = existingProfile as ProfileForRouting | null
       }
+
       setMessage('Email Verified.')
-      return
-      // navigation.reset({
-      //   index: 0,
-      //   routes: [{ name: 'Dashboard' }],
-      // })
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: isProfileComplete(savedProfile)
+              ? 'Dashboard'
+              : 'CompleteProfile',
+          },
+        ],
+      })
     } finally {
       setVerifying(false)
     }
