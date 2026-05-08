@@ -40,6 +40,7 @@ type UseChartDataResult = {
   houses: HouseCusp[] | null
   planetHouses: PlanetHousePlacement[] | null
   isSaved: boolean
+  canSaveChart: boolean
   saveCurrentChart: () => Promise<void>
 }
 
@@ -63,6 +64,7 @@ export default function useChartData({
   const chartName = `${profile.first_name ?? 'My'} Natal Chart`
   const birthLat = profile.birth_lat ?? null
   const birthLon = profile.birth_lon ?? null
+  const canSaveChart = birthLat != null && birthLon != null
 
   const applyChartState = useCallback(
     (
@@ -142,7 +144,7 @@ export default function useChartData({
       }
 
       // Null coordinates do not form a stable Postgres unique identity, so render only.
-      if (birthLat == null || birthLon == null) {
+      if (!canSaveChart) {
         const payload = buildChartData({
           name: chartName,
           birth_date: birthDate,
@@ -239,6 +241,7 @@ export default function useChartData({
     birthLat,
     birthLon,
     chartName,
+    canSaveChart,
     hydrateSavedChart,
     applyChartState,
   ])
@@ -253,10 +256,10 @@ export default function useChartData({
       return
     }
 
-    if (birthLat == null || birthLon == null) {
+    if (!canSaveChart) {
       Alert.alert(
         'Birth location needed',
-        'Add or select a birth location before saving this chart.'
+        'Add a birth location to save houses and chart data.'
       )
       return
     }
@@ -310,6 +313,7 @@ export default function useChartData({
     tz,
     birthLat,
     birthLon,
+    canSaveChart,
     applyChartState,
   ])
 
@@ -320,6 +324,7 @@ export default function useChartData({
     houses,
     planetHouses,
     isSaved,
+    canSaveChart,
     saveCurrentChart,
   }
 }

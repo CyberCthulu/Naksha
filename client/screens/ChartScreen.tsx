@@ -111,6 +111,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     houses,
     planetHouses,
     isSaved,
+    canSaveChart,
     saveCurrentChart,
   } = useChartData({
     profile,
@@ -222,11 +223,25 @@ export default function ChartScreen({ route }: ChartScreenProps) {
 
         <View style={{ alignItems: 'center', marginBottom: 10 }}>
           <Button
-            title={isSaved ? 'Already Saved' : 'Save Chart Data'}
+            title={
+              !canSaveChart
+                ? 'View Only'
+                : isSaved
+                ? 'Already Saved'
+                : 'Save Chart Data'
+            }
             onPress={saveCurrentChart}
-            disabled={isSaved}
+            disabled={isSaved || !canSaveChart}
           />
         </View>
+
+        {!canSaveChart && (
+          <View style={[uiStyles.card, { alignItems: 'center' }]}>
+            <Text style={[uiStyles.text, { textAlign: 'center' }]}>
+              Add a birth location to save houses and chart data.
+            </Text>
+          </View>
+        )}
 
         <View style={{ alignItems: 'center' }}>
           <ChartWheel
