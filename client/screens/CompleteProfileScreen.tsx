@@ -255,6 +255,8 @@ export default function CompleteProfileScreen() {
         setTimeZone={setTimeZone}
         birthLat={birthLat}
         birthLon={birthLon}
+        setBirthLat={setBirthLat}
+        setBirthLon={setBirthLon}
       />
 
       <View style={{ height: 12 }} />

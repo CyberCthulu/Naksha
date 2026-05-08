@@ -101,7 +101,21 @@ export type SaveChartInput = {
   chart_data: ChartData
 }
 
+const CHART_IDENTITY_CONFLICT_TARGET =
+  'user_id,birth_date,birth_time,time_zone,birth_lat,birth_lon'
+
+export function hasChartIdentityCoordinates(input: {
+  birth_lat?: number | null
+  birth_lon?: number | null
+}) {
+  return input.birth_lat != null && input.birth_lon != null
+}
+
 export async function saveChart(userId: string, input: SaveChartInput) {
+  if (!hasChartIdentityCoordinates(input)) {
+    throw new Error('Birth coordinates are required to save a chart.')
+  }
+
   const { data, error } = await supabase
     .from('charts')
     .upsert(
@@ -110,7 +124,7 @@ export async function saveChart(userId: string, input: SaveChartInput) {
         ...input,
       },
       {
-        onConflict: 'user_id,birth_date,birth_time,time_zone',
+        onConflict: CHART_IDENTITY_CONFLICT_TARGET,
       }
     )
     .select(

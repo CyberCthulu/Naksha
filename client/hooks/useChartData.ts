@@ -141,6 +141,27 @@ export default function useChartData({
         return
       }
 
+      // Null coordinates do not form a stable Postgres unique identity, so render only.
+      if (birthLat == null || birthLon == null) {
+        const payload = buildChartData({
+          name: chartName,
+          birth_date: birthDate,
+          birth_time: birthTime,
+          time_zone: tz,
+          birth_lat: null,
+          birth_lon: null,
+        })
+
+        applyChartState(
+          payload.planets,
+          payload.aspects,
+          payload.houses,
+          payload.planet_houses,
+          false
+        )
+        return
+      }
+
       let existingQuery = supabase
         .from('charts')
         .select('id, chart_data')
@@ -148,18 +169,8 @@ export default function useChartData({
         .eq('birth_date', birthDate)
         .eq('birth_time', birthTime)
         .eq('time_zone', tz)
-
-      if (birthLat == null) {
-        existingQuery = existingQuery.is('birth_lat', null)
-      } else {
-        existingQuery = existingQuery.eq('birth_lat', birthLat)
-      }
-
-      if (birthLon == null) {
-        existingQuery = existingQuery.is('birth_lon', null)
-      } else {
-        existingQuery = existingQuery.eq('birth_lon', birthLon)
-      }
+        .eq('birth_lat', birthLat)
+        .eq('birth_lon', birthLon)
 
       const { data: existing, error } = await existingQuery.maybeSingle()
       if (error) throw error
@@ -239,6 +250,14 @@ export default function useChartData({
   const saveCurrentChart = useCallback(async () => {
     if (isSaved) {
       Alert.alert('Already Saved', 'This chart is already in your library.')
+      return
+    }
+
+    if (birthLat == null || birthLon == null) {
+      Alert.alert(
+        'Birth location needed',
+        'Add or select a birth location before saving this chart.'
+      )
       return
     }
 

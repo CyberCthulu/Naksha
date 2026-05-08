@@ -174,14 +174,20 @@ export default function DashboardScreen() {
         return
       }
 
-      const { data: existing } = await supabase
-        .from('charts')
-        .select('chart_data')
-        .eq('user_id', user.id)
-        .eq('birth_date', u.birth_date)
-        .eq('birth_time', u.birth_time)
-        .eq('time_zone', tz)
-        .maybeSingle()
+      const hasChartCoordinates = u.birth_lat != null && u.birth_lon != null
+
+      const { data: existing } = hasChartCoordinates
+        ? await supabase
+            .from('charts')
+            .select('chart_data')
+            .eq('user_id', user.id)
+            .eq('birth_date', u.birth_date)
+            .eq('birth_time', u.birth_time)
+            .eq('time_zone', tz)
+            .eq('birth_lat', u.birth_lat)
+            .eq('birth_lon', u.birth_lon)
+            .maybeSingle()
+        : { data: null }
 
       if (existing?.chart_data?.planets) {
         const planets = existing.chart_data.planets as { name: string; lon: number }[]
@@ -208,18 +214,20 @@ export default function DashboardScreen() {
         birth_lon: u.birth_lon ?? null,
       })
 
-      try {
-        await saveChart(user.id, {
-          name: payload.meta.name,
-          birth_date: payload.meta.birth_date,
-          birth_time: payload.meta.birth_time,
-          time_zone: payload.meta.time_zone,
-          birth_lat: payload.meta.birth_lat,
-          birth_lon: payload.meta.birth_lon,
-          chart_data: payload,
-        })
-      } catch (e) {
-        console.warn('Auto-save failed:', e)
+      if (hasChartCoordinates) {
+        try {
+          await saveChart(user.id, {
+            name: payload.meta.name,
+            birth_date: payload.meta.birth_date,
+            birth_time: payload.meta.birth_time,
+            time_zone: payload.meta.time_zone,
+            birth_lat: payload.meta.birth_lat,
+            birth_lon: payload.meta.birth_lon,
+            chart_data: payload,
+          })
+        } catch (e) {
+          console.warn('Auto-save failed:', e)
+        }
       }
 
       const sun = payload.planets.find((p) => p.name === 'Sun')
