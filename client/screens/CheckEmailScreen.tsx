@@ -186,7 +186,7 @@ export default function CheckEmailScreen() {
           .maybeSingle()
 
         if (profileErr) {
-          Alert.alert('Save Failed', profileErr.message)
+          Alert.alert('Profile Load Failed', profileErr.message)
           return
         }
 
