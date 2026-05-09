@@ -180,19 +180,6 @@ export default function CompleteProfileScreen() {
         .eq('id', user.id)
       if (upErr) throw upErr
 
-      await supabase.auth.updateUser({
-        data: {
-          first_name: firstName.trim(),
-          last_name: lastName.trim(),
-          birth_date: formattedDate,
-          birth_time: formattedTime,
-          birth_location: birthLocation.trim(),
-          time_zone: normalized,
-          birth_lat: lat,
-          birth_lon: lon,
-        },
-      })
-
       navigation.goBack()
     } catch (e: any) {
       Alert.alert('Save failed', e?.message ?? 'Unknown error')
