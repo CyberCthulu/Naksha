@@ -70,6 +70,24 @@ const defaultPrefs: ChartPreferences = {
   show_house_degrees: true,
 }
 
+function supportedChartPreferences(input: Partial<ChartPreferences>): ChartPreferences {
+  return {
+    house_system:
+      input.house_system === 'whole_sign'
+        ? input.house_system
+        : defaultPrefs.house_system,
+    zodiac_type:
+      input.zodiac_type === 'tropical'
+        ? input.zodiac_type
+        : defaultPrefs.zodiac_type,
+    orb_mode:
+      input.orb_mode === 'medium'
+        ? input.orb_mode
+        : defaultPrefs.orb_mode,
+    show_house_degrees: defaultPrefs.show_house_degrees,
+  }
+}
+
 export default function ProfileScreen() {
   const navigation = useNavigation<any>()
   const insets = useSafeAreaInsets()
@@ -115,7 +133,7 @@ export default function ProfileScreen() {
 
       // 2) Preferences from auth.user_metadata
       const md = (user.user_metadata ?? {}) as any
-      const loadedPrefs: ChartPreferences = {
+      const loadedPrefs = supportedChartPreferences({
         house_system: md.pref_house_system ?? defaultPrefs.house_system,
         zodiac_type: md.pref_zodiac_type ?? defaultPrefs.zodiac_type,
         orb_mode: md.pref_orb_mode ?? defaultPrefs.orb_mode,
@@ -123,7 +141,7 @@ export default function ProfileScreen() {
           typeof md.pref_show_house_degrees === 'boolean'
             ? md.pref_show_house_degrees
             : defaultPrefs.show_house_degrees,
-      }
+      })
       setPrefs(loadedPrefs)
 
       // 3) Subscription (latest)
@@ -176,7 +194,8 @@ export default function ProfileScreen() {
   }
 
   const onUpdatePrefs = async (next: Partial<ChartPreferences>) => {
-    setPrefs((prev) => ({ ...prev, ...next }))
+    const newPrefs = supportedChartPreferences({ ...prefs, ...next })
+    setPrefs(newPrefs)
     try {
       setSavingPrefs(true)
       const {
@@ -184,7 +203,6 @@ export default function ProfileScreen() {
       } = await supabase.auth.getUser()
       if (!user) throw new Error('Not signed in')
 
-      const newPrefs = { ...prefs, ...next }
       await supabase.auth.updateUser({
         data: {
           pref_house_system: newPrefs.house_system,
@@ -298,31 +316,51 @@ export default function ProfileScreen() {
       {/* Chart Preferences */}
       <View style={uiStyles.card}>
         <Text style={uiStyles.cardTitle}>Chart Preferences</Text>
+        <Text style={styles.cardHint}>
+          Charts currently use Whole Sign houses, Tropical zodiac, and standard fixed aspect orbs.
+        </Text>
 
         <Text style={styles.subheading}>House System</Text>
-        <ChoiceRow label="Whole Sign (default)" selected={prefs.house_system === 'whole_sign'} onPress={() => onUpdatePrefs({ house_system: 'whole_sign' })} />
-        <ChoiceRow label="Placidus (coming soon)" selected={prefs.house_system === 'placidus'} onPress={() => onUpdatePrefs({ house_system: 'placidus' })} />
-        <ChoiceRow label="Equal House (coming soon)" selected={prefs.house_system === 'equal'} onPress={() => onUpdatePrefs({ house_system: 'equal' })} />
+        <ChoiceRow
+          label="Whole Sign"
+          note="Current chart engine"
+          selected={prefs.house_system === 'whole_sign'}
+          onPress={() => onUpdatePrefs({ house_system: 'whole_sign' })}
+        />
+        <ChoiceRow label="Placidus" note="Coming soon" selected={false} disabled />
+        <ChoiceRow label="Equal House" note="Coming soon" selected={false} disabled />
 
         <Text style={styles.subheading}>Zodiac</Text>
-        <ChoiceRow label="Tropical" selected={prefs.zodiac_type === 'tropical'} onPress={() => onUpdatePrefs({ zodiac_type: 'tropical' })} />
-        <ChoiceRow label="Sidereal (coming soon)" selected={prefs.zodiac_type === 'sidereal'} onPress={() => onUpdatePrefs({ zodiac_type: 'sidereal' })} />
+        <ChoiceRow
+          label="Tropical"
+          note="Current chart engine"
+          selected={prefs.zodiac_type === 'tropical'}
+          onPress={() => onUpdatePrefs({ zodiac_type: 'tropical' })}
+        />
+        <ChoiceRow label="Sidereal" note="Coming soon" selected={false} disabled />
 
         <Text style={styles.subheading}>Aspect Orbs</Text>
-        <ChoiceRow label="Tight" selected={prefs.orb_mode === 'tight'} onPress={() => onUpdatePrefs({ orb_mode: 'tight' })} />
-        <ChoiceRow label="Medium (default)" selected={prefs.orb_mode === 'medium'} onPress={() => onUpdatePrefs({ orb_mode: 'medium' })} />
-        <ChoiceRow label="Loose" selected={prefs.orb_mode === 'loose'} onPress={() => onUpdatePrefs({ orb_mode: 'loose' })} />
+        <ChoiceRow
+          label="Standard fixed orbs"
+          note="Current chart engine"
+          selected={prefs.orb_mode === 'medium'}
+          onPress={() => onUpdatePrefs({ orb_mode: 'medium' })}
+        />
+        <ChoiceRow label="Tight orbs" note="Coming soon" selected={false} disabled />
+        <ChoiceRow label="Loose orbs" note="Coming soon" selected={false} disabled />
 
         <View style={styles.switchRow}>
           <View style={{ flex: 1 }}>
-            <Text style={uiStyles.text}>Show house degrees</Text>
+            <Text style={[uiStyles.text, styles.disabledText]}>
+              Show house degrees
+            </Text>
             <Text style={styles.switchHint}>
-              Turn off if you prefer a simpler wheel (just house numbers).
+              Coming soon.
             </Text>
           </View>
           <Switch
             value={prefs.show_house_degrees}
-            onValueChange={(v) => onUpdatePrefs({ show_house_degrees: v })}
+            disabled
             trackColor={{ false: 'rgba(255,255,255,0.25)', true: 'rgba(0,122,255,0.6)' }}
             thumbColor={prefs.show_house_degrees ? '#007AFF' : '#999'}
           />
@@ -407,17 +445,28 @@ function Row({ label, value }: { label: string; value: string }) {
 
 function ChoiceRow({
   label,
+  note,
   selected,
   onPress,
+  disabled = false,
 }: {
   label: string
+  note?: string
   selected: boolean
-  onPress: () => void
+  onPress?: () => void
+  disabled?: boolean
 }) {
   return (
-    <TouchableOpacity style={styles.choiceRow} onPress={onPress}>
+    <TouchableOpacity
+      style={[styles.choiceRow, disabled && styles.choiceRowDisabled]}
+      onPress={onPress}
+      disabled={disabled}
+    >
       <View style={[styles.choiceDot, selected && styles.choiceDotSelected]} />
-      <Text style={uiStyles.text}>{label}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={[uiStyles.text, disabled && styles.disabledText]}>{label}</Text>
+        {note ? <Text style={styles.choiceHint}>{note}</Text> : null}
+      </View>
     </TouchableOpacity>
   )
 }
@@ -490,6 +539,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 6,
   },
+  choiceRowDisabled: {
+    opacity: 0.65,
+  },
   choiceDot: {
     width: 14,
     height: 14,
@@ -501,6 +553,14 @@ const styles = StyleSheet.create({
   choiceDotSelected: {
     backgroundColor: '#007AFF',
     borderColor: '#007AFF',
+  },
+  choiceHint: {
+    fontSize: 12,
+    color: theme.colors.muted,
+    marginTop: 1,
+  },
+  disabledText: {
+    color: theme.colors.muted,
   },
 
   switchRow: {
