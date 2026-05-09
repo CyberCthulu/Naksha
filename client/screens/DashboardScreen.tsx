@@ -7,6 +7,7 @@ import supabase from '../lib/supabase'
 import { signOut } from '../lib/auth'
 import { normalizeZone } from '../lib/timezones'
 import { saveChart, buildChartData } from '../lib/charts'
+import type { UserProfileFields, UserRow } from '../lib/domainTypes'
 
 import { uiStyles } from '../components/ui/uiStyles'
 import { AppText, MutedText, TitleText } from '../components/ui/AppText'
@@ -23,20 +24,7 @@ const ZODIAC_GLY = ['♈︎', '♉︎', '♊︎', '♋︎', '♌︎', '♍︎', 
 
 const signOf = (lon: number) => Math.floor((((lon % 360) + 360) % 360) / 30)
 
-type User = {
-  id: string
-  email: string | null
-  first_name: string | null
-  last_name: string | null
-  birth_date: string | null
-  birth_time: string | null
-  birth_location: string | null
-  time_zone: string | null
-  birth_lat: number | null
-  birth_lon: number | null
-}
-
-function profileFromMetadata(md: any) {
+function profileFromMetadata(md: any): UserProfileFields {
   return {
     first_name: md?.first_name ?? null,
     last_name: md?.last_name ?? null,
@@ -49,7 +37,7 @@ function profileFromMetadata(md: any) {
   }
 }
 
-function needsProfileCompletion(p: Partial<User> | null | undefined) {
+function needsProfileCompletion(p: Partial<UserProfileFields> | null | undefined) {
   if (!p) return true
 
   return (
@@ -64,7 +52,7 @@ function needsProfileCompletion(p: Partial<User> | null | undefined) {
 
 export default function DashboardScreen() {
   const [loading, setLoading] = useState(true)
-  const [profile, setProfile] = useState<User | null>(null)
+  const [profile, setProfile] = useState<UserRow | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [sunSign, setSunSign] = useState<string | null>(null)
   const [moonSign, setMoonSign] = useState<string | null>(null)
@@ -126,7 +114,7 @@ export default function DashboardScreen() {
 
       if (profErr) throw profErr
 
-      let u = (data as User) ?? null
+      let u = (data as UserRow) ?? null
 
       if (needsProfileCompletion(u)) {
         const mdProfile = profileFromMetadata(user.user_metadata)
@@ -148,7 +136,7 @@ export default function DashboardScreen() {
           if (mergeErr) throw mergeErr
 
           if (merged) {
-            u = merged as User
+            u = merged as UserRow
           }
         }
       }

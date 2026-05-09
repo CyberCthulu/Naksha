@@ -14,20 +14,10 @@ import { birthToUTC } from '../lib/time'
 import { normalizeZone } from '../lib/timezones'
 import supabase from '../lib/supabase'
 import { buildChartData, saveChart, type ChartData } from '../lib/charts'
-
-type ProfileForChart = {
-  birth_date: string | null
-  birth_time: string | null
-  time_zone: string | null
-  birth_lat?: number | null
-  birth_lon?: number | null
-  birth_location?: string | null
-  first_name?: string | null
-  last_name?: string | null
-}
+import type { ChartProfile } from '../lib/domainTypes'
 
 type UseChartDataArgs = {
-  profile: ProfileForChart
+  profile: ChartProfile
   fromSaved?: boolean
   saved?: ChartData
   tz: string

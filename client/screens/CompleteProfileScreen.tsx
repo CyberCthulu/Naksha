@@ -15,6 +15,7 @@ import supabase from '../lib/supabase'
 import { normalizeZone, getDeviceTimeZoneNormalized } from '../lib/timezones'
 import { formatDateForDb, formatTimeForDb } from '../lib/time'
 import { geocodePlace } from '../lib/geocode'
+import type { UserRow } from '../lib/domainTypes'
 
 // Shared auth UI
 import AuthContainer from '../components/auth/AuthContainer'
@@ -23,19 +24,6 @@ import ProfileFields from '../components/auth/ProfileFields'
 // Shared UI theme
 import { theme } from '../components/ui/theme'
 import { uiStyles } from '../components/ui/uiStyles'
-
-type DBUser = {
-  id: string
-  email: string | null
-  first_name: string | null
-  last_name: string | null
-  birth_date: string | null
-  birth_time: string | null
-  birth_location: string | null
-  time_zone: string | null
-  birth_lat?: number | null
-  birth_lon?: number | null
-}
 
 export default function CompleteProfileScreen() {
   const navigation = useNavigation<any>()
@@ -89,7 +77,7 @@ export default function CompleteProfileScreen() {
           .from('users')
           .select('*')
           .eq('id', user.id)
-          .maybeSingle<DBUser>()
+          .maybeSingle<UserRow>()
         if (perr) throw perr
 
         if (data) {

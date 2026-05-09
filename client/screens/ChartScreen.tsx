@@ -16,6 +16,7 @@ import { ParamListBase } from '@react-navigation/native'
 import { useSpace } from '../components/space/SpaceProvider'
 import type { ChartData } from '../lib/charts'
 import { normalizeZone } from '../lib/timezones'
+import type { ChartRouteParams } from '../lib/domainTypes'
 
 // chart components
 import ChartHeader from '../components/charts/ChartHeader'
@@ -46,25 +47,6 @@ import {
 import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
 
-type ProfileForChart = {
-  birth_date: string | null
-  birth_time: string | null
-  time_zone: string | null
-  birth_lat?: number | null
-  birth_lon?: number | null
-  birth_location?: string | null
-  first_name?: string | null
-  last_name?: string | null
-}
-
-type SavedChartPayload = ChartData
-
-type RouteParams = {
-  profile: ProfileForChart
-  fromSaved?: boolean
-  saved?: SavedChartPayload
-}
-
 type ChartScreenProps = NativeStackScreenProps<ParamListBase, 'Chart'>
 
 export default function ChartScreen({ route }: ChartScreenProps) {
@@ -76,7 +58,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     navigation.setOptions({ headerShown: false })
   }, [navigation])
 
-  const { profile, fromSaved, saved } = route.params as RouteParams
+  const { profile, fromSaved, saved } = route.params as ChartRouteParams<ChartData>
   const { focusedPlanet, focusPlanet, clearFocus } = useSpace()
 
   if (!profile?.birth_date || !profile?.birth_time || !profile?.time_zone) {
