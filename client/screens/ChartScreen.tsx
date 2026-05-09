@@ -58,7 +58,10 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     navigation.setOptions({ headerShown: false })
   }, [navigation])
 
-  const { profile, fromSaved, saved } = route.params as ChartRouteParams<ChartData>
+  const params = route.params as ChartRouteParams<ChartData> | null | undefined
+  const profile = params?.profile
+  const fromSaved = params?.fromSaved
+  const saved = params?.saved
   const { focusedPlanet, focusPlanet, clearFocus } = useSpace()
 
   if (!profile?.birth_date || !profile?.birth_time || !profile?.time_zone) {
@@ -68,6 +71,12 @@ export default function ChartScreen({ route }: ChartScreenProps) {
         <Text style={uiStyles.muted}>
           Missing birth date, time, or time zone. Please complete your profile.
         </Text>
+        <View style={{ marginTop: 16 }}>
+          <Button
+            title="Back to Dashboard"
+            onPress={() => navigation.navigate('Dashboard')}
+          />
+        </View>
       </View>
     )
   }
