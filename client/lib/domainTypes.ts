@@ -14,6 +14,26 @@ export type UserRow = {
   email: string | null
 } & UserProfileFields
 
+export type SubscriptionRow = {
+  id: number
+  user_id: string
+  plan: string
+  status: string
+  start_date: string
+  end_date: string | null
+  created_at: string | null
+}
+
+export type PurchaseRow = {
+  id: number
+  user_id: string
+  product_type: string
+  product_id: string
+  amount: number
+  currency: string
+  purchase_date: string
+}
+
 export type ChartProfile = Pick<
   UserProfileFields,
   'birth_date' | 'birth_time' | 'time_zone'

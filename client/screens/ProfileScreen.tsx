@@ -18,38 +18,7 @@ import { signOut } from '../lib/auth'
 import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
 import { formatShortTimeFromHHMM } from '../lib/time'
-
-type DBUser = {
-  id: string
-  email: string | null
-  first_name: string | null
-  last_name: string | null
-  birth_date: string | null
-  birth_time: string | null
-  birth_location: string | null
-  time_zone: string | null
-  birth_lat: number | null
-  birth_lon: number | null
-}
-
-type SubscriptionRow = {
-  id: number
-  user_id: string
-  plan: string
-  status: string
-  start_date: string
-  end_date: string | null
-}
-
-type PurchaseRow = {
-  id: number
-  user_id: string
-  product_type: string
-  product_id: string
-  amount: number
-  currency: string
-  purchase_date: string
-}
+import type { PurchaseRow, SubscriptionRow, UserRow } from '../lib/domainTypes'
 
 // Chart preference types – stored in public.chart_preferences
 type HouseSystem = 'whole_sign' | 'placidus' | 'equal'
@@ -108,7 +77,7 @@ export default function ProfileScreen() {
   const [savingPrefs, setSavingPrefs] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const [userProfile, setUserProfile] = useState<DBUser | null>(null)
+  const [userProfile, setUserProfile] = useState<UserRow | null>(null)
   const [prefs, setPrefs] = useState<ChartPreferences>(defaultPrefs)
   const [subscription, setSubscription] = useState<SubscriptionRow | null>(null)
   const [purchases, setPurchases] = useState<PurchaseRow[]>([])
@@ -134,7 +103,7 @@ export default function ProfileScreen() {
         .from('users')
         .select('*')
         .eq('id', user.id)
-        .maybeSingle<DBUser>()
+        .maybeSingle<UserRow>()
       if (profErr) throw profErr
       setUserProfile(profile ?? null)
 
