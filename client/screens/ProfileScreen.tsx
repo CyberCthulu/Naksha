@@ -51,7 +51,7 @@ type PurchaseRow = {
   purchase_date: string
 }
 
-// Chart preference types – stored in auth.user_metadata
+// Chart preference types – stored in public.chart_preferences
 type HouseSystem = 'whole_sign' | 'placidus' | 'equal'
 type ZodiacType = 'tropical' | 'sidereal'
 type OrbMode = 'tight' | 'medium' | 'loose'
@@ -67,8 +67,15 @@ const defaultPrefs: ChartPreferences = {
   house_system: 'whole_sign',
   zodiac_type: 'tropical',
   orb_mode: 'medium',
-  show_house_degrees: true,
+  show_house_degrees: false,
 }
+
+type ChartPreferencesRow = ChartPreferences & {
+  user_id: string
+}
+
+const CHART_PREFERENCES_SELECT =
+  'user_id,house_system,zodiac_type,orb_mode,show_house_degrees'
 
 function supportedChartPreferences(input: Partial<ChartPreferences>): ChartPreferences {
   return {
@@ -131,18 +138,32 @@ export default function ProfileScreen() {
       if (profErr) throw profErr
       setUserProfile(profile ?? null)
 
-      // 2) Preferences from auth.user_metadata
-      const md = (user.user_metadata ?? {}) as any
-      const loadedPrefs = supportedChartPreferences({
-        house_system: md.pref_house_system ?? defaultPrefs.house_system,
-        zodiac_type: md.pref_zodiac_type ?? defaultPrefs.zodiac_type,
-        orb_mode: md.pref_orb_mode ?? defaultPrefs.orb_mode,
-        show_house_degrees:
-          typeof md.pref_show_house_degrees === 'boolean'
-            ? md.pref_show_house_degrees
-            : defaultPrefs.show_house_degrees,
-      })
-      setPrefs(loadedPrefs)
+      // 2) Chart preferences row
+      const { data: prefRow, error: prefErr } = await supabase
+        .from('chart_preferences')
+        .select(CHART_PREFERENCES_SELECT)
+        .eq('user_id', user.id)
+        .maybeSingle<ChartPreferencesRow>()
+      if (prefErr) throw prefErr
+
+      if (prefRow) {
+        setPrefs(supportedChartPreferences(prefRow))
+      } else {
+        const defaults = supportedChartPreferences(defaultPrefs)
+        const { data: insertedPrefs, error: insertPrefErr } = await supabase
+          .from('chart_preferences')
+          .upsert(
+            {
+              user_id: user.id,
+              ...defaults,
+            },
+            { onConflict: 'user_id' }
+          )
+          .select(CHART_PREFERENCES_SELECT)
+          .maybeSingle<ChartPreferencesRow>()
+        if (insertPrefErr) throw insertPrefErr
+        setPrefs(supportedChartPreferences(insertedPrefs ?? defaults))
+      }
 
       // 3) Subscription (latest)
       const { data: sub, error: subErr } = await supabase
@@ -203,14 +224,20 @@ export default function ProfileScreen() {
       } = await supabase.auth.getUser()
       if (!user) throw new Error('Not signed in')
 
-      await supabase.auth.updateUser({
-        data: {
-          pref_house_system: newPrefs.house_system,
-          pref_zodiac_type: newPrefs.zodiac_type,
-          pref_orb_mode: newPrefs.orb_mode,
-          pref_show_house_degrees: newPrefs.show_house_degrees,
-        },
-      })
+      const { data: savedPrefs, error: prefErr } = await supabase
+        .from('chart_preferences')
+        .upsert(
+          {
+            user_id: user.id,
+            ...newPrefs,
+          },
+          { onConflict: 'user_id' }
+        )
+        .select(CHART_PREFERENCES_SELECT)
+        .maybeSingle<ChartPreferencesRow>()
+      if (prefErr) throw prefErr
+
+      setPrefs(supportedChartPreferences(savedPrefs ?? newPrefs))
     } catch (e: any) {
       Alert.alert('Save failed', e?.message ?? 'Could not update preferences.')
     } finally {
