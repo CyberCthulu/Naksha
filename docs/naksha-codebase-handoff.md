@@ -1,8 +1,9 @@
 # Naksha Codebase Handoff
 
 Generated: 2026-05-07  
-Scope: repository inspection only, plus this document. No source code was refactored or feature code changed.  
-Verification run: `cd client && npx tsc --noEmit` passes.
+Last updated: after chart identity, coordinate, OTP navigation, and docs/type cleanup slices.
+Scope: source-of-truth repository handoff. This update is documentation-only.
+Last recorded code verification: `cd client && npx tsc --noEmit` passes.
 
 ## 1. Executive Summary
 
@@ -12,21 +13,21 @@ What already works:
 
 - Email/password auth with Supabase, persisted through AsyncStorage.
 - Signup flow that collects birth details and stores profile data in auth metadata, then later in the `users` table.
-- Login, check-email OTP verification, deep-link callback handling, profile completion, dashboard, chart view, saved chart list, profile screen, and journal list/editor.
+- Login, check-email OTP verification with deterministic navigation reset, deep-link callback handling, profile completion, dashboard, chart view, saved chart list, profile screen, and journal list/editor.
 - Natal chart computation from birth date/time/time zone using `luxon` and `astronomy-engine`.
 - Whole-sign house calculation when latitude/longitude are available.
 - Local chart interpretation from lexicon files for planet/sign, planet/house, house/sign, generic house, and aspect meanings.
 - Supabase chart persistence through a `charts` table and journal persistence through a `journals` table.
+- Source-controlled Supabase migrations now exist under `supabase/migrations/`, including chart identity, profile coordinate trigger, purchase policy, and journal delete behavior fixes.
+- Location autocomplete can populate coordinates and update the selected time zone from OpenCage timezone annotations.
 
 What is incomplete or unstable:
 
-- No Supabase migrations, schema definitions, seed data, or RLS policy files are checked into the repo.
 - `server/` is empty, and several service files are placeholders: `conversations.ts`, `notifications.ts`, `reports.ts`, `subscriptions.ts`, `usage.ts`.
 - `ChatScreen.tsx` and `SubscriptionScreen.tsx` are empty and not wired into navigation.
 - Profile chart preferences are stored but not used by chart generation.
-- Chart persistence has inconsistent uniqueness and lookup rules around latitude/longitude.
-- Profile location editing can preserve stale coordinates.
-- Signup verification navigation is partly implicit.
+- Charts without birth coordinates are intentionally view-only: they can render planet data, but are not persisted because canonical saved-chart identity requires coordinates.
+- Profile data is still duplicated between auth metadata and `public.users`.
 - There are no tests and no `test` or `lint` npm scripts.
 
 ## 2. Tech Stack
@@ -57,6 +58,7 @@ Main folders:
 - `client/lib/`: Supabase client, auth helpers, chart computation, interpretation helpers, geocoding, time helpers, journals, and lexicon.
 - `client/lib/lexicon/`: local interpretation content and lookup functions.
 - `client/android/`: generated native Android project.
+- `supabase/`: local Supabase config and source-controlled SQL migrations.
 - `server/`: currently empty.
 
 Important files:
@@ -64,6 +66,7 @@ Important files:
 - `client/App.tsx`: root auth session bootstrap, linking config, stack navigation split, `AuthContext`, `SpaceProvider`.
 - `client/lib/supabase.ts`: Supabase client, AsyncStorage persistence, Expo public env vars.
 - `client/lib/auth.ts`: sign up, resend, OTP verify, login, logout, get user.
+- `client/lib/domainTypes.ts`: shared frontend domain types for profile fields, user rows, and chart route/profile params.
 - `client/screens/DashboardScreen.tsx`: profile load/repair, profile completion redirect, sun/moon summary, chart auto-save.
 - `client/screens/CompleteProfileScreen.tsx`: profile edit form, geocoding fallback, `users` table update, auth metadata update.
 - `client/screens/ChartScreen.tsx`: chart route validation, chart hook, chart UI composition, interpretation page construction.
@@ -73,6 +76,10 @@ Important files:
 - `client/lib/chartPageBuilders.ts`: builds modal pages from chart data and lexicon lookups.
 - `client/lib/chartInterpretation.ts`: shared planet/house key guards and planet summary construction.
 - `client/lib/lexicon/index.ts`: barrel export for all interpretation lookups.
+- `supabase/migrations/20260508021000_canonical_chart_identity.sql`: canonical chart identity constraint using `NULLS NOT DISTINCT`.
+- `supabase/migrations/20260508021100_handle_new_user_birth_coordinates.sql`: `handle_new_user` profile coordinate copy and safe metadata casting.
+- `supabase/migrations/20260508021200_remove_client_purchase_insert_policy.sql`: removes client-side purchase insertion.
+- `supabase/migrations/20260508021300_journals_chart_delete_set_null.sql`: makes `journals.chart_id` nullable on chart delete.
 
 ## 4. Auth Flow
 
@@ -80,6 +87,7 @@ Signup:
 
 - `SignupScreen.tsx` collects email, password, first/last name, birth date/time, location, time zone, and optional lat/lon.
 - It defaults time zone from the device via `getDeviceTimeZoneNormalized`.
+- Location autocomplete results set `birth_location`, `birth_lat`, `birth_lon`, and now update `time_zone` when OpenCage returns a valid timezone annotation.
 - It calls `signUpWithEmail` in `lib/auth.ts`.
 - `signUpWithEmail` passes profile fields into Supabase auth `options.data` and sets `emailRedirectTo` to `naksha://auth/callback`.
 - After signup succeeds, the app navigates to `CheckEmail` with `email` and a `profile` object in route params.
@@ -89,7 +97,8 @@ Email verification:
 - `CheckEmailScreen.tsx` supports OTP code entry and resend.
 - `verifySignupOtp(email, token)` calls `supabase.auth.verifyOtp({ email, token, type: 'email' })`.
 - After verification, it calls `supabase.auth.getUser()` and upserts the route-param profile into `users`.
-- It currently sets message to `Email Verified.` and returns. The explicit `navigation.reset(...Dashboard...)` block is commented out, so successful navigation relies on Supabase auth state changing and `App.tsx` switching stacks.
+- It then fetches or uses the saved profile, determines whether required profile fields are complete, and calls `navigation.reset` to `Dashboard` or `CompleteProfile` deterministically.
+- If the no-profile fetch path fails, the alert copy now identifies it as a profile load failure rather than a save failure.
 
 Login:
 
@@ -113,17 +122,25 @@ Profile completion:
 - It fetches `users` by `id`; if fields are missing, it attempts to merge from `auth.user_metadata`.
 - If the profile still needs required fields, it navigates to `CompleteProfile`.
 - `CompleteProfileScreen.tsx` updates the `users` table and mirrors birth/profile fields back into auth metadata.
+- Editing location text clears stale coordinates; selecting autocomplete sets coordinates; saving a manually typed location geocodes missing coordinates and can update the timezone from OpenCage.
 - `ProfileScreen.tsx` reads `users`, reads chart preferences from auth metadata, and stores preference edits back to auth metadata.
 
 Known auth/profile issues:
 
-- `CheckEmailScreen.tsx` uses implicit post-verification navigation instead of a deterministic reset.
 - Profile data is duplicated between `users` and auth metadata.
 - `AuthContext` exposes only `{ user }`, not auth actions or loading state.
 - Auth callback and auth helper files contain verbose debug logging.
 - Navigation route types are mostly `any`, so auth flow route params are not compile-time enforced.
+- Deep-link verification through `AuthCallbackScreen` remains a separate flow from OTP verification; both should stay aligned when profile requirements change.
 
 ## 5. Data Model / Supabase
+
+Supabase source state:
+
+- Local Supabase config and migrations now live in `supabase/`.
+- The pulled schema dump remains in `supabase/migrations/20260508015720_remote_schema.sql`.
+- New changes should be incremental migrations, not edits to the pulled remote schema dump.
+- Local email confirmations are enabled in `supabase/config.toml` so the OTP flow can be tested locally.
 
 Tables used by the frontend:
 
@@ -150,6 +167,14 @@ Expected `charts` fields:
 - `birth_date`, `birth_time`, `time_zone`, `birth_lat`, `birth_lon`.
 - `chart_data`: JSON object matching `ChartData`.
 - `created_at`, `updated_at`.
+
+Canonical saved-chart identity:
+
+- `user_id`, `birth_date`, `birth_time`, `time_zone`, `birth_lat`, `birth_lon`.
+- Migration `20260508021000_canonical_chart_identity.sql` drops the old 4-column uniqueness rule and attaches a clear canonical unique constraint.
+- The canonical unique index uses `NULLS NOT DISTINCT`, so old null-coordinate rows cannot duplicate indefinitely.
+- Frontend save and lookup paths now use the same coordinate-inclusive identity.
+- New charts without `birth_lat`/`birth_lon` are view-only and are not persisted.
 
 Expected `chart_data` shape:
 
@@ -191,14 +216,15 @@ RLS assumptions:
 - Users can select/insert/update/delete only their own `journals` where `user_id = auth.uid()`.
 - Users can read only their own `subscriptions` and `purchases`.
 - Signup/profile flows require `users.upsert` to be permitted for the authenticated user id.
+- The unsafe client purchase INSERT policy has been removed; purchases should be backend/service-role managed only.
+- `journals.chart_id` now uses `ON DELETE SET NULL`, so deleting a chart should not fail solely because journals reference it.
 
 Schema/frontend mismatch risks:
 
-- No migration files or RLS policy files exist in the repo, so the database contract is implicit.
-- `saveChart` upserts on `user_id,birth_date,birth_time,time_zone`, but `useChartData` looks up existing charts with `birth_lat` and `birth_lon` too.
-- `DashboardScreen` looks up charts without latitude/longitude, so it can reuse stale chart data after a location-only change.
+- Remote schema is now source-visible, but it originated as a schema dump plus incremental fixes; future migrations should stay small and auditable.
 - `ProfileScreen` stores chart preferences in auth metadata, not a table.
 - `ProfileScreen` orders subscriptions by `created_at`, but its local `SubscriptionRow` type does not include `created_at`.
+- `handle_new_user` now copies `birth_lat` and `birth_lon` from auth metadata with safe casts, but profile data still lives in both auth metadata and `public.users`.
 
 ## 6. Chart Flow
 
@@ -227,13 +253,17 @@ Where calculations happen:
 Where chart data is stored:
 
 - Supabase `charts.chart_data` stores the computed JSON.
-- `saveChart` upserts a row with top-level birth fields plus the full JSON payload.
+- `saveChart` requires `birth_lat` and `birth_lon`, then upserts a row with top-level birth fields plus the full JSON payload.
+- The upsert conflict target is `user_id,birth_date,birth_time,time_zone,birth_lat,birth_lon`, matching the canonical database identity.
+- `useChartData` and `DashboardScreen` look up saved charts by the same coordinate-inclusive identity when coordinates are available.
+- If coordinates are missing, chart screens build render-only chart data and avoid persisting ambiguous saved rows.
 - `listCharts`, `getChart`, and `deleteChart` read/delete chart rows by `user_id`.
 
 What UI renders it:
 
 - `ChartScreen.tsx` composes the full chart view.
 - `ChartHeader.tsx` renders title, location/zone/coords, and Sun summary.
+- `ChartScreen.tsx` shows a disabled `View Only` save state with copy explaining that a birth location is needed to save houses and chart data when coordinates are missing.
 - `ChartWheel.tsx` renders signs, houses, planets, and aspect lines with SVG.
 - `PlanetPositionsList.tsx` renders planet positions and inline summaries.
 - `HousesList.tsx` renders whole-sign house rows and inline summaries.
@@ -288,16 +318,16 @@ Screens that feel usable:
 
 - `LoginScreen.tsx`: simple login form with loading and error state.
 - `SignupScreen.tsx`: complete signup/profile form, including date/time/location/time zone.
+- `CheckEmailScreen.tsx`: OTP entry/resend flow now resets navigation deterministically after successful verification.
 - `DashboardScreen.tsx`: shows greeting, signs, birth details, and main navigation actions.
-- `ChartScreen.tsx`: usable chart view with SVG wheel, lists, legend, and interpretation modal.
+- `ChartScreen.tsx`: usable chart view with SVG wheel, lists, legend, interpretation modal, and clear view-only save state when coordinates are missing.
 - `MyCharts.tsx`: saved chart list with open/delete.
 - `JournalListScreen.tsx` and `JournalEditorScreen.tsx`: basic journal create/edit/delete flow.
 - `ProfileScreen.tsx`: readable account/profile/preferences/subscription/purchases/privacy surface.
 
 Screens that need polish:
 
-- `CheckEmailScreen.tsx`: verification success should navigate deterministically.
-- `CompleteProfileScreen.tsx`: location/coordinate editing needs correction.
+- `CompleteProfileScreen.tsx`: location/coordinate/timezone lifecycle is improved, but still mixes load/save/geocode/auth-metadata responsibilities.
 - `ProfileScreen.tsx`: preference choices marked "coming soon" are still selectable and saved.
 - `AuthCallbackScreen.tsx`: debug logging should be cleaned up before shipping.
 - `ChatScreen.tsx` and `SubscriptionScreen.tsx`: empty.
@@ -315,15 +345,14 @@ Component size/coupling concerns:
 
 | Issue | Files involved | Symptom | Likely cause |
 | --- | --- | --- | --- |
-| Stale coordinates when editing profile location | `CompleteProfileScreen.tsx`, `ProfileFields.tsx` | If an existing profile has lat/lon and the user edits the location text, old coordinates can be saved with the new location. | `CompleteProfileScreen` passes `birthLat`/`birthLon` but not `setBirthLat`/`setBirthLon`; `ProfileFields` cannot clear or update coordinates. `onSave` geocodes only when coordinates are missing. |
-| Chart uniqueness does not match chart lookup | `lib/charts.ts`, `hooks/useChartData.ts`, `DashboardScreen.tsx` | Different locations with the same date/time/time zone can be queried as separate charts but upserted into the same row. Dashboard can reuse stale chart data after a location-only change. | `saveChart` conflict target excludes lat/lon; `useChartData` includes lat/lon in lookup; dashboard lookup excludes lat/lon. |
-| Save chart button is mostly misleading | `DashboardScreen.tsx`, `useChartData.ts`, `ChartScreen.tsx` | The chart is usually saved before the user taps "Save Chart Data", so the button quickly becomes "Already Saved". | Dashboard and chart hook both auto-save charts. Manual save is not the primary persistence behavior. |
-| Check-email success navigation is implicit | `CheckEmailScreen.tsx` | After OTP verification, the screen sets "Email Verified." but does not explicitly reset to dashboard. | The reset block is commented out; the flow relies on Supabase auth state listener and stack switching. |
 | Preferences are saved but ignored | `ProfileScreen.tsx`, `lib/astro.ts`, `lib/charts.ts` | Users can choose Placidus, Equal House, Sidereal, and orb modes, but charts remain whole-sign/tropical with fixed aspect orbs. | Preferences are stored in auth metadata but not consumed by chart generation. |
 | Deep link to chart can crash without params | `App.tsx`, `ChartScreen.tsx` | `naksha://chart` can route to `ChartScreen` without required route params. | Linking config exposes `Chart: 'chart'`, but `ChartScreen` destructures `route.params` as required. |
 | Empty screens and service modules exist | `ChatScreen.tsx`, `SubscriptionScreen.tsx`, `lib/conversations.ts`, `lib/subscriptions.ts`, `lib/reports.ts`, `lib/notifications.ts`, `lib/usage.ts` | Future features appear present in files but contain no implementation. | Scaffolding exists ahead of feature work. |
-| Supabase schema is not reproducible from repo | repo root | Agents cannot verify table definitions, indexes, unique constraints, or RLS from source control. | No `supabase/` migrations or policy files are checked in. |
 | Duplicate profile storage can diverge | `SignupScreen.tsx`, `DashboardScreen.tsx`, `CompleteProfileScreen.tsx`, `ProfileScreen.tsx` | `users` row and auth metadata can disagree, especially after partial saves or older accounts. | Profile data is mirrored in two places, and merge rules are spread across screens. |
+| Chart save semantics are still partly implicit | `DashboardScreen.tsx`, `useChartData.ts`, `ChartScreen.tsx` | Charts with coordinates may auto-save before the user taps the chart screen save button, so the button often becomes "Already Saved". | Dashboard summary generation and chart screen loading both have persistence side effects. |
+| Subscription row type is incomplete | `ProfileScreen.tsx` | Query orders by `created_at`, but the local subscription type does not model that field. | Frontend type was hand-written and not generated from Supabase types. |
+| Auth callback logging is noisy | `AuthCallbackScreen.tsx`, `lib/auth.ts` | Auth/debug information may clutter logs during normal flows. | Temporary troubleshooting logs remain in the auth surface. |
+| Migration history starts from a remote schema dump | `supabase/migrations/20260508015720_remote_schema.sql`, later migrations | The schema is now reproducible, but history before the dump is not incremental. | The remote project schema was pulled into the repo after initial development. |
 | No automated regression coverage | `client/package.json` | Only TypeScript compile was available; there are no unit/integration/e2e tests. | No test framework or scripts are configured. |
 
 ## 10. Technical Debt
@@ -333,21 +362,21 @@ State duplication:
 - Profile fields live in both `users` and `auth.user_metadata`.
 - Chart computation happens in both `DashboardScreen` and `useChartData`.
 - Planet summary logic is duplicated in `PlanetPositionsList.tsx` and `chartInterpretation.ts`.
-- `User`, `DBUser`, and `ProfileForChart` types are repeated across screens/hooks.
+- Core profile/chart route shapes now have shared types in `client/lib/domainTypes.ts`, but navigation params overall are still not strongly typed.
 
 Unclear ownership:
 
 - It is unclear whether chart saving should be automatic, manual, or both.
 - Profile preferences are owned by `ProfileScreen`, but the chart engine does not consume them.
-- The chart storage uniqueness contract is split between frontend queries and unknown database indexes.
-- Auth verification is split between manual OTP entry and deep-link callback handling.
+- Chart storage identity is now canonicalized across frontend and database, but product semantics around auto-save vs manual save still need a deliberate decision.
+- Auth verification is split between manual OTP entry and deep-link callback handling, with shared profile completion rules only informally aligned.
 
 Fragile flows:
 
 - Route params are required at runtime but not enforced with a typed navigator.
 - Chart screen is deep-linkable without guaranteed params.
 - Dashboard throttles/reentrancy with refs, which works but is hard to reason about.
-- Location coordinates depend on optional setter props in a shared form component.
+- Location selection, manual geocode fallback, and timezone inference now work together, but this flow still depends on several screens/components sharing state through props.
 
 Large components:
 
@@ -364,77 +393,75 @@ Missing tests:
 
 - No test scripts exist in `package.json`.
 - No tests cover auth/profile save, chart generation, chart persistence, or interpretation page building.
-- No schema tests or migration checks exist because schema files are absent.
+- No schema tests or automated Supabase migration validation commands are configured.
 
 ## 11. Recommended Next 5 Tasks
 
-1. Fix profile location coordinate lifecycle.
-   - Highest user impact and risk reduction. Editing birth location must reliably clear/select/geocode coordinates and regenerate accurate houses.
+1. Add focused verification coverage for signup/profile/chart persistence.
+   - Highest risk reduction. Cover OTP verification, profile coordinate/timezone save, view-only charts without coordinates, and saved charts with canonical identity.
 
-2. Align chart persistence contract.
-   - Decide whether `birth_lat`/`birth_lon` belong in the unique key. Update frontend lookup, `saveChart`, and Supabase unique constraints/RLS docs together.
+2. Decide and simplify chart save semantics.
+   - Highest UX clarity. Choose whether persistence is automatic, manual, or explicitly both; then make the dashboard/chart screen copy and side effects match that rule.
 
-3. Make signup verification deterministic.
-   - After OTP success, explicitly save profile, refresh session/user state as needed, and reset to `Dashboard` or `CompleteProfile` with clear error handling.
+3. Establish `public.users` as the profile source of truth.
+   - Reduces long-term auth/profile drift. Keep auth metadata minimal after signup or define a one-way sync contract.
 
-4. Decide and simplify chart save semantics.
-   - Choose auto-save or manual save. Then adjust dashboard, `useChartData`, and the chart screen button so the UI matches reality.
+4. Wire or disable chart preferences.
+   - Demo/shipping value. Either implement house system, zodiac type, and orb mode in chart generation, or make coming-soon preferences visibly disabled and not persisted.
 
-5. Wire or disable chart preferences.
-   - Either implement house system, zodiac type, and orb mode in chart generation, or make coming-soon preferences visibly disabled and not persisted.
+5. Generate or centralize Supabase DB types.
+   - Maintains the schema/frontend contract. Replace hand-written row types and catch fields like `subscriptions.created_at` at compile time.
 
 ## 12. Best Next Vertical Slice
 
-Recommended slice: profile edit to chart refresh reliability.
+Recommended slice: chart save ownership and verification.
 
 Goal:
 
-- A user can edit birth date, time, location, or time zone, save successfully, and then see a regenerated chart whose metadata, coordinates, houses, dashboard summary, and saved-chart row all correspond to the new birth details.
+- Make saved-chart behavior obvious and testable now that canonical identity includes coordinates and coordinate-less charts are view-only.
+- Decide whether chart persistence should happen automatically, manually, or in two explicit places with clear copy.
 
 Files likely involved:
 
-- `client/screens/CompleteProfileScreen.tsx`
-- `client/components/auth/ProfileFields.tsx`
 - `client/hooks/useChartData.ts`
 - `client/lib/charts.ts`
 - `client/screens/DashboardScreen.tsx`
-- Potentially new Supabase migration/docs if schema can be added to the repo.
+- `client/screens/ChartScreen.tsx`
+- `client/components/charts/ChartHeader.tsx` if copy/layout needs a small adjustment.
+- No Supabase migration should be needed unless the product decision changes chart identity again.
 
 Expected behavior:
 
-- Changing location text clears previous coordinates.
-- Selecting an autocomplete result stores that result's lat/lon.
-- Saving with no selected coordinates geocodes the entered location.
-- `users.birth_location`, `birth_lat`, and `birth_lon` stay consistent.
-- Chart lookup and chart upsert use the same identity rules.
-- Dashboard and chart screen no longer show stale data after a profile edit.
-- Saved chart list either updates the existing chart or creates a new one according to the chosen product rule.
+- Charts with coordinates are saved exactly once per canonical identity.
+- Charts without coordinates render planet data, show `View Only`, and do not create saved rows.
+- The chart screen save button and dashboard summary behavior no longer surprise the user.
+- Saved-chart list behavior remains unchanged except where the chosen save ownership explicitly requires it.
 
 Verification steps:
 
 - Run `cd client && npx tsc --noEmit`.
 - Start the app with `cd client && npm run start`.
-- Sign in with a test account.
-- Edit birth location from one city to another and save.
-- Confirm the profile screen shows the new location and matching coordinates.
-- Open chart and confirm header metadata and house list reflect the new coordinates.
-- Open My Charts and confirm saved-chart behavior matches the chosen rule.
-- If schema files are added, verify the unique constraint matches `saveChart` and `useChartData`.
+- Test a profile with valid coordinates: open chart, confirm saved state/copy, reopen from My Charts.
+- Test a profile with no coordinates: open chart, confirm planets render, save is disabled as `View Only`, and no chart row is created.
+- Test changing only birth location/coordinates: confirm a distinct saved chart row can exist for the distinct canonical identity.
 
 ## 13. Agent Instructions Going Forward
 
 How Codex should work in this repo:
 
 - Treat `client/` as the active app.
+- Treat `supabase/migrations/` as the source-controlled database change history.
 - Read relevant files before editing; prefer `rg` for search.
 - Keep changes narrowly scoped to the requested vertical slice.
 - Use `apply_patch` for manual file edits.
 - Run `cd client && npx tsc --noEmit` before handing back code changes.
+- For schema changes, create a new incremental migration; do not edit `20260508015720_remote_schema.sql`.
 - Do not edit generated Android files unless the task is explicitly native-build related.
 - Do not read or print `.env` values; only reference required variable names.
 - Do not casually rewrite lexicon prose. It is product content, not just code.
-- Do not change chart math, persistence identity, or auth flow behavior without naming the user-facing effect and verification plan.
-- If Supabase schema/RLS is relevant, ask for or create source-controlled migrations/policy docs rather than assuming the remote database shape.
+- Do not change chart math, canonical chart identity, or auth flow behavior without naming the user-facing effect and verification plan.
+- Preserve the current canonical chart identity unless the user explicitly changes the product rule: `user_id`, `birth_date`, `birth_time`, `time_zone`, `birth_lat`, `birth_lon`, with `NULLS NOT DISTINCT` in the database.
+- Preserve the current view-only behavior for charts missing coordinates unless the user explicitly changes persistence semantics.
 
 Prompt style that works well:
 
@@ -448,6 +475,7 @@ What not to touch casually:
 
 - `client/.env`
 - `client/android/`
+- `supabase/migrations/20260508015720_remote_schema.sql`
 - Large lexicon files under `client/lib/lexicon/`
 - Auth callback/session behavior
 - Chart uniqueness and stored `chart_data` shape
@@ -456,6 +484,8 @@ What not to touch casually:
 Useful verification commands:
 
 - `cd client && npx tsc --noEmit`
+- `supabase db diff`
+- `supabase db reset`
 - `cd client && npm run start`
 - `cd client && npm run android`
 - `cd client && npm run ios`
@@ -465,4 +495,4 @@ Current command gaps:
 
 - No `npm test` script.
 - No `npm run lint` script.
-- No Supabase migration validation command.
+- Supabase migration validation is manual; run `supabase db reset` locally before pushing schema changes, and use `supabase db push` only when intentionally applying migrations to the remote project.
