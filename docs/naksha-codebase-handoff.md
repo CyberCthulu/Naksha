@@ -1,7 +1,7 @@
 # Naksha Codebase Handoff
 
 Generated: 2026-05-07  
-Last updated: after chart identity, coordinate, OTP navigation, and docs/type cleanup slices.
+Last updated: after chart identity, coordinate, OTP navigation, profile source-of-truth, and chart preference storage slices.
 Scope: source-of-truth repository handoff. This update is documentation-only.
 Last recorded code verification: `cd client && npx tsc --noEmit` passes.
 
@@ -12,7 +12,7 @@ Naksha is a mobile-first astrology app built with Expo, React Native, TypeScript
 What already works:
 
 - Email/password auth with Supabase, persisted through AsyncStorage.
-- Signup flow that collects birth details and stores profile data in auth metadata, then later in the `users` table.
+- Signup flow that collects birth details, passes them through auth metadata for bootstrap, and persists them durably in `public.users`.
 - Login, check-email OTP verification with deterministic navigation reset, deep-link callback handling, profile completion, dashboard, chart view, saved chart list, profile screen, and journal list/editor.
 - Natal chart computation from birth date/time/time zone using `luxon` and `astronomy-engine`.
 - Whole-sign house calculation when latitude/longitude are available.
@@ -20,14 +20,16 @@ What already works:
 - Supabase chart persistence through a `charts` table and journal persistence through a `journals` table.
 - Source-controlled Supabase migrations now exist under `supabase/migrations/`, including chart identity, profile coordinate trigger, purchase policy, and journal delete behavior fixes.
 - Location autocomplete can populate coordinates and update the selected time zone from OpenCage timezone annotations.
+- `public.users` is now the durable source of truth for profile/birth data after signup/bootstrap.
+- `public.chart_preferences` is now the durable source of truth for chart preference storage.
 
 What is incomplete or unstable:
 
 - `server/` is empty, and several service files are placeholders: `conversations.ts`, `notifications.ts`, `reports.ts`, `subscriptions.ts`, `usage.ts`.
 - `ChatScreen.tsx` and `SubscriptionScreen.tsx` are empty and not wired into navigation.
-- Profile chart preferences are stored but not used by chart generation.
+- Unsupported chart preferences remain disabled/coming soon and are not applied to chart math.
 - Charts without birth coordinates are intentionally view-only: they can render planet data, but are not persisted because canonical saved-chart identity requires coordinates.
-- Profile data is still duplicated between auth metadata and `public.users`.
+- `auth.user_metadata` still carries signup/bootstrap profile data for `handle_new_user` and older-account repair, but profile edits no longer mirror back to auth metadata.
 - There are no tests and no `test` or `lint` npm scripts.
 
 ## 2. Tech Stack
@@ -68,7 +70,8 @@ Important files:
 - `client/lib/auth.ts`: sign up, resend, OTP verify, login, logout, get user.
 - `client/lib/domainTypes.ts`: shared frontend domain types for profile fields, user rows, and chart route/profile params.
 - `client/screens/DashboardScreen.tsx`: profile load/repair, profile completion redirect, sun/moon summary, chart auto-save.
-- `client/screens/CompleteProfileScreen.tsx`: profile edit form, geocoding fallback, `users` table update, auth metadata update.
+- `client/screens/CompleteProfileScreen.tsx`: profile edit form, geocoding fallback, and durable `users` table update.
+- `client/screens/ProfileScreen.tsx`: account/profile display plus chart preferences backed by `public.chart_preferences`.
 - `client/screens/ChartScreen.tsx`: chart route validation, chart hook, chart UI composition, interpretation page construction.
 - `client/hooks/useChartData.ts`: load saved chart or compute chart, find existing chart, auto-save, manual save.
 - `client/lib/charts.ts`: `ChartData` shape, `buildChartData`, `saveChart`, list/get/delete chart helpers.
@@ -80,6 +83,8 @@ Important files:
 - `supabase/migrations/20260508021100_handle_new_user_birth_coordinates.sql`: `handle_new_user` profile coordinate copy and safe metadata casting.
 - `supabase/migrations/20260508021200_remove_client_purchase_insert_policy.sql`: removes client-side purchase insertion.
 - `supabase/migrations/20260508021300_journals_chart_delete_set_null.sql`: makes `journals.chart_id` nullable on chart delete.
+- `supabase/migrations/20260508021400_users_charts_updated_at_triggers.sql`: adds `updated_at` triggers for `users` and `charts`.
+- `supabase/migrations/20260508021500_chart_preferences.sql`: adds durable chart preference storage with RLS, checks, and an `updated_at` trigger.
 
 ## 4. Auth Flow
 
@@ -90,6 +95,7 @@ Signup:
 - Location autocomplete results set `birth_location`, `birth_lat`, `birth_lon`, and now update `time_zone` when OpenCage returns a valid timezone annotation.
 - It calls `signUpWithEmail` in `lib/auth.ts`.
 - `signUpWithEmail` passes profile fields into Supabase auth `options.data` and sets `emailRedirectTo` to `naksha://auth/callback`.
+- That auth metadata is a signup/bootstrap handoff for `handle_new_user`, not the durable post-signup profile store.
 - After signup succeeds, the app navigates to `CheckEmail` with `email` and a `profile` object in route params.
 
 Email verification:
@@ -121,13 +127,14 @@ Profile completion:
 - `DashboardScreen.tsx` ensures a minimal `users` row exists after login.
 - It fetches `users` by `id`; if fields are missing, it attempts to merge from `auth.user_metadata`.
 - If the profile still needs required fields, it navigates to `CompleteProfile`.
-- `CompleteProfileScreen.tsx` updates the `users` table and mirrors birth/profile fields back into auth metadata.
+- `CompleteProfileScreen.tsx` updates the `users` table only; it no longer mirrors profile/birth edits back into auth metadata.
 - Editing location text clears stale coordinates; selecting autocomplete sets coordinates; saving a manually typed location geocodes missing coordinates and can update the timezone from OpenCage.
-- `ProfileScreen.tsx` reads `users`, reads chart preferences from auth metadata, and stores preference edits back to auth metadata.
+- `ProfileScreen.tsx` reads profile/birth display data from `users`.
+- `ProfileScreen.tsx` reads/writes chart preferences through `public.chart_preferences`, not auth metadata.
 
 Known auth/profile issues:
 
-- Profile data is duplicated between `users` and auth metadata.
+- Auth metadata still exists as signup/bootstrap handoff data and a Dashboard repair source for older/incomplete accounts.
 - `AuthContext` exposes only `{ user }`, not auth actions or loading state.
 - Auth callback and auth helper files contain verbose debug logging.
 - Navigation route types are mostly `any`, so auth flow route params are not compile-time enforced.
@@ -145,6 +152,7 @@ Supabase source state:
 Tables used by the frontend:
 
 - `users`
+- `chart_preferences`
 - `charts`
 - `journals`
 - `subscriptions`
@@ -160,6 +168,22 @@ Expected `users` fields:
 - `birth_location`: formatted place name.
 - `time_zone`: IANA time zone.
 - `birth_lat`, `birth_lon`: numeric coordinates.
+
+Expected `chart_preferences` fields:
+
+- `user_id`: primary key, one row per user, references `public.users(id)` with `ON DELETE CASCADE`.
+- `house_system`: currently constrained to `whole_sign`.
+- `zodiac_type`: currently constrained to `tropical`.
+- `orb_mode`: currently constrained to `medium`.
+- `show_house_degrees`: currently defaults to `false`.
+- `created_at`, `updated_at`; `updated_at` is maintained by `chart_preferences_set_updated_at`.
+
+Current chart preference behavior:
+
+- Preferences are stored durably in `public.chart_preferences`.
+- `ProfileScreen` creates/upserts a default row when one does not exist.
+- Unsupported options such as Placidus, Equal House, Sidereal, Vedic, tight orbs, and loose orbs are disabled/coming soon.
+- Chart generation still uses whole-sign/tropical/fixed-orb behavior; the preference table is storage groundwork, not implementation of additional modes.
 
 Expected `charts` fields:
 
@@ -212,6 +236,7 @@ Expected `purchases` fields:
 RLS assumptions:
 
 - Users can select/insert/update only their own `users` row where `id = auth.uid()`.
+- Users can select/insert/update only their own `chart_preferences` row where `user_id = auth.uid()`.
 - Users can select/insert/update/delete only their own `charts` where `user_id = auth.uid()`.
 - Users can select/insert/update/delete only their own `journals` where `user_id = auth.uid()`.
 - Users can read only their own `subscriptions` and `purchases`.
@@ -222,9 +247,8 @@ RLS assumptions:
 Schema/frontend mismatch risks:
 
 - Remote schema is now source-visible, but it originated as a schema dump plus incremental fixes; future migrations should stay small and auditable.
-- `ProfileScreen` stores chart preferences in auth metadata, not a table.
 - `ProfileScreen` orders subscriptions by `created_at`, but its local `SubscriptionRow` type does not include `created_at`.
-- `handle_new_user` now copies `birth_lat` and `birth_lon` from auth metadata with safe casts, but profile data still lives in both auth metadata and `public.users`.
+- `handle_new_user` copies signup/bootstrap profile fields from auth metadata with safe casts; after signup, durable profile edits are owned by `public.users`.
 
 ## 6. Chart Flow
 
@@ -232,7 +256,8 @@ Birth data sources:
 
 - Dashboard-to-chart path: `DashboardScreen` passes a `profile` route param to `ChartScreen`.
 - Saved chart path: `MyCharts.tsx` passes `fromSaved: true`, `saved: chart_data`, and a reconstructed profile from chart metadata.
-- Signup/profile path: birth details originate in `SignupScreen` or `CompleteProfileScreen` and are stored in `users` plus auth metadata.
+- Signup path: birth details are sent through auth metadata so `handle_new_user` can bootstrap `public.users`.
+- Post-signup profile path: `CompleteProfileScreen` writes durable profile/birth edits to `public.users` only.
 
 How birth data becomes chart data:
 
@@ -323,12 +348,12 @@ Screens that feel usable:
 - `ChartScreen.tsx`: usable chart view with SVG wheel, lists, legend, interpretation modal, and clear view-only save state when coordinates are missing.
 - `MyCharts.tsx`: saved chart list with open/delete.
 - `JournalListScreen.tsx` and `JournalEditorScreen.tsx`: basic journal create/edit/delete flow.
-- `ProfileScreen.tsx`: readable account/profile/preferences/subscription/purchases/privacy surface.
+- `ProfileScreen.tsx`: readable account/profile/preferences/subscription/purchases/privacy surface; unsupported chart preference choices are disabled/coming soon.
 
 Screens that need polish:
 
-- `CompleteProfileScreen.tsx`: location/coordinate/timezone lifecycle is improved, but still mixes load/save/geocode/auth-metadata responsibilities.
-- `ProfileScreen.tsx`: preference choices marked "coming soon" are still selectable and saved.
+- `CompleteProfileScreen.tsx`: location/coordinate/timezone lifecycle is improved, but still mixes load/save/geocode and profile form responsibilities.
+- `ProfileScreen.tsx`: preferences now have durable table storage, but the chart engine still only supports the current defaults.
 - `AuthCallbackScreen.tsx`: debug logging should be cleaned up before shipping.
 - `ChatScreen.tsx` and `SubscriptionScreen.tsx`: empty.
 
@@ -336,7 +361,7 @@ Component size/coupling concerns:
 
 - `ProfileScreen.tsx`: 524 lines, mixes profile, preferences, subscription, purchases, privacy, and account actions.
 - `DashboardScreen.tsx`: 376 lines, mixes profile repair, chart lookup/generation, summary derivation, and dashboard UI.
-- `CompleteProfileScreen.tsx`: 341 lines, mixes data load/save, geocoding fallback, auth metadata update, and UI.
+- `CompleteProfileScreen.tsx`: 341 lines, mixes data load/save, geocoding fallback, and UI.
 - `CheckEmailScreen.tsx`: 312 lines, mixes OTP flow and custom UI.
 - `useChartData.ts`: 305 lines, owns loading, lookup, hydration, computation, auto-save, and manual save.
 - `InterpretationModal.tsx`: 292 lines, owns pager loop behavior plus modal shell.
@@ -345,10 +370,9 @@ Component size/coupling concerns:
 
 | Issue | Files involved | Symptom | Likely cause |
 | --- | --- | --- | --- |
-| Preferences are saved but ignored | `ProfileScreen.tsx`, `lib/astro.ts`, `lib/charts.ts` | Users can choose Placidus, Equal House, Sidereal, and orb modes, but charts remain whole-sign/tropical with fixed aspect orbs. | Preferences are stored in auth metadata but not consumed by chart generation. |
-| Deep link to chart can crash without params | `App.tsx`, `ChartScreen.tsx` | `naksha://chart` can route to `ChartScreen` without required route params. | Linking config exposes `Chart: 'chart'`, but `ChartScreen` destructures `route.params` as required. |
+| Additional chart modes are not implemented | `ProfileScreen.tsx`, `lib/astro.ts`, `lib/charts.ts`, `chart_preferences` migration | Users can see unsupported modes as coming soon, but charts remain whole-sign/tropical with fixed aspect orbs. | `chart_preferences` currently constrains values to supported defaults; chart math has not implemented additional systems. |
 | Empty screens and service modules exist | `ChatScreen.tsx`, `SubscriptionScreen.tsx`, `lib/conversations.ts`, `lib/subscriptions.ts`, `lib/reports.ts`, `lib/notifications.ts`, `lib/usage.ts` | Future features appear present in files but contain no implementation. | Scaffolding exists ahead of feature work. |
-| Duplicate profile storage can diverge | `SignupScreen.tsx`, `DashboardScreen.tsx`, `CompleteProfileScreen.tsx`, `ProfileScreen.tsx` | `users` row and auth metadata can disagree, especially after partial saves or older accounts. | Profile data is mirrored in two places, and merge rules are spread across screens. |
+| Signup metadata can become stale after bootstrap | `SignupScreen.tsx`, `lib/auth.ts`, `DashboardScreen.tsx`, `handle_new_user` migration | Auth metadata may not match later edits in `public.users`. | Auth metadata is intentionally retained as signup/bootstrap handoff and Dashboard repair input, not as durable profile storage. |
 | Chart save semantics are still partly implicit | `DashboardScreen.tsx`, `useChartData.ts`, `ChartScreen.tsx` | Charts with coordinates may auto-save before the user taps the chart screen save button, so the button often becomes "Already Saved". | Dashboard summary generation and chart screen loading both have persistence side effects. |
 | Subscription row type is incomplete | `ProfileScreen.tsx` | Query orders by `created_at`, but the local subscription type does not model that field. | Frontend type was hand-written and not generated from Supabase types. |
 | Auth callback logging is noisy | `AuthCallbackScreen.tsx`, `lib/auth.ts` | Auth/debug information may clutter logs during normal flows. | Temporary troubleshooting logs remain in the auth surface. |
@@ -359,7 +383,8 @@ Component size/coupling concerns:
 
 State duplication:
 
-- Profile fields live in both `users` and `auth.user_metadata`.
+- Signup/bootstrap profile fields still pass through `auth.user_metadata`, but durable profile edits are owned by `public.users`.
+- Chart preferences are now stored in `public.chart_preferences`.
 - Chart computation happens in both `DashboardScreen` and `useChartData`.
 - Planet summary logic is duplicated in `PlanetPositionsList.tsx` and `chartInterpretation.ts`.
 - Core profile/chart route shapes now have shared types in `client/lib/domainTypes.ts`, but navigation params overall are still not strongly typed.
@@ -367,7 +392,7 @@ State duplication:
 Unclear ownership:
 
 - It is unclear whether chart saving should be automatic, manual, or both.
-- Profile preferences are owned by `ProfileScreen`, but the chart engine does not consume them.
+- Chart preference storage exists, but the chart engine currently supports only the constrained defaults.
 - Chart storage identity is now canonicalized across frontend and database, but product semantics around auto-save vs manual save still need a deliberate decision.
 - Auth verification is split between manual OTP entry and deep-link callback handling, with shared profile completion rules only informally aligned.
 
@@ -403,14 +428,14 @@ Missing tests:
 2. Decide and simplify chart save semantics.
    - Highest UX clarity. Choose whether persistence is automatic, manual, or explicitly both; then make the dashboard/chart screen copy and side effects match that rule.
 
-3. Establish `public.users` as the profile source of truth.
-   - Reduces long-term auth/profile drift. Keep auth metadata minimal after signup or define a one-way sync contract.
+3. Generate or centralize Supabase DB types.
+   - Maintains the schema/frontend contract. Replace hand-written row types and catch fields like `subscriptions.created_at` and `chart_preferences` shape at compile time.
 
-4. Wire or disable chart preferences.
-   - Demo/shipping value. Either implement house system, zodiac type, and orb mode in chart generation, or make coming-soon preferences visibly disabled and not persisted.
+4. Clean up auth callback and bootstrap logging.
+   - Reduces noise and risk before demo/shipping while preserving the signup metadata handoff and Dashboard repair path.
 
-5. Generate or centralize Supabase DB types.
-   - Maintains the schema/frontend contract. Replace hand-written row types and catch fields like `subscriptions.created_at` at compile time.
+5. Plan real chart preference support.
+   - Product value, but larger scope. Implement additional house systems/zodiac/orb modes only when chart math, table constraints, UI, and saved chart metadata can change together.
 
 ## 12. Best Next Vertical Slice
 
@@ -460,8 +485,12 @@ How Codex should work in this repo:
 - Do not read or print `.env` values; only reference required variable names.
 - Do not casually rewrite lexicon prose. It is product content, not just code.
 - Do not change chart math, canonical chart identity, or auth flow behavior without naming the user-facing effect and verification plan.
+- Treat `auth.user_metadata` as signup/bootstrap handoff only for profile/birth data.
+- Treat `public.users` as the durable profile/birth source of truth.
+- Treat `public.chart_preferences` as the durable chart preference source of truth; do not write `pref_*` values back to auth metadata.
 - Preserve the current canonical chart identity unless the user explicitly changes the product rule: `user_id`, `birth_date`, `birth_time`, `time_zone`, `birth_lat`, `birth_lon`, with `NULLS NOT DISTINCT` in the database.
 - Preserve the current view-only behavior for charts missing coordinates unless the user explicitly changes persistence semantics.
+- Do not claim Placidus, Sidereal, Vedic, or custom orb modes are implemented; current `chart_preferences` checks allow only supported defaults.
 
 Prompt style that works well:
 
@@ -478,6 +507,8 @@ What not to touch casually:
 - `supabase/migrations/20260508015720_remote_schema.sql`
 - Large lexicon files under `client/lib/lexicon/`
 - Auth callback/session behavior
+- Signup metadata and Dashboard repair behavior
+- `chart_preferences` check constraints and RLS policies
 - Chart uniqueness and stored `chart_data` shape
 - Generated assets under `client/assets/`
 
