@@ -1,9 +1,9 @@
 # Naksha Codebase Handoff
 
 Generated: 2026-05-07  
-Last updated: after chart identity, coordinate, OTP navigation, profile source-of-truth, and chart preference storage slices.
+Last updated: after chart identity, coordinate, OTP navigation, profile source-of-truth, chart preference storage, and explicit chart mode slices.
 Scope: source-of-truth repository handoff. This update is documentation-only.
-Last recorded code verification: `cd client && npx tsc --noEmit` passes.
+Last recorded code verification: `cd client && npm run typecheck` passes.
 
 ## 1. Executive Summary
 
@@ -18,6 +18,7 @@ What already works:
 - Whole-sign house calculation when latitude/longitude are available.
 - Local chart interpretation from lexicon files for planet/sign, planet/house, house/sign, generic house, and aspect meanings.
 - Supabase chart persistence through a `charts` table and journal persistence through a `journals` table.
+- Explicit chart route mode groundwork: self charts can auto-save when coordinates exist; guest charts are manual-save only.
 - Source-controlled Supabase migrations now exist under `supabase/migrations/`, including chart identity, profile coordinate trigger, purchase policy, and journal delete behavior fixes.
 - Location autocomplete can populate coordinates and update the selected time zone from OpenCage timezone annotations.
 - `public.users` is now the durable source of truth for profile/birth data after signup/bootstrap.
@@ -28,6 +29,7 @@ What is incomplete or unstable:
 - `server/` is empty, and several service files are placeholders: `conversations.ts`, `notifications.ts`, `reports.ts`, `subscriptions.ts`, `usage.ts`.
 - `ChatScreen.tsx` and `SubscriptionScreen.tsx` are empty and not wired into navigation.
 - Unsupported chart preferences remain disabled/coming soon and are not applied to chart math.
+- Guest/other-person chart creation UI is not implemented yet; `chartMode: 'guest'` is groundwork only.
 - Charts without birth coordinates are intentionally view-only: they can render planet data, but are not persisted because canonical saved-chart identity requires coordinates.
 - `auth.user_metadata` still carries signup/bootstrap profile data for `handle_new_user` and older-account repair, but profile edits no longer mirror back to auth metadata.
 - There are no tests and no `test` or `lint` npm scripts.
@@ -68,12 +70,12 @@ Important files:
 - `client/App.tsx`: root auth session bootstrap, linking config, stack navigation split, `AuthContext`, `SpaceProvider`.
 - `client/lib/supabase.ts`: Supabase client, AsyncStorage persistence, Expo public env vars.
 - `client/lib/auth.ts`: sign up, resend, OTP verify, login, logout, get user.
-- `client/lib/domainTypes.ts`: shared frontend domain types for profile fields, user rows, and chart route/profile params.
-- `client/screens/DashboardScreen.tsx`: profile load/repair, profile completion redirect, sun/moon summary, chart auto-save.
+- `client/lib/domainTypes.ts`: shared frontend domain types for profile fields, user rows, chart mode, and chart route/profile params.
+- `client/screens/DashboardScreen.tsx`: profile load/repair, profile completion redirect, sun/moon summary, and self chart entry with `chartMode: 'self'`.
 - `client/screens/CompleteProfileScreen.tsx`: profile edit form, geocoding fallback, and durable `users` table update.
 - `client/screens/ProfileScreen.tsx`: account/profile display plus chart preferences backed by `public.chart_preferences`.
-- `client/screens/ChartScreen.tsx`: chart route validation, chart hook, chart UI composition, interpretation page construction.
-- `client/hooks/useChartData.ts`: load saved chart or compute chart, find existing chart, auto-save, manual save.
+- `client/screens/ChartScreen.tsx`: chart route validation, chart mode handling, chart hook, chart UI composition, interpretation page construction.
+- `client/hooks/useChartData.ts`: load saved chart or compute chart, find existing chart, self auto-save, guest manual save.
 - `client/lib/charts.ts`: `ChartData` shape, `buildChartData`, `saveChart`, list/get/delete chart helpers.
 - `client/lib/astro.ts`: planet longitude calculation, aspects, approximate whole-sign house calculation, planet-house assignment.
 - `client/lib/chartPageBuilders.ts`: builds modal pages from chart data and lexicon lookups.
@@ -247,17 +249,27 @@ RLS assumptions:
 Schema/frontend mismatch risks:
 
 - Remote schema is now source-visible, but it originated as a schema dump plus incremental fixes; future migrations should stay small and auditable.
-- `ProfileScreen` orders subscriptions by `created_at`, but its local `SubscriptionRow` type does not include `created_at`.
+- Supabase row types are still hand-maintained rather than generated from the database schema.
 - `handle_new_user` copies signup/bootstrap profile fields from auth metadata with safe casts; after signup, durable profile edits are owned by `public.users`.
 
 ## 6. Chart Flow
 
 Birth data sources:
 
-- Dashboard-to-chart path: `DashboardScreen` passes a `profile` route param to `ChartScreen`.
+- Dashboard-to-chart path: `DashboardScreen` passes a `profile` route param and `chartMode: 'self'` to `ChartScreen`.
 - Saved chart path: `MyCharts.tsx` passes `fromSaved: true`, `saved: chart_data`, and a reconstructed profile from chart metadata.
 - Signup path: birth details are sent through auth metadata so `handle_new_user` can bootstrap `public.users`.
 - Post-signup profile path: `CompleteProfileScreen` writes durable profile/birth edits to `public.users` only.
+
+Chart modes and save behavior:
+
+- `ChartRouteParams` supports optional `chartMode: 'self' | 'guest'`.
+- Missing `chartMode` defaults to `'self'`, preserving existing routes and saved-chart opens.
+- Self/generated natal charts with complete coordinates can auto-save.
+- Guest/generated other-person charts do not auto-save; they can be manually saved when coordinates exist.
+- Missing-coordinate charts remain `View Only` and are not persisted.
+- Saved chart flow still uses `fromSaved` plus `saved` chart data and remains unchanged.
+- Guest chart creation UI is not implemented yet; chart mode is groundwork for that future feature.
 
 How birth data becomes chart data:
 
@@ -281,6 +293,8 @@ Where chart data is stored:
 - `saveChart` requires `birth_lat` and `birth_lon`, then upserts a row with top-level birth fields plus the full JSON payload.
 - The upsert conflict target is `user_id,birth_date,birth_time,time_zone,birth_lat,birth_lon`, matching the canonical database identity.
 - `useChartData` and `DashboardScreen` look up saved charts by the same coordinate-inclusive identity when coordinates are available.
+- `DashboardScreen` may auto-save the user's own chart while building the dashboard summary.
+- `useChartData` auto-saves generated chart data only in self mode; guest mode waits for the user to tap save.
 - If coordinates are missing, chart screens build render-only chart data and avoid persisting ambiguous saved rows.
 - `listCharts`, `getChart`, and `deleteChart` read/delete chart rows by `user_id`.
 
@@ -288,7 +302,7 @@ What UI renders it:
 
 - `ChartScreen.tsx` composes the full chart view.
 - `ChartHeader.tsx` renders title, location/zone/coords, and Sun summary.
-- `ChartScreen.tsx` shows a disabled `View Only` save state with copy explaining that a birth location is needed to save houses and chart data when coordinates are missing.
+- `ChartScreen.tsx` shows `Saved to My Charts` for saved rows, `Save Chart` for unsaved guest charts, `Save Chart Data` for unsaved self charts, and disabled `View Only` when coordinates are missing.
 - `ChartWheel.tsx` renders signs, houses, planets, and aspect lines with SVG.
 - `PlanetPositionsList.tsx` renders planet positions and inline summaries.
 - `HousesList.tsx` renders whole-sign house rows and inline summaries.
@@ -345,7 +359,7 @@ Screens that feel usable:
 - `SignupScreen.tsx`: complete signup/profile form, including date/time/location/time zone.
 - `CheckEmailScreen.tsx`: OTP entry/resend flow now resets navigation deterministically after successful verification.
 - `DashboardScreen.tsx`: shows greeting, signs, birth details, and main navigation actions.
-- `ChartScreen.tsx`: usable chart view with SVG wheel, lists, legend, interpretation modal, and clear view-only save state when coordinates are missing.
+- `ChartScreen.tsx`: usable chart view with SVG wheel, lists, legend, interpretation modal, and explicit save states for self, guest, saved, and view-only charts.
 - `MyCharts.tsx`: saved chart list with open/delete.
 - `JournalListScreen.tsx` and `JournalEditorScreen.tsx`: basic journal create/edit/delete flow.
 - `ProfileScreen.tsx`: readable account/profile/preferences/subscription/purchases/privacy surface; unsupported chart preference choices are disabled/coming soon.
@@ -354,6 +368,7 @@ Screens that need polish:
 
 - `CompleteProfileScreen.tsx`: location/coordinate/timezone lifecycle is improved, but still mixes load/save/geocode and profile form responsibilities.
 - `ProfileScreen.tsx`: preferences now have durable table storage, but the chart engine still only supports the current defaults.
+- Guest/other-person chart creation: route and hook mode support exists, but no user-facing entry form exists yet.
 - `AuthCallbackScreen.tsx`: debug logging should be cleaned up before shipping.
 - `ChatScreen.tsx` and `SubscriptionScreen.tsx`: empty.
 
@@ -373,11 +388,11 @@ Component size/coupling concerns:
 | Additional chart modes are not implemented | `ProfileScreen.tsx`, `lib/astro.ts`, `lib/charts.ts`, `chart_preferences` migration | Users can see unsupported modes as coming soon, but charts remain whole-sign/tropical with fixed aspect orbs. | `chart_preferences` currently constrains values to supported defaults; chart math has not implemented additional systems. |
 | Empty screens and service modules exist | `ChatScreen.tsx`, `SubscriptionScreen.tsx`, `lib/conversations.ts`, `lib/subscriptions.ts`, `lib/reports.ts`, `lib/notifications.ts`, `lib/usage.ts` | Future features appear present in files but contain no implementation. | Scaffolding exists ahead of feature work. |
 | Signup metadata can become stale after bootstrap | `SignupScreen.tsx`, `lib/auth.ts`, `DashboardScreen.tsx`, `handle_new_user` migration | Auth metadata may not match later edits in `public.users`. | Auth metadata is intentionally retained as signup/bootstrap handoff and Dashboard repair input, not as durable profile storage. |
-| Chart save semantics are still partly implicit | `DashboardScreen.tsx`, `useChartData.ts`, `ChartScreen.tsx` | Charts with coordinates may auto-save before the user taps the chart screen save button, so the button often becomes "Already Saved". | Dashboard summary generation and chart screen loading both have persistence side effects. |
-| Subscription row type is incomplete | `ProfileScreen.tsx` | Query orders by `created_at`, but the local subscription type does not model that field. | Frontend type was hand-written and not generated from Supabase types. |
+| Guest chart creation is only groundwork | `domainTypes.ts`, `ChartScreen.tsx`, `useChartData.ts` | `chartMode: 'guest'` can prevent auto-save, but there is no screen for entering another person's birth data yet. | Route/hook behavior landed before the user-facing guest chart workflow. |
+| Supabase row types are still hand-maintained | `domainTypes.ts`, `ProfileScreen.tsx`, `lib/charts.ts` | Shared types reduce drift, but they are not generated from the live schema. | No generated Supabase type pipeline exists yet. |
 | Auth callback logging is noisy | `AuthCallbackScreen.tsx`, `lib/auth.ts` | Auth/debug information may clutter logs during normal flows. | Temporary troubleshooting logs remain in the auth surface. |
 | Migration history starts from a remote schema dump | `supabase/migrations/20260508015720_remote_schema.sql`, later migrations | The schema is now reproducible, but history before the dump is not incremental. | The remote project schema was pulled into the repo after initial development. |
-| No automated regression coverage | `client/package.json` | Only TypeScript compile was available; there are no unit/integration/e2e tests. | No test framework or scripts are configured. |
+| No automated regression coverage | `client/package.json` | A `typecheck` script exists, but there are no unit/integration/e2e tests. | No test framework or test scripts are configured. |
 
 ## 10. Technical Debt
 
@@ -386,14 +401,16 @@ State duplication:
 - Signup/bootstrap profile fields still pass through `auth.user_metadata`, but durable profile edits are owned by `public.users`.
 - Chart preferences are now stored in `public.chart_preferences`.
 - Chart computation happens in both `DashboardScreen` and `useChartData`.
+- Self chart auto-save can happen from more than one surface, though the canonical identity keeps the saved row deduplicated.
 - Planet summary logic is duplicated in `PlanetPositionsList.tsx` and `chartInterpretation.ts`.
 - Core profile/chart route shapes now have shared types in `client/lib/domainTypes.ts`, but navigation params overall are still not strongly typed.
 
-Unclear ownership:
+Ownership/design gaps:
 
-- It is unclear whether chart saving should be automatic, manual, or both.
+- Chart saving now has a mode rule: self charts can auto-save, guest charts are manual-save only, and missing-coordinate charts are view-only.
+- Guest chart creation, naming, and any future guest-specific metadata are not designed yet.
 - Chart preference storage exists, but the chart engine currently supports only the constrained defaults.
-- Chart storage identity is now canonicalized across frontend and database, but product semantics around auto-save vs manual save still need a deliberate decision.
+- The `charts` schema does not currently distinguish self vs guest rows with `chart_type`, `is_primary`, `relationship_label`, or a separate birth-profile model.
 - Auth verification is split between manual OTP entry and deep-link callback handling, with shared profile completion rules only informally aligned.
 
 Fragile flows:
@@ -423,13 +440,13 @@ Missing tests:
 ## 11. Recommended Next 5 Tasks
 
 1. Add focused verification coverage for signup/profile/chart persistence.
-   - Highest risk reduction. Cover OTP verification, profile coordinate/timezone save, view-only charts without coordinates, and saved charts with canonical identity.
+   - Highest risk reduction. Cover OTP verification, profile coordinate/timezone save, self chart auto-save, guest manual save, view-only charts without coordinates, and saved charts with canonical identity.
 
-2. Decide and simplify chart save semantics.
-   - Highest UX clarity. Choose whether persistence is automatic, manual, or explicitly both; then make the dashboard/chart screen copy and side effects match that rule.
+2. Design the guest chart creation workflow.
+   - High product value. Build on `chartMode: 'guest'` without adding synastry or schema changes prematurely; define how users enter another person's birth data and when they save it.
 
-3. Generate or centralize Supabase DB types.
-   - Maintains the schema/frontend contract. Replace hand-written row types and catch fields like `subscriptions.created_at` and `chart_preferences` shape at compile time.
+3. Generate Supabase DB types.
+   - Maintains the schema/frontend contract. Replace hand-written shared row types with generated types so future table/column drift is caught at compile time.
 
 4. Clean up auth callback and bootstrap logging.
    - Reduces noise and risk before demo/shipping while preserving the signup metadata handoff and Dashboard repair path.
@@ -439,36 +456,38 @@ Missing tests:
 
 ## 12. Best Next Vertical Slice
 
-Recommended slice: chart save ownership and verification.
+Recommended slice: guest chart creation MVP.
 
 Goal:
 
-- Make saved-chart behavior obvious and testable now that canonical identity includes coordinates and coordinate-less charts are view-only.
-- Decide whether chart persistence should happen automatically, manually, or in two explicit places with clear copy.
+- Let a user enter another person's birth data, open a chart with `chartMode: 'guest'`, and save it manually when coordinates exist.
+- Keep self chart behavior unchanged: Dashboard opens `chartMode: 'self'` and complete self charts can auto-save.
+- Keep missing-coordinate behavior unchanged: charts render planet data, show `View Only`, and do not persist.
 
 Files likely involved:
 
-- `client/hooks/useChartData.ts`
-- `client/lib/charts.ts`
 - `client/screens/DashboardScreen.tsx`
+- A new or existing birth-data entry screen/component for guest chart input.
 - `client/screens/ChartScreen.tsx`
-- `client/components/charts/ChartHeader.tsx` if copy/layout needs a small adjustment.
-- No Supabase migration should be needed unless the product decision changes chart identity again.
+- `client/hooks/useChartData.ts`
+- `client/components/auth/ProfileFields.tsx` if the existing birth form is reused.
+- No Supabase migration should be needed for a first guest chart MVP.
 
 Expected behavior:
 
-- Charts with coordinates are saved exactly once per canonical identity.
-- Charts without coordinates render planet data, show `View Only`, and do not create saved rows.
-- The chart screen save button and dashboard summary behavior no longer surprise the user.
-- Saved-chart list behavior remains unchanged except where the chosen save ownership explicitly requires it.
+- Self charts with coordinates continue to auto-save by canonical identity.
+- Guest charts with coordinates do not auto-save and show a manual save action.
+- Guest charts without coordinates render as `View Only` and do not create saved rows.
+- Saved-chart list behavior remains unchanged; saved rows still open through `fromSaved`/`saved`.
+- No synastry, compatibility, or guest-specific schema fields are implied by this slice.
 
 Verification steps:
 
-- Run `cd client && npx tsc --noEmit`.
+- Run `cd client && npm run typecheck`.
 - Start the app with `cd client && npm run start`.
 - Test a profile with valid coordinates: open chart, confirm saved state/copy, reopen from My Charts.
-- Test a profile with no coordinates: open chart, confirm planets render, save is disabled as `View Only`, and no chart row is created.
-- Test changing only birth location/coordinates: confirm a distinct saved chart row can exist for the distinct canonical identity.
+- Test a guest chart with valid coordinates: confirm it does not auto-save before tapping save, then saves manually.
+- Test a guest chart with no coordinates: confirm planets render, save is disabled as `View Only`, and no chart row is created.
 
 ## 13. Agent Instructions Going Forward
 
@@ -479,7 +498,7 @@ How Codex should work in this repo:
 - Read relevant files before editing; prefer `rg` for search.
 - Keep changes narrowly scoped to the requested vertical slice.
 - Use `apply_patch` for manual file edits.
-- Run `cd client && npx tsc --noEmit` before handing back code changes.
+- Run `cd client && npm run typecheck` before handing back code changes.
 - For schema changes, create a new incremental migration; do not edit `20260508015720_remote_schema.sql`.
 - Do not edit generated Android files unless the task is explicitly native-build related.
 - Do not read or print `.env` values; only reference required variable names.
@@ -488,8 +507,12 @@ How Codex should work in this repo:
 - Treat `auth.user_metadata` as signup/bootstrap handoff only for profile/birth data.
 - Treat `public.users` as the durable profile/birth source of truth.
 - Treat `public.chart_preferences` as the durable chart preference source of truth; do not write `pref_*` values back to auth metadata.
+- Treat `ChartRouteParams.chartMode` as the current chart save mode contract: missing means `'self'`, Dashboard passes `'self'`, and future other-person flows should pass `'guest'`.
+- Preserve the current save rule: self/generated charts with coordinates may auto-save; guest/generated charts must not auto-save; guest charts can be manually saved when coordinates exist.
+- Preserve saved-chart navigation through `fromSaved` and `saved`; do not require `chartMode` for that flow.
 - Preserve the current canonical chart identity unless the user explicitly changes the product rule: `user_id`, `birth_date`, `birth_time`, `time_zone`, `birth_lat`, `birth_lon`, with `NULLS NOT DISTINCT` in the database.
 - Preserve the current view-only behavior for charts missing coordinates unless the user explicitly changes persistence semantics.
+- Do not claim guest chart creation UI, synastry, compatibility, or guest-specific schema support exists yet.
 - Do not claim Placidus, Sidereal, Vedic, or custom orb modes are implemented; current `chart_preferences` checks allow only supported defaults.
 
 Prompt style that works well:
@@ -509,12 +532,13 @@ What not to touch casually:
 - Auth callback/session behavior
 - Signup metadata and Dashboard repair behavior
 - `chart_preferences` check constraints and RLS policies
+- `ChartRouteParams.chartMode` semantics
 - Chart uniqueness and stored `chart_data` shape
 - Generated assets under `client/assets/`
 
 Useful verification commands:
 
-- `cd client && npx tsc --noEmit`
+- `cd client && npm run typecheck`
 - `supabase db diff`
 - `supabase db reset`
 - `cd client && npm run start`
