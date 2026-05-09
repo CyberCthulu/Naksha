@@ -60,6 +60,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
 
   const params = route.params as ChartRouteParams<ChartData> | null | undefined
   const profile = params?.profile
+  const chartMode = params?.chartMode === 'guest' ? 'guest' : 'self'
   const fromSaved = params?.fromSaved
   const saved = params?.saved
   const { focusedPlanet, focusPlanet, clearFocus } = useSpace()
@@ -106,6 +107,7 @@ export default function ChartScreen({ route }: ChartScreenProps) {
     saveCurrentChart,
   } = useChartData({
     profile,
+    chartMode,
     fromSaved,
     saved,
     tz,
@@ -218,7 +220,9 @@ export default function ChartScreen({ route }: ChartScreenProps) {
               !canSaveChart
                 ? 'View Only'
                 : isSaved
-                ? 'Already Saved'
+                ? 'Saved to My Charts'
+                : chartMode === 'guest'
+                ? 'Save Chart'
                 : 'Save Chart Data'
             }
             onPress={saveCurrentChart}

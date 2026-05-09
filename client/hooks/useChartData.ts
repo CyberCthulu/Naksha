@@ -14,10 +14,11 @@ import { birthToUTC } from '../lib/time'
 import { normalizeZone } from '../lib/timezones'
 import supabase from '../lib/supabase'
 import { buildChartData, saveChart, type ChartData } from '../lib/charts'
-import type { ChartProfile } from '../lib/domainTypes'
+import type { ChartMode, ChartProfile } from '../lib/domainTypes'
 
 type UseChartDataArgs = {
   profile: ChartProfile
+  chartMode?: ChartMode
   fromSaved?: boolean
   saved?: ChartData
   tz: string
@@ -36,6 +37,7 @@ type UseChartDataResult = {
 
 export default function useChartData({
   profile,
+  chartMode = 'self',
   fromSaved,
   saved,
   tz,
@@ -203,19 +205,21 @@ export default function useChartData({
         false
       )
 
-      try {
-        await saveChart(user.id, {
-          name: payload.meta.name,
-          birth_date: payload.meta.birth_date,
-          birth_time: payload.meta.birth_time,
-          time_zone: payload.meta.time_zone,
-          birth_lat: payload.meta.birth_lat,
-          birth_lon: payload.meta.birth_lon,
-          chart_data: payload,
-        })
-        setIsSaved(true)
-      } catch (e) {
-        console.warn('Auto-save failed:', e)
+      if (chartMode === 'self') {
+        try {
+          await saveChart(user.id, {
+            name: payload.meta.name,
+            birth_date: payload.meta.birth_date,
+            birth_time: payload.meta.birth_time,
+            time_zone: payload.meta.time_zone,
+            birth_lat: payload.meta.birth_lat,
+            birth_lon: payload.meta.birth_lon,
+            chart_data: payload,
+          })
+          setIsSaved(true)
+        } catch (e) {
+          console.warn('Auto-save failed:', e)
+        }
       }
     } catch (e: any) {
       Alert.alert('Error loading chart', e?.message ?? 'Unknown error')
@@ -225,6 +229,7 @@ export default function useChartData({
   }, [
     fromSaved,
     saved,
+    chartMode,
     birthDate,
     birthTime,
     tz,

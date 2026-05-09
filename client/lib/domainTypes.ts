@@ -45,8 +45,11 @@ export type ChartProfile = Pick<
     >
   >
 
+export type ChartMode = 'self' | 'guest'
+
 export type ChartRouteParams<TSavedChart = unknown> = {
   profile: ChartProfile
+  chartMode?: ChartMode
   fromSaved?: boolean
   saved?: TSavedChart
 }

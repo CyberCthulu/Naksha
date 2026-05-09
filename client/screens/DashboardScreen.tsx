@@ -336,7 +336,7 @@ export default function DashboardScreen() {
       <Button
         title="View Birth Chart"
         variant="ghost"
-        onPress={() => nav.navigate('Chart', { profile })}
+        onPress={() => nav.navigate('Chart', { profile, chartMode: 'self' })}
         disabled={!profile || needsProfileCompletion(profile)}
         style={{ marginTop: 8 }}
       />
