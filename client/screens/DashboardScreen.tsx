@@ -7,7 +7,11 @@ import supabase from '../lib/supabase'
 import { signOut } from '../lib/auth'
 import { normalizeZone } from '../lib/timezones'
 import { saveChart, buildChartData } from '../lib/charts'
-import type { UserProfileFields, UserRow } from '../lib/domainTypes'
+import type { UserRow } from '../lib/domainTypes'
+import {
+  needsProfileCompletion,
+  profileFromAuthMetadata,
+} from '../lib/profileCompletion'
 
 import { uiStyles } from '../components/ui/uiStyles'
 import { AppText, MutedText, TitleText } from '../components/ui/AppText'
@@ -23,32 +27,6 @@ const ZODIAC = [
 const ZODIAC_GLY = ['♈︎', '♉︎', '♊︎', '♋︎', '♌︎', '♍︎', '♎︎', '♏︎', '♐︎', '♑︎', '♒︎', '♓︎']
 
 const signOf = (lon: number) => Math.floor((((lon % 360) + 360) % 360) / 30)
-
-function profileFromMetadata(md: any): UserProfileFields {
-  return {
-    first_name: md?.first_name ?? null,
-    last_name: md?.last_name ?? null,
-    birth_date: md?.birth_date ?? null,
-    birth_time: md?.birth_time ?? null,
-    birth_location: md?.birth_location ?? null,
-    time_zone: md?.time_zone ?? null,
-    birth_lat: typeof md?.birth_lat === 'number' ? md.birth_lat : null,
-    birth_lon: typeof md?.birth_lon === 'number' ? md.birth_lon : null,
-  }
-}
-
-function needsProfileCompletion(p: Partial<UserProfileFields> | null | undefined) {
-  if (!p) return true
-
-  return (
-    !p.first_name ||
-    !p.last_name ||
-    !p.birth_date ||
-    !p.birth_time ||
-    !p.birth_location ||
-    !p.time_zone
-  )
-}
 
 export default function DashboardScreen() {
   const [loading, setLoading] = useState(true)
@@ -117,7 +95,7 @@ export default function DashboardScreen() {
       let u = (data as UserRow) ?? null
 
       if (needsProfileCompletion(u)) {
-        const mdProfile = profileFromMetadata(user.user_metadata)
+        const mdProfile = profileFromAuthMetadata(user.user_metadata)
 
         if (!needsProfileCompletion(mdProfile)) {
           const { data: merged, error: mergeErr } = await supabase

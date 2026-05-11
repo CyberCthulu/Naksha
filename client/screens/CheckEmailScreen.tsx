@@ -11,6 +11,11 @@ import {
 import { useRoute, useNavigation } from '@react-navigation/native'
 import supabase from '../lib/supabase'
 import { resendSignupEmail, verifySignupOtp } from '../lib/auth'
+import type { UserProfileFields } from '../lib/domainTypes'
+import {
+  isProfileComplete,
+  type ProfileCompletionData,
+} from '../lib/profileCompletion'
 
 import AuthContainer from '../components/auth/AuthContainer'
 import { uiStyles } from '../components/ui/uiStyles'
@@ -18,40 +23,11 @@ import { theme } from '../components/ui/theme'
 
 type RouteParams = Partial<{
   email: string
-  profile: {
-    first_name: string | null
-    last_name: string | null
-    birth_date: string | null
-    birth_time: string | null
-    birth_location: string | null
-    time_zone: string | null
-    birth_lat: number | null
-    birth_lon: number | null
-  }
+  profile: UserProfileFields
 }>
-
-type ProfileForRouting = {
-  first_name: string | null
-  last_name: string | null
-  birth_date: string | null
-  birth_time: string | null
-  birth_location: string | null
-  time_zone: string | null
-}
 
 const PROFILE_SELECT =
   'first_name,last_name,birth_date,birth_time,birth_location,time_zone'
-
-function isProfileComplete(profile: ProfileForRouting | null | undefined) {
-  return !!(
-    profile?.first_name &&
-    profile.last_name &&
-    profile.birth_date &&
-    profile.birth_time &&
-    profile.birth_location &&
-    profile.time_zone
-  )
-}
 
 export default function CheckEmailScreen() {
   const navigation = useNavigation<any>()
@@ -149,7 +125,7 @@ export default function CheckEmailScreen() {
       }
 
       const profile = params.profile
-      let savedProfile: ProfileForRouting | null = null
+      let savedProfile: ProfileCompletionData | null = null
 
       if (profile) {
         const { data: upsertedProfile, error: upsertErr } = await supabase
@@ -177,7 +153,7 @@ export default function CheckEmailScreen() {
           return
         }
 
-        savedProfile = upsertedProfile as ProfileForRouting | null
+        savedProfile = upsertedProfile as ProfileCompletionData | null
       } else {
         const { data: existingProfile, error: profileErr } = await supabase
           .from('users')
@@ -190,7 +166,7 @@ export default function CheckEmailScreen() {
           return
         }
 
-        savedProfile = existingProfile as ProfileForRouting | null
+        savedProfile = existingProfile as ProfileCompletionData | null
       }
 
       setMessage('Email Verified.')
