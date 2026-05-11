@@ -19,6 +19,11 @@ import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
 import { formatShortTimeFromHHMM } from '../lib/time'
 import type { PurchaseRow, SubscriptionRow, UserRow } from '../lib/domainTypes'
+import ProfileHeader from '../components/profile/ProfileHeader'
+import BirthDetailsCard from '../components/profile/BirthDetailsCard'
+import SubscriptionCard from '../components/profile/SubscriptionCard'
+import PurchasesCard from '../components/profile/PurchasesCard'
+import DataPrivacyCard from '../components/profile/DataPrivacyCard'
 
 // Chart preference types – stored in public.chart_preferences
 type HouseSystem = 'whole_sign' | 'placidus' | 'equal'
@@ -267,47 +272,18 @@ export default function ProfileScreen() {
         paddingBottom: insets.bottom + 32,
       }}
     >
-      {/* Top bar (in-screen header) */}
-      <View style={styles.topRow}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>‹</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.screenTitle}>My Profile</Text>
-
-        <TouchableOpacity onPress={onEditProfile} style={styles.editBtn}>
-          <Text style={styles.link}>Edit</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Header / Avatar */}
-      <View style={styles.headerRow}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{prettyName.charAt(0).toUpperCase()}</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.name}>{prettyName}</Text>
-          <Text style={styles.email}>{userProfile?.email ?? '—'}</Text>
-        </View>
-      </View>
+      <ProfileHeader
+        prettyName={prettyName}
+        email={userProfile?.email}
+        onBack={() => navigation.goBack()}
+        onEditProfile={onEditProfile}
+      />
 
       {/* Birth details */}
-      <View style={uiStyles.card}>
-        <Text style={uiStyles.cardTitle}>Birth Details</Text>
-        <Row label="Date" value={userProfile?.birth_date ?? '—'} />
-        <Row label="Time" value={prettyBirthTime} />
-        <Row label="Location" value={userProfile?.birth_location ?? '—'} />
-        <Row label="Time Zone" value={userProfile?.time_zone ?? '—'} />
-        {userProfile?.birth_lat != null && userProfile?.birth_lon != null && (
-          <Row
-            label="Coordinates"
-            value={`${userProfile.birth_lat.toFixed(3)}, ${userProfile.birth_lon.toFixed(3)}`}
-          />
-        )}
-        <Text style={styles.cardHint}>
-          Edit these details in “Complete Profile” to update your natal chart.
-        </Text>
-      </View>
+      <BirthDetailsCard
+        userProfile={userProfile}
+        prettyBirthTime={prettyBirthTime}
+      />
 
       {/* Chart Preferences */}
       <View style={uiStyles.card}>
@@ -366,55 +342,16 @@ export default function ProfileScreen() {
       </View>
 
       {/* Subscription */}
-      <View style={uiStyles.card}>
-        <Text style={uiStyles.cardTitle}>Subscription</Text>
-        {subscription ? (
-          <>
-            <Row label="Plan" value={subscription.plan} />
-            <Row label="Status" value={subscription.status} />
-            <Row label="Started" value={subscription.start_date} />
-            <Row label="Ends" value={subscription.end_date ?? '—'} />
-            <Text style={styles.cardHint}>Manage or upgrade your plan from the billing portal (coming soon).</Text>
-          </>
-        ) : (
-          <>
-            <Text style={uiStyles.text}>You’re currently on the free plan.</Text>
-            <Text style={styles.cardHint}>
-              In future versions, you’ll see your premium status and manage your subscription here.
-            </Text>
-          </>
-        )}
-      </View>
+      <SubscriptionCard subscription={subscription} />
 
       {/* Purchases */}
-      <View style={uiStyles.card}>
-        <Text style={uiStyles.cardTitle}>Purchases</Text>
-        {purchases.length === 0 ? (
-          <Text style={uiStyles.muted}>No purchases yet.</Text>
-        ) : (
-          purchases.map((p) => (
-            <View key={p.id} style={{ marginBottom: 6 }}>
-              <Text style={[uiStyles.text, { fontWeight: '500' }]}>
-                {p.product_type}: {p.product_id}
-              </Text>
-              <Text style={uiStyles.muted}>
-                {p.amount} {p.currency.toUpperCase()} · {new Date(p.purchase_date).toLocaleString()}
-              </Text>
-            </View>
-          ))
-        )}
-      </View>
+      <PurchasesCard purchases={purchases} />
 
       {/* Data & Privacy */}
-      <View style={uiStyles.card}>
-        <Text style={uiStyles.cardTitle}>Data & Privacy</Text>
-        <TouchableOpacity style={styles.actionRow} onPress={onExportData}>
-          <Text style={styles.link}>Export my data</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionRow} onPress={onDeleteAccount}>
-          <Text style={[styles.link, { color: theme.colors.danger }]}>Request account deletion</Text>
-        </TouchableOpacity>
-      </View>
+      <DataPrivacyCard
+        onExportData={onExportData}
+        onDeleteAccount={onDeleteAccount}
+      />
 
       {/* Sign out */}
       <View style={uiStyles.card}>
@@ -424,18 +361,6 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
     </ScrollView>
-  )
-}
-
-// Simple label/value row
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue} numberOfLines={2}>
-        {value}
-      </Text>
-    </View>
   )
 }
 
@@ -468,65 +393,9 @@ function ChoiceRow({
 }
 
 const styles = StyleSheet.create({
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-  },
-  backText: {
-    color: theme.colors.text,
-    fontSize: 28,
-    lineHeight: 28,
-    marginTop: -2,
-  },
-  screenTitle: {
-    flex: 1,
-    textAlign: 'center',
-    color: theme.colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  editBtn: { width: 60, alignItems: 'flex-end' },
-
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  avatarText: { color: theme.colors.text, fontSize: 22, fontWeight: '700' },
-  name: { fontSize: 20, fontWeight: '700', color: theme.colors.text },
-  email: { color: theme.colors.sub, marginTop: 2 },
-
   link: { fontWeight: '700', color: '#007AFF' },
 
   cardHint: { marginTop: 6, fontSize: 12, color: theme.colors.muted },
-
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-    gap: 12,
-  },
-  rowLabel: { color: theme.colors.muted, flexShrink: 0, width: 110 },
-  rowValue: { color: theme.colors.text, fontWeight: '600', flex: 1, textAlign: 'right' },
 
   subheading: { marginTop: 10, marginBottom: 6, fontWeight: '700', color: theme.colors.sub },
 
