@@ -1,6 +1,7 @@
 # Naksha Decomposition Roadmap
 
 Generated: 2026-05-09
+Last updated: 2026-05-11 — marked completed slices, re-ranked remaining work.
 Scope: documentation-only roadmap for large-file cleanup before feature expansion.
 
 ## 1. Purpose
@@ -33,73 +34,86 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
 
 ## 4. Ranked Roadmap
 
-1. **ProfileScreen presentational split**
-   - Extract display cards and simple row components first.
-   - Keep Supabase calls and preference save handlers in `ProfileScreen` for the first commit.
+### ✅ DONE
 
-2. **Shared profile completion helpers**
-   - Extract profile completeness checks, profile select fields, and auth-metadata-to-profile mapping.
-   - Use from `DashboardScreen` and `CheckEmailScreen`.
+1. **ProfileScreen presentational split (Slice 1A)**
+   - Extracted display cards: `ProfileHeader`, `BirthDetailsCard`, `SubscriptionCard`, `PurchasesCard`, `DataPrivacyCard`, `InfoRow`.
+   - Supabase calls and preference save handlers remain in `ProfileScreen`.
 
-3. **ChartScreen shell/content split**
-   - Keep route validation and timezone validation in the shell.
-   - Move valid chart rendering and hook usage into `ChartScreenContent`.
+2. **ProfileScreen interactive card extraction (Slice 1B)**
+   - Extracted `ChartPreferencesCard`, `ChoiceRow`, `AccountActionsCard` (composing `DataPrivacyCard` + sign-out).
+   - `onUpdatePrefs` callback passed as prop; no Supabase logic moved to components.
 
-4. **CompleteProfile form/save helpers**
-   - Extract DB-to-form mapping, form-to-update payload mapping, and manual geocode-before-save logic.
-   - This creates useful groundwork for guest birth-data entry.
+3. **Shared profile completion helpers**
+   - `client/lib/profileCompletion.ts`: `isProfileComplete`, `needsProfileCompletion`, `profileFromAuthMetadata`, `ProfileCompletionData`.
+   - Used by both `DashboardScreen` and `CheckEmailScreen`.
 
-5. **InterpretationModal pager extraction**
-   - Move circular pager calculations and refs into a focused hook.
-   - Import the existing shared interpretation types instead of defining duplicates.
+4. **ChartScreen shell/content split**
+   - `ChartScreen.tsx`: route guard + timezone validation only.
+   - `ChartScreenContent.tsx`: all hooks (`useChartData`, `useChartInterpretation`, `useSpace`) and rendering.
+   - Passed props: `profile`, `chartMode`, `fromSaved`, `saved`, `tz`.
 
-6. **Dashboard chart summary service**
-   - Extract saved-chart lookup/build/sun-moon summary after profile helper extraction is stable.
+---
 
-7. **useChartData persistence split**
-   - Extract persistence and hydration helpers before considering a larger hook split.
-   - This should wait for stronger verification because it owns save behavior.
+### REMAINING (re-ranked)
 
-## 5. Safest First Slice
+- **Next stabilization slice: Runtime `chart_data` validation** *(reduces crash risk from schema-drifted rows)*
+   - Add `parseChartData(json)` validator in `client/lib/chartValidation.ts`.
+   - Replace bare `as ChartData` casts in `useChartData` and `MyCharts`.
+   - Return `null` on shape mismatch; render a recoverable error state.
+   - Do this before further `useChartData` refactors so the safety net exists first.
 
-Start with `ProfileScreen.tsx` presentational extraction.
+- **Following stabilization slice: Test runner setup** *(foundational; enables safe refactoring of remaining large files)*
+   - Add `jest` + `@testing-library/react-native`.
+   - Cover: `profileCompletion`, `buildChartData`, `saveChart` guard, `useChartData` self/guest/view-only, OTP navigation, `upsertJournal` create-mode.
+   - Must exist before touching `useChartData`, `DashboardScreen`, or `CompleteProfileScreen`.
 
-Suggested first commit:
+- **Later stabilization slice: Auto-save failure visibility** *(UX; low-effort, high trust value)*
+   - In `useChartData` auto-save catch block, emit an alert or set a degraded save-state flag.
+   - No schema change needed.
 
-- Add `ProfileHeader`.
-- Add `BirthDetailsCard`.
-- Add `ChartPreferencesCard`.
-- Add `SubscriptionCard`.
-- Add `PurchasesCard`.
-- Add `DataPrivacyCard`.
-- Add `AccountActionsCard`.
-- Move `Row`/`ChoiceRow` into reusable local or component files only if the call sites stay simple.
+- **Later hardening slice: AuthCallback handling review** *(auth reliability)*
+   - Clean up verbose logging.
+   - Review `handledOnce` guard for delayed/retried deep-link URLs.
+   - Align profile completion rules with `CheckEmailScreen`.
 
-Keep in `ProfileScreen.tsx` for this first slice:
+- **Later decomposition slice: CompleteProfile form/save helpers** *(medium; groundwork for guest birth-data entry)*
+   - Extract DB-to-form mapping, form-to-update payload, and manual geocode-before-save logic.
+   - Requires test runner setup first to verify behavior is preserved.
 
-- `load`.
-- `onUpdatePrefs`.
-- `onSignOut`.
-- Supabase calls.
-- Navigation handlers.
+- **Later decomposition slice: Dashboard chart summary extraction** *(medium; reduces DashboardScreen coupling)*
+    - Extract saved-chart lookup/build/sun-moon summary after profile helper extraction is stable.
+    - Requires test runner setup first.
 
-This is the safest first slice because it is mostly render extraction. It reduces file size without changing data ownership, auth metadata behavior, chart preferences storage, or billing/purchase behavior.
+- **Later decomposition slice: InterpretationModal pager extraction** *(low; organizational)*
+    - Move circular pager calculations and refs into a `useCircularPager` hook.
+    - Import the existing shared interpretation types instead of defining duplicates.
 
-## 6. Second And Third Slices
+- **Deferred high-risk slice: useChartData persistence split** *(deferred; high regression risk)*
+    - Extract persistence and hydration helpers before considering a larger hook split.
+    - Must wait for test coverage and `chart_data` validation to be in place.
 
-Second slice: shared profile completion helpers.
+## 5. Completed Slices (Summary)
 
-- Add `client/lib/profileCompletion.ts`.
-- Move `needsProfileCompletion` and related profile field checks there.
-- Share the helper between `DashboardScreen.tsx` and `CheckEmailScreen.tsx`.
-- Keep Dashboard repair behavior and CheckEmail navigation behavior unchanged.
+**Slice 1A — ProfileScreen presentational extraction** ✅
+Extracted `ProfileHeader`, `BirthDetailsCard`, `SubscriptionCard`, `PurchasesCard`, `DataPrivacyCard`, `InfoRow`. Supabase calls, `onUpdatePrefs`, `onSignOut`, and navigation handlers remained in `ProfileScreen`.
 
-Third slice: `ChartScreen` shell/content split.
+**Slice 1B — ProfileScreen interactive card extraction** ✅
+Extracted `ChartPreferencesCard`, `ChoiceRow`, `AccountActionsCard`. `onUpdatePrefs` passed as prop. No Supabase logic moved to components. `ProfileScreen` is now 312 lines.
 
-- Keep malformed-route and invalid-timezone guards in `ChartScreen`.
-- Move the valid route body into `ChartScreenContent`.
-- Pass validated `profile`, `chartMode`, `fromSaved`, `saved`, and `tz` into the content component.
-- Preserve saved chart flow and view-only behavior.
+**Shared profileCompletion helpers** ✅
+`client/lib/profileCompletion.ts` created with `isProfileComplete`, `needsProfileCompletion`, `profileFromAuthMetadata`, and `ProfileCompletionData`. Both `DashboardScreen` and `CheckEmailScreen` import from there. Dashboard repair behavior and CheckEmail navigation behavior unchanged.
+
+**ChartScreen shell/content split** ✅
+`ChartScreen.tsx` retains only route guard (missing birth fields) and timezone validation. `ChartScreenContent.tsx` owns all hooks and rendering after both guards pass. `profile`, `chartMode`, `fromSaved`, `saved`, and `tz` passed as props.
+
+## 6. Next Safe Slice
+
+**Next stabilization slice: Runtime `chart_data` validation**
+
+Add `parseChartData(json): ChartData | null` in `client/lib/chartValidation.ts`. Replace bare `as ChartData` casts in `useChartData` (saved-chart load path) and `MyCharts`. Return `null` on shape mismatch and render a recoverable error state. This is a small, targeted change with no behavior impact on valid data, and it makes subsequent `useChartData` refactoring safer.
+
+Followed immediately by the test runner setup slice before touching `useChartData`, `DashboardScreen`, or `CompleteProfileScreen`.
 
 ## 7. Deferred / High-Risk Refactors
 
@@ -113,6 +127,8 @@ Third slice: `ChartScreen` shell/content split.
 
 ## 8. Do Not Touch Without Tests
 
+These areas have no test coverage and are high-regression risk. Do not do high-risk refactors here until the test runner setup slice is complete:
+
 - `useChartData` auto-save/manual-save/canonical lookup behavior.
 - `DashboardScreen` profile repair and self chart auto-save behavior.
 - `CheckEmailScreen` OTP verification and deterministic navigation reset.
@@ -123,6 +139,8 @@ Third slice: `ChartScreen` shell/content split.
   - guest charts do not auto-save;
   - guest charts can be manually saved when coordinates exist;
   - missing-coordinate charts remain view-only.
+- `AuthCallbackScreen` deep-link handling and `handledOnce` guard.
+- `upsertJournal` create-mode with `id: undefined`.
 
 ## 9. Verification Baseline
 

@@ -1,9 +1,9 @@
 # Naksha Codebase Handoff
 
 Generated: 2026-05-07  
-Last updated: after chart identity, coordinate, OTP navigation, profile source-of-truth, chart preference storage, and explicit chart mode slices.
+Last updated: 2026-05-11 — after ProfileScreen card extraction, shared profileCompletion helpers, and ChartScreen shell/content split.
 Scope: source-of-truth repository handoff. This update is documentation-only.
-Last recorded code verification: `cd client && npm run typecheck` passes.
+Last recorded code verification: `cd client && npm run typecheck` passes. Working tree clean.
 
 ## 1. Executive Summary
 
@@ -23,16 +23,21 @@ What already works:
 - Location autocomplete can populate coordinates and update the selected time zone from OpenCage timezone annotations.
 - `public.users` is now the durable source of truth for profile/birth data after signup/bootstrap.
 - `public.chart_preferences` is now the durable source of truth for chart preference storage.
+- `ProfileScreen` display-only and interactive presentational cards extracted into `client/components/profile/`.
+- Shared profile completeness helpers (`isProfileComplete`, `needsProfileCompletion`, `profileFromAuthMetadata`) extracted to `client/lib/profileCompletion.ts` and used by both `DashboardScreen` and `CheckEmailScreen`.
+- `ChartScreen` split into a route-validation shell and `ChartScreenContent`; all hooks and rendering live in `ChartScreenContent` after both guards pass.
 
 What is incomplete or unstable:
 
 - `server/` is empty, and several service files are placeholders: `conversations.ts`, `notifications.ts`, `reports.ts`, `subscriptions.ts`, `usage.ts`.
-- `ChatScreen.tsx` and `SubscriptionScreen.tsx` are empty and not wired into navigation.
+- `ChatScreen.tsx` and `SubscriptionScreen.tsx` are empty stub files and are not registered in `App.tsx` navigation or linking config.
 - Unsupported chart preferences remain disabled/coming soon and are not applied to chart math.
 - Guest/other-person chart creation UI is not implemented yet; `chartMode: 'guest'` is groundwork only.
 - Charts without birth coordinates are intentionally view-only: they can render planet data, but are not persisted because canonical saved-chart identity requires coordinates.
 - `auth.user_metadata` still carries signup/bootstrap profile data for `handle_new_user` and older-account repair, but profile edits no longer mirror back to auth metadata.
 - There are no tests and no `test` or `lint` npm scripts.
+- Persisted `chart_data` JSON is cast to `ChartData` without runtime validation; malformed rows in `charts` or `MyCharts` could crash.
+- Self chart auto-save failure is caught and logged but not surfaced to the user.
 
 ## 2. Tech Stack
 
@@ -56,10 +61,11 @@ Main folders:
 - `client/screens/`: route-level screens.
 - `client/components/auth/`: auth/profile form components.
 - `client/components/charts/`: chart display, list, modal, and interpretation card components.
+- `client/components/profile/`: extracted presentational and interactive cards for `ProfileScreen`.
 - `client/components/ui/`: shared theme, text, card, button, field styles.
 - `client/components/space/`: focused planet context and disabled Three.js background.
 - `client/hooks/`: chart data loading/persistence and interpretation modal state.
-- `client/lib/`: Supabase client, auth helpers, chart computation, interpretation helpers, geocoding, time helpers, journals, and lexicon.
+- `client/lib/`: Supabase client, auth helpers, chart computation, interpretation helpers, geocode helper, time helpers, journals, and lexicon.
 - `client/lib/lexicon/`: local interpretation content and lookup functions.
 - `client/android/`: generated native Android project.
 - `supabase/`: local Supabase config and source-controlled SQL migrations.
@@ -71,10 +77,13 @@ Important files:
 - `client/lib/supabase.ts`: Supabase client, AsyncStorage persistence, Expo public env vars.
 - `client/lib/auth.ts`: sign up, resend, OTP verify, login, logout, get user.
 - `client/lib/domainTypes.ts`: shared frontend domain types for profile fields, user rows, chart mode, and chart route/profile params.
+- `client/lib/profileCompletion.ts`: `isProfileComplete`, `needsProfileCompletion`, `profileFromAuthMetadata`, `ProfileCompletionData` type; shared by `DashboardScreen` and `CheckEmailScreen`.
+- `client/lib/geocode.ts`: `geocodePlace` — OpenCage geocoding helper used by `CompleteProfileScreen`.
 - `client/screens/DashboardScreen.tsx`: profile load/repair, profile completion redirect, sun/moon summary, and self chart entry with `chartMode: 'self'`.
 - `client/screens/CompleteProfileScreen.tsx`: profile edit form, geocoding fallback, and durable `users` table update.
-- `client/screens/ProfileScreen.tsx`: account/profile display plus chart preferences backed by `public.chart_preferences`.
-- `client/screens/ChartScreen.tsx`: chart route validation, chart mode handling, chart hook, chart UI composition, interpretation page construction.
+- `client/screens/ProfileScreen.tsx`: account/profile display plus chart preferences backed by `public.chart_preferences`; presentational cards are in `components/profile/`.
+- `client/screens/ChartScreen.tsx`: route-validation shell — guards missing birth fields and invalid time zone, then delegates to `ChartScreenContent`.
+- `client/components/charts/ChartScreenContent.tsx`: valid-chart compositor — owns `useChartData`, `useChartInterpretation`, `useSpace`, page building, and all chart UI rendering.
 - `client/hooks/useChartData.ts`: load saved chart or compute chart, find existing chart, self auto-save, guest manual save.
 - `client/lib/charts.ts`: `ChartData` shape, `buildChartData`, `saveChart`, list/get/delete chart helpers.
 - `client/lib/astro.ts`: planet longitude calculation, aspects, approximate whole-sign house calculation, planet-house assignment.
@@ -121,8 +130,10 @@ Session persistence:
 Deep-link callback:
 
 - `AuthCallbackScreen.tsx` handles incoming URLs from `expo-linking`.
+- It is registered outside the auth/unauthenticated stack split so it is reachable in both states.
 - It supports `token_hash` plus `type`, auth `code`, and URL fragment `access_token`/`refresh_token`.
 - After handling, it resets navigation to `Dashboard` if a session user exists, otherwise to `Login`.
+- `handledOnce` guards against re-entry, but a delayed second URL arriving after an initial failure would be silently ignored; this path should be reviewed before shipping.
 
 Profile completion:
 
@@ -141,6 +152,8 @@ Known auth/profile issues:
 - Auth callback and auth helper files contain verbose debug logging.
 - Navigation route types are mostly `any`, so auth flow route params are not compile-time enforced.
 - Deep-link verification through `AuthCallbackScreen` remains a separate flow from OTP verification; both should stay aligned when profile requirements change.
+- `AuthCallbackScreen` `handledOnce` guard marks the flow complete before async work finishes; a delayed second deep-link URL arriving after a partial failure would be silently ignored.
+- `useChartData` has no mounted/cancelled guard around async state updates; rapid navigation could produce state updates on an unmounted component.
 
 ## 5. Data Model / Supabase
 
@@ -300,9 +313,10 @@ Where chart data is stored:
 
 What UI renders it:
 
-- `ChartScreen.tsx` composes the full chart view.
+- `ChartScreen.tsx` is the route-validation shell; it guards missing birth fields and invalid time zone, then renders `ChartScreenContent`.
+- `ChartScreenContent.tsx` composes the full chart view and owns all hook calls and rendering.
 - `ChartHeader.tsx` renders title, location/zone/coords, and Sun summary.
-- `ChartScreen.tsx` shows `Saved to My Charts` for saved rows, `Save Chart` for unsaved guest charts, `Save Chart Data` for unsaved self charts, and disabled `View Only` when coordinates are missing.
+- `ChartScreenContent.tsx` shows `Saved to My Charts` for saved rows, `Save Chart` for unsaved guest charts, `Save Chart Data` for unsaved self charts, and disabled `View Only` when coordinates are missing.
 - `ChartWheel.tsx` renders signs, houses, planets, and aspect lines with SVG.
 - `PlanetPositionsList.tsx` renders planet positions and inline summaries.
 - `HousesList.tsx` renders whole-sign house rows and inline summaries.
@@ -331,7 +345,7 @@ Interpretation modules:
 - House/sign lookups use `getHouseSignMeaning(house, sign)`, with handcrafted meanings or fallback blended text.
 - Aspect lookups use `getAspectMeaning(type)`; aspect meanings are type-level, not planet-pair-specific.
 
-How `ChartScreen` builds interpretation pages:
+How `ChartScreenContent` builds interpretation pages:
 
 - It converts computed planets into ordered `PlanetKey[]`.
 - `buildPlanetPages(planets, orderedPlanetKeys, planetHouses)` builds one page per planet.
@@ -349,7 +363,7 @@ How modal/card rendering works:
 Notable interpretation coupling:
 
 - `PlanetPositionsList.tsx` has its own local `buildPlanetSummary` logic that duplicates `lib/chartInterpretation.ts`.
-- `ChartScreen.tsx` is responsible for both chart layout and interpretation page assembly.
+- `ChartScreenContent.tsx` is responsible for both chart layout and interpretation page assembly; the page-building logic has not been extracted to a dedicated hook yet.
 
 ## 8. Current UI/UX State
 
@@ -374,11 +388,11 @@ Screens that need polish:
 
 Component size/coupling concerns:
 
-- `ProfileScreen.tsx`: 524 lines, mixes profile, preferences, subscription, purchases, privacy, and account actions.
-- `DashboardScreen.tsx`: 376 lines, mixes profile repair, chart lookup/generation, summary derivation, and dashboard UI.
-- `CompleteProfileScreen.tsx`: 341 lines, mixes data load/save, geocoding fallback, and UI.
-- `CheckEmailScreen.tsx`: 312 lines, mixes OTP flow and custom UI.
-- `useChartData.ts`: 305 lines, owns loading, lookup, hydration, computation, auto-save, and manual save.
+- `ProfileScreen.tsx`: 312 lines. Presentational card extraction is done; all Supabase calls and preference save handlers remain in the screen. The screen now mixes data loading with glue for chart preferences and account action callbacks.
+- `DashboardScreen.tsx`: 351 lines, mixes profile repair, chart lookup/generation, summary derivation, and dashboard UI.
+- `CompleteProfileScreen.tsx`: 325 lines, mixes data load/save, geocoding fallback, and UI.
+- `CheckEmailScreen.tsx`: 350 lines, mixes OTP flow and custom UI.
+- `useChartData.ts`: 325 lines, owns loading, lookup, hydration, computation, auto-save, and manual save.
 - `InterpretationModal.tsx`: 292 lines, owns pager loop behavior plus modal shell.
 
 ## 9. Known Bugs / Inconsistencies
@@ -393,6 +407,8 @@ Component size/coupling concerns:
 | Auth callback logging is noisy | `AuthCallbackScreen.tsx`, `lib/auth.ts` | Auth/debug information may clutter logs during normal flows. | Temporary troubleshooting logs remain in the auth surface. |
 | Migration history starts from a remote schema dump | `supabase/migrations/20260508015720_remote_schema.sql`, later migrations | The schema is now reproducible, but history before the dump is not incremental. | The remote project schema was pulled into the repo after initial development. |
 | No automated regression coverage | `client/package.json` | A `typecheck` script exists, but there are no unit/integration/e2e tests. | No test framework or test scripts are configured. |
+| Persisted `chart_data` cast without runtime validation | `client/hooks/useChartData.ts`, `client/screens/MyCharts.tsx` | Malformed or schema-drifted rows in `public.charts` could crash when their `chart_data` JSON is accessed after the bare `as ChartData` cast. | No runtime schema validator exists for the persisted blob. |
+| Self chart auto-save failure is not visible to users | `client/hooks/useChartData.ts` | Chart appears to have loaded but was not persisted; user has no feedback. | Auto-save error is caught, logged as a warning, and rendering continues without surfacing an alert or status indicator. |
 
 ## 10. Technical Debt
 
@@ -422,7 +438,8 @@ Fragile flows:
 
 Large components:
 
-- Break up `ProfileScreen`, `DashboardScreen`, `CompleteProfileScreen`, `CheckEmailScreen`, `useChartData`, and `InterpretationModal` when touching their areas.
+- `ProfileScreen` presentational extraction is done. Next step is extracting the data-loading and preference-save logic into a hook.
+- Break up `DashboardScreen`, `CompleteProfileScreen`, `CheckEmailScreen`, `useChartData`, and `InterpretationModal` when touching their areas.
 
 Naming and consistency issues:
 
@@ -439,54 +456,51 @@ Missing tests:
 
 ## 11. Recommended Next 5 Tasks
 
-1. Add focused verification coverage for signup/profile/chart persistence.
-   - Highest risk reduction. Cover OTP verification, profile coordinate/timezone save, self chart auto-save, guest manual save, view-only charts without coordinates, and saved charts with canonical identity.
+1. Add a test runner and first test suite.
+   - Highest risk reduction. Add `jest` + `@testing-library/react-native`. Cover `profileCompletion` boundary cases, `buildChartData` round-trip, `useChartData` self/guest/view-only branches, OTP navigation reset, and `upsertJournal` create-mode with `undefined id`.
 
-2. Design the guest chart creation workflow.
-   - High product value. Build on `chartMode: 'guest'` without adding synastry or schema changes prematurely; define how users enter another person's birth data and when they save it.
+2. Add runtime validation for persisted `chart_data`.
+   - Replace bare `as ChartData` casts in `useChartData` and `MyCharts` with a validator that returns null on shape mismatch, preventing crashes from schema-drifted rows.
 
-3. Generate Supabase DB types.
-   - Maintains the schema/frontend contract. Replace hand-written shared row types with generated types so future table/column drift is caught at compile time.
+3. Surface auto-save failure to the user.
+   - Show an alert or status indicator when self chart auto-save fails. Currently caught and logged silently; user has no way to know the chart was not persisted.
 
-4. Clean up auth callback and bootstrap logging.
-   - Reduces noise and risk before demo/shipping while preserving the signup metadata handoff and Dashboard repair path.
+4. Review and harden `AuthCallbackScreen`.
+   - Clean up verbose logging; review `handledOnce` guard behaviour for delayed or retried deep-link URLs; add a test for token/code/fragment paths.
 
-5. Plan real chart preference support.
-   - Product value, but larger scope. Implement additional house systems/zodiac/orb modes only when chart math, table constraints, UI, and saved chart metadata can change together.
+5. Design the guest chart creation workflow.
+   - Build on `chartMode: 'guest'` without adding synastry or schema changes prematurely; define how users enter another person's birth data and when they save it.
 
 ## 12. Best Next Vertical Slice
 
-Recommended slice: guest chart creation MVP.
+Recommended slice: runtime `chart_data` validation.
 
 Goal:
 
-- Let a user enter another person's birth data, open a chart with `chartMode: 'guest'`, and save it manually when coordinates exist.
-- Keep self chart behavior unchanged: Dashboard opens `chartMode: 'self'` and complete self charts can auto-save.
-- Keep missing-coordinate behavior unchanged: charts render planet data, show `View Only`, and do not persist.
+- Prevent malformed or schema-drifted persisted `chart_data` from crashing or hydrating incorrectly in `useChartData`, `MyCharts`, and `DashboardScreen`.
+- Valid saved chart data loads normally with no behavior change.
+- Invalid or malformed `chart_data` is rejected at the parse boundary and falls back to recompute (when a profile is available) or shows a safe error state (when only the saved blob is available).
 
 Files likely involved:
 
-- `client/screens/DashboardScreen.tsx`
-- A new or existing birth-data entry screen/component for guest chart input.
-- `client/screens/ChartScreen.tsx`
-- `client/hooks/useChartData.ts`
-- `client/components/auth/ProfileFields.tsx` if the existing birth form is reused.
-- No Supabase migration should be needed for a first guest chart MVP.
+- New `client/lib/chartDataValidation.ts` (or within `client/lib/charts.ts`): a `parseChartData(json): ChartData | null` function that validates the required shape before use.
+- `client/hooks/useChartData.ts`: replace bare `existing.chart_data as ChartData` cast with the validated parse; handle null result as a cache miss and fall through to recompute.
+- `client/screens/MyCharts.tsx`: replace bare `row.chart_data as ChartData` cast with the validated parse; show a safe error row if null.
+- `client/screens/DashboardScreen.tsx`: replace bare `existing.chart_data.planets as ...` cast with the validated parse.
+- No Supabase migration needed.
 
 Expected behavior:
 
-- Self charts with coordinates continue to auto-save by canonical identity.
-- Guest charts with coordinates do not auto-save and show a manual save action.
-- Guest charts without coordinates render as `View Only` and do not create saved rows.
-- Saved-chart list behavior remains unchanged; saved rows still open through `fromSaved`/`saved`.
-- No synastry, compatibility, or guest-specific schema fields are implied by this slice.
+- Opening a saved chart with valid `chart_data` is unchanged.
+- Opening a saved chart with malformed `chart_data` falls back to recompute (if profile fields are available) or shows a recoverable error card instead of crashing.
+- Dashboard sun/moon summary degrades gracefully if its saved `chart_data` is malformed.
+- No change to canonical chart identity, save behavior, or chart math.
 
 Verification steps:
 
 - Run `cd client && npm run typecheck`.
-- Start the app with `cd client && npm run start`.
-- Test a profile with valid coordinates: open chart, confirm saved state/copy, reopen from My Charts.
-- Test a guest chart with valid coordinates: confirm it does not auto-save before tapping save, then saves manually.
+- Open a valid saved chart from My Charts; confirm it loads normally.
+- Confirm Dashboard sun/moon summary still appears for a complete profile.
 - Test a guest chart with no coordinates: confirm planets render, save is disabled as `View Only`, and no chart row is created.
 
 ## 13. Agent Instructions Going Forward
