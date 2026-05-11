@@ -7,7 +7,6 @@ import {
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
-  Switch,
   Alert,
 } from 'react-native'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
@@ -23,7 +22,8 @@ import ProfileHeader from '../components/profile/ProfileHeader'
 import BirthDetailsCard from '../components/profile/BirthDetailsCard'
 import SubscriptionCard from '../components/profile/SubscriptionCard'
 import PurchasesCard from '../components/profile/PurchasesCard'
-import DataPrivacyCard from '../components/profile/DataPrivacyCard'
+import ChartPreferencesCard from '../components/profile/ChartPreferencesCard'
+import AccountActionsCard from '../components/profile/AccountActionsCard'
 
 // Chart preference types – stored in public.chart_preferences
 type HouseSystem = 'whole_sign' | 'placidus' | 'equal'
@@ -286,60 +286,11 @@ export default function ProfileScreen() {
       />
 
       {/* Chart Preferences */}
-      <View style={uiStyles.card}>
-        <Text style={uiStyles.cardTitle}>Chart Preferences</Text>
-        <Text style={styles.cardHint}>
-          Charts currently use Whole Sign houses, Tropical zodiac, and standard fixed aspect orbs.
-        </Text>
-
-        <Text style={styles.subheading}>House System</Text>
-        <ChoiceRow
-          label="Whole Sign"
-          note="Current chart engine"
-          selected={prefs.house_system === 'whole_sign'}
-          onPress={() => onUpdatePrefs({ house_system: 'whole_sign' })}
-        />
-        <ChoiceRow label="Placidus" note="Coming soon" selected={false} disabled />
-        <ChoiceRow label="Equal House" note="Coming soon" selected={false} disabled />
-
-        <Text style={styles.subheading}>Zodiac</Text>
-        <ChoiceRow
-          label="Tropical"
-          note="Current chart engine"
-          selected={prefs.zodiac_type === 'tropical'}
-          onPress={() => onUpdatePrefs({ zodiac_type: 'tropical' })}
-        />
-        <ChoiceRow label="Sidereal" note="Coming soon" selected={false} disabled />
-
-        <Text style={styles.subheading}>Aspect Orbs</Text>
-        <ChoiceRow
-          label="Standard fixed orbs"
-          note="Current chart engine"
-          selected={prefs.orb_mode === 'medium'}
-          onPress={() => onUpdatePrefs({ orb_mode: 'medium' })}
-        />
-        <ChoiceRow label="Tight orbs" note="Coming soon" selected={false} disabled />
-        <ChoiceRow label="Loose orbs" note="Coming soon" selected={false} disabled />
-
-        <View style={styles.switchRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={[uiStyles.text, styles.disabledText]}>
-              Show house degrees
-            </Text>
-            <Text style={styles.switchHint}>
-              Coming soon.
-            </Text>
-          </View>
-          <Switch
-            value={prefs.show_house_degrees}
-            disabled
-            trackColor={{ false: 'rgba(255,255,255,0.25)', true: 'rgba(0,122,255,0.6)' }}
-            thumbColor={prefs.show_house_degrees ? '#007AFF' : '#999'}
-          />
-        </View>
-
-        {savingPrefs && <Text style={styles.savingText}>Saving preferences…</Text>}
-      </View>
+      <ChartPreferencesCard
+        prefs={prefs}
+        savingPrefs={savingPrefs}
+        onUpdatePrefs={onUpdatePrefs}
+      />
 
       {/* Subscription */}
       <SubscriptionCard subscription={subscription} />
@@ -347,103 +298,15 @@ export default function ProfileScreen() {
       {/* Purchases */}
       <PurchasesCard purchases={purchases} />
 
-      {/* Data & Privacy */}
-      <DataPrivacyCard
+      <AccountActionsCard
         onExportData={onExportData}
         onDeleteAccount={onDeleteAccount}
+        onSignOut={onSignOut}
       />
-
-      {/* Sign out */}
-      <View style={uiStyles.card}>
-        <Text style={uiStyles.cardTitle}>Account</Text>
-        <TouchableOpacity style={styles.actionRow} onPress={onSignOut}>
-          <Text style={[styles.link, { color: theme.colors.danger }]}>Sign out</Text>
-        </TouchableOpacity>
-      </View>
     </ScrollView>
-  )
-}
-
-function ChoiceRow({
-  label,
-  note,
-  selected,
-  onPress,
-  disabled = false,
-}: {
-  label: string
-  note?: string
-  selected: boolean
-  onPress?: () => void
-  disabled?: boolean
-}) {
-  return (
-    <TouchableOpacity
-      style={[styles.choiceRow, disabled && styles.choiceRowDisabled]}
-      onPress={onPress}
-      disabled={disabled}
-    >
-      <View style={[styles.choiceDot, selected && styles.choiceDotSelected]} />
-      <View style={{ flex: 1 }}>
-        <Text style={[uiStyles.text, disabled && styles.disabledText]}>{label}</Text>
-        {note ? <Text style={styles.choiceHint}>{note}</Text> : null}
-      </View>
-    </TouchableOpacity>
   )
 }
 
 const styles = StyleSheet.create({
   link: { fontWeight: '700', color: '#007AFF' },
-
-  cardHint: { marginTop: 6, fontSize: 12, color: theme.colors.muted },
-
-  subheading: { marginTop: 10, marginBottom: 6, fontWeight: '700', color: theme.colors.sub },
-
-  choiceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-  },
-  choiceRowDisabled: {
-    opacity: 0.65,
-  },
-  choiceDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginRight: 10,
-  },
-  choiceDotSelected: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
-  choiceHint: {
-    fontSize: 12,
-    color: theme.colors.muted,
-    marginTop: 1,
-  },
-  disabledText: {
-    color: theme.colors.muted,
-  },
-
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-    gap: 12,
-  },
-  switchHint: { fontSize: 12, color: theme.colors.muted, marginTop: 2 },
-
-  savingText: {
-    marginTop: 8,
-    fontSize: 12,
-    color: theme.colors.muted,
-    fontStyle: 'italic',
-  },
-
-  actionRow: {
-    paddingVertical: 8,
-  },
 })
