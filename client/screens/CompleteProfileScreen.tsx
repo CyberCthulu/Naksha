@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import supabase from '../lib/supabase'
 import { normalizeZone, getDeviceTimeZoneNormalized } from '../lib/timezones'
@@ -27,7 +26,6 @@ import { uiStyles } from '../components/ui/uiStyles'
 
 export default function CompleteProfileScreen() {
   const navigation = useNavigation<any>()
-  const insets = useSafeAreaInsets()
 
   useLayoutEffect(() => {
     navigation.setOptions?.({ headerShown: false })
@@ -204,7 +202,7 @@ export default function CompleteProfileScreen() {
   return (
     <AuthContainer>
       {/* Top bar */}
-      <View style={[styles.topRow, { paddingTop: insets.top + 6 }]}>
+      <View style={styles.topRow}>
         <TouchableOpacity onPress={onSkip} style={styles.iconBtn}>
           <Text style={styles.iconText}>‹</Text>
         </TouchableOpacity>
