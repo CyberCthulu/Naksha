@@ -7,6 +7,7 @@ import supabase from '../lib/supabase'
 import { signOut } from '../lib/auth'
 import { normalizeZone } from '../lib/timezones'
 import { saveChart, buildChartData } from '../lib/charts'
+import { parseChartData } from '../lib/chartDataValidation'
 import type { UserRow } from '../lib/domainTypes'
 import {
   needsProfileCompletion,
@@ -155,8 +156,12 @@ export default function DashboardScreen() {
             .maybeSingle()
         : { data: null }
 
-      if (existing?.chart_data?.planets) {
-        const planets = existing.chart_data.planets as { name: string; lon: number }[]
+      const existingChart = existing?.chart_data
+        ? parseChartData(existing.chart_data)
+        : null
+
+      if (existingChart) {
+        const planets = existingChart.planets
 
         const sun = planets.find((p) => p.name === 'Sun')
         const moon = planets.find((p) => p.name === 'Moon')

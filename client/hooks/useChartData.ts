@@ -14,6 +14,7 @@ import { birthToUTC } from '../lib/time'
 import { normalizeZone } from '../lib/timezones'
 import supabase from '../lib/supabase'
 import { buildChartData, saveChart, type ChartData } from '../lib/charts'
+import { parseChartData } from '../lib/chartDataValidation'
 import type { ChartMode, ChartProfile } from '../lib/domainTypes'
 
 type UseChartDataArgs = {
@@ -42,14 +43,21 @@ export default function useChartData({
   saved,
   tz,
 }: UseChartDataArgs): UseChartDataResult {
-  const [loading, setLoading] = useState<boolean>(!fromSaved || !saved?.planets)
-  const [planets, setPlanets] = useState<PlanetPos[]>(saved?.planets ?? [])
-  const [aspects, setAspects] = useState<Aspect[]>(saved?.aspects ?? [])
-  const [houses, setHouses] = useState<HouseCusp[] | null>(saved?.houses ?? null)
-  const [planetHouses, setPlanetHouses] = useState<PlanetHousePlacement[] | null>(
-    saved?.planet_houses ?? null
+  const initialSaved = fromSaved ? parseChartData(saved) : null
+  const [loading, setLoading] = useState<boolean>(!initialSaved)
+  const [planets, setPlanets] = useState<PlanetPos[]>(
+    initialSaved?.planets ?? []
   )
-  const [isSaved, setIsSaved] = useState<boolean>(!!fromSaved)
+  const [aspects, setAspects] = useState<Aspect[]>(
+    initialSaved?.aspects ?? []
+  )
+  const [houses, setHouses] = useState<HouseCusp[] | null>(
+    initialSaved?.houses ?? null
+  )
+  const [planetHouses, setPlanetHouses] = useState<PlanetHousePlacement[] | null>(
+    initialSaved?.planet_houses ?? null
+  )
+  const [isSaved, setIsSaved] = useState<boolean>(!!initialSaved)
 
   const birthDate = profile.birth_date!
   const birthTime = profile.birth_time!
@@ -108,12 +116,14 @@ export default function useChartData({
     setLoading(true)
 
     try {
-      if (fromSaved && saved?.planets && saved?.aspects) {
+      const parsedSaved = fromSaved ? parseChartData(saved) : null
+
+      if (parsedSaved) {
         const hydrated = hydrateSavedChart(
-          saved.planets,
-          saved.aspects,
-          saved.houses ?? null,
-          saved.planet_houses ?? null
+          parsedSaved.planets,
+          parsedSaved.aspects,
+          parsedSaved.houses,
+          parsedSaved.planet_houses
         )
 
         applyChartState(
@@ -169,13 +179,13 @@ export default function useChartData({
       const { data: existing, error } = await existingQuery.maybeSingle()
       if (error) throw error
 
-      if (existing) {
-        const cd = existing.chart_data as ChartData
+      const cd = existing ? parseChartData(existing.chart_data) : null
+      if (cd) {
         const hydrated = hydrateSavedChart(
-          cd.planets ?? [],
-          cd.aspects ?? [],
-          cd.houses ?? null,
-          cd.planet_houses ?? null
+          cd.planets,
+          cd.aspects,
+          cd.houses,
+          cd.planet_houses
         )
 
         applyChartState(

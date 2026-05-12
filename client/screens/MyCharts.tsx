@@ -14,7 +14,8 @@ import { useNavigation } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import supabase from '../lib/supabase'
-import { type ChartRow, listCharts, deleteChart, type ChartData } from '../lib/charts'
+import { type ChartRow, listCharts, deleteChart } from '../lib/charts'
+import { parseChartData } from '../lib/chartDataValidation'
 
 import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
@@ -59,7 +60,15 @@ export default function MyChartsScreen() {
 
   const openChart = useCallback(
     (row: ChartRow) => {
-      const data = row.chart_data as ChartData
+      const data = parseChartData(row.chart_data)
+      if (!data) {
+        Alert.alert(
+          'Chart unavailable',
+          'This saved chart data could not be read. Recreate the chart to open it again.'
+        )
+        return
+      }
+
       const meta = data.meta
 
       nav.navigate('Chart', {
@@ -153,16 +162,18 @@ export default function MyChartsScreen() {
           keyExtractor={(r) => String(r.id)}
           ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           renderItem={({ item }) => {
-            const data = item.chart_data as ChartData
-            const meta = data.meta
+            const data = parseChartData(item.chart_data)
+            const meta = data?.meta
 
-            const base = [meta.birth_date, meta.birth_time, meta.time_zone]
-              .filter(Boolean)
-              .join(' · ')
+            const base = meta
+              ? [meta.birth_date, meta.birth_time, meta.time_zone]
+                  .filter(Boolean)
+                  .join(' · ')
+              : 'Chart data unavailable'
 
             const coords =
-              meta.birth_lat != null && meta.birth_lon != null
-                ? ` · (${Number(meta.birth_lat).toFixed(2)}, ${Number(meta.birth_lon).toFixed(2)})`
+              meta?.birth_lat != null && meta.birth_lon != null
+                ? ` · (${meta.birth_lat.toFixed(2)}, ${meta.birth_lon.toFixed(2)})`
                 : ''
 
             return (
