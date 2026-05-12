@@ -85,15 +85,11 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
 
 ### REMAINING (re-ranked)
 
-- **Next test slice: useChartData branch coverage** *(highest remaining regression risk)*
-   - Cover valid saved-chart load, invalid `chart_data` fallback, self auto-save success/failure warning, guest manual-save mode, missing-coordinate view-only mode, and stale async load cancellation.
-   - Do this before splitting the hook or extracting Dashboard chart summary logic.
-
-- **Following test slice: auth/profile navigation coverage** *(auth reliability)*
-   - Cover `CheckEmailScreen` OTP success paths, complete/incomplete profile resets, resend behavior, and AuthCallback token/code/fragment paths.
+- **Next test slice: auth/profile navigation coverage** *(auth reliability)*
+   - Cover `CheckEmailScreen` OTP success paths, complete/incomplete profile resets, resend behavior, and `AuthCallbackScreen` token/code/fragment paths and delayed-URL edge case.
    - Keep AuthCallback and CheckEmail flows separate unless product requirements change.
 
-- **Following test slice: chart generation and persistence helpers** *(chart correctness)*
+- **Next test slice: chart generation and persistence helpers** *(chart correctness)*
    - Cover `buildChartData` with and without coordinates, `saveChart` coordinate guard, canonical identity payloads, and parser edge cases beyond the initial minimal tests.
 
 - **Later decomposition slice: CompleteProfile form/save helpers** *(medium; groundwork for guest birth-data entry)*
@@ -141,6 +137,9 @@ Auth callback URL processing no longer treats a null initial URL as permanently 
 **Journal create-mode payload fix** ✅
 `upsertJournal` omits `id` for create-mode upserts and preserves `id` for update-mode upserts. Tests verify create/update payload construction and `chart_id` behavior.
 
+**`useChartData` branch coverage** ✅
+`hooks/__tests__/useChartData.test.tsx` added (7 tests). Covers: valid `fromSaved` load skips auth/recompute; invalid saved data falls back to recompute; missing-coordinate view-only blocks DB lookup and save; self charts auto-save; guest charts do not auto-save; auto-save failure sets `saveWarning` and leaves `isSaved: false`; manual save clears warning and sets `isSaved: true`. Total test baseline: 4 suites, 17 tests.
+
 **useChartData async cancellation guard** ✅
 Mounted/current-operation guards prevent stale async load/save work from updating state or showing stale alerts after unmount or after a newer load supersedes an older one.
 
@@ -149,11 +148,14 @@ Removed duplicate top safe-area padding from the screen header. Safe-area behavi
 
 ## 6. Next Safe Slice
 
-**Next test slice: useChartData branch coverage**
+**Next test slices: auth/profile navigation and chart generation/persistence helpers**
 
-Add focused hook coverage for the current `useChartData` state machine: valid saved-chart loading, invalid `chart_data` fallback, self auto-save success, self auto-save warning, guest manual-save mode, missing-coordinate view-only mode, manual save success, and stale async load cancellation.
+`useChartData` branch coverage is complete (4 suites, 17 tests). The two highest-remaining-risk untested areas are:
 
-This should happen before splitting `useChartData`, extracting Dashboard chart summary logic, or changing OTP/profile-save flows. The test runner exists, but coverage is still mostly pure helpers.
+1. `CheckEmailScreen` and `AuthCallbackScreen` — OTP success routing, complete/incomplete profile reset paths, resend, and deep-link token/code/fragment verification.
+2. `buildChartData` and `saveChart` — round-trip with/without coordinates, coordinate guard, canonical identity payload, and `parseChartData` edge cases.
+
+Both can proceed independently. Neither requires source changes. They unblock safe decomposition of `DashboardScreen` and `CompleteProfileScreen`.
 
 ## 7. Deferred / High-Risk Refactors
 
