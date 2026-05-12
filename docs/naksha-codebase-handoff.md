@@ -456,6 +456,8 @@ Missing tests:
 
 ## 11. Recommended Next 5 Tasks
 
+Note: §12 names the immediate implementation slice. The test runner remains the highest-priority foundational task and should follow immediately after, or run in parallel with, runtime `chart_data` validation. Broad refactors should wait until the test runner is in place.
+
 1. Add a test runner and first test suite.
    - Highest risk reduction. Add `jest` + `@testing-library/react-native`. Cover `profileCompletion` boundary cases, `buildChartData` round-trip, `useChartData` self/guest/view-only branches, OTP navigation reset, and `upsertJournal` create-mode with `undefined id`.
 
@@ -474,6 +476,8 @@ Missing tests:
 ## 12. Best Next Vertical Slice
 
 Recommended slice: runtime `chart_data` validation.
+
+This is the immediate next implementation slice because it is narrowly scoped and reduces crash risk before feature expansion. Test runner setup should follow immediately after or happen in parallel, and it should precede broad refactors of `useChartData`, `DashboardScreen`, `CheckEmailScreen`, or profile save flows.
 
 Goal:
 

@@ -133,7 +133,7 @@ When `saveChart` throws during auto-save, `useChartData` catches the error, logs
 
 ---
 
-### 3.6 — Broader DB cleanup remains future work (LOW, not blocking)
+### 3.11 — Broader DB cleanup remains future work (LOW, not blocking)
 
 - `users` and `charts` timestamps use `TIMESTAMP WITHOUT TIME ZONE`; `journals` and `chart_preferences` use `WITH TIME ZONE`.
 - No secondary indexes on `journals(user_id)`, `conversations(user_id)`, `messages(conversation_id)`.
