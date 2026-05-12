@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useSpace } from '../space/SpaceProvider'
 import type { ChartData } from '../../lib/charts'
+import { parseChartData } from '../../lib/chartDataValidation'
 import type { ChartMode, ChartProfile } from '../../lib/domainTypes'
 import { asPlanetKey } from '../../lib/chartInterpretation'
 import { buildHousePages, buildPlanetPages } from '../../lib/chartPageBuilders'
@@ -52,6 +53,10 @@ export default function ChartScreenContent({
   const insets = useSafeAreaInsets()
   const { width } = useWindowDimensions()
   const { focusedPlanet, focusPlanet, clearFocus } = useSpace()
+  const parsedSaved = useMemo(
+    () => (fromSaved ? parseChartData(saved) : null),
+    [fromSaved, saved]
+  )
 
   const {
     loading,
@@ -66,7 +71,7 @@ export default function ChartScreenContent({
     profile,
     chartMode,
     fromSaved,
-    saved,
+    saved: parsedSaved ?? undefined,
     tz,
   })
 
@@ -91,10 +96,10 @@ export default function ChartScreenContent({
   const size = Math.min(Math.max(280, width - 32), maxChart)
 
   const subtitleLocation = profile.birth_location ?? null
-  const subtitleZone = saved?.meta.time_zone ?? tz
+  const subtitleZone = parsedSaved?.meta.time_zone ?? tz
   const subtitleCoords =
-    saved?.meta.birth_lat != null && saved?.meta.birth_lon != null
-      ? ` (${Number(saved.meta.birth_lat).toFixed(2)}, ${Number(saved.meta.birth_lon).toFixed(2)})`
+    parsedSaved?.meta.birth_lat != null && parsedSaved.meta.birth_lon != null
+      ? ` (${parsedSaved.meta.birth_lat.toFixed(2)}, ${parsedSaved.meta.birth_lon.toFixed(2)})`
       : ''
 
   const orderedPlanetKeys = useMemo<PlanetKey[]>(
