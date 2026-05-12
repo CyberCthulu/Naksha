@@ -1,15 +1,15 @@
 # Claude's Architectural Review — Naksha Codebase
 
-Last updated: 2026-05-11 (seventh pass — post useChartData branch coverage)
+Last updated: 2026-05-11 (eighth pass — post auth navigation and chart helper tests)
 Reviewer: Claude (Sonnet 4.6)
 Scope: source code + all migrations through `20260508021500_chart_preferences.sql`
-Verification: `cd client && npm run typecheck` passes with zero errors. `npm test` passes (4 suites, 17 tests). Working tree clean.
+Verification: `cd client && npm run typecheck` passes with zero errors. `npm test` passes (7 suites, 35 tests). Working tree clean.
 
 ---
 
 ## 1. Current Status Summary
 
-The stabilization sprint is complete. Persisted `chart_data` is now validated before use (`parseChartData` in `client/lib/chartDataValidation.ts`). Auto-save failures are surfaced to users via a `saveWarning` card in `ChartScreenContent`. `AuthCallbackScreen` URL-deduplication guard was replaced with URL-keyed refs (`processingUrl`/`handledUrl`), all token-hash-exposing logs were removed, and auth errors now show an `Alert`. `useChartData` acquired a mounted/load-ID cancellation guard. `upsertJournal` no longer sends `id: undefined` in create mode. `CompleteProfileScreen` top dead space was fixed by removing the redundant inset duplication. A Jest test runner (`jest-expo`) is configured with 4 suites and 17 passing tests, including `useChartData` branch coverage.
+The stabilization sprint is complete. Persisted `chart_data` is now validated before use (`parseChartData` in `client/lib/chartDataValidation.ts`). Auto-save failures are surfaced to users via a `saveWarning` card in `ChartScreenContent`. `AuthCallbackScreen` URL-deduplication guard was replaced with URL-keyed refs (`processingUrl`/`handledUrl`), all token-hash-exposing logs were removed, and auth errors now show an `Alert`. `useChartData` acquired a mounted/load-ID cancellation guard. `upsertJournal` no longer sends `id: undefined` in create mode. `CompleteProfileScreen` top dead space was fixed by removing the redundant inset duplication. A Jest test runner (`jest-expo`) is configured with 7 suites and 35 passing tests, including `useChartData` branch coverage, chart generation/persistence helper coverage, and auth/profile navigation screen coverage.
 
 `ProfileScreen` presentational and interactive cards have been extracted to `client/components/profile/`. Shared profile completeness helpers live in `client/lib/profileCompletion.ts`. `ChartScreen` is a route-validation shell; all hooks and rendering live in `ChartScreenContent`.
 
@@ -58,8 +58,10 @@ The remaining open risks are: chart preferences not wired to chart math, guest c
 | `AuthCallbackScreen` `handledOnce` guard blocked delayed URL events | `handledOnce` boolean replaced with URL-keyed `processingUrl` / `handledUrl` refs. Guard is set only after a non-null URL is confirmed, allowing the event listener to process a URL that `getInitialURL()` missed on first call. All token-hash-exposing `console.log` calls removed. Auth errors on all three paths (verifyOtp, exchangeCodeForSession, setSession) now call `Alert.alert`. Catch block promoted from `console.log` to `console.warn`. `auth.ts` redirect-URL log removed. |
 | `useChartData` set React state after unmount / stale load | `mountedRef` + `loadIdRef` + `saveIdRef` refs added. Every `await` in `loadChart` and `saveCurrentChart` is followed by an `isCurrentLoad()` / `isCurrentSave()` guard before any state mutation. `applyChartState` also guards on `mountedRef`. Cleanup increments both IDs on unmount and on dependency change. |
 | `upsertJournal` sent `id: undefined` in create mode | Payload object typed explicitly; `id` is only added via `if (input.id != null) payload.id = input.id`. `undefined` and `null` both skip the assignment, letting Postgres assign a serial PK. Verified by a mocked Supabase Jest test (`lib/__tests__/journals.test.ts`). |
-| No test runner | `jest-expo` preset configured (`jest.config.js`). `"test": "jest"` added to `package.json`. 3 suites, 10 tests: `profileCompletion` (4), `chartDataValidation` (3), `journals` (3). All mock Supabase; no network calls. |
-| `useChartData` had no branch-level test coverage | `hooks/__tests__/useChartData.test.tsx` added (7 tests, mocked Supabase and chart helpers, `react-test-renderer`). Covers: valid `fromSaved` load (no auth/recompute), invalid `fromSaved` fallback to recompute, missing-coordinate view-only, self auto-save, guest no-auto-save, auto-save failure sets `saveWarning`, manual save success clears `saveWarning`. Total: 4 suites, 17 tests. |
+| No test runner | `jest-expo` preset configured (`jest.config.js`). `"test": "jest"` added to `package.json`. Initial suites covered `profileCompletion`, `chartDataValidation`, and `journals`; the current baseline is 7 suites / 35 tests. All mock Supabase; no network calls. |
+| `useChartData` had no branch-level test coverage | `hooks/__tests__/useChartData.test.tsx` added (7 tests, mocked Supabase and chart helpers, `react-test-renderer`). Covers: valid `fromSaved` load (no auth/recompute), invalid `fromSaved` fallback to recompute, missing-coordinate view-only, self auto-save, guest no-auto-save, auto-save failure sets `saveWarning`, manual save success clears `saveWarning`. |
+| Chart generation and persistence helpers had no tests | `lib/__tests__/charts.test.ts` added. Covers `buildChartData` shape with and without coordinates, `saveChart` coordinate guard, canonical upsert payload/onConflict, and Supabase error propagation. |
+| Auth/profile navigation had no screen tests | `screens/__tests__/CheckEmailScreen.test.tsx` and `screens/__tests__/AuthCallbackScreen.test.tsx` added. Covers missing email/code validation, resend success/failure, OTP complete profile to `Dashboard`, OTP incomplete profile to `CompleteProfile`, AuthCallback token/code/fragment paths, delayed URL after null initial URL, and auth error alert plus finish routing. Total: 7 suites, 35 tests. |
 | `CompleteProfileScreen` excessive top dead space | Removed `insets.top + 6` inline style from the top-bar `View`. `AuthContainer` already applies `insets.top + 16` to its scroll container, so the previous code double-counted the safe area. `useSafeAreaInsets` import and call removed from the screen. |
 
 ---
@@ -126,25 +128,25 @@ Stale `pref_*` keys in auth metadata for pre-migration users are inert — nothi
 
 Ranked by user impact × risk reduction × demo readiness.
 
-**1. Add auth/profile navigation tests** *(highest remaining test risk)*
-Cover `CheckEmailScreen` OTP success paths: profile-complete route to `Dashboard`, incomplete route to `CompleteProfile`, resend behavior. Cover `AuthCallbackScreen` token/code/fragment paths and the delayed-URL edge case.
-Files: `screens/__tests__/CheckEmailScreen.test.tsx`, `screens/__tests__/AuthCallbackScreen.test.tsx`.
+**1. Add Dashboard profile repair and chart summary tests** *(highest remaining screen risk)*
+Cover complete-profile load, incomplete-profile redirect, auth metadata repair for older accounts, saved chart summary hydration, invalid saved `chart_data` fallback, self chart auto-save, and missing-coordinate no-save behavior.
+Files: `screens/__tests__/DashboardScreen.test.tsx`.
 
-**2. Add chart generation and persistence helper tests** *(chart correctness)*
-Cover `buildChartData` round-trip with and without coordinates, `saveChart` coordinate guard, canonical identity payload shape, and `parseChartData` edge cases beyond the initial minimal suite.
-Files: `lib/__tests__/charts.test.ts`, expand `lib/__tests__/chartDataValidation.test.ts`.
+**2. Add CompleteProfile save/geocode lifecycle tests** *(profile source-of-truth reliability)*
+Cover load/prefill, missing field validation, selected-coordinate save, manual geocode fallback, timezone update from geocode, and `public.users` update payload.
+Files: `screens/__tests__/CompleteProfileScreen.test.tsx`.
 
-**3. Wire chart preferences to chart math** *(highest user trust impact)*
+**3. Add InterpretationModal pager tests** *(subtle UI state risk)*
+Cover first/last circular paging, single-page behavior, close/reopen reset, and previous/next controls.
+Files: `components/charts/__tests__/InterpretationModal.test.tsx` or a focused pager hook test if extracted first.
+
+**4. Wire chart preferences to chart math** *(highest user trust impact)*
 Read `house_system`, `zodiac_type`, and `orb_mode` from `public.chart_preferences` in `buildChartData` and `findAspects`. DB CHECK constraints and UI guards already limit values to currently supported defaults, so this is a read-path addition only. Expand CHECK constraints in a new migration when implementing each additional system.
 Files: `lib/astro.ts`, `lib/charts.ts`, `hooks/useChartData.ts`, potentially `DashboardScreen.tsx`.
 
-**4. Build guest chart creation UI** *(enables the chartMode infrastructure)*
+**5. Build guest chart creation UI** *(enables the chartMode infrastructure)*
 Create a form screen that collects a name and birth details for another person and navigates to `ChartScreen` with `chartMode: 'guest'`. The hook and route contract are already in place; optionally add a `birth_profiles` table for persisting guest birth records.
 Files: new screen, optionally new migration for `birth_profiles`.
-
-**5. Generate Supabase DB types** *(prevents schema/frontend drift)*
-Replace hand-maintained `UserRow`, `ChartData`, `SubscriptionRow`, `PurchaseRow` in `domainTypes.ts` with types generated from the live schema via `supabase gen types typescript`. Future column additions will be caught at compile time.
-Files: `client/lib/domainTypes.ts`, `client/package.json` (gen script).
 
 ---
 

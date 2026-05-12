@@ -81,16 +81,24 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
     - Removed duplicate safe-area padding from the in-screen header.
     - Shared `AuthContainer` remains responsible for safe-area top padding.
 
+12. **Chart generation and persistence helper tests**
+    - `lib/__tests__/charts.test.ts` added.
+    - Covers `buildChartData` shape with and without coordinates, `saveChart` coordinate guard, canonical upsert payload/onConflict, and Supabase error propagation.
+
+13. **Auth/profile navigation screen tests**
+    - `screens/__tests__/CheckEmailScreen.test.tsx` and `screens/__tests__/AuthCallbackScreen.test.tsx` added.
+    - Covers missing email/code validation, resend success/failure, OTP complete/incomplete profile resets, AuthCallback token/code/fragment paths, delayed URL handling, and auth error alert plus finish routing.
+
 ---
 
 ### REMAINING (re-ranked)
 
-- **Next test slice: auth/profile navigation coverage** *(auth reliability)*
-   - Cover `CheckEmailScreen` OTP success paths, complete/incomplete profile resets, resend behavior, and `AuthCallbackScreen` token/code/fragment paths and delayed-URL edge case.
-   - Keep AuthCallback and CheckEmail flows separate unless product requirements change.
+- **Next test slice: Dashboard profile repair and chart summary** *(remaining high-risk screen logic)*
+   - Cover complete-profile load, incomplete-profile redirect, auth metadata repair, saved chart summary hydration, invalid saved `chart_data` fallback, self chart auto-save, and missing-coordinate no-save behavior.
+   - Do this before extracting Dashboard chart summary or profile repair helpers.
 
-- **Next test slice: chart generation and persistence helpers** *(chart correctness)*
-   - Cover `buildChartData` with and without coordinates, `saveChart` coordinate guard, canonical identity payloads, and parser edge cases beyond the initial minimal tests.
+- **Next test slice: CompleteProfile save/geocode lifecycle** *(profile source-of-truth reliability)*
+   - Cover load/prefill, missing field validation, selected-coordinate save, manual geocode fallback, timezone update from geocode, and `public.users` update payload.
 
 - **Later decomposition slice: CompleteProfile form/save helpers** *(medium; groundwork for guest birth-data entry)*
    - Extract DB-to-form mapping, form-to-update payload, and manual geocode-before-save logic.
@@ -138,7 +146,7 @@ Auth callback URL processing no longer treats a null initial URL as permanently 
 `upsertJournal` omits `id` for create-mode upserts and preserves `id` for update-mode upserts. Tests verify create/update payload construction and `chart_id` behavior.
 
 **`useChartData` branch coverage** ✅
-`hooks/__tests__/useChartData.test.tsx` added (7 tests). Covers: valid `fromSaved` load skips auth/recompute; invalid saved data falls back to recompute; missing-coordinate view-only blocks DB lookup and save; self charts auto-save; guest charts do not auto-save; auto-save failure sets `saveWarning` and leaves `isSaved: false`; manual save clears warning and sets `isSaved: true`. Total test baseline: 4 suites, 17 tests.
+`hooks/__tests__/useChartData.test.tsx` added (7 tests). Covers: valid `fromSaved` load skips auth/recompute; invalid saved data falls back to recompute; missing-coordinate view-only blocks DB lookup and save; self charts auto-save; guest charts do not auto-save; auto-save failure sets `saveWarning` and leaves `isSaved: false`; manual save clears warning and sets `isSaved: true`.
 
 **useChartData async cancellation guard** ✅
 Mounted/current-operation guards prevent stale async load/save work from updating state or showing stale alerts after unmount or after a newer load supersedes an older one.
@@ -146,16 +154,22 @@ Mounted/current-operation guards prevent stale async load/save work from updatin
 **CompleteProfile top spacing polish** ✅
 Removed duplicate top safe-area padding from the screen header. Safe-area behavior remains owned by `AuthContainer`.
 
+**Chart generation and persistence helper tests** ✅
+`lib/__tests__/charts.test.ts` added. Covers `buildChartData` shape with and without coordinates, `saveChart` coordinate guard, canonical upsert payload/onConflict, and Supabase error propagation.
+
+**Auth/profile navigation screen tests** ✅
+`screens/__tests__/CheckEmailScreen.test.tsx` and `screens/__tests__/AuthCallbackScreen.test.tsx` added. Covers CheckEmail missing email/code validation, resend success/failure, OTP complete profile to `Dashboard`, OTP incomplete profile to `CompleteProfile`, AuthCallback token hash to `verifyOtp`, auth code to `exchangeCodeForSession`, fragment tokens to `setSession`, delayed URL after null initial URL, and auth error alert plus finish routing. Total test baseline: 7 suites, 35 tests.
+
 ## 6. Next Safe Slice
 
-**Next test slices: auth/profile navigation and chart generation/persistence helpers**
+**Next test slices: Dashboard and CompleteProfile coverage**
 
-`useChartData` branch coverage is complete (4 suites, 17 tests). The two highest-remaining-risk untested areas are:
+`useChartData`, chart helper, and auth/profile navigation coverage are complete (7 suites, 35 tests). The two highest-remaining-risk untested areas are:
 
-1. `CheckEmailScreen` and `AuthCallbackScreen` — OTP success routing, complete/incomplete profile reset paths, resend, and deep-link token/code/fragment verification.
-2. `buildChartData` and `saveChart` — round-trip with/without coordinates, coordinate guard, canonical identity payload, and `parseChartData` edge cases.
+1. `DashboardScreen` — profile repair, profile completion redirect, saved chart lookup, chart summary derivation, invalid saved `chart_data` fallback, and self chart auto-save/missing-coordinate no-save behavior.
+2. `CompleteProfileScreen` — load/prefill, missing required field validation, selected-coordinate save, manual geocode fallback, timezone update from geocode, and `public.users` update payload.
 
-Both can proceed independently. Neither requires source changes. They unblock safe decomposition of `DashboardScreen` and `CompleteProfileScreen`.
+Both can proceed independently. Neither should require source changes. They unblock safe decomposition of `DashboardScreen` and `CompleteProfileScreen`.
 
 ## 7. Deferred / High-Risk Refactors
 
@@ -173,7 +187,7 @@ These areas have little or no focused test coverage and are high-regression risk
 
 - `useChartData` auto-save/manual-save/canonical lookup/save-warning/cancellation behavior.
 - `DashboardScreen` profile repair and self chart auto-save behavior.
-- `CheckEmailScreen` OTP verification and deterministic navigation reset.
+- `CheckEmailScreen` OTP/session/upsert flow beyond the covered navigation paths.
 - `CompleteProfileScreen` manual geocode, timezone normalization, and `public.users` update lifecycle.
 - `InterpretationModal` circular pager logic.
 - Canonical chart identity and save behavior:
@@ -181,7 +195,7 @@ These areas have little or no focused test coverage and are high-regression risk
   - guest charts do not auto-save;
   - guest charts can be manually saved when coordinates exist;
   - missing-coordinate charts remain view-only.
-- `AuthCallbackScreen` deep-link handling across token/code/fragment paths.
+- `AuthCallbackScreen` deep-link behavior beyond the covered token/code/fragment/delayed URL paths.
 - Journal UI flows beyond the pure `upsertJournal` payload tests.
 
 ## 9. Verification Baseline

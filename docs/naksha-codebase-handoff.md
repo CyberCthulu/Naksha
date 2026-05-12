@@ -31,7 +31,7 @@ What already works:
 - `AuthCallbackScreen` now avoids locking out later URL events when no initial URL exists, deduplicates real callback URLs, removes raw/sensitive callback logging, and surfaces auth callback failures with a user-visible alert.
 - `useChartData` now has mounted/current-operation guards so stale async loads or saves do not update state after unmount or after a newer load supersedes them.
 - Journal create-mode payloads omit `id` when no id exists, while update-mode payloads preserve `id`.
-- Jest is configured with 4 suites and 17 tests: pure-helper coverage for `profileCompletion`, `chartDataValidation`, and journal payload behavior, plus full branch coverage for `useChartData` (valid saved-chart load, invalid saved data fallback, missing-coordinate view-only, self auto-save, guest no-auto-save, save-warning on failure, and manual save clearing the warning).
+- Jest is configured with 7 suites and 35 tests: pure-helper coverage, chart generation/persistence helper coverage, `useChartData` branch coverage, and auth/profile navigation coverage for `CheckEmailScreen` and `AuthCallbackScreen`.
 - `CompleteProfileScreen` top spacing was tightened by removing duplicate safe-area padding from its in-screen header.
 
 What is incomplete or unstable:
@@ -42,7 +42,7 @@ What is incomplete or unstable:
 - Guest/other-person chart creation UI is not implemented yet; `chartMode: 'guest'` is groundwork only.
 - Charts without birth coordinates are intentionally view-only: they can render planet data, but are not persisted because canonical saved-chart identity requires coordinates.
 - `auth.user_metadata` still carries signup/bootstrap profile data for `handle_new_user` and older-account repair, but profile edits no longer mirror back to auth metadata.
-- `useChartData` branch coverage is in place; remaining testing gaps are `CheckEmailScreen`/`AuthCallbackScreen` navigation flows, chart generation and persistence helpers, Dashboard profile repair and summary, `CompleteProfileScreen` save/geocode, and `InterpretationModal` pager logic.
+- Auth/profile navigation, chart helper, and `useChartData` branch coverage are in place; remaining testing gaps are Dashboard profile repair and chart summary, `CompleteProfileScreen` save/geocode lifecycle, `InterpretationModal` pager logic, and broader migration/schema validation.
 - There is no `lint` npm script.
 
 ## 2. Tech Stack
@@ -102,7 +102,10 @@ Important files:
 - `client/lib/__tests__/profileCompletion.test.ts`: profile completion helper coverage.
 - `client/lib/__tests__/chartDataValidation.test.ts`: persisted chart-data parser coverage.
 - `client/lib/__tests__/journals.test.ts`: journal upsert payload coverage.
+- `client/lib/__tests__/charts.test.ts`: chart generation and persistence helper coverage for `buildChartData` and `saveChart`.
 - `client/hooks/__tests__/useChartData.test.tsx`: `useChartData` branch coverage — valid saved-chart load, invalid saved data fallback, missing-coordinate view-only, self auto-save, guest no-auto-save, save-warning on failure, manual save clearing the warning.
+- `client/screens/__tests__/CheckEmailScreen.test.tsx`: auth/profile navigation coverage for missing email/code validation, resend success/failure, and OTP complete/incomplete profile reset paths.
+- `client/screens/__tests__/AuthCallbackScreen.test.tsx`: deep-link callback coverage for token hash, auth code, fragment tokens, delayed URL events, and auth error alert plus finish routing.
 - `supabase/migrations/20260508021000_canonical_chart_identity.sql`: canonical chart identity constraint using `NULLS NOT DISTINCT`.
 - `supabase/migrations/20260508021100_handle_new_user_birth_coordinates.sql`: `handle_new_user` profile coordinate copy and safe metadata casting.
 - `supabase/migrations/20260508021200_remove_client_purchase_insert_policy.sql`: removes client-side purchase insertion.
@@ -417,7 +420,7 @@ Component size/coupling concerns:
 | Guest chart creation is only groundwork | `domainTypes.ts`, `ChartScreen.tsx`, `useChartData.ts` | `chartMode: 'guest'` can prevent auto-save, but there is no screen for entering another person's birth data yet. | Route/hook behavior landed before the user-facing guest chart workflow. |
 | Supabase row types are still hand-maintained | `domainTypes.ts`, `ProfileScreen.tsx`, `lib/charts.ts` | Shared types reduce drift, but they are not generated from the live schema. | No generated Supabase type pipeline exists yet. |
 | Migration history starts from a remote schema dump | `supabase/migrations/20260508015720_remote_schema.sql`, later migrations | The schema is now reproducible, but history before the dump is not incremental. | The remote project schema was pulled into the repo after initial development. |
-| Limited automated regression coverage | `client/package.json`, `client/lib/__tests__/` | A pure-helper Jest suite exists, but high-risk hook, navigation, screen, chart persistence, and migration flows remain untested. | Test runner setup landed before broader coverage. |
+| Limited automated regression coverage | `client/package.json`, `client/lib/__tests__/`, `client/hooks/__tests__/`, `client/screens/__tests__/` | Jest now has 7 suites / 35 tests covering pure helpers, chart helpers, `useChartData`, `CheckEmailScreen`, and `AuthCallbackScreen`. Remaining gaps are Dashboard profile repair/chart summary, `CompleteProfileScreen` save/geocode lifecycle, `InterpretationModal` pager, and schema/migration validation. | Test coverage is expanding from targeted helpers and high-risk auth/chart flows toward broader screen and schema coverage. |
 
 ## 10. Technical Debt
 
@@ -459,57 +462,57 @@ Naming and consistency issues:
 
 Testing gaps:
 
-- `npm test` runs 4 suites (17 tests): `profileCompletion`, `chartDataValidation`, `journals`, and `useChartData` branch coverage.
-- Remaining gaps: `CheckEmailScreen`/`AuthCallbackScreen` navigation flows, chart generation/persistence helpers (`buildChartData`, `saveChart`), Dashboard profile repair and chart summary, `CompleteProfileScreen` save/geocode lifecycle, and `InterpretationModal` pager logic.
+- `npm test` runs 7 suites (35 tests): `profileCompletion`, `chartDataValidation`, `journals`, `charts`, `useChartData`, `CheckEmailScreen`, and `AuthCallbackScreen`.
+- Remaining gaps: Dashboard profile repair and chart summary, `CompleteProfileScreen` save/geocode lifecycle, `InterpretationModal` pager logic, and broader migration/schema validation.
 - No schema tests or automated Supabase migration validation commands are configured.
 
 ## 11. Recommended Next 5 Tasks
 
-Note: runtime `chart_data` validation, the initial Jest setup, auto-save warning visibility, AuthCallback hardening, journal create-mode payload coverage, `useChartData` async cancellation guard, and `useChartData` branch coverage are complete. The next priority is auth/profile navigation tests and chart generation/persistence helper tests.
+Note: runtime `chart_data` validation, the initial Jest setup, auto-save warning visibility, AuthCallback hardening, journal create-mode payload coverage, `useChartData` async cancellation guard, `useChartData` branch coverage, chart helper tests, and auth/profile navigation tests are complete. The next priority is coverage for Dashboard profile repair/chart summary and `CompleteProfileScreen` save/geocode behavior before those screens are decomposed.
 
-1. Add auth/profile navigation tests.
-   - Cover `CheckEmailScreen` OTP success paths, profile-complete route to `Dashboard`, incomplete route to `CompleteProfile`, resend behavior, and `AuthCallbackScreen` token/code/fragment paths.
+1. Add Dashboard profile repair and chart summary tests.
+   - Cover complete-profile load, incomplete-profile redirect, auth metadata repair for older accounts, saved chart summary hydration, invalid saved `chart_data` fallback, and self chart auto-save behavior.
 
-2. Add chart generation and persistence helper tests.
-   - Cover `buildChartData` round-trip with/without coordinates, `saveChart` coordinate guard, canonical identity payloads, and `parseChartData` edge cases beyond the minimal parser tests.
+2. Add CompleteProfile save/geocode lifecycle tests.
+   - Cover loading existing user fields, missing required field validation, selected-coordinate save, manual typed location geocode fallback, timezone update from geocode, and `public.users` update payload.
 
-3. Wire chart preferences to chart math.
+3. Add InterpretationModal pager tests.
+   - Cover first/last circular paging, single-page behavior, close/reopen reset, and previous/next controls without snapshot testing.
+
+4. Wire chart preferences to chart math.
    - Highest user trust impact. Read `house_system`, `zodiac_type`, and `orb_mode` from `public.chart_preferences` in `buildChartData` and `findAspects`.
 
-4. Generate Supabase DB types.
+5. Generate Supabase DB types and plan migration/schema validation.
    - Maintains the schema/frontend contract. Replace hand-written shared row types with generated types so future table/column drift is caught at compile time.
-
-5. Design the guest chart creation workflow.
-   - Build on `chartMode: 'guest'` without adding synastry or schema changes prematurely; define how users enter another person's birth data and when they save it.
 
 ## 12. Best Next Vertical Slice
 
-Recommended slice: auth/profile navigation tests.
+Recommended slice: Dashboard profile repair and chart summary tests.
 
-This is the immediate next implementation slice because the chart hook branch coverage is now complete, while auth/profile routing remains high-risk and mostly untested. Keep `CheckEmailScreen` and `AuthCallbackScreen` as separate flows; this slice should add coverage without changing runtime behavior.
+This is the immediate next implementation slice because auth/profile navigation and chart helper coverage are complete, while `DashboardScreen` still mixes profile repair, profile completion redirects, saved chart lookup, chart summary derivation, and self chart auto-save. Add coverage before extracting Dashboard logic.
 
 Goal:
 
-- Cover `CheckEmailScreen` OTP success routing.
-- Confirm a complete profile resets navigation to `Dashboard`.
-- Confirm an incomplete profile resets navigation to `CompleteProfile`.
-- Cover resend behavior and user-facing resend errors.
-- Cover `AuthCallbackScreen` `token_hash`/`type`, `code`, and `access_token`/`refresh_token` fragment paths.
-- Cover the delayed URL edge case where `getInitialURL()` returns null but a later URL event arrives.
+- Cover complete profile load without redirect.
+- Cover incomplete profile redirect to `CompleteProfile`.
+- Cover auth metadata repair for older/incomplete accounts without changing the source-of-truth contract.
+- Cover saved chart summary hydration from valid `chart_data`.
+- Cover invalid saved `chart_data` fallback/rebuild behavior.
+- Cover self chart auto-save behavior and missing-coordinate no-save behavior.
 
 Files likely involved:
 
-- `client/screens/CheckEmailScreen.tsx`.
-- `client/screens/AuthCallbackScreen.tsx`.
-- New screen tests under `client/screens/__tests__/` or equivalent.
-- Test mocks for `supabase`, `lib/auth`, `expo-linking`, navigation reset/replace, and alerts.
+- `client/screens/DashboardScreen.tsx`.
+- New or existing screen tests under `client/screens/__tests__/`.
+- Test mocks for Supabase auth/user/chart queries, `buildChartData`, `saveChart`, navigation, and alerts.
 
 Expected behavior:
 
 - No production behavior change.
-- OTP verification order remains: verify OTP, get session/user, upsert/fetch profile, then reset navigation.
-- AuthCallback continues to finish to `Dashboard` when a session exists and `Login` otherwise.
-- Tests make later auth/profile decomposition safer.
+- `public.users` remains the durable profile source of truth.
+- Auth metadata remains only a signup/bootstrap and older-account repair source.
+- Dashboard continues to pass `chartMode: 'self'`.
+- Tests make later Dashboard decomposition safer.
 
 Verification steps:
 
