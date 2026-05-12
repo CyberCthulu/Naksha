@@ -37,8 +37,14 @@ export async function upsertJournal(input: {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not signed in')
 
-  const payload = {
-    id: input.id,
+  const payload: {
+    id?: number
+    user_id: string
+    chart_id: number | null
+    prompt_template: string | null
+    title: string | null
+    content: string
+  } = {
     user_id: user.id,
     chart_id: input.chart_id ?? null,
     prompt_template: input.prompt_template ?? null,
