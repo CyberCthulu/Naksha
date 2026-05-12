@@ -1,19 +1,19 @@
 # Claude's Architectural Review — Naksha Codebase
 
-Last updated: 2026-05-11 (fifth pass — post ProfileScreen extraction, profileCompletion helpers, ChartScreen shell/content split)
+Last updated: 2026-05-11 (sixth pass — post stabilization sprint: chart_data validation, auto-save visibility, AuthCallback hardening, useChartData cancellation guard, upsertJournal fix, Jest setup)
 Reviewer: Claude (Sonnet 4.6)
 Scope: source code + all migrations through `20260508021500_chart_preferences.sql`
-Verification: `cd client && npm run typecheck` passes with zero errors. Working tree clean.
+Verification: `cd client && npm run typecheck` passes with zero errors. `npm test` passes (3 suites, 10 tests). Working tree clean.
 
 ---
 
 ## 1. Current Status Summary
 
-Chart save semantics now have an explicit product rule: self charts (the user's own natal chart) auto-save on load; guest charts (other people's birth data) skip auto-save and require a deliberate manual save. The `chartMode: 'self' | 'guest'` param on `ChartRouteParams` encodes this rule at the route boundary with no schema change required. `domainTypes.ts` is now the complete home for all shared row types including `SubscriptionRow` (with `created_at` restored) and `PurchaseRow`.
+The stabilization sprint is complete. Persisted `chart_data` is now validated before use (`parseChartData` in `client/lib/chartDataValidation.ts`). Auto-save failures are surfaced to users via a `saveWarning` card in `ChartScreenContent`. `AuthCallbackScreen` URL-deduplication guard was replaced with URL-keyed refs (`processingUrl`/`handledUrl`), all token-hash-exposing logs were removed, and auth errors now show an `Alert`. `useChartData` acquired a mounted/load-ID cancellation guard. `upsertJournal` no longer sends `id: undefined` in create mode. `CompleteProfileScreen` top dead space was fixed by removing the redundant inset duplication. A Jest test runner (`jest-expo`) is configured with 3 suites and 10 passing tests.
 
-`ProfileScreen` presentational and interactive cards have been extracted to `client/components/profile/`. Shared profile completeness helpers live in `client/lib/profileCompletion.ts`. `ChartScreen` is now a route-validation shell; all hooks and rendering live in `ChartScreenContent`.
+`ProfileScreen` presentational and interactive cards have been extracted to `client/components/profile/`. Shared profile completeness helpers live in `client/lib/profileCompletion.ts`. `ChartScreen` is a route-validation shell; all hooks and rendering live in `ChartScreenContent`.
 
-The remaining open risks are: persisted `chart_data` is cast without runtime validation, self chart auto-save failure is silent, `AuthCallbackScreen` `handledOnce` guard needs review, `useChartData` has no async cancellation guard, chart preferences still not wired to chart math, guest chart creation UI not built, and foundational tooling (tests, lint) absent.
+The remaining open risks are: chart preferences not wired to chart math, guest chart creation UI not built, no ESLint script, Supabase types still hand-maintained, and large-component decomposition ongoing.
 
 ---
 
@@ -53,6 +53,13 @@ The remaining open risks are: persisted `chart_data` is cast without runtime val
 | `isProfileComplete` / `needsProfileCompletion` duplicated between `DashboardScreen` and `CheckEmailScreen` | Extracted to `client/lib/profileCompletion.ts`; both screens import from there. `ProfileCompletionData` type is the canonical shape for the six required fields. |
 | `ProfileScreen` at ~524 lines mixing 6 concerns | Presentational cards extracted to `client/components/profile/`: `ProfileHeader`, `BirthDetailsCard`, `ChartPreferencesCard`, `ChoiceRow`, `SubscriptionCard`, `PurchasesCard`, `DataPrivacyCard`, `AccountActionsCard`, `InfoRow`. Data loading and save handlers remain in the screen. Current line count: 312. |
 | `ChartScreen` called hooks before early-return guards (Rules of Hooks) | Shell/content split: `ChartScreen` owns route and timezone guards only; `ChartScreenContent` owns all hook calls and rendering after both guards pass. |
+| Persisted `chart_data` cast to `ChartData` without runtime validation | `client/lib/chartDataValidation.ts`: `parseChartData(json): ChartData \| null` validates required shape. All three cast sites replaced: `useChartData` (fromSaved path + DB lookup), `MyCharts` (open + list render), `DashboardScreen` (sun/moon summary). Malformed rows fall back to recompute or show a safe error; valid data is unchanged. |
+| Self chart auto-save failure was silent | `useChartData` catch block now sets `saveWarning` state. `ChartScreenContent` renders it as an inline card when `canSaveChart && saveWarning && chartMode === 'self'`. `isSaved` is explicitly set to `false` on failure, restoring the manual retry button. |
+| `AuthCallbackScreen` `handledOnce` guard blocked delayed URL events | `handledOnce` boolean replaced with URL-keyed `processingUrl` / `handledUrl` refs. Guard is set only after a non-null URL is confirmed, allowing the event listener to process a URL that `getInitialURL()` missed on first call. All token-hash-exposing `console.log` calls removed. Auth errors on all three paths (verifyOtp, exchangeCodeForSession, setSession) now call `Alert.alert`. Catch block promoted from `console.log` to `console.warn`. `auth.ts` redirect-URL log removed. |
+| `useChartData` set React state after unmount / stale load | `mountedRef` + `loadIdRef` + `saveIdRef` refs added. Every `await` in `loadChart` and `saveCurrentChart` is followed by an `isCurrentLoad()` / `isCurrentSave()` guard before any state mutation. `applyChartState` also guards on `mountedRef`. Cleanup increments both IDs on unmount and on dependency change. |
+| `upsertJournal` sent `id: undefined` in create mode | Payload object typed explicitly; `id` is only added via `if (input.id != null) payload.id = input.id`. `undefined` and `null` both skip the assignment, letting Postgres assign a serial PK. Verified by a mocked Supabase Jest test (`lib/__tests__/journals.test.ts`). |
+| No test runner | `jest-expo` preset configured (`jest.config.js`). `"test": "jest"` added to `package.json`. 3 suites, 10 tests: `profileCompletion` (4), `chartDataValidation` (3), `journals` (3). All mock Supabase; no network calls. |
+| `CompleteProfileScreen` excessive top dead space | Removed `insets.top + 6` inline style from the top-bar `View`. `AuthContainer` already applies `insets.top + 16` to its scroll container, so the previous code double-counted the safe area. `useSafeAreaInsets` import and call removed from the screen. |
 
 ---
 
@@ -84,43 +91,13 @@ Stale `pref_*` keys in auth metadata for pre-migration users are inert — nothi
 
 ---
 
-### 3.4 — No test or lint scripts (ONGOING)
+### 3.4 — No ESLint script (LOW, tooling gap)
 
-`client/package.json` now has `typecheck` (`tsc --noEmit`), but still no `test` or `lint` scripts. No coverage of auth flows, chart generation math, chart persistence, or interpretation page building.
-
----
-
-### 3.5 — Persisted `chart_data` cast without runtime validation (MEDIUM)
-
-`useChartData` and `MyCharts` cast the `chart_data` column from Supabase directly to `ChartData` with no runtime check. `useChartData` uses `?? []` fallbacks for `planets` and `aspects`, which guards against `null` but not wrong types. A malformed or schema-drifted row will surface as a crash inside `hydrateSavedChart` or downstream list rendering. A lightweight validator (`parseChartData`) that returns `null` on shape mismatch would prevent cascading errors.
+`client/package.json` now has `typecheck` and `test`. ESLint is installed but `"lint": "eslint ."` has not been added to scripts. No import-order or no-unused-vars enforcement in CI.
 
 ---
 
-### 3.6 — Self chart auto-save failure is not visible to users (LOW, UX risk)
-
-When `saveChart` throws during auto-save, `useChartData` catches the error, logs a warning, and continues rendering. The user sees a fully rendered chart but it was not persisted. There is no alert, badge, or retry prompt. Surfacing this as a transient alert or a degraded save-state indicator would prevent silent data loss.
-
----
-
-### 3.7 — `AuthCallbackScreen` `handledOnce` guard needs review (LOW-MEDIUM)
-
-`AuthCallbackScreen` is registered outside the auth/unauthenticated stack split and is reachable in both states. The `handledOnce` ref marks the flow complete immediately, before async verification work finishes. If a deep-link URL arrives after an initial partial failure, the second URL is silently ignored. This path should be reviewed and tested before shipping.
-
----
-
-### 3.8 — `useChartData` has no async cancellation guard (LOW)
-
-`useChartData` sets React state inside async callbacks with no check for whether the component is still mounted. Rapid navigation (e.g., opening and immediately closing `ChartScreen`) can produce state-update-on-unmounted-component warnings or, in edge cases, stale state in a later mount.
-
----
-
-### 3.9 — `upsertJournal` create-mode with `undefined id` is untested (LOW)
-
-`upsertJournal` passes `id: input.id` in the payload. When creating a new entry from `JournalEditorScreen`, `id` is `undefined`. Whether Supabase's upsert correctly omits the `id` field in this case (allowing a serial PK to be assigned) or silently errors has not been verified with a test.
-
----
-
-### 3.10 — Large components still need gradual decomposition (ONGOING)
+### 3.5 — Large components still need gradual decomposition (ONGOING)
 
 | File | Lines | Status |
 |---|---|---|
@@ -133,7 +110,7 @@ When `saveChart` throws during auto-save, `useChartData` catches the error, logs
 
 ---
 
-### 3.11 — Broader DB cleanup remains future work (LOW, not blocking)
+### 3.6 — Broader DB cleanup remains future work (LOW, not blocking)
 
 - `users` and `charts` timestamps use `TIMESTAMP WITHOUT TIME ZONE`; `journals` and `chart_preferences` use `WITH TIME ZONE`.
 - No secondary indexes on `journals(user_id)`, `conversations(user_id)`, `messages(conversation_id)`.
@@ -146,27 +123,27 @@ When `saveChart` throws during auto-save, `useChartData` catches the error, logs
 
 ## 4. Recommended Next 5 Tasks
 
-Ranked by risk reduction × user trust × demo readiness.
+Ranked by user impact × risk reduction × demo readiness.
 
-**1. Add a test runner and first test suite** *(foundational; highest risk reduction)*
-Add `jest` + `@testing-library/react-native`. First suite: `profileCompletion` boundary cases, `buildChartData` round-trip, `saveChart` coordinate guard, `useChartData` self/guest/view-only branches, OTP navigation reset (complete → Dashboard, incomplete → CompleteProfile), `upsertJournal` create-mode with `undefined id`.
-Files: `client/package.json`, new test files.
+**1. Wire chart preferences to chart math** *(highest user trust impact)*
+Read `house_system`, `zodiac_type`, and `orb_mode` from `public.chart_preferences` in `buildChartData` and `findAspects`. DB CHECK constraints and UI guards already limit values to currently supported defaults, so this is a read-path addition only. Expand CHECK constraints in a new migration when implementing each additional system.
+Files: `lib/astro.ts`, `lib/charts.ts`, `hooks/useChartData.ts`, potentially `DashboardScreen.tsx`.
 
-**2. Add runtime validation for persisted `chart_data`** *(prevents silent crashes on schema-drifted rows)*
-Replace bare `as ChartData` casts in `useChartData` and `MyCharts` with a `parseChartData(json)` validator that returns `null` on shape mismatch and shows a recoverable error state. No schema change needed.
-Files: `client/hooks/useChartData.ts`, `client/screens/MyCharts.tsx`, new `client/lib/chartValidation.ts`.
-
-**3. Surface auto-save failure to the user** *(prevents silent data loss)*
-When `saveChart` throws during auto-save in `useChartData`, show an alert or a degraded save-state indicator rather than swallowing the error. The outer try/catch structure is already there; only the failure branch needs a user-visible response.
-File: `client/hooks/useChartData.ts`.
-
-**4. Review and harden `AuthCallbackScreen`** *(reduces auth/deep-link fragility)*
-Clean up verbose logging. Review `handledOnce` guard for delayed or retried deep-link URLs. Add tests for token/code/fragment paths and the delayed-URL edge case.
-Files: `client/screens/AuthCallbackScreen.tsx`, `client/lib/auth.ts`.
-
-**5. Build guest chart creation UI** *(enables the chartMode infrastructure)*
+**2. Build guest chart creation UI** *(enables the chartMode infrastructure)*
 Create a form screen that collects a name and birth details for another person and navigates to `ChartScreen` with `chartMode: 'guest'`. The hook and route contract are already in place; optionally add a `birth_profiles` table for persisting guest birth records.
 Files: new screen, optionally new migration for `birth_profiles`.
+
+**3. Add ESLint script** *(tooling; ESLint is already installed)*
+Add `"lint": "eslint ."` to `package.json` scripts. Enforce consistent import order and no-unused-vars as a minimum starting ruleset.
+File: `client/package.json`.
+
+**4. Generate Supabase DB types** *(prevents schema/frontend drift)*
+Replace hand-maintained `UserRow`, `ChartData`, `SubscriptionRow`, `PurchaseRow` in `domainTypes.ts` with types generated from the live schema via `supabase gen types typescript`. Future column additions will be caught at compile time.
+Files: `client/lib/domainTypes.ts`, `client/package.json` (gen script).
+
+**5. Normalize DB timestamps and add missing FK indexes** *(low risk, DB housekeeping)*
+Migrate `users` and `charts` `created_at`/`updated_at` from `TIMESTAMP WITHOUT TIME ZONE` to `TIMESTAMP WITH TIME ZONE`. Add indexes on `journals(user_id)`, `conversations(user_id)`, and `messages(conversation_id)`.
+File: new incremental migration.
 
 ---
 
@@ -191,14 +168,18 @@ Files: new screen, optionally new migration for `birth_profiles`.
 
 - `client/lib/domainTypes.ts` is the canonical location for all shared row types: `UserRow`, `UserProfileFields`, `ChartProfile`, `ChartRouteParams`, `ChartMode`, `SubscriptionRow`, `PurchaseRow`. Do not declare local aliases for these in screens.
 - `client/lib/profileCompletion.ts` owns `isProfileComplete`, `needsProfileCompletion`, `profileFromAuthMetadata`, and `ProfileCompletionData`. Import from there; do not redefine these in screens.
+- `client/lib/chartDataValidation.ts` owns `parseChartData(json): ChartData | null`. Use it everywhere `chart_data` is read from the database. Do not use bare `as ChartData` casts on persisted blobs.
 - `client/screens/ChartScreen.tsx` is now a route-validation shell only. Do not add hooks or rendering to it. All chart logic belongs in `client/components/charts/ChartScreenContent.tsx`.
 - `client/components/profile/` contains extracted presentational cards for `ProfileScreen`. Data loading and save handlers remain in `ProfileScreen` itself; do not add Supabase calls to the card components.
+- `useChartData` has mounted/load-ID/save-ID cancellation guards. Any new async state mutation inside the hook must be preceded by an `isCurrentLoad()` or `isCurrentSave()` check.
+- `upsertJournal`: `id` is only added to the payload when `input.id != null`. Do not pass `id: undefined` in any Supabase upsert payload.
 - `saveChart` throws if coordinates are null. Always assert `hasChartIdentityCoordinates(input)` before calling it.
 - Chart identity is `(user_id, birth_date, birth_time, time_zone, birth_lat, birth_lon)`. All save/lookup call sites use all six columns.
 - `public.chart_preferences` CHECK constraints currently allow only `'whole_sign'`, `'tropical'`, and `'medium'`. When implementing a new value, expand the CHECK constraint in a new migration before writing it from the frontend.
 - New migrations must be incremental files in `supabase/migrations/` with timestamp prefix. Do not edit `20260508015720_remote_schema.sql`.
 - Run `supabase db diff` to verify intent before and after any schema change.
 - Run `cd client && npm run typecheck` before any handoff. Zero errors required.
+- Run `cd client && npm test` before any handoff. All suites must pass.
 
 **What not to touch casually:**
 - `client/.env`
@@ -211,12 +192,13 @@ Files: new screen, optionally new migration for `birth_profiles`.
 **Verification commands:**
 ```bash
 cd client && npm run typecheck     # must pass before any handoff
+cd client && npm test              # must pass before any handoff
 cd client && npm run start         # Expo dev server
 supabase db diff                   # verify migration intent
 supabase db reset                  # apply all migrations locally
 ```
 
 **Remaining tooling gaps:**
-- No `npm test` script
-- No `npm run lint` script
+- No `npm run lint` script (ESLint is installed; script not yet added)
 - No `supabase db push` in CI
+- No `supabase gen types` script for generated DB types

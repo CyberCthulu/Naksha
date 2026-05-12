@@ -1,7 +1,7 @@
 # Naksha Decomposition Roadmap
 
 Generated: 2026-05-09
-Last updated: 2026-05-11 — marked completed slices, re-ranked remaining work.
+Last updated: 2026-05-11 — marked stabilization fixes complete, re-ranked remaining test/refactor work.
 Scope: documentation-only roadmap for large-file cleanup before feature expansion.
 
 ## 1. Purpose
@@ -28,7 +28,7 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
 | `DashboardScreen.tsx` | High | Auth user lookup, user-row bootstrap, auth metadata repair, profile completion redirect, chart lookup/build/auto-save, sun/moon summary, navigation UI. | `lib/profileCompletion.ts`, `lib/dashboardChartSummary.ts`, `DashboardSignsCard`, `DashboardBirthDetailsCard`, `DashboardActions`. | Older-account repair remains; incomplete profiles still route to `CompleteProfile`; self chart opens with `chartMode: 'self'`; charts without coordinates do not save. | Reduces future auth/chart risk, but refactor carefully because the load flow is fragile. |
 | `CompleteProfileScreen.tsx` | Medium | Loads user row, maps DB date/time to picker state, manages form state, validates, geocodes fallback, updates `public.users`, renders header/footer/form. | `useCompleteProfileForm`, `userRowToProfileForm`, `profileFormToUserUpdate`, `resolveBirthLocationForSave`, `CompleteProfileHeader`, `CompleteProfileFooter`. | Writes `public.users` only; manual typed location geocodes before save; OpenCage timezone can update `time_zone`; `navigation.goBack()` remains. | Reduces crash risk around date/time/geocode and prepares reuse for guest birth-data entry. |
 | `CheckEmailScreen.tsx` | Medium-High | OTP UI, resend, verify, session/user confirmation, signup profile upsert, fallback profile fetch, completion routing. | `lib/profileCompletion.ts`, `lib/signupProfileBootstrap.ts`, `OtpVerificationCard`. | Resend behavior, OTP alerts, route-param profile upsert, and deterministic reset to `Dashboard` or `CompleteProfile` remain. | Reduces auth-flow drift and future profile-rule risk. |
-| `useChartData.ts` | High | Saved-chart hydration, auth lookup, canonical chart lookup, render-only charts, self auto-save, guest manual save, alerts, chart state. | `lib/chartPersistence.ts`, `hydrateChartData`, `findSavedChartByIdentity`, `saveBuiltChart`, later `useChartLoader`/`useChartSaveAction`. | `fromSaved` path stays valid; self charts can auto-save; guest charts do not auto-save; missing-coordinate charts stay view-only. | High future feature value, but high regression risk without tests. |
+| `useChartData.ts` | High | Saved-chart hydration, `chart_data` validation handling, auth lookup, canonical chart lookup, render-only charts, self auto-save, guest manual save, save warnings, async cancellation guards, alerts, chart state. | `lib/chartPersistence.ts`, `hydrateChartData`, `findSavedChartByIdentity`, `saveBuiltChart`, later `useChartLoader`/`useChartSaveAction`. | `fromSaved` path stays valid; self charts can auto-save; guest charts do not auto-save; missing-coordinate charts stay view-only; save warnings and cancellation behavior remain. | High future feature value, but high regression risk without focused hook tests. |
 | `ChartScreen.tsx` | Medium | Route guard, timezone validation, chart hook wiring, focus side effect, save button state, chart layout, page building, modal wiring. | `ChartScreenContent`, `ChartSaveControl`, `ChartViewOnlyNotice`, `useChartInterpretationPages`, `ChartBody`. | Invalid route empty state, saved chart flow, save button labels, initial Sun focus, and interpretation modal behavior remain. | Reduces crash/hook-order risk and prepares guest chart UI. |
 | `InterpretationModal.tsx` | Medium | Modal shell, duplicate interpretation types, circular pager index math, previous/next controls, close/backdrop, page rendering. | Import shared `interpretationTypes`, `useCircularPager`, `InterpretationModalHeader`, `InterpretationPager`. | Circular swipe, first/last wrap, disabled arrows for one page, and close/reopen reset remain. | Mostly organization, with some pager edge-case risk reduction. |
 
@@ -53,37 +53,56 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
    - `ChartScreenContent.tsx`: all hooks (`useChartData`, `useChartInterpretation`, `useSpace`) and rendering.
    - Passed props: `profile`, `chartMode`, `fromSaved`, `saved`, `tz`.
 
+5. **Runtime `chart_data` validation**
+   - Added `client/lib/chartDataValidation.ts` with `parseChartData`.
+   - Persisted chart reads in `useChartData`, `MyCharts`, and `DashboardScreen` validate JSON before use.
+
+6. **Test runner setup**
+   - Added Jest/Expo config and `npm test`.
+   - Initial pure-helper tests cover `profileCompletion`, `chartDataValidation`, and journal upsert payload behavior.
+
+7. **Auto-save failure visibility**
+   - `useChartData` exposes `saveWarning`.
+   - `ChartScreenContent` shows an inline warning when self chart auto-save fails, while the chart remains visible.
+
+8. **AuthCallback handling hardening**
+   - URL processing now deduplicates real callback URLs without permanently blocking later URL events when no initial URL exists.
+   - Raw URL/token logs and step-by-step success logs were removed; real failures use warnings and user-visible alerts.
+
+9. **Journal create-mode payload fix**
+   - `upsertJournal` omits `id` when creating a new journal entry and preserves it for updates.
+   - Tests cover create/update payload behavior and `chart_id` preservation.
+
+10. **useChartData async cancellation guard**
+    - Added mounted/current-operation guards for async chart load and save work.
+    - Stale loads and post-unmount saves no longer update React state or show stale alerts.
+
+11. **CompleteProfile top spacing polish**
+    - Removed duplicate safe-area padding from the in-screen header.
+    - Shared `AuthContainer` remains responsible for safe-area top padding.
+
 ---
 
 ### REMAINING (re-ranked)
 
-- **Next stabilization slice: Runtime `chart_data` validation** *(reduces crash risk from schema-drifted rows)*
-   - Add `parseChartData(json)` validator in `client/lib/chartValidation.ts`.
-   - Replace bare `as ChartData` casts in `useChartData` and `MyCharts`.
-   - Return `null` on shape mismatch; render a recoverable error state.
-   - Do this before further `useChartData` refactors so the safety net exists first.
+- **Next test slice: useChartData branch coverage** *(highest remaining regression risk)*
+   - Cover valid saved-chart load, invalid `chart_data` fallback, self auto-save success/failure warning, guest manual-save mode, missing-coordinate view-only mode, and stale async load cancellation.
+   - Do this before splitting the hook or extracting Dashboard chart summary logic.
 
-- **Following stabilization slice: Test runner setup** *(foundational; enables safe refactoring of remaining large files)*
-   - Add `jest` + `@testing-library/react-native`.
-   - Cover: `profileCompletion`, `buildChartData`, `saveChart` guard, `useChartData` self/guest/view-only, OTP navigation, `upsertJournal` create-mode.
-   - Must exist before touching `useChartData`, `DashboardScreen`, or `CompleteProfileScreen`.
+- **Following test slice: auth/profile navigation coverage** *(auth reliability)*
+   - Cover `CheckEmailScreen` OTP success paths, complete/incomplete profile resets, resend behavior, and AuthCallback token/code/fragment paths.
+   - Keep AuthCallback and CheckEmail flows separate unless product requirements change.
 
-- **Later stabilization slice: Auto-save failure visibility** *(UX; low-effort, high trust value)*
-   - In `useChartData` auto-save catch block, emit an alert or set a degraded save-state flag.
-   - No schema change needed.
-
-- **Later hardening slice: AuthCallback handling review** *(auth reliability)*
-   - Clean up verbose logging.
-   - Review `handledOnce` guard for delayed/retried deep-link URLs.
-   - Align profile completion rules with `CheckEmailScreen`.
+- **Following test slice: chart generation and persistence helpers** *(chart correctness)*
+   - Cover `buildChartData` with and without coordinates, `saveChart` coordinate guard, canonical identity payloads, and parser edge cases beyond the initial minimal tests.
 
 - **Later decomposition slice: CompleteProfile form/save helpers** *(medium; groundwork for guest birth-data entry)*
    - Extract DB-to-form mapping, form-to-update payload, and manual geocode-before-save logic.
-   - Requires test runner setup first to verify behavior is preserved.
+   - Requires focused save/geocode tests first to verify behavior is preserved.
 
 - **Later decomposition slice: Dashboard chart summary extraction** *(medium; reduces DashboardScreen coupling)*
     - Extract saved-chart lookup/build/sun-moon summary after profile helper extraction is stable.
-    - Requires test runner setup first.
+    - Requires focused Dashboard/useChartData tests first.
 
 - **Later decomposition slice: InterpretationModal pager extraction** *(low; organizational)*
     - Move circular pager calculations and refs into a `useCircularPager` hook.
@@ -91,7 +110,7 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
 
 - **Deferred high-risk slice: useChartData persistence split** *(deferred; high regression risk)*
     - Extract persistence and hydration helpers before considering a larger hook split.
-    - Must wait for test coverage and `chart_data` validation to be in place.
+    - Must wait for focused hook coverage; `chart_data` validation is already in place.
 
 ## 5. Completed Slices (Summary)
 
@@ -107,13 +126,34 @@ Extracted `ChartPreferencesCard`, `ChoiceRow`, `AccountActionsCard`. `onUpdatePr
 **ChartScreen shell/content split** ✅
 `ChartScreen.tsx` retains only route guard (missing birth fields) and timezone validation. `ChartScreenContent.tsx` owns all hooks and rendering after both guards pass. `profile`, `chartMode`, `fromSaved`, `saved`, and `tz` passed as props.
 
+**Runtime `chart_data` validation** ✅
+`client/lib/chartDataValidation.ts` created with `parseChartData`. `useChartData`, `MyCharts`, and `DashboardScreen` now validate persisted chart JSON before use and degrade safely on malformed rows.
+
+**Test runner setup** ✅
+`client/jest.config.js` and `"test": "jest"` added. Initial tests cover `profileCompletion`, `chartDataValidation`, and journal upsert payload behavior.
+
+**Auto-save failure visibility** ✅
+`useChartData` now returns `saveWarning`; `ChartScreenContent` shows an inline warning when self chart auto-save fails. Manual save success clears the warning.
+
+**AuthCallback handling hardening** ✅
+Auth callback URL processing no longer treats a null initial URL as permanently handled. Real URLs are deduplicated, noisy/sensitive logs were removed, and auth errors produce warnings plus user-visible alerts before normal finish routing.
+
+**Journal create-mode payload fix** ✅
+`upsertJournal` omits `id` for create-mode upserts and preserves `id` for update-mode upserts. Tests verify create/update payload construction and `chart_id` behavior.
+
+**useChartData async cancellation guard** ✅
+Mounted/current-operation guards prevent stale async load/save work from updating state or showing stale alerts after unmount or after a newer load supersedes an older one.
+
+**CompleteProfile top spacing polish** ✅
+Removed duplicate top safe-area padding from the screen header. Safe-area behavior remains owned by `AuthContainer`.
+
 ## 6. Next Safe Slice
 
-**Next stabilization slice: Runtime `chart_data` validation**
+**Next test slice: useChartData branch coverage**
 
-Add `parseChartData(json): ChartData | null` in `client/lib/chartValidation.ts`. Replace bare `as ChartData` casts in `useChartData` (saved-chart load path) and `MyCharts`. Return `null` on shape mismatch and render a recoverable error state. This is a small, targeted change with no behavior impact on valid data, and it makes subsequent `useChartData` refactoring safer.
+Add focused hook coverage for the current `useChartData` state machine: valid saved-chart loading, invalid `chart_data` fallback, self auto-save success, self auto-save warning, guest manual-save mode, missing-coordinate view-only mode, manual save success, and stale async load cancellation.
 
-Followed immediately by the test runner setup slice before touching `useChartData`, `DashboardScreen`, or `CompleteProfileScreen`.
+This should happen before splitting `useChartData`, extracting Dashboard chart summary logic, or changing OTP/profile-save flows. The test runner exists, but coverage is still mostly pure helpers.
 
 ## 7. Deferred / High-Risk Refactors
 
@@ -127,9 +167,9 @@ Followed immediately by the test runner setup slice before touching `useChartDat
 
 ## 8. Do Not Touch Without Tests
 
-These areas have no test coverage and are high-regression risk. Do not do high-risk refactors here until the test runner setup slice is complete:
+These areas have little or no focused test coverage and are high-regression risk. Do not do high-risk refactors here until targeted tests exist:
 
-- `useChartData` auto-save/manual-save/canonical lookup behavior.
+- `useChartData` auto-save/manual-save/canonical lookup/save-warning/cancellation behavior.
 - `DashboardScreen` profile repair and self chart auto-save behavior.
 - `CheckEmailScreen` OTP verification and deterministic navigation reset.
 - `CompleteProfileScreen` manual geocode, timezone normalization, and `public.users` update lifecycle.
@@ -139,8 +179,8 @@ These areas have no test coverage and are high-regression risk. Do not do high-r
   - guest charts do not auto-save;
   - guest charts can be manually saved when coordinates exist;
   - missing-coordinate charts remain view-only.
-- `AuthCallbackScreen` deep-link handling and `handledOnce` guard.
-- `upsertJournal` create-mode with `id: undefined`.
+- `AuthCallbackScreen` deep-link handling across token/code/fragment paths.
+- Journal UI flows beyond the pure `upsertJournal` payload tests.
 
 ## 9. Verification Baseline
 
@@ -148,6 +188,8 @@ Run after every implementation slice:
 
 ```bash
 cd client && npm run typecheck
+cd client && npm test
+git diff --check
 ```
 
 Manual verification should match the touched surface:
