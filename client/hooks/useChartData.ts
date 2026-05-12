@@ -33,6 +33,7 @@ type UseChartDataResult = {
   planetHouses: PlanetHousePlacement[] | null
   isSaved: boolean
   canSaveChart: boolean
+  saveWarning: string | null
   saveCurrentChart: () => Promise<void>
 }
 
@@ -58,6 +59,7 @@ export default function useChartData({
     initialSaved?.planet_houses ?? null
   )
   const [isSaved, setIsSaved] = useState<boolean>(!!initialSaved)
+  const [saveWarning, setSaveWarning] = useState<string | null>(null)
 
   const birthDate = profile.birth_date!
   const birthTime = profile.birth_time!
@@ -114,6 +116,7 @@ export default function useChartData({
 
   const loadChart = useCallback(async () => {
     setLoading(true)
+    setSaveWarning(null)
 
     try {
       const parsedSaved = fromSaved ? parseChartData(saved) : null
@@ -227,8 +230,13 @@ export default function useChartData({
             chart_data: payload,
           })
           setIsSaved(true)
+          setSaveWarning(null)
         } catch (e) {
           console.warn('Auto-save failed:', e)
+          setIsSaved(false)
+          setSaveWarning(
+            'This chart is ready to view, but it was not saved automatically. Tap Save Chart Data to try again.'
+          )
         }
       }
     } catch (e: any) {
@@ -305,6 +313,7 @@ export default function useChartData({
         payload.planet_houses,
         true
       )
+      setSaveWarning(null)
 
       Alert.alert('Saved', 'Chart saved to your library.')
     } catch (e: any) {
@@ -330,6 +339,7 @@ export default function useChartData({
     planetHouses,
     isSaved,
     canSaveChart,
+    saveWarning,
     saveCurrentChart,
   }
 }

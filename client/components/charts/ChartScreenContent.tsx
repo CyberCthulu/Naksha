@@ -66,6 +66,7 @@ export default function ChartScreenContent({
     planetHouses,
     isSaved,
     canSaveChart,
+    saveWarning,
     saveCurrentChart,
   } = useChartData({
     profile,
@@ -196,6 +197,14 @@ export default function ChartScreenContent({
           <View style={[uiStyles.card, { alignItems: 'center' }]}>
             <Text style={[uiStyles.text, { textAlign: 'center' }]}>
               Add a birth location to save houses and chart data.
+            </Text>
+          </View>
+        )}
+
+        {canSaveChart && saveWarning && chartMode === 'self' && (
+          <View style={uiStyles.card}>
+            <Text style={[uiStyles.errorText, { textAlign: 'center' }]}>
+              {saveWarning}
             </Text>
           </View>
         )}
