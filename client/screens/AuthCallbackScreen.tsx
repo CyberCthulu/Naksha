@@ -1,21 +1,25 @@
 // screens/AuthCallbackScreen.tsx
 import { useEffect, useRef } from 'react'
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native'
+import { View, Text, ActivityIndicator, StyleSheet, Alert } from 'react-native'
 import * as ExpoLinking from 'expo-linking'
 import supabase from '../lib/supabase'
 
 type VerifyType = 'email' | 'recovery' | 'invite' | 'email_change'
 
 export default function AuthCallbackScreen({ navigation }: any) {
-  const handledOnce = useRef(false)
+  const processingUrl = useRef<string | null>(null)
+  const handledUrl = useRef<string | null>(null)
 
   useEffect(() => {
     const finish = async () => {
       const {
         data: { session },
+        error,
       } = await supabase.auth.getSession()
 
-      console.log('✅ Auth callback done, session user:', session?.user?.email ?? null)
+      if (error) {
+        console.warn('Auth callback session lookup failed:', error.message)
+      }
 
       if (session?.user) {
         navigation.reset({
@@ -30,21 +34,28 @@ export default function AuthCallbackScreen({ navigation }: any) {
       }
     }
 
-    const handleUrl = async (incomingUrl?: string | null) => {
-      if (handledOnce.current) return
-      handledOnce.current = true
+    const showAuthError = (message: string, error: { message?: string }) => {
+      console.warn('Auth callback failed:', error.message ?? message)
+      Alert.alert('Verification failed', message)
+    }
 
+    const handleUrl = async (incomingUrl?: string | null) => {
+      let url: string | null | undefined
       try {
-        const url = incomingUrl ?? (await ExpoLinking.getInitialURL())
-        console.log('🔗 callback incoming url:', url)
+        url = incomingUrl ?? (await ExpoLinking.getInitialURL())
 
         if (!url) {
           await finish()
           return
         }
 
+        if (processingUrl.current === url || handledUrl.current === url) {
+          return
+        }
+
+        processingUrl.current = url
+
         const parsed = ExpoLinking.parse(url)
-        console.log('🔍 parsed callback url:', JSON.stringify(parsed, null, 2))
 
         const tokenHash =
           typeof parsed.queryParams?.token_hash === 'string'
@@ -57,12 +68,18 @@ export default function AuthCallbackScreen({ navigation }: any) {
             : undefined
 
         if (tokenHash && type) {
-          console.log('🟡 verifying OTP with token_hash...')
           const { error } = await supabase.auth.verifyOtp({
             token_hash: tokenHash,
             type,
           })
-          console.log('🟢 verifyOtp error:', error?.message ?? null)
+
+          if (error) {
+            showAuthError(
+              'We could not verify this sign-in link. Please try again or request a new email.',
+              error
+            )
+          }
+
           await finish()
           return
         }
@@ -74,9 +91,15 @@ export default function AuthCallbackScreen({ navigation }: any) {
             : undefined
 
         if (code) {
-          console.log('🟡 exchanging code for session...')
           const { error } = await supabase.auth.exchangeCodeForSession(code)
-          console.log('🟢 exchange result error:', error?.message ?? null)
+
+          if (error) {
+            showAuthError(
+              'We could not complete sign-in from this link. Please try again or request a new email.',
+              error
+            )
+          }
+
           await finish()
           return
         }
@@ -87,8 +110,6 @@ export default function AuthCallbackScreen({ navigation }: any) {
             : undefined
 
         if (fragment) {
-          console.log('🟡 found fragment:', fragment)
-
           const params = new URLSearchParams(fragment)
           const access_token = params.get('access_token') ?? undefined
           const refresh_token = params.get('refresh_token') ?? undefined
@@ -98,7 +119,14 @@ export default function AuthCallbackScreen({ navigation }: any) {
               access_token,
               refresh_token,
             })
-            console.log('🟢 setSession error:', error?.message ?? null)
+
+            if (error) {
+              showAuthError(
+                'We could not restore your sign-in session from this link. Please try again.',
+                error
+              )
+            }
+
             await finish()
             return
           }
@@ -106,15 +134,19 @@ export default function AuthCallbackScreen({ navigation }: any) {
 
         await finish()
       } catch (e) {
-        console.log('🔥 AuthCallbackScreen crash:', e)
+        console.warn('Auth callback failed:', e)
         await finish()
+      } finally {
+        if (url && processingUrl.current === url) {
+          handledUrl.current = url
+          processingUrl.current = null
+        }
       }
     }
 
     handleUrl()
 
     const sub = ExpoLinking.addEventListener('url', ({ url }) => {
-      console.log('📩 url event:', url)
       handleUrl(url)
     })
 

@@ -1,9 +1,7 @@
 import supabase from './supabase'
 
 function getRedirectTo() {
-  const url = 'naksha://auth/callback'
-  console.log('🔗 Supabase emailRedirectTo:', url)
-  return url
+  return 'naksha://auth/callback'
 }
 
 export type ProfileMeta = {
