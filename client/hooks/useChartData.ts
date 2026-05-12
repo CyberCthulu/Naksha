@@ -1,5 +1,5 @@
 //hooks/useChartData.ts
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Alert } from 'react-native'
 
 import {
@@ -45,6 +45,10 @@ export default function useChartData({
   tz,
 }: UseChartDataArgs): UseChartDataResult {
   const initialSaved = fromSaved ? parseChartData(saved) : null
+  const mountedRef = useRef(true)
+  const loadIdRef = useRef(0)
+  const saveIdRef = useRef(0)
+
   const [loading, setLoading] = useState<boolean>(!initialSaved)
   const [planets, setPlanets] = useState<PlanetPos[]>(
     initialSaved?.planets ?? []
@@ -76,6 +80,8 @@ export default function useChartData({
       nextPlanetHouses: PlanetHousePlacement[] | null,
       nextIsSaved: boolean
     ) => {
+      if (!mountedRef.current) return
+
       setPlanets(nextPlanets)
       setAspects(nextAspects)
       setHouses(nextHouses)
@@ -115,11 +121,18 @@ export default function useChartData({
   )
 
   const loadChart = useCallback(async () => {
+    const loadId = loadIdRef.current + 1
+    loadIdRef.current = loadId
+    const isCurrentLoad = () =>
+      mountedRef.current && loadIdRef.current === loadId
+
     setLoading(true)
     setSaveWarning(null)
 
     try {
       const parsedSaved = fromSaved ? parseChartData(saved) : null
+
+      if (!isCurrentLoad()) return
 
       if (parsedSaved) {
         const hydrated = hydrateSavedChart(
@@ -142,6 +155,8 @@ export default function useChartData({
       const {
         data: { user },
       } = await supabase.auth.getUser()
+
+      if (!isCurrentLoad()) return
 
       if (!user) {
         Alert.alert('Not signed in')
@@ -180,6 +195,9 @@ export default function useChartData({
         .eq('birth_lon', birthLon)
 
       const { data: existing, error } = await existingQuery.maybeSingle()
+
+      if (!isCurrentLoad()) return
+
       if (error) throw error
 
       const cd = existing ? parseChartData(existing.chart_data) : null
@@ -229,9 +247,14 @@ export default function useChartData({
             birth_lon: payload.meta.birth_lon,
             chart_data: payload,
           })
+
+          if (!isCurrentLoad()) return
+
           setIsSaved(true)
           setSaveWarning(null)
         } catch (e) {
+          if (!isCurrentLoad()) return
+
           console.warn('Auto-save failed:', e)
           setIsSaved(false)
           setSaveWarning(
@@ -240,9 +263,13 @@ export default function useChartData({
         }
       }
     } catch (e: any) {
-      Alert.alert('Error loading chart', e?.message ?? 'Unknown error')
+      if (isCurrentLoad()) {
+        Alert.alert('Error loading chart', e?.message ?? 'Unknown error')
+      }
     } finally {
-      setLoading(false)
+      if (isCurrentLoad()) {
+        setLoading(false)
+      }
     }
   }, [
     fromSaved,
@@ -260,7 +287,21 @@ export default function useChartData({
   ])
 
   useEffect(() => {
+    mountedRef.current = true
+
+    return () => {
+      mountedRef.current = false
+      loadIdRef.current += 1
+      saveIdRef.current += 1
+    }
+  }, [])
+
+  useEffect(() => {
     loadChart()
+
+    return () => {
+      loadIdRef.current += 1
+    }
   }, [loadChart])
 
   const saveCurrentChart = useCallback(async () => {
@@ -277,9 +318,16 @@ export default function useChartData({
       return
     }
 
+    const saveId = saveIdRef.current + 1
+    saveIdRef.current = saveId
+    const isCurrentSave = () =>
+      mountedRef.current && saveIdRef.current === saveId
+
     const {
       data: { user },
     } = await supabase.auth.getUser()
+
+    if (!isCurrentSave()) return
 
     if (!user) {
       Alert.alert('Not signed in')
@@ -306,6 +354,8 @@ export default function useChartData({
         chart_data: payload,
       })
 
+      if (!isCurrentSave()) return
+
       applyChartState(
         payload.planets,
         payload.aspects,
@@ -317,7 +367,9 @@ export default function useChartData({
 
       Alert.alert('Saved', 'Chart saved to your library.')
     } catch (e: any) {
-      Alert.alert('Save failed', e?.message ?? 'Unknown error')
+      if (isCurrentSave()) {
+        Alert.alert('Save failed', e?.message ?? 'Unknown error')
+      }
     }
   }, [
     isSaved,
