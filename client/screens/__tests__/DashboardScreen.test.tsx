@@ -256,6 +256,23 @@ function expectText(root: TestRenderer.ReactTestRenderer, expected: string) {
   expect(screenText(root).some((text) => text.includes(expected))).toBe(true)
 }
 
+function findPressableByText(
+  root: TestRenderer.ReactTestRenderer,
+  label: string
+) {
+  const pressable = root.root
+    .findAll(
+      (node) =>
+        typeof node.props.onPress === 'function' &&
+        node.findAllByType(Text).some((textNode) =>
+          textValue(textNode.props.children).includes(label)
+        )
+    )[0]
+
+  if (!pressable) throw new Error(`Could not find pressable: ${label}`)
+  return pressable
+}
+
 describe('DashboardScreen', () => {
   beforeEach(() => {
     ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
@@ -308,6 +325,17 @@ describe('DashboardScreen', () => {
     expectText(screen, 'Hello, Ada Lovelace!')
     expectText(screen, 'Your Birth Details')
     expectText(screen, 'Email: ada@example.com')
+  })
+
+  it('opens the guest chart creation flow from the dashboard', async () => {
+    const screen = await renderScreen()
+
+    await act(async () => {
+      findPressableByText(screen, "Create Someone Else's Chart").props.onPress()
+      await settleAsyncWork()
+    })
+
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('CreateGuestChart')
   })
 
   it('redirects incomplete profiles to CompleteProfile', async () => {

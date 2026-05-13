@@ -15,6 +15,7 @@ import CheckEmailScreen from './screens/CheckEmailScreen'
 import DashboardScreen from './screens/DashboardScreen'
 import AuthCallbackScreen from './screens/AuthCallbackScreen'
 import CompleteProfileScreen from './screens/CompleteProfileScreen'
+import CreateGuestChartScreen from './screens/CreateGuestChartScreen'
 import ChartScreen from './screens/ChartScreen'
 import MyChartsScreen from './screens/MyCharts'
 import JournalEditorScreen from './screens/JournalEditorScreen'
@@ -33,6 +34,7 @@ const linking = {
       CheckEmail: 'verify-email',
       Dashboard: 'dashboard',
       CompleteProfile: 'complete-profile',
+      CreateGuestChart: 'guest-chart/new',
       Chart: 'chart',
       MyCharts: 'my-charts',
       AuthCallback: 'auth/callback',
@@ -121,6 +123,15 @@ export default function App() {
                     options={{
                       headerShown: true,
                       title: 'Complete Profile',
+                      headerTransparent: true,
+                    }}
+                  />
+                  <Stack.Screen
+                    name="CreateGuestChart"
+                    component={CreateGuestChartScreen}
+                    options={{
+                      headerShown: true,
+                      title: 'Create Guest Chart',
                       headerTransparent: true,
                     }}
                   />

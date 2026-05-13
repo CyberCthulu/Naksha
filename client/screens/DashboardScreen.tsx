@@ -338,6 +338,13 @@ export default function DashboardScreen() {
       />
 
       <Button
+        title="Create Someone Else's Chart"
+        variant="ghost"
+        onPress={() => nav.navigate('CreateGuestChart')}
+        style={{ marginTop: 8 }}
+      />
+
+      <Button
         title="My Charts"
         variant="ghost"
         onPress={() => nav.navigate('MyCharts')}
