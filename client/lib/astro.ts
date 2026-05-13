@@ -42,6 +42,8 @@ export type Aspect = {
   orb: number
 }
 
+export type AspectOrbMode = 'medium'
+
 const ASPECTS = [
   { type: 'conj',    angle: 0,   orb: 6 },
   { type: 'opp',     angle: 180, orb: 6 },
@@ -50,14 +52,26 @@ const ASPECTS = [
   { type: 'sextile', angle: 60,  orb: 4 },
 ] as const
 
-export function findAspects(planets: PlanetPos[]): Aspect[] {
+function supportedAspectDefinitions(orbMode: AspectOrbMode) {
+  if (orbMode !== 'medium') {
+    throw new Error('Unsupported aspect orb mode. Only medium is implemented.')
+  }
+
+  return ASPECTS
+}
+
+export function findAspects(
+  planets: PlanetPos[],
+  orbMode: AspectOrbMode = 'medium'
+): Aspect[] {
+  const aspectDefinitions = supportedAspectDefinitions(orbMode)
   const res: Aspect[] = []
   for (let i = 0; i < planets.length; i++) {
     for (let j = i + 1; j < planets.length; j++) {
       const a = planets[i], b = planets[j]
       // smallest angular distance 0..180
       const sep = Math.abs(((a.lon - b.lon + 540) % 360) - 180)
-      for (const asp of ASPECTS) {
+      for (const asp of aspectDefinitions) {
         const diff = Math.abs(sep - asp.angle)
         if (diff <= asp.orb) {
           res.push({

@@ -1,10 +1,12 @@
 import supabase from '../supabase'
 import {
   buildChartData,
+  getChartCalculationPreferences,
   saveChart,
   type ChartData,
   type SaveChartInput,
 } from '../charts'
+import { DEFAULT_CHART_CALCULATION_PREFERENCES } from '../domainTypes'
 
 jest.mock('../supabase', () => ({
   __esModule: true,
@@ -78,6 +80,26 @@ function mockChartUpsert({
   return { upsert, select, single, data, error }
 }
 
+function mockPreferencesLookup({
+  data = null,
+  error = null,
+}: {
+  data?: unknown
+  error?: unknown
+} = {}) {
+  const maybeSingle = jest.fn().mockResolvedValue({ data, error })
+  const query: any = {
+    select: jest.fn(() => query),
+    eq: jest.fn(() => query),
+    maybeSingle,
+  }
+  const from = supabase.from as unknown as jest.Mock
+
+  from.mockReturnValue(query)
+
+  return query
+}
+
 describe('buildChartData', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -149,6 +171,105 @@ describe('buildChartData', () => {
     expect(chart.meta.birth_lon).toBeNull()
     expect(chart.houses).toBeNull()
     expect(chart.planet_houses).toBeNull()
+  })
+
+  it('keeps structural output unchanged with explicit supported preferences', () => {
+    const input = {
+      name: 'Test Natal Chart',
+      birth_date: '1990-01-01',
+      birth_time: '12:34:00',
+      time_zone: 'America/Los_Angeles',
+      birth_lat: 37.7749,
+      birth_lon: -122.4194,
+    }
+
+    const defaultChart = buildChartData(input)
+    const explicitChart = buildChartData(
+      input,
+      DEFAULT_CHART_CALCULATION_PREFERENCES
+    )
+
+    expect(explicitChart.planets).toEqual(defaultChart.planets)
+    expect(explicitChart.aspects).toEqual(defaultChart.aspects)
+    expect(explicitChart.houses).toEqual(defaultChart.houses)
+    expect(explicitChart.planet_houses).toEqual(defaultChart.planet_houses)
+    expect(explicitChart.meta).toEqual(
+      expect.objectContaining({
+        name: defaultChart.meta.name,
+        birth_date: defaultChart.meta.birth_date,
+        birth_time: defaultChart.meta.birth_time,
+        time_zone: defaultChart.meta.time_zone,
+        birth_lat: defaultChart.meta.birth_lat,
+        birth_lon: defaultChart.meta.birth_lon,
+        instant_utc: defaultChart.meta.instant_utc,
+      })
+    )
+  })
+
+  it('rejects unsupported explicit calculation preferences', () => {
+    expect(() =>
+      buildChartData(
+        {
+          name: 'Test Natal Chart',
+          birth_date: '1990-01-01',
+          birth_time: '12:34:00',
+          time_zone: 'America/Los_Angeles',
+          birth_lat: 37.7749,
+          birth_lon: -122.4194,
+        },
+        {
+          ...DEFAULT_CHART_CALCULATION_PREFERENCES,
+          house_system: 'placidus',
+        } as any
+      )
+    ).toThrow('Unsupported chart calculation preferences')
+  })
+})
+
+describe('getChartCalculationPreferences', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    jest.spyOn(console, 'warn').mockImplementation(jest.fn())
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  it('returns stored supported preferences', async () => {
+    const row = {
+      ...DEFAULT_CHART_CALCULATION_PREFERENCES,
+      show_house_degrees: true,
+    }
+    const query = mockPreferencesLookup({ data: row })
+
+    await expect(getChartCalculationPreferences('user-1')).resolves.toEqual(row)
+    expect(supabase.from).toHaveBeenCalledWith('chart_preferences')
+    expect(query.select).toHaveBeenCalledWith(
+      'house_system,zodiac_type,orb_mode,show_house_degrees'
+    )
+    expect(query.eq).toHaveBeenCalledWith('user_id', 'user-1')
+  })
+
+  it('falls back to defaults when the preference row is missing', async () => {
+    mockPreferencesLookup()
+
+    await expect(getChartCalculationPreferences('user-1')).resolves.toEqual(
+      DEFAULT_CHART_CALCULATION_PREFERENCES
+    )
+  })
+
+  it('falls back to defaults when preference lookup fails', async () => {
+    const error = new Error('preferences unavailable')
+    mockPreferencesLookup({ error })
+
+    await expect(getChartCalculationPreferences('user-1')).resolves.toEqual(
+      DEFAULT_CHART_CALCULATION_PREFERENCES
+    )
+    expect(console.warn).toHaveBeenCalledWith(
+      'Chart preferences fetch failed:',
+      error
+    )
   })
 })
 

@@ -6,7 +6,11 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import supabase from '../lib/supabase'
 import { signOut } from '../lib/auth'
 import { normalizeZone } from '../lib/timezones'
-import { saveChart, buildChartData } from '../lib/charts'
+import {
+  saveChart,
+  buildChartData,
+  getChartCalculationPreferences,
+} from '../lib/charts'
 import { parseChartData } from '../lib/chartDataValidation'
 import type { UserRow } from '../lib/domainTypes'
 import {
@@ -178,14 +182,21 @@ export default function DashboardScreen() {
         return
       }
 
-      const payload = buildChartData({
-        name: `${u.first_name ?? 'My'} Natal Chart`,
-        birth_date: u.birth_date,
-        birth_time: u.birth_time,
-        time_zone: tz,
-        birth_lat: u.birth_lat ?? null,
-        birth_lon: u.birth_lon ?? null,
-      })
+      const calculationPreferences = await getChartCalculationPreferences(
+        user.id
+      )
+
+      const payload = buildChartData(
+        {
+          name: `${u.first_name ?? 'My'} Natal Chart`,
+          birth_date: u.birth_date,
+          birth_time: u.birth_time,
+          time_zone: tz,
+          birth_lat: u.birth_lat ?? null,
+          birth_lon: u.birth_lon ?? null,
+        },
+        calculationPreferences
+      )
 
       if (hasChartCoordinates) {
         try {

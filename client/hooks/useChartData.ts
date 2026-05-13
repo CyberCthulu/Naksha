@@ -12,7 +12,12 @@ import {
 } from '../lib/astro'
 import { birthToUTC } from '../lib/time'
 import supabase from '../lib/supabase'
-import { buildChartData, saveChart, type ChartData } from '../lib/charts'
+import {
+  buildChartData,
+  getChartCalculationPreferences,
+  saveChart,
+  type ChartData,
+} from '../lib/charts'
 import { parseChartData } from '../lib/chartDataValidation'
 import type { ChartMode, ChartProfile } from '../lib/domainTypes'
 
@@ -162,16 +167,25 @@ export default function useChartData({
         return
       }
 
+      const calculationPreferences = await getChartCalculationPreferences(
+        user.id
+      )
+
+      if (!isCurrentLoad()) return
+
       // Null coordinates do not form a stable Postgres unique identity, so render only.
       if (!canSaveChart) {
-        const payload = buildChartData({
-          name: chartName,
-          birth_date: birthDate,
-          birth_time: birthTime,
-          time_zone: tz,
-          birth_lat: null,
-          birth_lon: null,
-        })
+        const payload = buildChartData(
+          {
+            name: chartName,
+            birth_date: birthDate,
+            birth_time: birthTime,
+            time_zone: tz,
+            birth_lat: null,
+            birth_lon: null,
+          },
+          calculationPreferences
+        )
 
         applyChartState(
           payload.planets,
@@ -218,14 +232,17 @@ export default function useChartData({
         return
       }
 
-      const payload = buildChartData({
-        name: chartName,
-        birth_date: birthDate,
-        birth_time: birthTime,
-        time_zone: tz,
-        birth_lat: birthLat,
-        birth_lon: birthLon,
-      })
+      const payload = buildChartData(
+        {
+          name: chartName,
+          birth_date: birthDate,
+          birth_time: birthTime,
+          time_zone: tz,
+          birth_lat: birthLat,
+          birth_lon: birthLon,
+        },
+        calculationPreferences
+      )
 
       applyChartState(
         payload.planets,
@@ -334,14 +351,23 @@ export default function useChartData({
     }
 
     try {
-      const payload = buildChartData({
-        name: chartName,
-        birth_date: birthDate,
-        birth_time: birthTime,
-        time_zone: tz,
-        birth_lat: birthLat,
-        birth_lon: birthLon,
-      })
+      const calculationPreferences = await getChartCalculationPreferences(
+        user.id
+      )
+
+      if (!isCurrentSave()) return
+
+      const payload = buildChartData(
+        {
+          name: chartName,
+          birth_date: birthDate,
+          birth_time: birthTime,
+          time_zone: tz,
+          birth_lat: birthLat,
+          birth_lon: birthLon,
+        },
+        calculationPreferences
+      )
 
       await saveChart(user.id, {
         name: payload.meta.name,

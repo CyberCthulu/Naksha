@@ -5,8 +5,15 @@ import TestRenderer from 'react-test-renderer'
 import useChartData from '../useChartData'
 import supabase from '../../lib/supabase'
 import type { ChartData } from '../../lib/charts'
-import { buildChartData, saveChart } from '../../lib/charts'
-import type { ChartProfile } from '../../lib/domainTypes'
+import {
+  buildChartData,
+  getChartCalculationPreferences,
+  saveChart,
+} from '../../lib/charts'
+import {
+  DEFAULT_CHART_CALCULATION_PREFERENCES,
+  type ChartProfile,
+} from '../../lib/domainTypes'
 
 jest.mock('../../lib/supabase', () => ({
   __esModule: true,
@@ -21,6 +28,7 @@ jest.mock('../../lib/supabase', () => ({
 jest.mock('../../lib/charts', () => ({
   __esModule: true,
   buildChartData: jest.fn(),
+  getChartCalculationPreferences: jest.fn(),
   saveChart: jest.fn(),
 }))
 
@@ -103,6 +111,12 @@ function mockedBuildChartData() {
   return buildChartData as jest.MockedFunction<typeof buildChartData>
 }
 
+function mockedGetChartCalculationPreferences() {
+  return getChartCalculationPreferences as jest.MockedFunction<
+    typeof getChartCalculationPreferences
+  >
+}
+
 function mockedSaveChart() {
   return saveChart as jest.MockedFunction<typeof saveChart>
 }
@@ -141,6 +155,9 @@ describe('useChartData', () => {
     mockSignedInUser()
     mockChartLookup()
     mockedBuildChartData().mockReturnValue(makeChartData())
+    mockedGetChartCalculationPreferences().mockResolvedValue(
+      DEFAULT_CHART_CALCULATION_PREFERENCES
+    )
     mockedSaveChart().mockResolvedValue({ id: 1 } as any)
   })
 
@@ -177,6 +194,7 @@ describe('useChartData', () => {
     expect(result.canSaveChart).toBe(true)
     expect(mockedSupabase().auth.getUser).not.toHaveBeenCalled()
     expect(mockedBuildChartData()).not.toHaveBeenCalled()
+    expect(mockedGetChartCalculationPreferences()).not.toHaveBeenCalled()
     expect(mockedSaveChart()).not.toHaveBeenCalled()
   })
 
@@ -197,6 +215,9 @@ describe('useChartData', () => {
     expect(result.planets).toEqual(recomputed.planets)
     expect(result.aspects).toEqual(recomputed.aspects)
     expect(mockedBuildChartData()).toHaveBeenCalledTimes(1)
+    expect(mockedGetChartCalculationPreferences()).toHaveBeenCalledWith(
+      'user-1'
+    )
     expect(mockedSaveChart()).toHaveBeenCalledTimes(1)
     expect(Alert.alert).not.toHaveBeenCalledWith(
       'Error loading chart',
@@ -230,15 +251,21 @@ describe('useChartData', () => {
     expect(result.canSaveChart).toBe(false)
     expect(result.isSaved).toBe(false)
     expect(result.planets).toEqual(viewOnlyChart.planets)
-    expect(mockedBuildChartData()).toHaveBeenCalledWith({
-      name: 'Ada Natal Chart',
-      birth_date: '1815-12-10',
-      birth_time: '12:00:00',
-      time_zone: 'Europe/London',
-      birth_lat: null,
-      birth_lon: null,
-    })
+    expect(mockedBuildChartData()).toHaveBeenCalledWith(
+      {
+        name: 'Ada Natal Chart',
+        birth_date: '1815-12-10',
+        birth_time: '12:00:00',
+        time_zone: 'Europe/London',
+        birth_lat: null,
+        birth_lon: null,
+      },
+      DEFAULT_CHART_CALCULATION_PREFERENCES
+    )
     expect(mockedSupabase().from).not.toHaveBeenCalled()
+    expect(mockedGetChartCalculationPreferences()).toHaveBeenCalledWith(
+      'user-1'
+    )
     expect(mockedSaveChart()).not.toHaveBeenCalled()
   })
 
@@ -252,6 +279,9 @@ describe('useChartData', () => {
     expect(result.loading).toBe(false)
     expect(result.isSaved).toBe(true)
     expect(result.saveWarning).toBeNull()
+    expect(mockedGetChartCalculationPreferences()).toHaveBeenCalledWith(
+      'user-1'
+    )
     expect(mockedSaveChart()).toHaveBeenCalledTimes(1)
   })
 
@@ -266,6 +296,9 @@ describe('useChartData', () => {
     expect(result.canSaveChart).toBe(true)
     expect(result.isSaved).toBe(false)
     expect(result.saveWarning).toBeNull()
+    expect(mockedGetChartCalculationPreferences()).toHaveBeenCalledWith(
+      'user-1'
+    )
     expect(mockedSaveChart()).not.toHaveBeenCalled()
   })
 
@@ -309,6 +342,7 @@ describe('useChartData', () => {
     })
 
     expect(mockedSaveChart()).toHaveBeenCalledTimes(2)
+    expect(mockedGetChartCalculationPreferences()).toHaveBeenCalledTimes(2)
     expect(currentResult().saveWarning).toBeNull()
     expect(currentResult().isSaved).toBe(true)
     expect(Alert.alert).toHaveBeenCalledWith(

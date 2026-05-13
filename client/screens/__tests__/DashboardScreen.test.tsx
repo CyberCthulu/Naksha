@@ -4,8 +4,17 @@ import TestRenderer from 'react-test-renderer'
 
 import DashboardScreen from '../DashboardScreen'
 import supabase from '../../lib/supabase'
-import { buildChartData, saveChart, type ChartData } from '../../lib/charts'
-import type { UserProfileFields, UserRow } from '../../lib/domainTypes'
+import {
+  buildChartData,
+  getChartCalculationPreferences,
+  saveChart,
+  type ChartData,
+} from '../../lib/charts'
+import {
+  DEFAULT_CHART_CALCULATION_PREFERENCES,
+  type UserProfileFields,
+  type UserRow,
+} from '../../lib/domainTypes'
 
 const mockNavigation = {
   navigate: jest.fn(),
@@ -30,6 +39,7 @@ jest.mock('../../lib/auth', () => ({
 jest.mock('../../lib/charts', () => ({
   __esModule: true,
   buildChartData: jest.fn(),
+  getChartCalculationPreferences: jest.fn(),
   saveChart: jest.fn(),
 }))
 
@@ -141,6 +151,12 @@ function mockedSupabase() {
 
 function mockedBuildChartData() {
   return buildChartData as jest.MockedFunction<typeof buildChartData>
+}
+
+function mockedGetChartCalculationPreferences() {
+  return getChartCalculationPreferences as jest.MockedFunction<
+    typeof getChartCalculationPreferences
+  >
 }
 
 function mockedSaveChart() {
@@ -267,6 +283,9 @@ describe('DashboardScreen', () => {
       chartRow: { chart_data: makeChartData() },
     })
     mockedBuildChartData().mockReturnValue(makeChartData())
+    mockedGetChartCalculationPreferences().mockResolvedValue(
+      DEFAULT_CHART_CALCULATION_PREFERENCES
+    )
     mockedSaveChart().mockResolvedValue({ id: 1 } as any)
   })
 
@@ -306,6 +325,7 @@ describe('DashboardScreen', () => {
 
     expect(mockNavigation.navigate).toHaveBeenCalledWith('CompleteProfile')
     expect(mockedBuildChartData()).not.toHaveBeenCalled()
+    expect(mockedGetChartCalculationPreferences()).not.toHaveBeenCalled()
     expect(mockedSaveChart()).not.toHaveBeenCalled()
     expect(mockedSupabase().from).not.toHaveBeenCalledWith('charts')
   })
@@ -357,6 +377,7 @@ describe('DashboardScreen', () => {
     expectText(screen, 'Aries')
     expectText(screen, 'Taurus')
     expect(mockedBuildChartData()).not.toHaveBeenCalled()
+    expect(mockedGetChartCalculationPreferences()).not.toHaveBeenCalled()
     expect(mockedSaveChart()).not.toHaveBeenCalled()
   })
 
@@ -375,14 +396,20 @@ describe('DashboardScreen', () => {
 
     const screen = await renderScreen()
 
-    expect(mockedBuildChartData()).toHaveBeenCalledWith({
-      name: 'Ada Natal Chart',
-      birth_date: completeUser.birth_date,
-      birth_time: completeUser.birth_time,
-      time_zone: completeUser.time_zone,
-      birth_lat: completeUser.birth_lat,
-      birth_lon: completeUser.birth_lon,
-    })
+    expect(mockedBuildChartData()).toHaveBeenCalledWith(
+      {
+        name: 'Ada Natal Chart',
+        birth_date: completeUser.birth_date,
+        birth_time: completeUser.birth_time,
+        time_zone: completeUser.time_zone,
+        birth_lat: completeUser.birth_lat,
+        birth_lon: completeUser.birth_lon,
+      },
+      DEFAULT_CHART_CALCULATION_PREFERENCES
+    )
+    expect(mockedGetChartCalculationPreferences()).toHaveBeenCalledWith(
+      'user-1'
+    )
     expect(mockedSaveChart()).toHaveBeenCalledTimes(1)
     expectText(screen, 'Gemini')
     expectText(screen, 'Libra')
@@ -401,6 +428,9 @@ describe('DashboardScreen', () => {
 
     await renderScreen()
 
+    expect(mockedGetChartCalculationPreferences()).toHaveBeenCalledWith(
+      'user-1'
+    )
     expect(mockedSaveChart()).toHaveBeenCalledWith('user-1', {
       name: builtChart.meta.name,
       birth_date: builtChart.meta.birth_date,
@@ -433,14 +463,20 @@ describe('DashboardScreen', () => {
     const screen = await renderScreen()
 
     expect(mockedSupabase().from).not.toHaveBeenCalledWith('charts')
-    expect(mockedBuildChartData()).toHaveBeenCalledWith({
-      name: 'Ada Natal Chart',
-      birth_date: completeUser.birth_date,
-      birth_time: completeUser.birth_time,
-      time_zone: completeUser.time_zone,
-      birth_lat: null,
-      birth_lon: null,
-    })
+    expect(mockedBuildChartData()).toHaveBeenCalledWith(
+      {
+        name: 'Ada Natal Chart',
+        birth_date: completeUser.birth_date,
+        birth_time: completeUser.birth_time,
+        time_zone: completeUser.time_zone,
+        birth_lat: null,
+        birth_lon: null,
+      },
+      DEFAULT_CHART_CALCULATION_PREFERENCES
+    )
+    expect(mockedGetChartCalculationPreferences()).toHaveBeenCalledWith(
+      'user-1'
+    )
     expect(mockedSaveChart()).not.toHaveBeenCalled()
     expectText(screen, 'Pisces')
     expectText(screen, 'Aries')

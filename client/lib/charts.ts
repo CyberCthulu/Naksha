@@ -13,6 +13,13 @@ import {
 
 import { birthToUTC } from './time'
 import { normalizeZone } from './timezones'
+import {
+  DEFAULT_CHART_CALCULATION_PREFERENCES,
+  parseChartCalculationPreferences,
+  resolveChartCalculationPreferences,
+  type ChartCalculationPreferences,
+  type ChartPreferencesRow,
+} from './domainTypes'
 
 export type ChartMeta = {
   name: string
@@ -56,13 +63,47 @@ export type BuildChartInput = {
   birth_lon?: number | null
 }
 
-export function buildChartData(input: BuildChartInput): ChartData {
+const CHART_CALCULATION_PREFERENCES_SELECT =
+  'house_system,zodiac_type,orb_mode,show_house_degrees'
+
+export async function getChartCalculationPreferences(
+  userId: string
+): Promise<ChartCalculationPreferences> {
+  const { data, error } = await supabase
+    .from('chart_preferences')
+    .select(CHART_CALCULATION_PREFERENCES_SELECT)
+    .eq('user_id', userId)
+    .maybeSingle<ChartPreferencesRow>()
+
+  if (error) {
+    console.warn('Chart preferences fetch failed:', error)
+    return DEFAULT_CHART_CALCULATION_PREFERENCES
+  }
+
+  if (!data) return DEFAULT_CHART_CALCULATION_PREFERENCES
+
+  const parsed = parseChartCalculationPreferences(data)
+  if (!parsed) {
+    console.warn('Unsupported chart preferences found; using defaults.')
+    return DEFAULT_CHART_CALCULATION_PREFERENCES
+  }
+
+  return parsed
+}
+
+export function buildChartData(
+  input: BuildChartInput,
+  calculationPreferences?: ChartCalculationPreferences
+): ChartData {
+  const preferences = resolveChartCalculationPreferences(
+    calculationPreferences
+  )
   const tz = normalizeZone(input.time_zone)
   if (!tz) throw new Error('Invalid time zone')
 
   const { jsDate, dtUTC } = birthToUTC(input.birth_date, input.birth_time, tz)
   const planets = computeNatalPlanets(jsDate)
-  const aspects = findAspects(planets)
+  const aspects = findAspects(planets, preferences.orb_mode)
 
   const hasLocation = input.birth_lat != null && input.birth_lon != null
 
