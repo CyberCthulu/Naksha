@@ -1,7 +1,7 @@
 # Naksha Decomposition Roadmap
 
 Generated: 2026-05-09
-Last updated: 2026-05-12 — chart preference calculation plumbing complete.
+Last updated: 2026-05-12 — Guest Chart Creation UI v1 complete.
 Scope: documentation-only roadmap for large-file cleanup before feature expansion.
 
 ## 1. Purpose
@@ -29,7 +29,7 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
 | `CompleteProfileScreen.tsx` | Medium | Loads user row, maps DB date/time to picker state, manages form state, validates, geocodes fallback, updates `public.users`, renders header/footer/form. | `useCompleteProfileForm`, `userRowToProfileForm`, `profileFormToUserUpdate`, `resolveBirthLocationForSave`, `CompleteProfileHeader`, `CompleteProfileFooter`. | Writes `public.users` only; manual typed location geocodes before save; OpenCage timezone can update `time_zone`; `navigation.goBack()` remains. | Save/geocode lifecycle tests now guard current behavior and prepare reuse for guest birth-data entry. |
 | `CheckEmailScreen.tsx` | Medium-High | OTP UI, resend, verify, session/user confirmation, signup profile upsert, fallback profile fetch, completion routing. | `lib/profileCompletion.ts`, `lib/signupProfileBootstrap.ts`, `OtpVerificationCard`. | Resend behavior, OTP alerts, route-param profile upsert, and deterministic reset to `Dashboard` or `CompleteProfile` remain. | Reduces auth-flow drift and future profile-rule risk. |
 | `useChartData.ts` | High | Saved-chart hydration, `chart_data` validation handling, auth lookup, canonical chart lookup, render-only charts, self auto-save, guest manual save, save warnings, async cancellation guards, alerts, chart state. | `lib/chartPersistence.ts`, `hydrateChartData`, `findSavedChartByIdentity`, `saveBuiltChart`, later `useChartLoader`/`useChartSaveAction`. | `fromSaved` path stays valid; self charts can auto-save; guest charts do not auto-save; missing-coordinate charts stay view-only; save warnings and cancellation behavior remain. | High future feature value; focused hook tests now guard current behavior. |
-| `ChartScreen.tsx` | Medium | Route guard, timezone validation, chart hook wiring, focus side effect, save button state, chart layout, page building, modal wiring. | `ChartScreenContent`, `ChartSaveControl`, `ChartViewOnlyNotice`, `useChartInterpretationPages`, `ChartBody`. | Invalid route empty state, saved chart flow, save button labels, initial Sun focus, and interpretation modal behavior remain. | Reduces crash/hook-order risk and prepares guest chart UI. |
+| `ChartScreen.tsx` | Medium | Route guard, timezone validation, chart hook wiring, focus side effect, save button state, chart layout, page building, modal wiring. | `ChartScreenContent`, `ChartSaveControl`, `ChartViewOnlyNotice`, `useChartInterpretationPages`, `ChartBody`. | Invalid route empty state, saved chart flow, save button labels, initial Sun focus, guest manual-save behavior, and interpretation modal behavior remain. | Reduces crash/hook-order risk and now supports the guest chart entry flow. |
 | `InterpretationModal.tsx` | Medium | Modal shell, duplicate interpretation types, circular pager index math, previous/next controls, close/backdrop, page rendering. | Import shared `interpretationTypes`, `useCircularPager`, `InterpretationModalHeader`, `InterpretationPager`. | Circular swipe, first/last wrap, disabled arrows for one page, and close/reopen reset remain. | Pager tests now guard current behavior; extraction is optional and should be feature-attached. |
 
 ## 4. Ranked Roadmap
@@ -117,13 +117,26 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
     - `useChartData` and `DashboardScreen` pass preferences into computed chart builds.
     - Output intentionally remains Whole Sign, Tropical, and medium orbs only.
 
+20. **Guest Chart Creation UI v1**
+    - `CreateGuestChartScreen` added.
+    - `CreateGuestChart` route registered.
+    - Dashboard entry added: "Create Someone Else's Chart".
+    - Guest form collects name, birth date, birth time, location, time zone, and selected coordinates when available.
+    - Submit navigates to `Chart` with `chartMode: 'guest'`.
+    - Typed-location guest charts may pass null coordinates and rely on existing View Only behavior.
+    - No schema, migration, `birth_profiles` table, synastry, compatibility, composite chart, report, or premium gating added.
+
 ---
 
 ### REMAINING (re-ranked)
 
-- **Next feature slice: Guest chart creation UI** *(activates existing chartMode groundwork)*
-   - Add a user-facing form for another person's birth data and navigate to `ChartScreen` with `chartMode: 'guest'`.
-   - Do not add synastry, compatibility, or guest-specific schema until that workflow is defined.
+- **Next feature slice: Guest chart polish/persistence decision** *(builds on Guest Chart UI v1)*
+   - Decide whether guest charts remain one-off entries, get UX polish only, or need reusable guest birth profiles/relationship labels.
+   - Do not add a `birth_profiles` table or guest-specific schema until the product workflow is defined.
+
+- **Next feature slice: Daily transits / Today's Energy v1** *(feature-facing growth)*
+   - Add a small daily astrology surface using existing profile/chart data.
+   - Do not expand relationship analysis, premium gating, or unsupported chart systems in the same slice.
 
 - **Later feature slice: Additional chart systems** *(product/math scope)*
    - Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, and house-degree display are not implemented.
@@ -203,23 +216,26 @@ Expo-compatible ESLint flat config and `"lint": "eslint ."` added. Targeted clea
 **Chart preferences calculation plumbing** ✅
 `getChartCalculationPreferences` reads `public.chart_preferences` and falls back to defaults when the row is missing or unreadable. `buildChartData` accepts `ChartCalculationPreferences`, `findAspects` receives `orb_mode`, and `useChartData` plus `DashboardScreen` pass preferences into computed chart builds. Current output remains intentionally unchanged: Whole Sign, Tropical, and medium orbs only.
 
+**Guest Chart Creation UI v1** ✅
+`CreateGuestChartScreen` added, `CreateGuestChart` route registered, and Dashboard now exposes "Create Someone Else's Chart". The form collects name, birth date, birth time, location, time zone, and selected coordinates when available. Submit navigates to `Chart` with `chartMode: 'guest'`. Typed-location guest charts may pass null coordinates and rely on existing View Only behavior. No schema, migrations, `birth_profiles` table, synastry, compatibility, composite chart, report, or premium gating added.
+
 **Final cleanup verification baseline** ✅
-`npm run typecheck`, `npm test` (10 suites / 60 tests), and `npm run lint` pass cleanly.
+`npm run typecheck`, `npm test` (11 suites / 64 tests), and `npm run lint` pass cleanly.
 
 ## 6. Next Safe Slice
 
-**Next feature slice: Guest chart creation UI**
+**Next feature slice: Guest chart polish/persistence decision**
 
 Cleanup/stabilization is complete enough for feature expansion. Future cleanup should be attached to specific feature work or real defects, not broad open-ended refactoring.
 
-The best next feature-facing slice is activating the existing `chartMode: 'guest'` groundwork with a user-facing entry flow:
+Guest Chart Creation UI v1 is now built. The best next feature-facing slice is deciding whether to keep guest charts as one-off chart entries or add persistence/profile-management affordances:
 
-- Collect another person's name and birth details.
-- Navigate to `ChartScreen` with `chartMode: 'guest'`.
+- Polish the current form only where it improves the one-off flow.
+- Decide whether reusable guest birth profiles, relationship labels, or a future `birth_profiles` table are needed.
 - Preserve guest manual-save behavior and self chart auto-save behavior.
 - Keep missing-coordinate guest charts View Only.
 
-Do not claim synastry, compatibility, guest-specific schema, Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, or house-degree display are implemented until their product behavior, math/schema needs, UI, and tests are defined.
+A viable alternate next feature slice is daily transits / Today's Energy v1. Do not claim synastry, compatibility, composite charts, reports, premium gating, guest-specific schema, Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, or house-degree display are implemented until their product behavior, math/schema needs, UI, and tests are defined.
 
 ## 7. Deferred / High-Risk Refactors
 
@@ -227,7 +243,7 @@ Do not claim synastry, compatibility, guest-specific schema, Placidus, Equal Hou
 - Moving the entire `DashboardScreen.load` flow into a hook in one pass without a feature or defect reason.
 - Reworking `CheckEmailScreen` OTP/session/upsert flow beyond covered behavior without a product reason.
 - Changing `CompleteProfileScreen` geocode/timezone/save sequencing without updating focused tests.
-- Adding guest chart schema fields such as `chart_type`, `is_primary`, `relationship_label`, or a `birth_profiles` table.
+- Adding guest chart schema fields such as `chart_type`, `is_primary`, `relationship_label`, or a `birth_profiles` table before the guest profile-management workflow is defined.
 - Reworking subscriptions, purchases, account deletion, or exports before those features are product-ready.
 - Implementing additional chart systems before math, DB constraints, UI, and tests are ready.
 
@@ -241,6 +257,7 @@ These areas now have focused coverage or explicit contracts, but they remain hig
 - `CompleteProfileScreen` manual geocode, timezone normalization, and `public.users` update lifecycle.
 - `InterpretationModal` circular pager logic.
 - Additional chart preference modes once preferences expand beyond supported defaults.
+- Guest chart persistence/profile management if the product moves beyond one-off guest chart entry.
 - Canonical chart identity and save behavior:
   - self charts with coordinates may auto-save;
   - guest charts do not auto-save;
