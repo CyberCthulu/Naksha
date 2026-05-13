@@ -1,7 +1,7 @@
 # Naksha Decomposition Roadmap
 
 Generated: 2026-05-09
-Last updated: 2026-05-11 — marked stabilization fixes complete, re-ranked remaining test/refactor work.
+Last updated: 2026-05-12 — cleanup/stabilization complete enough for feature expansion.
 Scope: documentation-only roadmap for large-file cleanup before feature expansion.
 
 ## 1. Purpose
@@ -25,12 +25,12 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
 | File | Risk | Current mixed responsibilities | Best extraction candidates | Behavior that must remain unchanged | Main value |
 | --- | --- | --- | --- | --- | --- |
 | `ProfileScreen.tsx` | Medium | Loads profile, chart preferences, subscription, purchases; creates default preference row; renders account, birth details, preferences, billing, purchases, privacy, and sign-out. | `useProfileScreenData`, `lib/chartPreferences.ts`, `ProfileHeader`, `BirthDetailsCard`, `ChartPreferencesCard`, `SubscriptionCard`, `PurchasesCard`, `AccountActionsCard`, reusable `InfoRow`/`ChoiceRow`. | No auth metadata preference writes; default `chart_preferences` row is created/upserted; unsupported options stay disabled/coming soon. | Mostly organization, plus lower future risk for preferences and billing work. |
-| `DashboardScreen.tsx` | High | Auth user lookup, user-row bootstrap, auth metadata repair, profile completion redirect, chart lookup/build/auto-save, sun/moon summary, navigation UI. | `lib/profileCompletion.ts`, `lib/dashboardChartSummary.ts`, `DashboardSignsCard`, `DashboardBirthDetailsCard`, `DashboardActions`. | Older-account repair remains; incomplete profiles still route to `CompleteProfile`; self chart opens with `chartMode: 'self'`; charts without coordinates do not save. | Reduces future auth/chart risk, but refactor carefully because the load flow is fragile. |
-| `CompleteProfileScreen.tsx` | Medium | Loads user row, maps DB date/time to picker state, manages form state, validates, geocodes fallback, updates `public.users`, renders header/footer/form. | `useCompleteProfileForm`, `userRowToProfileForm`, `profileFormToUserUpdate`, `resolveBirthLocationForSave`, `CompleteProfileHeader`, `CompleteProfileFooter`. | Writes `public.users` only; manual typed location geocodes before save; OpenCage timezone can update `time_zone`; `navigation.goBack()` remains. | Reduces crash risk around date/time/geocode and prepares reuse for guest birth-data entry. |
+| `DashboardScreen.tsx` | High | Auth user lookup, user-row bootstrap, auth metadata repair, profile completion redirect, chart lookup/build/auto-save, sun/moon summary, navigation UI. | `lib/profileCompletion.ts`, `lib/dashboardChartSummary.ts`, `DashboardSignsCard`, `DashboardBirthDetailsCard`, `DashboardActions`. | Older-account repair remains; incomplete profiles still route to `CompleteProfile`; self chart opens with `chartMode: 'self'`; charts without coordinates do not save. | Focused tests now guard current behavior; future extraction should be tied to a feature or defect. |
+| `CompleteProfileScreen.tsx` | Medium | Loads user row, maps DB date/time to picker state, manages form state, validates, geocodes fallback, updates `public.users`, renders header/footer/form. | `useCompleteProfileForm`, `userRowToProfileForm`, `profileFormToUserUpdate`, `resolveBirthLocationForSave`, `CompleteProfileHeader`, `CompleteProfileFooter`. | Writes `public.users` only; manual typed location geocodes before save; OpenCage timezone can update `time_zone`; `navigation.goBack()` remains. | Save/geocode lifecycle tests now guard current behavior and prepare reuse for guest birth-data entry. |
 | `CheckEmailScreen.tsx` | Medium-High | OTP UI, resend, verify, session/user confirmation, signup profile upsert, fallback profile fetch, completion routing. | `lib/profileCompletion.ts`, `lib/signupProfileBootstrap.ts`, `OtpVerificationCard`. | Resend behavior, OTP alerts, route-param profile upsert, and deterministic reset to `Dashboard` or `CompleteProfile` remain. | Reduces auth-flow drift and future profile-rule risk. |
-| `useChartData.ts` | High | Saved-chart hydration, `chart_data` validation handling, auth lookup, canonical chart lookup, render-only charts, self auto-save, guest manual save, save warnings, async cancellation guards, alerts, chart state. | `lib/chartPersistence.ts`, `hydrateChartData`, `findSavedChartByIdentity`, `saveBuiltChart`, later `useChartLoader`/`useChartSaveAction`. | `fromSaved` path stays valid; self charts can auto-save; guest charts do not auto-save; missing-coordinate charts stay view-only; save warnings and cancellation behavior remain. | High future feature value, but high regression risk without focused hook tests. |
+| `useChartData.ts` | High | Saved-chart hydration, `chart_data` validation handling, auth lookup, canonical chart lookup, render-only charts, self auto-save, guest manual save, save warnings, async cancellation guards, alerts, chart state. | `lib/chartPersistence.ts`, `hydrateChartData`, `findSavedChartByIdentity`, `saveBuiltChart`, later `useChartLoader`/`useChartSaveAction`. | `fromSaved` path stays valid; self charts can auto-save; guest charts do not auto-save; missing-coordinate charts stay view-only; save warnings and cancellation behavior remain. | High future feature value; focused hook tests now guard current behavior. |
 | `ChartScreen.tsx` | Medium | Route guard, timezone validation, chart hook wiring, focus side effect, save button state, chart layout, page building, modal wiring. | `ChartScreenContent`, `ChartSaveControl`, `ChartViewOnlyNotice`, `useChartInterpretationPages`, `ChartBody`. | Invalid route empty state, saved chart flow, save button labels, initial Sun focus, and interpretation modal behavior remain. | Reduces crash/hook-order risk and prepares guest chart UI. |
-| `InterpretationModal.tsx` | Medium | Modal shell, duplicate interpretation types, circular pager index math, previous/next controls, close/backdrop, page rendering. | Import shared `interpretationTypes`, `useCircularPager`, `InterpretationModalHeader`, `InterpretationPager`. | Circular swipe, first/last wrap, disabled arrows for one page, and close/reopen reset remain. | Mostly organization, with some pager edge-case risk reduction. |
+| `InterpretationModal.tsx` | Medium | Modal shell, duplicate interpretation types, circular pager index math, previous/next controls, close/backdrop, page rendering. | Import shared `interpretationTypes`, `useCircularPager`, `InterpretationModalHeader`, `InterpretationPager`. | Circular swipe, first/last wrap, disabled arrows for one page, and close/reopen reset remain. | Pager tests now guard current behavior; extraction is optional and should be feature-attached. |
 
 ## 4. Ranked Roadmap
 
@@ -89,32 +89,50 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
     - `screens/__tests__/CheckEmailScreen.test.tsx` and `screens/__tests__/AuthCallbackScreen.test.tsx` added.
     - Covers missing email/code validation, resend success/failure, OTP complete/incomplete profile resets, AuthCallback token/code/fragment paths, delayed URL handling, and auth error alert plus finish routing.
 
+14. **DashboardScreen behavior tests**
+    - `screens/__tests__/DashboardScreen.test.tsx` added.
+    - Covers complete/incomplete profile behavior, auth metadata repair, saved chart summary hydration, invalid saved `chart_data` fallback, self chart auto-save, and missing-coordinate no-save behavior.
+
+15. **CompleteProfileScreen save/geocode lifecycle tests**
+    - `screens/__tests__/CompleteProfileScreen.test.tsx` added.
+    - Covers load/prefill, validation, selected-coordinate save, manual geocode fallback, geocode failure, timezone handling, and `public.users` update payload.
+
+16. **InterpretationModal pager tests**
+    - `components/charts/__tests__/InterpretationModal.test.tsx` added.
+    - Covers closed state, one-page behavior, prev/next controls, circular boundaries, close, and close/reopen reset behavior.
+
+17. **ESLint setup and warning cleanup**
+    - Added Expo-compatible ESLint flat config and `"lint": "eslint ."`.
+    - Cleaned warnings narrowly; `npm run lint` passes cleanly.
+
+18. **Supabase generated types**
+    - `client/lib/database.types.ts` generated from Supabase.
+    - `client/lib/supabase.ts` uses `createClient<Database>()`.
+    - Shared DB row aliases in `domainTypes.ts` derive from generated `Tables`.
+
 ---
 
 ### REMAINING (re-ranked)
 
-- **Next test slice: Dashboard profile repair and chart summary** *(remaining high-risk screen logic)*
-   - Cover complete-profile load, incomplete-profile redirect, auth metadata repair, saved chart summary hydration, invalid saved `chart_data` fallback, self chart auto-save, and missing-coordinate no-save behavior.
-   - Do this before extracting Dashboard chart summary or profile repair helpers.
+- **Next feature slice: Wire chart preferences to chart math** *(highest user trust impact)*
+   - `public.chart_preferences` stores supported defaults, but `buildChartData` and aspect math still use the current hardcoded behavior.
+   - Preserve Whole Sign, Tropical, and medium-orb output until additional systems have math, DB constraints, UI, and tests.
 
-- **Next test slice: CompleteProfile save/geocode lifecycle** *(profile source-of-truth reliability)*
-   - Cover load/prefill, missing field validation, selected-coordinate save, manual geocode fallback, timezone update from geocode, and `public.users` update payload.
+- **Next feature slice: Guest chart creation UI** *(activates existing chartMode groundwork)*
+   - Add a user-facing form for another person's birth data and navigate to `ChartScreen` with `chartMode: 'guest'`.
+   - Do not add synastry, compatibility, or guest-specific schema until that workflow is defined.
 
-- **Later decomposition slice: CompleteProfile form/save helpers** *(medium; groundwork for guest birth-data entry)*
-   - Extract DB-to-form mapping, form-to-update payload, and manual geocode-before-save logic.
-   - Requires focused save/geocode tests first to verify behavior is preserved.
+- **Product decision slice: Chat, subscription, and service stubs** *(feature clarity)*
+   - Decide whether to implement or intentionally park `ChatScreen`, `SubscriptionScreen`, and placeholder service modules.
+   - The empty screens remain unregistered in `App.tsx`.
 
-- **Later decomposition slice: Dashboard chart summary extraction** *(medium; reduces DashboardScreen coupling)*
-    - Extract saved-chart lookup/build/sun-moon summary after profile helper extraction is stable.
-    - Requires focused Dashboard/useChartData tests first.
+- **Tooling slice: CI-backed schema/migration validation** *(release safety)*
+   - Automate or document a reliable `supabase db reset`/`db diff` workflow.
+   - Client tests, lint, generated types, and typecheck are in place; migration validation is still manual.
 
-- **Later decomposition slice: InterpretationModal pager extraction** *(low; organizational)*
-    - Move circular pager calculations and refs into a `useCircularPager` hook.
-    - Import the existing shared interpretation types instead of defining duplicates.
-
-- **Deferred high-risk slice: useChartData persistence split** *(deferred; high regression risk)*
-    - Extract persistence and hydration helpers before considering a larger hook split.
-    - Must wait for focused hook coverage; `chart_data` validation is already in place.
+- **Feature-attached cleanup slices** *(ongoing, not standalone)*
+   - Extract Dashboard, CompleteProfile, Profile, CheckEmail, `useChartData`, or `InterpretationModal` internals only when touching that surface for a concrete feature or defect.
+   - Avoid broad open-ended refactors now that stabilization coverage is in place.
 
 ## 5. Completed Slices (Summary)
 
@@ -158,38 +176,60 @@ Removed duplicate top safe-area padding from the screen header. Safe-area behavi
 `lib/__tests__/charts.test.ts` added. Covers `buildChartData` shape with and without coordinates, `saveChart` coordinate guard, canonical upsert payload/onConflict, and Supabase error propagation.
 
 **Auth/profile navigation screen tests** ✅
-`screens/__tests__/CheckEmailScreen.test.tsx` and `screens/__tests__/AuthCallbackScreen.test.tsx` added. Covers CheckEmail missing email/code validation, resend success/failure, OTP complete profile to `Dashboard`, OTP incomplete profile to `CompleteProfile`, AuthCallback token hash to `verifyOtp`, auth code to `exchangeCodeForSession`, fragment tokens to `setSession`, delayed URL after null initial URL, and auth error alert plus finish routing. Total test baseline: 7 suites, 35 tests.
+`screens/__tests__/CheckEmailScreen.test.tsx` and `screens/__tests__/AuthCallbackScreen.test.tsx` added. Covers CheckEmail missing email/code validation, resend success/failure, OTP complete profile to `Dashboard`, OTP incomplete profile to `CompleteProfile`, AuthCallback token hash to `verifyOtp`, auth code to `exchangeCodeForSession`, fragment tokens to `setSession`, delayed URL after null initial URL, and auth error alert plus finish routing.
+
+**DashboardScreen behavior tests** ✅
+`screens/__tests__/DashboardScreen.test.tsx` added. Covers complete/incomplete profile behavior, auth metadata repair, saved chart summary hydration, invalid saved `chart_data` fallback, self chart auto-save, and missing-coordinate no-save behavior.
+
+**CompleteProfileScreen save/geocode lifecycle tests** ✅
+`screens/__tests__/CompleteProfileScreen.test.tsx` added. Covers load/prefill, validation, selected-coordinate save, manual geocode fallback, geocode failure, timezone handling, and `public.users` update payload.
+
+**InterpretationModal pager tests** ✅
+`components/charts/__tests__/InterpretationModal.test.tsx` added. Covers closed state, one-page behavior, prev/next controls, circular boundaries, close, and close/reopen reset behavior.
+
+**ESLint setup and warning cleanup** ✅
+Expo-compatible ESLint flat config and `"lint": "eslint ."` added. Targeted cleanup brought `npm run lint` to zero warnings/errors.
+
+**Supabase generated types** ✅
+`client/lib/database.types.ts` generated from Supabase. `client/lib/supabase.ts` now uses `createClient<Database>()`, and DB row aliases in `domainTypes.ts` derive from generated `Tables`.
+
+**Final cleanup verification baseline** ✅
+`npm run typecheck`, `npm test` (10 suites / 55 tests), and `npm run lint` pass cleanly.
 
 ## 6. Next Safe Slice
 
-**Next test slices: Dashboard and CompleteProfile coverage**
+**Next feature slice: Wire chart preferences to chart math**
 
-`useChartData`, chart helper, and auth/profile navigation coverage are complete (7 suites, 35 tests). The two highest-remaining-risk untested areas are:
+Cleanup/stabilization is complete enough for feature expansion. Future cleanup should be attached to specific feature work or real defects, not broad open-ended refactoring.
 
-1. `DashboardScreen` — profile repair, profile completion redirect, saved chart lookup, chart summary derivation, invalid saved `chart_data` fallback, and self chart auto-save/missing-coordinate no-save behavior.
-2. `CompleteProfileScreen` — load/prefill, missing required field validation, selected-coordinate save, manual geocode fallback, timezone update from geocode, and `public.users` update payload.
+The best next feature-facing slice is applying the already-stored chart preferences to the chart calculation path while preserving the current supported defaults:
 
-Both can proceed independently. Neither should require source changes. They unblock safe decomposition of `DashboardScreen` and `CompleteProfileScreen`.
+- Whole Sign houses.
+- Tropical zodiac.
+- Medium orbs.
+
+Do not claim Placidus, Sidereal, Vedic, or alternate orb modes are implemented until the math, DB constraints, UI states, and tests all support them.
 
 ## 7. Deferred / High-Risk Refactors
 
 - Full `useChartData` rewrite or state-machine conversion.
-- Moving the entire `DashboardScreen.load` flow into a hook in one pass.
-- Reworking `CheckEmailScreen` OTP/session/upsert flow beyond shared helper extraction.
-- Changing `CompleteProfileScreen` geocode/timezone/save sequencing without focused tests.
+- Moving the entire `DashboardScreen.load` flow into a hook in one pass without a feature or defect reason.
+- Reworking `CheckEmailScreen` OTP/session/upsert flow beyond covered behavior without a product reason.
+- Changing `CompleteProfileScreen` geocode/timezone/save sequencing without updating focused tests.
 - Adding guest chart schema fields such as `chart_type`, `is_primary`, `relationship_label`, or a `birth_profiles` table.
 - Reworking subscriptions, purchases, account deletion, or exports before those features are product-ready.
-- Reworking `InterpretationModal` circular pager behavior without checking first/last/single-page cases.
+- Implementing additional chart systems before math, DB constraints, UI, and tests are ready.
 
-## 8. Do Not Touch Without Tests
+## 8. Guardrails For Future Work
 
-These areas have little or no focused test coverage and are high-regression risk. Do not do high-risk refactors here until targeted tests exist:
+These areas now have focused coverage or explicit contracts, but they remain high-regression surfaces. Update targeted tests when changing them:
 
 - `useChartData` auto-save/manual-save/canonical lookup/save-warning/cancellation behavior.
 - `DashboardScreen` profile repair and self chart auto-save behavior.
 - `CheckEmailScreen` OTP/session/upsert flow beyond the covered navigation paths.
 - `CompleteProfileScreen` manual geocode, timezone normalization, and `public.users` update lifecycle.
 - `InterpretationModal` circular pager logic.
+- Chart preference math integration once preferences become active inputs.
 - Canonical chart identity and save behavior:
   - self charts with coordinates may auto-save;
   - guest charts do not auto-save;
@@ -197,6 +237,7 @@ These areas have little or no focused test coverage and are high-regression risk
   - missing-coordinate charts remain view-only.
 - `AuthCallbackScreen` deep-link behavior beyond the covered token/code/fragment/delayed URL paths.
 - Journal UI flows beyond the pure `upsertJournal` payload tests.
+- Supabase schema/migration validation, which is still manual rather than CI-backed.
 
 ## 9. Verification Baseline
 
@@ -205,6 +246,7 @@ Run after every implementation slice:
 ```bash
 cd client && npm run typecheck
 cd client && npm test
+cd client && npm run lint
 git diff --check
 ```
 
