@@ -1,7 +1,7 @@
 # Naksha Decomposition Roadmap
 
 Generated: 2026-05-09
-Last updated: 2026-05-12 — cleanup/stabilization complete enough for feature expansion.
+Last updated: 2026-05-12 — chart preference calculation plumbing complete.
 Scope: documentation-only roadmap for large-file cleanup before feature expansion.
 
 ## 1. Purpose
@@ -110,17 +110,24 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
     - `client/lib/supabase.ts` uses `createClient<Database>()`.
     - Shared DB row aliases in `domainTypes.ts` derive from generated `Tables`.
 
+19. **Chart preferences calculation plumbing**
+    - `getChartCalculationPreferences` reads `public.chart_preferences` with default fallback.
+    - `buildChartData` accepts `ChartCalculationPreferences`.
+    - `findAspects` receives `orb_mode`.
+    - `useChartData` and `DashboardScreen` pass preferences into computed chart builds.
+    - Output intentionally remains Whole Sign, Tropical, and medium orbs only.
+
 ---
 
 ### REMAINING (re-ranked)
 
-- **Next feature slice: Wire chart preferences to chart math** *(highest user trust impact)*
-   - `public.chart_preferences` stores supported defaults, but `buildChartData` and aspect math still use the current hardcoded behavior.
-   - Preserve Whole Sign, Tropical, and medium-orb output until additional systems have math, DB constraints, UI, and tests.
-
 - **Next feature slice: Guest chart creation UI** *(activates existing chartMode groundwork)*
    - Add a user-facing form for another person's birth data and navigate to `ChartScreen` with `chartMode: 'guest'`.
    - Do not add synastry, compatibility, or guest-specific schema until that workflow is defined.
+
+- **Later feature slice: Additional chart systems** *(product/math scope)*
+   - Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, and house-degree display are not implemented.
+   - Add math, DB constraints, UI states, and tests together when each system is product-ready.
 
 - **Product decision slice: Chat, subscription, and service stubs** *(feature clarity)*
    - Decide whether to implement or intentionally park `ChatScreen`, `SubscriptionScreen`, and placeholder service modules.
@@ -193,22 +200,26 @@ Expo-compatible ESLint flat config and `"lint": "eslint ."` added. Targeted clea
 **Supabase generated types** ✅
 `client/lib/database.types.ts` generated from Supabase. `client/lib/supabase.ts` now uses `createClient<Database>()`, and DB row aliases in `domainTypes.ts` derive from generated `Tables`.
 
+**Chart preferences calculation plumbing** ✅
+`getChartCalculationPreferences` reads `public.chart_preferences` and falls back to defaults when the row is missing or unreadable. `buildChartData` accepts `ChartCalculationPreferences`, `findAspects` receives `orb_mode`, and `useChartData` plus `DashboardScreen` pass preferences into computed chart builds. Current output remains intentionally unchanged: Whole Sign, Tropical, and medium orbs only.
+
 **Final cleanup verification baseline** ✅
-`npm run typecheck`, `npm test` (10 suites / 55 tests), and `npm run lint` pass cleanly.
+`npm run typecheck`, `npm test` (10 suites / 60 tests), and `npm run lint` pass cleanly.
 
 ## 6. Next Safe Slice
 
-**Next feature slice: Wire chart preferences to chart math**
+**Next feature slice: Guest chart creation UI**
 
 Cleanup/stabilization is complete enough for feature expansion. Future cleanup should be attached to specific feature work or real defects, not broad open-ended refactoring.
 
-The best next feature-facing slice is applying the already-stored chart preferences to the chart calculation path while preserving the current supported defaults:
+The best next feature-facing slice is activating the existing `chartMode: 'guest'` groundwork with a user-facing entry flow:
 
-- Whole Sign houses.
-- Tropical zodiac.
-- Medium orbs.
+- Collect another person's name and birth details.
+- Navigate to `ChartScreen` with `chartMode: 'guest'`.
+- Preserve guest manual-save behavior and self chart auto-save behavior.
+- Keep missing-coordinate guest charts View Only.
 
-Do not claim Placidus, Sidereal, Vedic, or alternate orb modes are implemented until the math, DB constraints, UI states, and tests all support them.
+Do not claim synastry, compatibility, guest-specific schema, Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, or house-degree display are implemented until their product behavior, math/schema needs, UI, and tests are defined.
 
 ## 7. Deferred / High-Risk Refactors
 
@@ -229,7 +240,7 @@ These areas now have focused coverage or explicit contracts, but they remain hig
 - `CheckEmailScreen` OTP/session/upsert flow beyond the covered navigation paths.
 - `CompleteProfileScreen` manual geocode, timezone normalization, and `public.users` update lifecycle.
 - `InterpretationModal` circular pager logic.
-- Chart preference math integration once preferences become active inputs.
+- Additional chart preference modes once preferences expand beyond supported defaults.
 - Canonical chart identity and save behavior:
   - self charts with coordinates may auto-save;
   - guest charts do not auto-save;

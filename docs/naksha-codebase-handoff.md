@@ -553,13 +553,15 @@ How Codex should work in this repo:
 - Treat `auth.user_metadata` as signup/bootstrap handoff only for profile/birth data.
 - Treat `public.users` as the durable profile/birth source of truth.
 - Treat `public.chart_preferences` as the durable chart preference source of truth; do not write `pref_*` values back to auth metadata.
+- Use `getChartCalculationPreferences(userId)` before computed chart builds when a user is available; missing or failed preference reads fall back to current defaults.
+- `buildChartData(input, preferences?)` accepts `ChartCalculationPreferences`; `findAspects(planets, orbMode)` currently supports only `orb_mode: 'medium'`.
 - Treat `ChartRouteParams.chartMode` as the current chart save mode contract: missing means `'self'`, Dashboard passes `'self'`, and future other-person flows should pass `'guest'`.
 - Preserve the current save rule: self/generated charts with coordinates may auto-save; guest/generated charts must not auto-save; guest charts can be manually saved when coordinates exist.
 - Preserve saved-chart navigation through `fromSaved` and `saved`; do not require `chartMode` for that flow.
 - Preserve the current canonical chart identity unless the user explicitly changes the product rule: `user_id`, `birth_date`, `birth_time`, `time_zone`, `birth_lat`, `birth_lon`, with `NULLS NOT DISTINCT` in the database.
 - Preserve the current view-only behavior for charts missing coordinates unless the user explicitly changes persistence semantics.
 - Do not claim guest chart creation UI, synastry, compatibility, or guest-specific schema support exists yet.
-- Do not claim Placidus, Sidereal, Vedic, or custom orb modes are implemented; current `chart_preferences` checks allow only supported defaults.
+- Do not claim Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, custom orb modes, or house-degree display are implemented; current `chart_preferences` checks allow only supported defaults.
 
 Prompt style that works well:
 

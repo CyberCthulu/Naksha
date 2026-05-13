@@ -1,19 +1,19 @@
 # Claude's Architectural Review — Naksha Codebase
 
-Last updated: 2026-05-12 (final cleanup pass — post lint, generated types, and screen coverage)
+Last updated: 2026-05-12 (post chart preference calculation plumbing)
 Reviewer: Claude (Sonnet 4.6)
 Scope: source code + all migrations through `20260508021500_chart_preferences.sql`
-Verification: `cd client && npm run typecheck` passes with zero errors. `npm test` passes (10 suites, 55 tests). `npm run lint` passes cleanly. `git diff --check` passes.
+Verification: `cd client && npm run typecheck` passes with zero errors. `npm test` passes (10 suites, 60 tests). `npm run lint` passes cleanly. `git diff --check` passes.
 
 ---
 
 ## 1. Current Status Summary
 
-The cleanup/stabilization phase is complete enough for feature expansion. Persisted `chart_data` is validated before use (`parseChartData` in `client/lib/chartDataValidation.ts`). Auto-save failures are surfaced to users via a `saveWarning` card in `ChartScreenContent`. `AuthCallbackScreen` URL-deduplication guard was replaced with URL-keyed refs (`processingUrl`/`handledUrl`), all token-hash-exposing logs were removed, and auth errors now show an `Alert`. `useChartData` has mounted/load-ID cancellation guards. `upsertJournal` no longer sends `id: undefined` in create mode. `CompleteProfileScreen` top dead space was fixed. Jest now has 10 suites and 55 passing tests, including Dashboard, CompleteProfile, and InterpretationModal coverage. ESLint is configured and clean. Supabase generated types are checked in, the Supabase client is typed with `Database`, and shared DB row aliases derive from generated `Tables`.
+The cleanup/stabilization phase is complete enough for feature expansion. Persisted `chart_data` is validated before use (`parseChartData` in `client/lib/chartDataValidation.ts`). Chart preferences are now read through `getChartCalculationPreferences`, passed into `buildChartData` as `ChartCalculationPreferences`, and `orb_mode` is plumbed into `findAspects`; current output intentionally remains Whole Sign, Tropical, and medium-orb only. Auto-save failures are surfaced to users via a `saveWarning` card in `ChartScreenContent`. `AuthCallbackScreen` URL-deduplication guard was replaced with URL-keyed refs (`processingUrl`/`handledUrl`), all token-hash-exposing logs were removed, and auth errors now show an `Alert`. `useChartData` has mounted/load-ID cancellation guards. `upsertJournal` no longer sends `id: undefined` in create mode. `CompleteProfileScreen` top dead space was fixed. Jest now has 10 suites and 60 passing tests, including chart preference plumbing, Dashboard, CompleteProfile, and InterpretationModal coverage. ESLint is configured and clean. Supabase generated types are checked in, the Supabase client is typed with `Database`, and shared DB row aliases derive from generated `Tables`.
 
 `ProfileScreen` presentational and interactive cards have been extracted to `client/components/profile/`. Shared profile completeness helpers live in `client/lib/profileCompletion.ts`. `ChartScreen` is a route-validation shell; all hooks and rendering live in `ChartScreenContent`.
 
-The remaining open risks are product/automation gaps: chart preferences are stored but not wired to chart math, guest chart creation UI is not built, stubbed chat/subscription/service modules remain unimplemented, additional astrology systems are not implemented, and schema/migration validation is not automated or CI-backed. Future cleanup should be attached to specific feature work or real defects, not broad open-ended refactoring.
+The remaining open risks are product/automation gaps: guest chart creation UI is not built, stubbed chat/subscription/service modules remain unimplemented, additional astrology systems are not implemented, and schema/migration validation is not automated or CI-backed. Future cleanup should be attached to specific feature work or real defects, not broad open-ended refactoring.
 
 ---
 
@@ -58,13 +58,14 @@ The remaining open risks are product/automation gaps: chart preferences are stor
 | `AuthCallbackScreen` `handledOnce` guard blocked delayed URL events | `handledOnce` boolean replaced with URL-keyed `processingUrl` / `handledUrl` refs. Guard is set only after a non-null URL is confirmed, allowing the event listener to process a URL that `getInitialURL()` missed on first call. All token-hash-exposing `console.log` calls removed. Auth errors on all three paths (verifyOtp, exchangeCodeForSession, setSession) now call `Alert.alert`. Catch block promoted from `console.log` to `console.warn`. `auth.ts` redirect-URL log removed. |
 | `useChartData` set React state after unmount / stale load | `mountedRef` + `loadIdRef` + `saveIdRef` refs added. Every `await` in `loadChart` and `saveCurrentChart` is followed by an `isCurrentLoad()` / `isCurrentSave()` guard before any state mutation. `applyChartState` also guards on `mountedRef`. Cleanup increments both IDs on unmount and on dependency change. |
 | `upsertJournal` sent `id: undefined` in create mode | Payload object typed explicitly; `id` is only added via `if (input.id != null) payload.id = input.id`. `undefined` and `null` both skip the assignment, letting Postgres assign a serial PK. Verified by a mocked Supabase Jest test (`lib/__tests__/journals.test.ts`). |
-| No test runner | `jest-expo` preset configured (`jest.config.js`). `"test": "jest"` added to `package.json`. Current baseline is 10 suites / 55 tests. All mock Supabase; no network calls. |
+| No test runner | `jest-expo` preset configured (`jest.config.js`). `"test": "jest"` added to `package.json`. Current baseline is 10 suites / 60 tests. All mock Supabase; no network calls. |
 | `useChartData` had no branch-level test coverage | `hooks/__tests__/useChartData.test.tsx` added (7 tests, mocked Supabase and chart helpers, `react-test-renderer`). Covers: valid `fromSaved` load (no auth/recompute), invalid `fromSaved` fallback to recompute, missing-coordinate view-only, self auto-save, guest no-auto-save, auto-save failure sets `saveWarning`, manual save success clears `saveWarning`. |
 | Chart generation and persistence helpers had no tests | `lib/__tests__/charts.test.ts` added. Covers `buildChartData` shape with and without coordinates, `saveChart` coordinate guard, canonical upsert payload/onConflict, and Supabase error propagation. |
 | Auth/profile navigation had no screen tests | `screens/__tests__/CheckEmailScreen.test.tsx` and `screens/__tests__/AuthCallbackScreen.test.tsx` added. Covers missing email/code validation, resend success/failure, OTP complete profile to `Dashboard`, OTP incomplete profile to `CompleteProfile`, AuthCallback token/code/fragment paths, delayed URL after null initial URL, and auth error alert plus finish routing. |
 | Dashboard / CompleteProfile / InterpretationModal lacked focused tests | `DashboardScreen.test.tsx`, `CompleteProfileScreen.test.tsx`, and `InterpretationModal.test.tsx` added. Coverage includes profile repair, chart summary hydration/fallback, self auto-save, missing-coordinate no-save, profile load/validation/save/geocode/timezone behavior, and circular modal pager behavior. |
 | ESLint setup and warning cleanup | `eslint-config-expo` flat config added with `"lint": "eslint ."`. Targeted warning cleanup removed unused imports/vars, merged duplicate imports, fixed the modal hook dependency, and scoped the React-three-fiber JSX prop override to `SpaceBackground`. `npm run lint` passes cleanly. |
 | Generated Supabase row types | `client/lib/database.types.ts` generated from the linked Supabase project. `client/lib/supabase.ts` uses `createClient<Database>()`. `UserRow`, `SubscriptionRow`, `PurchaseRow`, `JournalRow`, and `ChartPreferencesRow` derive from generated `Tables<'...'>`; app/domain chart types remain handwritten. |
+| Chart preferences were stored but not read by chart math | `ChartCalculationPreferences` and defaults added. `getChartCalculationPreferences` reads `public.chart_preferences` with default fallback. `buildChartData` accepts preferences, `findAspects` receives `orb_mode`, and `useChartData` plus `DashboardScreen` pass preferences into computed chart builds. Current behavior remains Whole Sign, Tropical, and medium orbs only. |
 | `CompleteProfileScreen` excessive top dead space | Removed `insets.top + 6` inline style from the top-bar `View`. `AuthContainer` already applies `insets.top + 16` to its scroll container, so the previous code double-counted the safe area. `useSafeAreaInsets` import and call removed from the screen. |
 
 ---
@@ -85,9 +86,9 @@ Stale `pref_*` keys in auth metadata for pre-migration users are inert — nothi
 
 ---
 
-### 3.2 — Chart preferences stored correctly but not applied to chart math (LOW urgency, HIGH user trust risk)
+### 3.2 — Additional chart systems are not implemented (MEDIUM, product gap)
 
-`public.chart_preferences` stores house system, zodiac type, and orb mode. `buildChartData` and `findAspects` in `lib/astro.ts` still use hardcoded Whole Sign, Tropical, and fixed orbs. Unsupported options are visually disabled, so users cannot save non-functional values. The preferences table is inert storage until chart math reads it.
+`public.chart_preferences` is now read by chart calculation paths, but only the current defaults are supported: Whole Sign houses, Tropical zodiac, and medium orbs. Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, and house-degree display remain disabled/coming soon until their math, DB constraints, UI states, and tests exist.
 
 ---
 
@@ -128,21 +129,21 @@ Future decomposition should be attached to a feature, product requirement, or re
 
 Ranked by user impact × risk reduction × demo readiness.
 
-**1. Wire chart preferences to chart math** *(highest user trust impact)*
-Read `house_system`, `zodiac_type`, and `orb_mode` from `public.chart_preferences` in `buildChartData` and `findAspects`. Current UI and DB checks allow only supported defaults; expand CHECK constraints in a new migration before implementing each additional system.
-Files: `lib/astro.ts`, `lib/charts.ts`, `hooks/useChartData.ts`, potentially `DashboardScreen.tsx`.
-
-**2. Build guest chart creation UI** *(enables the chartMode infrastructure)*
+**1. Build guest chart creation UI** *(enables the chartMode infrastructure)*
 Create a form screen that collects a name and birth details for another person and navigates to `ChartScreen` with `chartMode: 'guest'`. The hook and route contract are already in place; optionally add a `birth_profiles` table for persisting guest birth records.
 Files: new screen, optionally new migration for `birth_profiles`.
 
-**3. Decide the next product slice for stubbed areas** *(feature clarity)*
+**2. Decide the next product slice for stubbed areas** *(feature clarity)*
 Either implement or intentionally keep parked `ChatScreen`, `SubscriptionScreen`, and placeholder service modules. The empty screens are not registered in `App.tsx`.
 Files: depends on chosen feature.
 
-**4. Add CI-backed schema/migration validation** *(release safety)*
+**3. Add CI-backed schema/migration validation** *(release safety)*
 Automate or document a reliable `supabase db reset`/`db diff` workflow so migration drift is caught before release.
 Files: CI config or project scripts/docs.
+
+**4. Plan additional chart systems deliberately** *(product/math scope)*
+Implement Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, or house-degree display only when math, DB checks, UI states, and tests are all part of the same slice.
+Files: `lib/astro.ts`, `lib/charts.ts`, preference UI, migrations, tests.
 
 **5. Attach future cleanup to feature work or defects** *(keeps momentum focused)*
 Decompose large screens/hooks only when touching that surface for a concrete feature or bug.
@@ -170,9 +171,11 @@ Files: depends on touched surface.
 **What changed that affects how you work here:**
 
 - `client/lib/database.types.ts` contains generated Supabase schema types. Regenerate it when migrations change.
-- `client/lib/domainTypes.ts` is the canonical location for shared app/domain types and generated DB row aliases: `UserRow`, `UserProfileFields`, `ChartProfile`, `ChartRouteParams`, `ChartMode`, `SubscriptionRow`, `PurchaseRow`, `JournalRow`, `ChartPreferencesRow`. Do not declare local aliases for these in screens.
+- `client/lib/domainTypes.ts` is the canonical location for shared app/domain types, chart calculation preference types/defaults, and generated DB row aliases: `UserRow`, `UserProfileFields`, `ChartProfile`, `ChartRouteParams`, `ChartMode`, `ChartCalculationPreferences`, `SubscriptionRow`, `PurchaseRow`, `JournalRow`, `ChartPreferencesRow`. Do not declare local aliases for these in screens.
 - `client/lib/profileCompletion.ts` owns `isProfileComplete`, `needsProfileCompletion`, `profileFromAuthMetadata`, and `ProfileCompletionData`. Import from there; do not redefine these in screens.
 - `client/lib/chartDataValidation.ts` owns `parseChartData(json): ChartData | null`. Use it everywhere `chart_data` is read from the database. Do not use bare `as ChartData` casts on persisted blobs.
+- `client/lib/charts.ts` owns `getChartCalculationPreferences(userId)` and `buildChartData(input, preferences?)`. Use stored preferences for computed chart builds when a user is available.
+- `client/lib/astro.ts` `findAspects(planets, orbMode)` currently supports only `orb_mode: 'medium'`.
 - `client/screens/ChartScreen.tsx` is now a route-validation shell only. Do not add hooks or rendering to it. All chart logic belongs in `client/components/charts/ChartScreenContent.tsx`.
 - `client/components/profile/` contains extracted presentational cards for `ProfileScreen`. Data loading and save handlers remain in `ProfileScreen` itself; do not add Supabase calls to the card components.
 - `useChartData` has mounted/load-ID/save-ID cancellation guards. Any new async state mutation inside the hook must be preceded by an `isCurrentLoad()` or `isCurrentSave()` check.
@@ -180,6 +183,7 @@ Files: depends on touched surface.
 - `saveChart` throws if coordinates are null. Always assert `hasChartIdentityCoordinates(input)` before calling it.
 - Chart identity is `(user_id, birth_date, birth_time, time_zone, birth_lat, birth_lon)`. All save/lookup call sites use all six columns.
 - `public.chart_preferences` CHECK constraints currently allow only `'whole_sign'`, `'tropical'`, and `'medium'`. When implementing a new value, expand the CHECK constraint in a new migration before writing it from the frontend.
+- Do not claim Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, custom orb modes, or house-degree display are implemented. Current preference plumbing preserves Whole Sign, Tropical, and medium-orb output.
 - New migrations must be incremental files in `supabase/migrations/` with timestamp prefix. Do not edit `20260508015720_remote_schema.sql`.
 - Run `supabase db diff` to verify intent before and after any schema change.
 - Run `cd client && npm run typecheck` before any handoff. Zero errors required.
