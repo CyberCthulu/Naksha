@@ -21,7 +21,7 @@ export default function PurchasesCard({ purchases }: Props) {
             </Text>
             <Text style={uiStyles.muted}>
               {p.amount} {p.currency.toUpperCase()} ·{' '}
-              {new Date(p.purchase_date).toLocaleString()}
+              {p.purchase_date ? new Date(p.purchase_date).toLocaleString() : '—'}
             </Text>
           </View>
         ))

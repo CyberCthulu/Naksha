@@ -133,7 +133,7 @@ export default function CheckEmailScreen() {
           .upsert(
             {
               id: user.id,
-              email: user.email ?? null,
+              email: user.email ?? '',
               first_name: profile.first_name,
               last_name: profile.last_name,
               birth_date: profile.birth_date,

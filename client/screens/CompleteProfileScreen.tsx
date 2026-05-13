@@ -69,7 +69,7 @@ export default function CompleteProfileScreen() {
         // Ensure user row exists (in case of older accounts)
         await supabase
           .from('users')
-          .upsert({ id: user.id, email: user.email ?? null }, { onConflict: 'id' })
+          .upsert({ id: user.id, email: user.email ?? '' }, { onConflict: 'id' })
 
         const { data, error: perr } = await supabase
           .from('users')

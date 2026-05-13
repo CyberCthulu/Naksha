@@ -1,3 +1,5 @@
+import type { Tables } from './database.types'
+
 export type UserProfileFields = {
   first_name: string | null
   last_name: string | null
@@ -9,30 +11,15 @@ export type UserProfileFields = {
   birth_lon: number | null
 }
 
-export type UserRow = {
-  id: string
-  email: string | null
-} & UserProfileFields
+export type UserRow = Tables<'users'>
 
-export type SubscriptionRow = {
-  id: number
-  user_id: string
-  plan: string
-  status: string
-  start_date: string
-  end_date: string | null
-  created_at: string | null
-}
+export type SubscriptionRow = Tables<'subscriptions'>
 
-export type PurchaseRow = {
-  id: number
-  user_id: string
-  product_type: string
-  product_id: string
-  amount: number
-  currency: string
-  purchase_date: string
-}
+export type PurchaseRow = Tables<'purchases'>
+
+export type JournalRow = Tables<'journals'>
+
+export type ChartPreferencesRow = Tables<'chart_preferences'>
 
 export type ChartProfile = Pick<
   UserProfileFields,

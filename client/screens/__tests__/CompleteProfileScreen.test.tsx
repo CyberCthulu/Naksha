@@ -65,6 +65,8 @@ const completeUser: UserRow = {
   time_zone: 'Europe/London',
   birth_lat: 51.5072,
   birth_lon: -0.1276,
+  created_at: null,
+  updated_at: null,
 }
 
 async function settleAsyncWork() {

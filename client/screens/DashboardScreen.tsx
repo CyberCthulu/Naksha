@@ -78,7 +78,7 @@ export default function DashboardScreen() {
         await supabase
           .from('users')
           .upsert(
-            { id: user.id, email: user.email ?? null },
+            { id: user.id, email: user.email ?? '' },
             { onConflict: 'id' }
           )
 
@@ -104,7 +104,7 @@ export default function DashboardScreen() {
             .upsert(
               {
                 id: user.id,
-                email: user.email ?? null,
+                email: user.email ?? '',
                 ...mdProfile,
               },
               { onConflict: 'id' }
@@ -141,7 +141,9 @@ export default function DashboardScreen() {
         return
       }
 
-      const hasChartCoordinates = u.birth_lat != null && u.birth_lon != null
+      const birthLat = u.birth_lat
+      const birthLon = u.birth_lon
+      const hasChartCoordinates = birthLat != null && birthLon != null
 
       const { data: existing } = hasChartCoordinates
         ? await supabase
@@ -151,8 +153,8 @@ export default function DashboardScreen() {
             .eq('birth_date', u.birth_date)
             .eq('birth_time', u.birth_time)
             .eq('time_zone', tz)
-            .eq('birth_lat', u.birth_lat)
-            .eq('birth_lon', u.birth_lon)
+            .eq('birth_lat', birthLat)
+            .eq('birth_lon', birthLon)
             .maybeSingle()
         : { data: null }
 
