@@ -11,7 +11,6 @@ import {
   type PlanetHousePlacement,
 } from '../lib/astro'
 import { birthToUTC } from '../lib/time'
-import { normalizeZone } from '../lib/timezones'
 import supabase from '../lib/supabase'
 import { buildChartData, saveChart, type ChartData } from '../lib/charts'
 import { parseChartData } from '../lib/chartDataValidation'

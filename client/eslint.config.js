@@ -35,4 +35,10 @@ module.exports = defineConfig([
       sourceType: 'commonjs',
     },
   },
+  {
+    files: ['components/space/SpaceBackground.tsx'],
+    rules: {
+      'react/no-unknown-property': 'off',
+    },
+  },
 ])

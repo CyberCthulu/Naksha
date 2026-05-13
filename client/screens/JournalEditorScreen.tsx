@@ -16,7 +16,6 @@ import { useRoute, useNavigation } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { upsertJournal } from '../lib/journals'
-import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
 
 export default function JournalEditorScreen() {

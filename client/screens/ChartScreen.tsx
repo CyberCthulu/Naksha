@@ -1,9 +1,8 @@
 //screens/ChartScreen.tsx
 import React, { useLayoutEffect } from 'react'
 import { View, Text, Button } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
-import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { ParamListBase } from '@react-navigation/native'
+import { useNavigation, type ParamListBase } from '@react-navigation/native'
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 
 import type { ChartData } from '../lib/charts'
 import { normalizeZone } from '../lib/timezones'

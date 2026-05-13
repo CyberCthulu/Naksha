@@ -71,7 +71,7 @@ export default function LocationAutocompleteField({
 
         setResults(next)
         setShowResults(true)
-      } catch (e: unknown) {
+      } catch {
         if (requestId !== requestIdRef.current) return
         setResults([])
         setError('Could not load location suggestions.')

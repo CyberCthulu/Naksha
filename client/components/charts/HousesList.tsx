@@ -1,6 +1,6 @@
 // components/charts/HousesList.tsx
 import React from 'react'
-import { View, Text, StyleSheet, Pressable } from 'react-native'
+import { Text, StyleSheet, Pressable } from 'react-native'
 import { HouseCusp } from '../../lib/astro'
 import {
   signIndexFromLongitude,

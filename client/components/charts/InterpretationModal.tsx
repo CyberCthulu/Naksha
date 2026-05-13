@@ -1,5 +1,5 @@
 //components/charts/InterpretationModal.tsx
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import {
   Modal,
   View,
@@ -53,10 +53,10 @@ export default function InterpretationModal({
     return [pages[pages.length - 1], ...pages, pages[0]]
   }, [pages])
 
-  const toPagerIndex = (realIndex: number) => {
+  const toPagerIndex = useCallback((realIndex: number) => {
     if (pages.length <= 1) return 0
     return realIndex + 1
-  }
+  }, [pages.length])
 
   const toRealIndex = (pagerIndex: number) => {
     if (pages.length <= 1) return 0
@@ -84,7 +84,7 @@ export default function InterpretationModal({
     }
 
     pagerRef.current?.setPageWithoutAnimation(targetPagerIndex)
-  }, [visible, currentIndex, pages.length])
+  }, [visible, currentIndex, pages.length, toPagerIndex])
 
   useEffect(() => {
     if (!visible) {
