@@ -203,6 +203,14 @@ describe('CreateGuestChartScreen', () => {
     expect(mockNavigation.navigate).not.toHaveBeenCalled()
   })
 
+  it('goes back from the header back control', async () => {
+    const screen = await renderScreen()
+
+    await press(screen, '‹')
+
+    expect(mockNavigation.goBack).toHaveBeenCalled()
+  })
+
   it('navigates to Chart with guest mode for a resolved location', async () => {
     const screen = await renderScreen()
 

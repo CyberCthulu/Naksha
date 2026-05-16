@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react'
-import { Alert, StyleSheet, View } from 'react-native'
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 
 import AuthContainer from '../components/auth/AuthContainer'
@@ -7,10 +7,11 @@ import DateField from '../components/auth/DateField'
 import LocationAutocompleteField from '../components/auth/LocationAutocompleteField'
 import TimeField from '../components/auth/TimeField'
 import TimeZonePicker from '../components/auth/TimeZonePicker'
-import { AppText, MutedText, TitleText } from '../components/ui/AppText'
+import { AppText, MutedText } from '../components/ui/AppText'
 import { Button } from '../components/ui/Button'
 import FormField from '../components/ui/FormField'
 import TextField from '../components/ui/TextField'
+import { theme } from '../components/ui/theme'
 import { uiStyles } from '../components/ui/uiStyles'
 import { formatDateForDb, formatTimeForDb } from '../lib/time'
 import { getDeviceTimeZoneNormalized, normalizeZone } from '../lib/timezones'
@@ -73,7 +74,19 @@ export default function CreateGuestChartScreen() {
 
   return (
     <AuthContainer>
-      <TitleText>Create Guest Chart</TitleText>
+      <View style={styles.topRow}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <Text style={styles.backText}>‹</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.headerTitle}>Create Guest Chart</Text>
+
+        <View style={styles.rightSlot} />
+      </View>
+
       <MutedText style={styles.subtitle}>
         Enter another person{"'"}s birth details to view their chart.
       </MutedText>
@@ -126,18 +139,40 @@ export default function CreateGuestChartScreen() {
 
       <View style={styles.actions}>
         <Button title="Create Chart" onPress={onCreateChart} />
-        <Button
-          title="Cancel"
-          variant="ghost"
-          onPress={() => navigation.goBack()}
-          style={styles.cancelButton}
-        />
       </View>
     </AuthContainer>
   )
 }
 
 const styles = StyleSheet.create({
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  backText: {
+    color: theme.colors.text,
+    fontSize: 28,
+    lineHeight: 28,
+    marginTop: -2,
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    color: theme.colors.text,
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  rightSlot: {
+    width: 44,
+  },
   subtitle: {
     marginTop: 6,
     marginBottom: 18,
@@ -147,8 +182,5 @@ const styles = StyleSheet.create({
   },
   actions: {
     marginTop: 18,
-  },
-  cancelButton: {
-    marginTop: 10,
   },
 })

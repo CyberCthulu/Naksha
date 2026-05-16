@@ -17,6 +17,59 @@ type Props = {
   blocks?: InterpretationBlock[]
 }
 
+type TextSegment = {
+  text: string
+  paragraphIndex: number
+  sentenceIndex: number
+}
+
+function splitParagraphs(content: string): string[] {
+  return content
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+}
+
+function splitSentences(paragraph: string): string[] {
+  const sentences: string[] = []
+  let sentenceStart = 0
+
+  for (let index = 0; index < paragraph.length; index += 1) {
+    const character = paragraph[index]
+    if (character !== '.' && character !== '!' && character !== '?') continue
+
+    const nextCharacter = paragraph[index + 1]
+    if (nextCharacter && !/\s/.test(nextCharacter)) continue
+
+    const sentence = paragraph.slice(sentenceStart, index + 1).trim()
+    if (sentence) sentences.push(sentence)
+
+    sentenceStart = index + 1
+    while (
+      sentenceStart < paragraph.length &&
+      /\s/.test(paragraph[sentenceStart])
+    ) {
+      sentenceStart += 1
+    }
+    index = sentenceStart - 1
+  }
+
+  const trailingSentence = paragraph.slice(sentenceStart).trim()
+  if (trailingSentence) sentences.push(trailingSentence)
+
+  return sentences
+}
+
+function splitTextSegments(content: string): TextSegment[] {
+  return splitParagraphs(content).flatMap((paragraph, paragraphIndex) =>
+    splitSentences(paragraph).map((text, sentenceIndex) => ({
+      text,
+      paragraphIndex,
+      sentenceIndex,
+    }))
+  )
+}
+
 export default function InterpretationCard({
   title,
   subtitle = null,
@@ -53,6 +106,7 @@ export default function InterpretationCard({
           mode === 'short'
             ? block.interpretation?.short ?? ''
             : block.interpretation?.long ?? ''
+        const textSegments = splitTextSegments(content)
 
         return (
           <View
@@ -63,7 +117,24 @@ export default function InterpretationCard({
               <Text style={styles.blockTitle}>{block.title}</Text>
             )}
 
-            <Text style={styles.bodyText}>{content}</Text>
+            {textSegments.map((segment) => (
+              <Text
+                key={`${block.title ?? 'sentence'}-${index}-${segment.paragraphIndex}-${segment.sentenceIndex}`}
+                style={[
+                  styles.bodyText,
+                  segment.paragraphIndex > 0 &&
+                    segment.sentenceIndex === 0 &&
+                    styles.paragraphGap,
+                ]}
+              >
+                {segment.text}
+              </Text>
+            ))}
+
+            <View
+              testID="interpretation-block-bottom-spacer"
+              style={styles.blockBottomSpacer}
+            />
           </View>
         )
       })}
@@ -112,6 +183,13 @@ const styles = StyleSheet.create({
   bodyText: {
     color: theme.colors.text,
     fontSize: 14,
-    lineHeight: 22,
+    lineHeight: 24,
+    includeFontPadding: true,
+  },
+  paragraphGap: {
+    marginTop: 10,
+  },
+  blockBottomSpacer: {
+    height: 8,
   },
 })

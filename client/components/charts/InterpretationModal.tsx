@@ -1,5 +1,5 @@
 //components/charts/InterpretationModal.tsx
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import {
   Modal,
   View,
@@ -8,7 +8,7 @@ import {
   Pressable,
   ScrollView,
 } from 'react-native'
-import PagerView from 'react-native-pager-view'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { theme } from '../ui/theme'
 import InterpretationCard from './InterpretationCard'
 import { Interpretation } from '../../lib/lexicon'
@@ -44,53 +44,19 @@ export default function InterpretationModal({
   onChangeIndex,
   onClose,
 }: Props) {
-  const pagerRef = useRef<PagerView>(null)
-  const hasMountedRef = useRef(false)
-  const isInternalJumpRef = useRef(false)
+  const scrollRef = useRef<ScrollView | null>(null)
+  const insets = useSafeAreaInsets()
+  const activePage = pages[currentIndex] ?? pages[0]
 
-  const pagerPages = useMemo<InterpretationPage[]>(() => {
-    if (pages.length <= 1) return pages
-    return [pages[pages.length - 1], ...pages, pages[0]]
-  }, [pages])
-
-  const toPagerIndex = useCallback((realIndex: number) => {
-    if (pages.length <= 1) return 0
-    return realIndex + 1
-  }, [pages.length])
-
-  const toRealIndex = (pagerIndex: number) => {
-    if (pages.length <= 1) return 0
-    if (pagerIndex === 0) return pages.length - 1
-    if (pagerIndex === pagerPages.length - 1) return 0
-    return pagerIndex - 1
-  }
-
+  // Reset scroll to top whenever the modal opens or the page changes.
+  // The ScrollView is also keyed by currentIndex, so index changes mount a
+  // fresh instance at y=0 automatically; this effect handles the modal-reopen
+  // case where the index is unchanged.
   useEffect(() => {
-    if (!visible || !pages.length) return
-
-    const targetPagerIndex = toPagerIndex(currentIndex)
-
-    if (!hasMountedRef.current) {
-      hasMountedRef.current = true
-      requestAnimationFrame(() => {
-        pagerRef.current?.setPageWithoutAnimation(targetPagerIndex)
-      })
-      return
-    }
-
-    if (isInternalJumpRef.current) {
-      isInternalJumpRef.current = false
-      return
-    }
-
-    pagerRef.current?.setPageWithoutAnimation(targetPagerIndex)
-  }, [visible, currentIndex, pages.length, toPagerIndex])
-
-  useEffect(() => {
-    if (!visible) {
-      hasMountedRef.current = false
-      isInternalJumpRef.current = false
-    }
+    if (!visible) return
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo?.({ y: 0, animated: false })
+    })
   }, [visible])
 
   const handlePrevPress = () => {
@@ -103,38 +69,10 @@ export default function InterpretationModal({
     onChangeIndex(currentIndex === pages.length - 1 ? 0 : currentIndex + 1)
   }
 
-  const handlePageSelected = (event: { nativeEvent: { position: number } }) => {
-    if (!pages.length) return
-
-    const pagerIndex = event.nativeEvent.position
-
-    if (pages.length <= 1) {
-      onChangeIndex(0)
-      return
-    }
-
-    if (pagerIndex === 0) {
-      isInternalJumpRef.current = true
-      onChangeIndex(pages.length - 1)
-
-      requestAnimationFrame(() => {
-        pagerRef.current?.setPageWithoutAnimation(pages.length)
-      })
-      return
-    }
-
-    if (pagerIndex === pagerPages.length - 1) {
-      isInternalJumpRef.current = true
-      onChangeIndex(0)
-
-      requestAnimationFrame(() => {
-        pagerRef.current?.setPageWithoutAnimation(1)
-      })
-      return
-    }
-
-    onChangeIndex(toRealIndex(pagerIndex))
-  }
+  // Sheet top: sit just below the status bar with a small gap.
+  const sheetTop = insets.top + 52
+  // Bottom spacer inside the ScrollView clears the home indicator / nav bar.
+  const bottomSpacerHeight = Math.max(insets.bottom, 16) + 40
 
   return (
     <Modal
@@ -143,13 +81,41 @@ export default function InterpretationModal({
       transparent
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <Pressable style={styles.backdrop} onPress={onClose} />
+      {/* Full-screen backdrop — tap outside the sheet to close */}
+      <Pressable
+        testID="interpretation-backdrop"
+        style={styles.backdrop}
+        onPress={onClose}
+      />
 
-        <View style={styles.sheet}>
-          <View style={styles.headerRow}>
+      {/* Reading sheet — absolutely positioned so its height is never
+          derived from a fragile percentage calculation */}
+      <View
+        testID="interpretation-sheet"
+        style={[styles.sheet, { top: sheetTop }]}
+      >
+        {/* Fixed header row */}
+        <View style={styles.headerRow}>
+          <Pressable
+            onPress={handlePrevPress}
+            style={styles.navButton}
+            disabled={pages.length <= 1}
+          >
+            <Text
+              style={[
+                styles.navText,
+                pages.length <= 1 && styles.navTextDisabled,
+              ]}
+            >
+              ‹
+            </Text>
+          </Pressable>
+
+          <Text style={styles.headerTitle}>{headerTitle}</Text>
+
+          <View style={styles.headerActions}>
             <Pressable
-              onPress={handlePrevPress}
+              onPress={handleNextPress}
               style={styles.navButton}
               disabled={pages.length <= 1}
             >
@@ -159,57 +125,40 @@ export default function InterpretationModal({
                   pages.length <= 1 && styles.navTextDisabled,
                 ]}
               >
-                ‹
+                ›
               </Text>
             </Pressable>
 
-            <Text style={styles.headerTitle}>{headerTitle}</Text>
-
-            <View style={styles.headerActions}>
-              <Pressable
-                onPress={handleNextPress}
-                style={styles.navButton}
-                disabled={pages.length <= 1}
-              >
-                <Text
-                  style={[
-                    styles.navText,
-                    pages.length <= 1 && styles.navTextDisabled,
-                  ]}
-                >
-                  ›
-                </Text>
-              </Pressable>
-
-              <Pressable onPress={onClose} style={styles.closeButton}>
-                <Text style={styles.closeText}>✕</Text>
-              </Pressable>
-            </View>
+            <Pressable onPress={onClose} style={styles.closeButton}>
+              <Text style={styles.closeText}>✕</Text>
+            </Pressable>
           </View>
+        </View>
 
-          {!!pagerPages.length && (
-            <PagerView
-              ref={pagerRef}
-              style={styles.pager}
-              initialPage={toPagerIndex(currentIndex)}
-              onPageSelected={handlePageSelected}
+        {/* Scrollable content — keyed by currentIndex so every navigation
+            mounts a fresh ScrollView at y=0, eliminating stale scroll state */}
+        <View style={styles.contentArea}>
+          {!!activePage && (
+            <ScrollView
+              key={currentIndex}
+              ref={scrollRef}
+              testID="interpretation-scroll"
+              style={styles.pageScroll}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
             >
-              {pagerPages.map((page, index) => (
-                <View key={`${page.key}-${index}`} style={styles.page}>
-                  <ScrollView
-                    contentContainerStyle={styles.scrollContent}
-                    showsVerticalScrollIndicator={false}
-                  >
-                    <InterpretationCard
-                      title={page.title}
-                      subtitle={page.subtitle}
-                      summary={page.summary}
-                      blocks={page.blocks}
-                    />
-                  </ScrollView>
-                </View>
-              ))}
-            </PagerView>
+              <InterpretationCard
+                title={activePage.title}
+                subtitle={activePage.subtitle}
+                summary={activePage.summary}
+                blocks={activePage.blocks}
+              />
+              {/* Explicit spacer so the last text line clears the nav bar */}
+              <View
+                testID="interpretation-bottom-spacer"
+                style={{ height: bottomSpacerHeight }}
+              />
+            </ScrollView>
           )}
         </View>
       </View>
@@ -218,17 +167,16 @@ export default function InterpretationModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
   backdrop: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.55)',
   },
   sheet: {
-    height: '82%',
-    backgroundColor: 'rgba(10,10,10,0.96)',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(10,10,10,0.97)',
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     borderTopWidth: 1,
@@ -237,7 +185,6 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     paddingTop: 10,
     paddingHorizontal: 14,
-    paddingBottom: 18,
   },
   headerRow: {
     flexDirection: 'row',
@@ -281,13 +228,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
   },
-  pager: {
+  contentArea: {
     flex: 1,
+    minHeight: 0,
   },
-  page: {
+  pageScroll: {
     flex: 1,
+    minHeight: 0,
   },
-  scrollContent: {
-    paddingBottom: 24,
-  },
+  scrollContent: {},
 })

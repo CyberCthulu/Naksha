@@ -4,6 +4,7 @@ import { View, ActivityIndicator } from 'react-native'
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import * as Linking from 'expo-linking'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import supabase from './lib/supabase'
 import { SpaceProvider } from './components/space/SpaceProvider'
@@ -100,6 +101,7 @@ export default function App() {
   }
 
   return (
+    <SafeAreaProvider>
     <SpaceProvider>
       <View style={{ flex: 1, backgroundColor: '#000' }}>
         {/* <SpaceBackground /> */}
@@ -195,5 +197,6 @@ export default function App() {
         </AuthContext.Provider>
       </View>
     </SpaceProvider>
+    </SafeAreaProvider>
   )
 }

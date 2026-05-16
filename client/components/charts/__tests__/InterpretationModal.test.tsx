@@ -1,43 +1,21 @@
 import React from 'react'
-import { Text, View } from 'react-native'
+import { ScrollView, Text } from 'react-native'
 import TestRenderer from 'react-test-renderer'
 
 import InterpretationModal, {
   type InterpretationPage,
 } from '../InterpretationModal'
 
-jest.mock('react-native-pager-view', () => {
-  const React = require('react')
-  const { View } = require('react-native')
+function flattenStyles(style: unknown): Record<string, unknown> {
+  if (!style) return {}
+  if (Array.isArray(style)) return Object.assign({}, ...style.map(flattenStyles))
+  if (typeof style === 'object') return style as Record<string, unknown>
+  return {}
+}
 
-  return {
-    __esModule: true,
-    default: React.forwardRef(
-      (
-        props: {
-          children?: React.ReactNode
-          initialPage?: number
-          onPageSelected?: (event: { nativeEvent: { position: number } }) => void
-        },
-        ref: React.Ref<{ setPageWithoutAnimation: jest.Mock }>
-      ) => {
-        React.useImperativeHandle(ref, () => ({
-          setPageWithoutAnimation: jest.fn(),
-        }))
-
-        return (
-          <View
-            testID="PagerView"
-            initialPage={props.initialPage}
-            onPageSelected={props.onPageSelected}
-          >
-            {props.children}
-          </View>
-        )
-      }
-    ),
-  }
-})
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 24, left: 0 }),
+}))
 
 const { act, create } = TestRenderer
 
@@ -188,13 +166,11 @@ function findPressableByText(
   return pressable[0]
 }
 
-function pager(root: TestRenderer.ReactTestRenderer) {
-  const nodes = root.root.findAll(
-    (node) => node.type === View && node.props.testID === 'PagerView'
-  )
+function findByTestID(root: TestRenderer.ReactTestRenderer, testID: string) {
+  const node = root.root.findAll((item) => item.props.testID === testID)[0]
 
-  if (!nodes[0]) throw new Error('Could not find PagerView')
-  return nodes[0]
+  if (!node) throw new Error(`Could not find testID: ${testID}`)
+  return node
 }
 
 async function press(
@@ -252,12 +228,34 @@ describe('InterpretationModal', () => {
     expect(hasText(screen, 'A bright first page.')).toBe(true)
     expect(findPressableByText(screen, '‹').props.disabled).toBe(true)
     expect(findPressableByText(screen, '›').props.disabled).toBe(true)
+    expect(onChangeIndex).not.toHaveBeenCalled()
+  })
 
-    act(() => {
-      pager(screen).props.onPageSelected({ nativeEvent: { position: 0 } })
-    })
+  it('renders the active page inside one flex scroll container', () => {
+    const { renderer: screen } = renderModal()
+    const scrollViews = screen.root.findAllByType(ScrollView)
+    const firstScrollView = scrollViews[0]
+    const scrollStyle = flattenStyles(firstScrollView.props.style)
 
-    expect(onChangeIndex).toHaveBeenCalledWith(0)
+    expect(scrollViews).toHaveLength(1)
+    expect(scrollStyle?.flex).toBe(1)
+  })
+
+  it('positions the sheet absolutely and includes a bottom spacer for safe area', () => {
+    const { renderer: screen } = renderModal()
+    const sheet = findByTestID(screen, 'interpretation-sheet')
+    const sheetStyle = flattenStyles(sheet.props.style)
+
+    expect(sheetStyle?.position).toBe('absolute')
+    expect(sheetStyle?.bottom).toBe(0)
+    expect(sheetStyle?.left).toBe(0)
+    expect(sheetStyle?.right).toBe(0)
+
+    const spacer = findByTestID(screen, 'interpretation-bottom-spacer')
+    const spacerStyle = flattenStyles(spacer.props.style)
+
+    // With mocked insets.bottom=24: max(24,16)+40=64. Spacer must clear nav bar.
+    expect((spacerStyle?.height as number) ?? 0).toBeGreaterThanOrEqual(56)
   })
 
   it('calls onChangeIndex from next and previous controls', async () => {
@@ -266,7 +264,6 @@ describe('InterpretationModal', () => {
     })
 
     expect(hasText(screen, 'Sun in Aries')).toBe(true)
-    expect(pager(screen).props.initialPage).toBe(1)
 
     await press(screen, '›')
     expect(onChangeIndex).toHaveBeenLastCalledWith(1)
@@ -300,20 +297,21 @@ describe('InterpretationModal', () => {
     expect(onChangeIndex).toHaveBeenCalledWith(0)
   })
 
-  it('wraps circular sentinel pager selections to real page indexes', () => {
+  it('renders active page content when currentIndex changes', async () => {
     const { renderer: screen, onChangeIndex } = renderModal({
       currentIndex: 0,
     })
 
-    act(() => {
-      pager(screen).props.onPageSelected({ nativeEvent: { position: 0 } })
-    })
-    expect(onChangeIndex).toHaveBeenLastCalledWith(2)
+    expect(hasText(screen, 'Sun in Aries')).toBe(true)
+    expect(hasText(screen, 'Moon in Taurus')).toBe(false)
 
-    act(() => {
-      pager(screen).props.onPageSelected({ nativeEvent: { position: 4 } })
+    await updateModal({
+      currentIndex: 1,
+      onChangeIndex,
     })
-    expect(onChangeIndex).toHaveBeenLastCalledWith(0)
+
+    expect(hasText(screen, 'Sun in Aries')).toBe(false)
+    expect(hasText(screen, 'Moon in Taurus')).toBe(true)
   })
 
   it('calls onClose from the close control', async () => {
@@ -322,28 +320,5 @@ describe('InterpretationModal', () => {
     await press(screen, '✕')
 
     expect(onClose).toHaveBeenCalled()
-  })
-
-  it('resets pager mounting state after close and reopen', async () => {
-    const { renderer: screen, onChangeIndex, onClose } = renderModal({
-      currentIndex: 2,
-    })
-
-    expect(pager(screen).props.initialPage).toBe(3)
-
-    await updateModal({
-      visible: false,
-      currentIndex: 2,
-      onChangeIndex,
-      onClose,
-    })
-    await updateModal({
-      visible: true,
-      currentIndex: 0,
-      onChangeIndex,
-      onClose,
-    })
-
-    expect(pager(screen).props.initialPage).toBe(1)
   })
 })

@@ -4,6 +4,7 @@ import TestRenderer from 'react-test-renderer'
 
 import DashboardScreen from '../DashboardScreen'
 import supabase from '../../lib/supabase'
+import { signOut } from '../../lib/auth'
 import {
   buildChartData,
   getChartCalculationPreferences,
@@ -30,6 +31,10 @@ jest.mock('@react-navigation/native', () => {
     },
   }
 })
+
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 24, left: 0 }),
+}))
 
 jest.mock('../../lib/auth', () => ({
   __esModule: true,
@@ -327,15 +332,30 @@ describe('DashboardScreen', () => {
     expectText(screen, 'Email: ada@example.com')
   })
 
-  it('opens the guest chart creation flow from the dashboard', async () => {
+  it('routes compact dashboard actions to their current targets', async () => {
     const screen = await renderScreen()
 
     await act(async () => {
-      findPressableByText(screen, "Create Someone Else's Chart").props.onPress()
+      findPressableByText(screen, 'View Birth Chart').props.onPress()
+      findPressableByText(screen, 'Guest Chart').props.onPress()
+      findPressableByText(screen, 'My Charts').props.onPress()
+      findPressableByText(screen, 'Journal').props.onPress()
+      findPressableByText(screen, 'Edit Details').props.onPress()
+      findPressableByText(screen, 'My Profile').props.onPress()
+      findPressableByText(screen, 'Sign Out').props.onPress()
       await settleAsyncWork()
     })
 
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('Chart', {
+      profile: completeUser,
+      chartMode: 'self',
+    })
     expect(mockNavigation.navigate).toHaveBeenCalledWith('CreateGuestChart')
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('MyCharts')
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('JournalList')
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('CompleteProfile')
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('Profile')
+    expect(signOut).toHaveBeenCalled()
   })
 
   it('redirects incomplete profiles to CompleteProfile', async () => {

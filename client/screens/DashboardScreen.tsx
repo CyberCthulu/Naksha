@@ -1,7 +1,14 @@
 // screens/DashboardScreen.tsx
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { View, ActivityIndicator, InteractionManager } from 'react-native'
+import {
+  View,
+  ActivityIndicator,
+  InteractionManager,
+  ScrollView,
+  StyleSheet,
+} from 'react-native'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import supabase from '../lib/supabase'
 import { signOut } from '../lib/auth'
@@ -23,6 +30,7 @@ import { AppText, MutedText, TitleText } from '../components/ui/AppText'
 import { formatShortTimeFromHHMM } from '../lib/time'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
+import { theme } from '../components/ui/theme'
 
 const ZODIAC = [
   'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
@@ -41,6 +49,7 @@ export default function DashboardScreen() {
   const [moonSign, setMoonSign] = useState<string | null>(null)
 
   const nav = useNavigation<any>()
+  const insets = useSafeAreaInsets()
 
   const didEnsureOnce = useRef(false)
   const didNavigateRef = useRef(false)
@@ -249,11 +258,11 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       didNavigateRef.current = false
-      
+
       const task = InteractionManager.runAfterInteractions(() => {
         load()
-    }) 
-    
+      })
+
       return () => task.cancel()
   }, [load])
   )
@@ -289,7 +298,14 @@ export default function DashboardScreen() {
   }
 
   return (
-    <View style={uiStyles.screen}>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={[
+        styles.screenContent,
+        { paddingBottom: insets.bottom + 80 },
+      ]}
+      showsVerticalScrollIndicator={false}
+    >
       <TitleText style={uiStyles.h1}>Welcome to Naksha 🌌</TitleText>
 
       <AppText style={uiStyles.sub}>
@@ -321,56 +337,77 @@ export default function DashboardScreen() {
         </Card>
       )}
 
-      <View style={{ height: 12 }} />
-
-      <Button
-        title="Edit Birth Details"
-        variant="ghost"
-        onPress={() => nav.navigate('CompleteProfile')}
-      />
-
-      <Button
-        title="View Birth Chart"
-        variant="ghost"
-        onPress={() => nav.navigate('Chart', { profile, chartMode: 'self' })}
-        disabled={!profile || needsProfileCompletion(profile)}
-        style={{ marginTop: 8 }}
-      />
-
-      <Button
-        title="Create Someone Else's Chart"
-        variant="ghost"
-        onPress={() => nav.navigate('CreateGuestChart')}
-        style={{ marginTop: 8 }}
-      />
-
-      <Button
-        title="My Charts"
-        variant="ghost"
-        onPress={() => nav.navigate('MyCharts')}
-        style={{ marginTop: 8 }}
-      />
-
-      <Button
-        title="Journal"
-        variant="ghost"
-        onPress={() => nav.navigate('JournalList')}
-        style={{ marginTop: 8 }}
-      />
-
-      <Button
-        title="My Profile"
-        variant="ghost"
-        onPress={() => nav.navigate('Profile')}
-        style={{ marginTop: 8 }}
-      />
-
-      <Button
-        title="Sign Out"
-        variant="ghost"
-        onPress={signOut}
-        style={{ marginTop: 8 }}
-      />
-    </View>
+      <View style={styles.actionsPanel}>
+        <Button
+          title="View Birth Chart"
+          onPress={() => nav.navigate('Chart', { profile, chartMode: 'self' })}
+          disabled={!profile || needsProfileCompletion(profile)}
+        />
+        <View style={styles.actionGrid}>
+          <View style={styles.actionCell}>
+            <Button
+              title="Guest Chart"
+              variant="ghost"
+              onPress={() => nav.navigate('CreateGuestChart')}
+            />
+          </View>
+          <View style={styles.actionCell}>
+            <Button
+              title="My Charts"
+              variant="ghost"
+              onPress={() => nav.navigate('MyCharts')}
+            />
+          </View>
+          <View style={styles.actionCell}>
+            <Button
+              title="Journal"
+              variant="ghost"
+              onPress={() => nav.navigate('JournalList')}
+            />
+          </View>
+          <View style={styles.actionCell}>
+            <Button
+              title="Edit Details"
+              variant="ghost"
+              onPress={() => nav.navigate('CompleteProfile')}
+            />
+          </View>
+          <View style={styles.actionCell}>
+            <Button
+              title="My Profile"
+              variant="ghost"
+              onPress={() => nav.navigate('Profile')}
+            />
+          </View>
+          <View style={styles.actionCell}>
+            <Button title="Sign Out" variant="ghost" onPress={signOut} />
+          </View>
+        </View>
+      </View>
+    </ScrollView>
   )
 }
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  screenContent: {
+    padding: theme.spacing.screen,
+    paddingTop: theme.spacing.top,
+  },
+  actionsPanel: {
+    marginTop: 4,
+  },
+  actionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    columnGap: 8,
+    rowGap: 8,
+    marginTop: 8,
+  },
+  actionCell: {
+    flexBasis: '48%',
+    flexGrow: 1,
+  },
+})
