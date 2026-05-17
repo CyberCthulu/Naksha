@@ -19,6 +19,7 @@ import {
   getChartCalculationPreferences,
 } from '../lib/charts'
 import { parseChartData } from '../lib/chartDataValidation'
+import { buildTodayEnergy, type TodayEnergy } from '../lib/dailyTransits'
 import type { UserRow } from '../lib/domainTypes'
 import {
   needsProfileCompletion,
@@ -41,12 +42,24 @@ const ZODIAC_GLY = ['♈︎', '♉︎', '♊︎', '♋︎', '♌︎', '♍︎', 
 
 const signOf = (lon: number) => Math.floor((((lon % 360) + 360) % 360) / 30)
 
+const ASPECT_LABELS: Record<
+  NonNullable<TodayEnergy['strongestAspect']>['type'],
+  string
+> = {
+  conj: 'conjunct',
+  opp: 'opposite',
+  trine: 'trine',
+  square: 'square',
+  sextile: 'sextile',
+}
+
 export default function DashboardScreen() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<UserRow | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [sunSign, setSunSign] = useState<string | null>(null)
   const [moonSign, setMoonSign] = useState<string | null>(null)
+  const [todayEnergy, setTodayEnergy] = useState<TodayEnergy | null>(null)
 
   const nav = useNavigation<any>()
   const insets = useSafeAreaInsets()
@@ -83,6 +96,7 @@ export default function DashboardScreen() {
         setProfile(null)
         setSunSign(null)
         setMoonSign(null)
+        setTodayEnergy(null)
         setError('No active session found.')
         return
       }
@@ -138,6 +152,7 @@ export default function DashboardScreen() {
       if (needsProfileCompletion(u)) {
         setSunSign(null)
         setMoonSign(null)
+        setTodayEnergy(null)
 
         if (!didNavigateRef.current) {
           didNavigateRef.current = true
@@ -151,6 +166,7 @@ export default function DashboardScreen() {
       if (!(tz && u.birth_date && u.birth_time)) {
         setSunSign(null)
         setMoonSign(null)
+        setTodayEnergy(null)
         return
       }
 
@@ -187,6 +203,7 @@ export default function DashboardScreen() {
         setMoonSign(
           moon ? `${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}` : null
         )
+        setTodayEnergy(buildTodayEnergy(planets, new Date()))
 
         return
       }
@@ -232,11 +249,13 @@ export default function DashboardScreen() {
       setMoonSign(
         moon ? `${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}` : null
       )
+      setTodayEnergy(buildTodayEnergy(payload.planets, new Date()))
     } catch (e: any) {
       if (!unmounted.current) {
         setError(e?.message ?? 'Failed to load dashboard.')
         setSunSign(null)
         setMoonSign(null)
+        setTodayEnergy(null)
       }
     } finally {
       loadingRef.current = false
@@ -274,6 +293,7 @@ export default function DashboardScreen() {
   const prettyTime = profile?.birth_time
     ? formatShortTimeFromHHMM(profile.birth_time)
     : '—'
+  const strongestAspect = todayEnergy?.strongestAspect ?? null
 
   if (loading) {
     return (
@@ -317,6 +337,28 @@ export default function DashboardScreen() {
           <AppText style={uiStyles.cardTitle}>Your Signs</AppText>
           <AppText>☀️ Sun: {sunSign}</AppText>
           <AppText>🌙 Moon: {moonSign ?? '—'}</AppText>
+        </Card>
+      )}
+
+      {todayEnergy && (
+        <Card>
+          <AppText style={uiStyles.cardTitle}>Today’s Energy</AppText>
+          <AppText>Transit Moon: {todayEnergy.transitMoonSign ?? '—'}</AppText>
+          <AppText>Transit Sun: {todayEnergy.transitSunSign ?? '—'}</AppText>
+          {strongestAspect ? (
+            <>
+              <AppText>
+                {`Transit ${strongestAspect.transit.name} ${
+                  ASPECT_LABELS[strongestAspect.type]
+                } natal ${strongestAspect.natal.name} · ${strongestAspect.orb.toFixed(1)}°`}
+              </AppText>
+              {!!strongestAspect.aspectMeaning && (
+                <MutedText>{strongestAspect.aspectMeaning}</MutedText>
+              )}
+            </>
+          ) : (
+            <MutedText>No major fast transit aspect is exact right now.</MutedText>
+          )}
         </Card>
       )}
 

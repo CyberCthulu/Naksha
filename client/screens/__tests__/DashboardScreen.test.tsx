@@ -12,6 +12,10 @@ import {
   type ChartData,
 } from '../../lib/charts'
 import {
+  buildTodayEnergy,
+  type TodayEnergy,
+} from '../../lib/dailyTransits'
+import {
   DEFAULT_CHART_CALCULATION_PREFERENCES,
   type UserProfileFields,
   type UserRow,
@@ -46,6 +50,11 @@ jest.mock('../../lib/charts', () => ({
   buildChartData: jest.fn(),
   getChartCalculationPreferences: jest.fn(),
   saveChart: jest.fn(),
+}))
+
+jest.mock('../../lib/dailyTransits', () => ({
+  __esModule: true,
+  buildTodayEnergy: jest.fn(),
 }))
 
 jest.mock('../../lib/supabase', () => ({
@@ -129,6 +138,33 @@ function makeChartData({
   }
 }
 
+function makeTodayEnergy(
+  overrides: Partial<TodayEnergy> = {}
+): TodayEnergy {
+  return {
+    transitMoonSign: 'Virgo',
+    transitSunSign: 'Taurus',
+    strongestAspect: {
+      transit: {
+        kind: 'transit',
+        id: 'transit:Moon:0',
+        name: 'Moon',
+        lon: 150,
+      },
+      natal: {
+        kind: 'natal',
+        id: 'natal:Mars:0',
+        name: 'Mars',
+        lon: 60,
+      },
+      type: 'square',
+      orb: 0.75,
+      aspectMeaning: 'Friction that pushes you toward growth and action.',
+    },
+    ...overrides,
+  }
+}
+
 async function settleAsyncWork() {
   for (let i = 0; i < 20; i += 1) {
     await Promise.resolve()
@@ -166,6 +202,10 @@ function mockedGetChartCalculationPreferences() {
 
 function mockedSaveChart() {
   return saveChart as jest.MockedFunction<typeof saveChart>
+}
+
+function mockedBuildTodayEnergy() {
+  return buildTodayEnergy as jest.MockedFunction<typeof buildTodayEnergy>
 }
 
 function mockSignedInUser(metadata: Record<string, unknown> = {}) {
@@ -309,6 +349,7 @@ describe('DashboardScreen', () => {
       DEFAULT_CHART_CALCULATION_PREFERENCES
     )
     mockedSaveChart().mockResolvedValue({ id: 1 } as any)
+    mockedBuildTodayEnergy().mockReturnValue(makeTodayEnergy())
   })
 
   afterEach(() => {
@@ -409,13 +450,14 @@ describe('DashboardScreen', () => {
   })
 
   it('hydrates the signs summary from valid saved chart_data', async () => {
+    const savedChart = makeChartData({
+      sunLon: 15,
+      moonLon: 45,
+    })
     mockDashboardQueries({
       userRow: completeUser,
       chartRow: {
-        chart_data: makeChartData({
-          sunLon: 15,
-          moonLon: 45,
-        }),
+        chart_data: savedChart,
       },
     })
 
@@ -427,6 +469,35 @@ describe('DashboardScreen', () => {
     expect(mockedBuildChartData()).not.toHaveBeenCalled()
     expect(mockedGetChartCalculationPreferences()).not.toHaveBeenCalled()
     expect(mockedSaveChart()).not.toHaveBeenCalled()
+    expect(mockedBuildTodayEnergy()).toHaveBeenCalledWith(
+      savedChart.planets,
+      expect.any(Date)
+    )
+  })
+
+  it('renders Today’s Energy with a strongest fast transit aspect', async () => {
+    const screen = await renderScreen()
+
+    expectText(screen, 'Today’s Energy')
+    expectText(screen, 'Transit Moon: Virgo')
+    expectText(screen, 'Transit Sun: Taurus')
+    expectText(screen, 'Transit Moon square natal Mars · 0.8°')
+    expectText(screen, 'Friction that pushes you toward growth and action.')
+  })
+
+  it('renders Today’s Energy fallback when no strongest aspect exists', async () => {
+    mockedBuildTodayEnergy().mockReturnValue(
+      makeTodayEnergy({
+        strongestAspect: null,
+      })
+    )
+
+    const screen = await renderScreen()
+
+    expectText(screen, 'Today’s Energy')
+    expectText(screen, 'Transit Moon: Virgo')
+    expectText(screen, 'Transit Sun: Taurus')
+    expectText(screen, 'No major fast transit aspect is exact right now.')
   })
 
   it('falls back to built chart data when saved chart_data is invalid', async () => {
