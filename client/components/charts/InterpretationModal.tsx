@@ -1,5 +1,5 @@
 //components/charts/InterpretationModal.tsx
-import React, { useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import {
   Modal,
   View,
@@ -8,6 +8,7 @@ import {
   Pressable,
   ScrollView,
 } from 'react-native'
+import PagerView from 'react-native-pager-view'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { theme } from '../ui/theme'
 import InterpretationCard from './InterpretationCard'
@@ -44,35 +45,115 @@ export default function InterpretationModal({
   onChangeIndex,
   onClose,
 }: Props) {
-  const scrollRef = useRef<ScrollView | null>(null)
+  const pagerRef = useRef<PagerView>(null)
+  const hasMountedRef = useRef(false)
+  const isInternalJumpRef = useRef(false)
   const insets = useSafeAreaInsets()
-  const activePage = pages[currentIndex] ?? pages[0]
 
-  // Reset scroll to top whenever the modal opens or the page changes.
-  // The ScrollView is also keyed by currentIndex, so index changes mount a
-  // fresh instance at y=0 automatically; this effect handles the modal-reopen
-  // case where the index is unchanged.
+  const normalizedCurrentIndex =
+    pages.length > 0
+      ? Math.min(Math.max(currentIndex, 0), pages.length - 1)
+      : 0
+
+  const pagerPages = useMemo<InterpretationPage[]>(() => {
+    if (pages.length <= 1) return pages
+    return [pages[pages.length - 1], ...pages, pages[0]]
+  }, [pages])
+
+  const toPagerIndex = useCallback(
+    (realIndex: number) => {
+      if (pages.length <= 1) return 0
+      return realIndex + 1
+    },
+    [pages.length]
+  )
+
+  const toRealIndex = (pagerIndex: number) => {
+    if (pages.length <= 1) return 0
+    if (pagerIndex === 0) return pages.length - 1
+    if (pagerIndex === pagerPages.length - 1) return 0
+    return pagerIndex - 1
+  }
+
   useEffect(() => {
-    if (!visible) return
-    requestAnimationFrame(() => {
-      scrollRef.current?.scrollTo?.({ y: 0, animated: false })
-    })
+    if (!visible || !pages.length) return
+
+    const targetPagerIndex = toPagerIndex(normalizedCurrentIndex)
+
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true
+      requestAnimationFrame(() => {
+        pagerRef.current?.setPageWithoutAnimation(targetPagerIndex)
+      })
+      return
+    }
+
+    if (isInternalJumpRef.current) {
+      isInternalJumpRef.current = false
+      return
+    }
+
+    pagerRef.current?.setPageWithoutAnimation(targetPagerIndex)
+  }, [visible, pages.length, normalizedCurrentIndex, toPagerIndex])
+
+  useEffect(() => {
+    if (!visible) {
+      hasMountedRef.current = false
+      isInternalJumpRef.current = false
+    }
   }, [visible])
 
   const handlePrevPress = () => {
     if (!pages.length) return
-    onChangeIndex(currentIndex === 0 ? pages.length - 1 : currentIndex - 1)
+    onChangeIndex(
+      normalizedCurrentIndex === 0
+        ? pages.length - 1
+        : normalizedCurrentIndex - 1
+    )
   }
 
   const handleNextPress = () => {
     if (!pages.length) return
-    onChangeIndex(currentIndex === pages.length - 1 ? 0 : currentIndex + 1)
+    onChangeIndex(
+      normalizedCurrentIndex === pages.length - 1
+        ? 0
+        : normalizedCurrentIndex + 1
+    )
+  }
+
+  const handlePageSelected = (event: { nativeEvent: { position: number } }) => {
+    if (pages.length <= 1) return
+
+    const pagerIndex = event.nativeEvent.position
+
+    if (pagerIndex === 0) {
+      isInternalJumpRef.current = true
+      onChangeIndex(pages.length - 1)
+
+      requestAnimationFrame(() => {
+        pagerRef.current?.setPageWithoutAnimation(pages.length)
+      })
+      return
+    }
+
+    if (pagerIndex === pagerPages.length - 1) {
+      isInternalJumpRef.current = true
+      onChangeIndex(0)
+
+      requestAnimationFrame(() => {
+        pagerRef.current?.setPageWithoutAnimation(1)
+      })
+      return
+    }
+
+    onChangeIndex(toRealIndex(pagerIndex))
   }
 
   // Sheet top: sit just below the status bar with a small gap.
   const sheetTop = insets.top + 52
-  // Bottom spacer inside the ScrollView clears the home indicator / nav bar.
-  const bottomSpacerHeight = Math.max(insets.bottom, 16) + 40
+  // Bottom padding clears the home indicator / Android nav bar without
+  // leaving a large void after the final paragraph.
+  const scrollBottomPadding = Math.max(insets.bottom, 16) + 8
 
   return (
     <Modal
@@ -135,30 +216,36 @@ export default function InterpretationModal({
           </View>
         </View>
 
-        {/* Scrollable content — keyed by currentIndex so every navigation
-            mounts a fresh ScrollView at y=0, eliminating stale scroll state */}
         <View style={styles.contentArea}>
-          {!!activePage && (
-            <ScrollView
-              key={currentIndex}
-              ref={scrollRef}
-              testID="interpretation-scroll"
-              style={styles.pageScroll}
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
+          {!!pagerPages.length && (
+            <PagerView
+              ref={pagerRef}
+              testID="interpretation-pager"
+              style={styles.pager}
+              initialPage={toPagerIndex(normalizedCurrentIndex)}
+              onPageSelected={handlePageSelected}
             >
-              <InterpretationCard
-                title={activePage.title}
-                subtitle={activePage.subtitle}
-                summary={activePage.summary}
-                blocks={activePage.blocks}
-              />
-              {/* Explicit spacer so the last text line clears the nav bar */}
-              <View
-                testID="interpretation-bottom-spacer"
-                style={{ height: bottomSpacerHeight }}
-              />
-            </ScrollView>
+              {pagerPages.map((page, index) => (
+                <View key={`${page.key}-${index}`} style={styles.page}>
+                  <ScrollView
+                    testID="interpretation-scroll"
+                    style={styles.pageScroll}
+                    contentContainerStyle={[
+                      styles.scrollContent,
+                      { paddingBottom: scrollBottomPadding },
+                    ]}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    <InterpretationCard
+                      title={page.title}
+                      subtitle={page.subtitle}
+                      summary={page.summary}
+                      blocks={page.blocks}
+                    />
+                  </ScrollView>
+                </View>
+              ))}
+            </PagerView>
           )}
         </View>
       </View>
@@ -231,6 +318,12 @@ const styles = StyleSheet.create({
   contentArea: {
     flex: 1,
     minHeight: 0,
+  },
+  pager: {
+    flex: 1,
+  },
+  page: {
+    flex: 1,
   },
   pageScroll: {
     flex: 1,
