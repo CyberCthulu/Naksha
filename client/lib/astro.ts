@@ -34,6 +34,10 @@ export function computeNatalPlanets(dateUTC: Date): PlanetPos[] {
   }))
 }
 
+export function computeTransitPlanets(dateUTC: Date): PlanetPos[] {
+  return computeNatalPlanets(dateUTC)
+}
+
 // -------- Aspect finder --------
 export type Aspect = {
   a: string
