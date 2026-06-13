@@ -1,7 +1,9 @@
 import supabase from './supabase'
 
+const AUTH_CALLBACK_URL = 'naksha://auth/callback'
+
 function getRedirectTo() {
-  return 'naksha://auth/callback'
+  return AUTH_CALLBACK_URL
 }
 
 export type ProfileMeta = {
@@ -50,6 +52,12 @@ export async function verifySignupOtp(email: string, token: string) {
 
 export async function signInWithEmail(email: string, password: string) {
   return supabase.auth.signInWithPassword({ email, password })
+}
+
+export async function requestPasswordResetEmail(email: string) {
+  return supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: getRedirectTo(),
+  })
 }
 
 export async function signOut() {

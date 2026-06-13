@@ -5,13 +5,14 @@ import * as ExpoLinking from 'expo-linking'
 import supabase from '../lib/supabase'
 
 type VerifyType = 'email' | 'recovery' | 'invite' | 'email_change'
+type FinishRoute = 'ResetPassword'
 
 export default function AuthCallbackScreen({ navigation }: any) {
   const processingUrl = useRef<string | null>(null)
   const handledUrl = useRef<string | null>(null)
 
   useEffect(() => {
-    const finish = async () => {
+    const finish = async (route?: FinishRoute) => {
       const {
         data: { session },
         error,
@@ -21,7 +22,12 @@ export default function AuthCallbackScreen({ navigation }: any) {
         console.warn('Auth callback session lookup failed:', error.message)
       }
 
-      if (session?.user) {
+      if (route === 'ResetPassword') {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'ResetPassword' }],
+        })
+      } else if (session?.user) {
         navigation.reset({
           index: 0,
           routes: [{ name: 'Dashboard' }],
@@ -80,7 +86,7 @@ export default function AuthCallbackScreen({ navigation }: any) {
             )
           }
 
-          await finish()
+          await finish(!error && type === 'recovery' ? 'ResetPassword' : undefined)
           return
         }
 
@@ -100,7 +106,7 @@ export default function AuthCallbackScreen({ navigation }: any) {
             )
           }
 
-          await finish()
+          await finish(!error && type === 'recovery' ? 'ResetPassword' : undefined)
           return
         }
 
@@ -113,6 +119,7 @@ export default function AuthCallbackScreen({ navigation }: any) {
           const params = new URLSearchParams(fragment)
           const access_token = params.get('access_token') ?? undefined
           const refresh_token = params.get('refresh_token') ?? undefined
+          const fragmentType = params.get('type') ?? undefined
 
           if (access_token && refresh_token) {
             const { error } = await supabase.auth.setSession({
@@ -127,7 +134,11 @@ export default function AuthCallbackScreen({ navigation }: any) {
               )
             }
 
-            await finish()
+            await finish(
+              !error && fragmentType === 'recovery'
+                ? 'ResetPassword'
+                : undefined
+            )
             return
           }
         }

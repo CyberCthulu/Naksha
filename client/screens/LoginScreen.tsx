@@ -57,6 +57,15 @@ export default function LoginScreen({ navigation }: any) {
       <View style={{ height: 10 }} />
 
       <Button
+        title="Forgot password?"
+        variant="ghost"
+        onPress={() => navigation.navigate('ForgotPassword')}
+        disabled={submitting}
+      />
+
+      <View style={{ height: 10 }} />
+
+      <Button
         title="Don't have an account? Sign Up"
         variant="ghost"
         onPress={() => navigation.navigate('Signup')}

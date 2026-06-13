@@ -13,6 +13,8 @@ import { SpaceProvider } from './components/space/SpaceProvider'
 import LoginScreen from './screens/LoginScreen'
 import SignupScreen from './screens/SignupScreen'
 import CheckEmailScreen from './screens/CheckEmailScreen'
+import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
+import ResetPasswordScreen from './screens/ResetPasswordScreen'
 import DashboardScreen from './screens/DashboardScreen'
 import AuthCallbackScreen from './screens/AuthCallbackScreen'
 import CompleteProfileScreen from './screens/CompleteProfileScreen'
@@ -32,6 +34,8 @@ const linking = {
     screens: {
       Login: 'login',
       Signup: 'signup',
+      ForgotPassword: 'forgot-password',
+      ResetPassword: 'reset-password',
       CheckEmail: 'verify-email',
       Dashboard: 'dashboard',
       CompleteProfile: 'complete-profile',
@@ -187,10 +191,15 @@ export default function App() {
                 <>
                   <Stack.Screen name="Login" component={LoginScreen} />
                   <Stack.Screen name="Signup" component={SignupScreen} />
+                  <Stack.Screen
+                    name="ForgotPassword"
+                    component={ForgotPasswordScreen}
+                  />
                   <Stack.Screen name="CheckEmail" component={CheckEmailScreen} />
                 </>
               )}
 
+              <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
               <Stack.Screen name="AuthCallback" component={AuthCallbackScreen} />
             </Stack.Navigator>
           </NavigationContainer>

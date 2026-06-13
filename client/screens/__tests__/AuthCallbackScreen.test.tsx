@@ -161,6 +161,28 @@ describe('AuthCallbackScreen', () => {
     })
   })
 
+  it('routes recovery token callbacks to ResetPassword', async () => {
+    const url = 'naksha://auth/callback?token_hash=hash-1&type=recovery'
+    mockedLinking().getInitialURL.mockResolvedValue(url)
+    mockParsedUrl(url, {
+      queryParams: {
+        token_hash: 'hash-1',
+        type: 'recovery',
+      },
+    })
+
+    await renderScreen()
+
+    expect(mockedSupabase().auth.verifyOtp).toHaveBeenCalledWith({
+      token_hash: 'hash-1',
+      type: 'recovery',
+    })
+    expect(mockNavigation.reset).toHaveBeenCalledWith({
+      index: 0,
+      routes: [{ name: 'ResetPassword' }],
+    })
+  })
+
   it('uses exchangeCodeForSession for code callback URLs', async () => {
     const url = 'naksha://auth/callback?code=auth-code-1'
     mockedLinking().getInitialURL.mockResolvedValue(url)
@@ -198,6 +220,27 @@ describe('AuthCallbackScreen', () => {
     expect(mockNavigation.reset).toHaveBeenCalledWith({
       index: 0,
       routes: [{ name: 'Dashboard' }],
+    })
+  })
+
+  it('routes recovery fragment callbacks to ResetPassword', async () => {
+    const url =
+      'naksha://auth/callback#access_token=access-1&refresh_token=refresh-1&type=recovery'
+    mockedLinking().getInitialURL.mockResolvedValue(url)
+    mockParsedUrl(url, {
+      queryParams: {},
+      fragment: 'access_token=access-1&refresh_token=refresh-1&type=recovery',
+    })
+
+    await renderScreen()
+
+    expect(mockedSupabase().auth.setSession).toHaveBeenCalledWith({
+      access_token: 'access-1',
+      refresh_token: 'refresh-1',
+    })
+    expect(mockNavigation.reset).toHaveBeenCalledWith({
+      index: 0,
+      routes: [{ name: 'ResetPassword' }],
     })
   })
 
