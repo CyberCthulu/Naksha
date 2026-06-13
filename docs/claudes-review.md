@@ -80,15 +80,6 @@ The remaining open risks are product/automation gaps: guest chart persistence/pr
 | Chart preferences were stored but not read by chart math | `ChartCalculationPreferences` and defaults added. `getChartCalculationPreferences` reads `public.chart_preferences` with default fallback. `buildChartData` accepts preferences, `findAspects` receives `orb_mode`, and `useChartData` plus `DashboardScreen` pass preferences into computed chart builds. Current behavior remains Whole Sign, Tropical, and medium orbs only. |
 | `CompleteProfileScreen` excessive top dead space | Removed `insets.top + 6` inline style from the top-bar `View`. `AuthContainer` already applies `insets.top + 16` to its scroll container, so the previous code double-counted the safe area. `useSafeAreaInsets` import and call removed from the screen. |
 
-### Re-entry audit (2026-06-13)
-
-| Item | Resolution |
-|---|---|
-| `InterpretationCard` clipped final words/paragraphs | Reworked to split interpretation content into paragraphs and sentences (`splitParagraphs`/`splitSentences`/`splitTextSegments`) and render each as its own `Text` segment with a trailing block spacer. `components/charts/__tests__/InterpretationCard.test.tsx` added. Manually verified — clipping appears fully fixed. Do not casually modify this file again unless a real bug appears. |
-| `InterpretationModal` swipe/infinite paging needed restoring after the clipping fix | Circular pager behavior restored: pages are wrapped with duplicate first/last entries, `setPageWithoutAnimation` repositions on programmatic index changes, and an internal-jump ref prevents feedback loops on wrap. `components/charts/__tests__/InterpretationModal.test.tsx` expanded to cover prev/next, circular boundaries, close/reopen reset. Manually verified working. Per-page scroll position is preserved across swipes by current behavior — this is acceptable UX, not a release blocker. |
-| App root had no safe-area context provider | `SafeAreaProvider` (from `react-native-safe-area-context`) added at the top of the component tree in `App.tsx`, wrapping `SpaceProvider`. |
-| No daily/transit-based feature surface existed | `client/lib/dailyTransits.ts` added: `computeTransitPlanets` (in `lib/astro.ts`), `findDailyTransitAspects`, `findStrongestDailyTransitAspect`, and `buildTodayEnergy` compute transit Sun/Moon signs and the strongest fast-transit-to-natal aspect (Moon/Sun/Mercury/Venus/Mars vs. natal planets) using existing `findAspects`/orb-mode plumbing. `lib/__tests__/dailyTransits.test.ts` added. `DashboardScreen` renders a "Today's Energy" card showing transit Sun/Moon sign and the strongest aspect (or a fallback message when none is exact). Manually confirmed loading. This is intentionally v1/basic/generic — single strongest aspect only, self chart only, no relationship/synastry expansion. |
-
 ---
 
 ## 3. Remaining Architectural Risks
@@ -124,12 +115,11 @@ Stale `pref_*` keys in auth metadata for pre-migration users are inert — nothi
 | File | Lines | Status |
 |---|---|---|
 | `ProfileScreen.tsx` | 312 | Presentational cards extracted; data loading and save handlers still inline |
-| `DashboardScreen.tsx` | 455 | Profile repair + chart generation + Today's Energy v1 + UI; covered by focused tests, not yet extracted. Grew further with the Today's Energy card — primary decomposition candidate if this surface expands. |
-| `CompleteProfileScreen.tsx` | 323 | Data load + geocoding + timezone inference + UI; covered by focused tests, not yet extracted |
+| `DashboardScreen.tsx` | 351 | Profile repair + chart generation + UI; covered by focused tests, not yet extracted |
+| `CompleteProfileScreen.tsx` | 325 | Data load + geocoding + timezone inference + UI; covered by focused tests, not yet extracted |
 | `CheckEmailScreen.tsx` | 350 | OTP + upsert + navigation — not yet extracted |
-| `useChartData.ts` | 422 | Load + lookup + hydrate + compute + save — not yet split |
-| `InterpretationModal.tsx` | 333 | Circular pager + modal shell; recently reworked for swipe/clipping fix and covered by expanded tests, not yet split |
-| `InterpretationCard.tsx` | 195 | Paragraph/sentence splitting for clipping-safe rendering; small and tested — avoid refactor unless text rendering changes |
+| `useChartData.ts` | 325 | Load + lookup + hydrate + compute + save — not yet split |
+| `InterpretationModal.tsx` | 292 | Circular pager + modal shell; covered by focused tests, not yet split |
 
 Future decomposition should be attached to a feature, product requirement, or real defect. The cleanup phase no longer needs broad open-ended refactoring as a standalone priority.
 
@@ -147,42 +137,29 @@ Future decomposition should be attached to a feature, product requirement, or re
 
 ---
 
-### 3.6 — Today's Energy v1 is intentionally basic (LOW, future feature)
-
-`client/lib/dailyTransits.ts` and the Dashboard "Today's Energy" card are implemented and manually confirmed loading. Current scope is intentionally minimal: transit Sun/Moon sign plus a single strongest fast-transit-to-natal aspect (or a fallback message), computed for the logged-in user's own chart only. No forecast detail screen, historical/trend view, notifications, caching, premium gating, or user-configurable transit settings exist. Expanding this surface should be a deliberate future slice, not an incidental change.
-
----
-
-### 3.7 — Password reset and account/data deletion are not implemented (MEDIUM, release gap)
-
-Manual auth recheck during the 2026-06-13 re-entry audit confirmed signup, login, OTP verification, and deep-link callback handling work as documented, but there is no forgot-password/reset-password flow. Separately, `ProfileScreen` exposes account/privacy display surfaces, but there is no account deletion, data deletion/export, or retention-policy implementation. Both are release-readiness gaps rather than architectural defects.
-
----
-
 ## 4. Recommended Next 5 Tasks
 
 Ranked by user impact × risk reduction × demo readiness.
 
-**1. Docs refresh** *(complete as of this audit)*
-This review, the codebase handoff, and the decomposition roadmap have been brought current as of 2026-06-13: 13 suites / 77 tests, Today's Energy v1, interpretation clipping/swipe fixes, and `SafeAreaProvider` are now documented. "Build daily transits / Today's Energy v1" (previously #2) is now done — see §3.6.
+**1. Decide guest chart polish/persistence scope** *(builds on Guest Chart UI v1)*
+Guest Chart UI v1 exists without schema changes. Decide whether the next guest slice is UX polish only, saved guest birth profiles, relationship labels, or a future `birth_profiles` table.
+Files: `CreateGuestChartScreen.tsx`, tests, and optionally a future migration only if product chooses persisted guest profiles.
 
-**2. Password reset** *(release-readiness)*
-Add a forgot-password/reset-password flow. Preserve existing login/signup/OTP/deep-link behavior; do not log reset tokens or callback URLs. Add focused tests for reset request and reset callback/update paths.
-Files: likely `LoginScreen.tsx`, `lib/auth.ts`, a new reset screen, `AuthCallbackScreen.tsx`, linking config, tests.
+**2. Build daily transits / Today's Energy v1** *(next feature-facing surface)*
+Use existing profile/chart data to create a small daily astrology surface without expanding relationship analysis, premium gating, or unsupported chart systems.
+Files: depends on chosen UX.
 
-**3. Account deletion / data deletion / privacy basics** *(release-readiness)*
-Implement or scope account deletion and data deletion/export flows referenced by `ProfileScreen`'s privacy surface. Decide retention behavior for `charts`, `journals`, and related rows.
-Files: `ProfileScreen.tsx`, `components/profile/DataPrivacyCard.tsx`, `lib/auth.ts`, possibly a new migration for cascade/retention behavior.
+**3. Decide the next product slice for stubbed areas** *(feature clarity)*
+Either implement or intentionally keep parked `ChatScreen`, `SubscriptionScreen`, and placeholder service modules. The empty screens are not registered in `App.tsx`.
+Files: depends on chosen feature.
 
-**4. UI/UX revamp** *(pre-release polish)*
-With clipping/swipe fixed and Today's Energy live, do a cohesive interaction/visual pass across Dashboard, chart interpretation, guest chart entry, saved charts, and profile.
-Files: depends on chosen scope; `DashboardScreen.tsx` is the natural decomposition target given its growth (§3.4).
-
-**5. Release prep / CI-backed schema validation** *(release safety)*
-Automate or document a reliable `supabase db reset`/`db diff` workflow so migration drift is caught before release, alongside a manual release QA checklist.
+**4. Add CI-backed schema/migration validation** *(release safety)*
+Automate or document a reliable `supabase db reset`/`db diff` workflow so migration drift is caught before release.
 Files: CI config or project scripts/docs.
 
-**Deferred** (still valid, lower priority): guest chart polish/persistence decision (§3.3), product slice for `ChatScreen`/`SubscriptionScreen`/service stubs, and additional chart systems (Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, house-degree display) per §3.2.
+**5. Plan additional chart systems deliberately** *(product/math scope)*
+Implement Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, or house-degree display only when math, DB checks, UI states, and tests are all part of the same slice.
+Files: `lib/astro.ts`, `lib/charts.ts`, preference UI, migrations, tests.
 
 ---
 
@@ -219,9 +196,6 @@ Files: CI config or project scripts/docs.
 - Chart identity is `(user_id, birth_date, birth_time, time_zone, birth_lat, birth_lon)`. All save/lookup call sites use all six columns.
 - `public.chart_preferences` CHECK constraints currently allow only `'whole_sign'`, `'tropical'`, and `'medium'`. When implementing a new value, expand the CHECK constraint in a new migration before writing it from the frontend.
 - Do not claim Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, custom orb modes, or house-degree display are implemented. Current preference plumbing preserves Whole Sign, Tropical, and medium-orb output.
-- `client/lib/dailyTransits.ts` owns `computeTransitPlanets` (in `astro.ts`), `findDailyTransitAspects`, `findStrongestDailyTransitAspect`, and `buildTodayEnergy`. `DashboardScreen`'s "Today's Energy" card is intentionally v1/basic (§3.6) — do not expand its scope without a product decision.
-- Do not casually modify `InterpretationCard.tsx` or `InterpretationModal.tsx` — both were recently fixed for text clipping and circular swipe/infinite paging and are manually verified. Per-page scroll-position preservation across swipes is intentional behavior, not a bug.
-- `App.tsx` root is wrapped in `SafeAreaProvider` (from `react-native-safe-area-context`). Do not remove or duplicate this wrapper.
 - New migrations must be incremental files in `supabase/migrations/` with timestamp prefix. Do not edit `20260508015720_remote_schema.sql`.
 - Run `supabase db diff` to verify intent before and after any schema change.
 - Run `cd client && npm run typecheck` before any handoff. Zero errors required.
