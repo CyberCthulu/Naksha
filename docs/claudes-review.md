@@ -1,19 +1,30 @@
 # Claude's Architectural Review — Naksha Codebase
 
-Last updated: 2026-05-12 (post Guest Chart Creation UI v1)
+Last updated: 2026-06-13 (post re-entry audit — Today's Energy v1, interpretation clipping/swipe fixes, SafeAreaProvider)
 Reviewer: Claude (Sonnet 4.6)
 Scope: source code + all migrations through `20260508021500_chart_preferences.sql`
-Verification: `cd client && npm run typecheck` passes with zero errors. `npm test` passes (11 suites, 64 tests). `npm run lint` passes cleanly. `git diff --check` passes.
+Verification: `cd client && npm run typecheck` passes with zero errors. `npm test` passes (13 suites, 77 tests). `npm run lint` passes cleanly. `git diff --check` passes. `git status` clean on `main`, in sync with `origin/main`.
 
 ---
 
 ## 1. Current Status Summary
 
-The cleanup/stabilization phase is complete enough for feature expansion. Persisted `chart_data` is validated before use (`parseChartData` in `client/lib/chartDataValidation.ts`). Chart preferences are now read through `getChartCalculationPreferences`, passed into `buildChartData` as `ChartCalculationPreferences`, and `orb_mode` is plumbed into `findAspects`; current output intentionally remains Whole Sign, Tropical, and medium-orb only. Guest Chart Creation UI v1 is built: `CreateGuestChartScreen` collects another person's birth details, `CreateGuestChart` is registered in navigation, Dashboard exposes "Create Someone Else's Chart", and submit navigates to `Chart` with `chartMode: 'guest'`. Auto-save failures are surfaced to users via a `saveWarning` card in `ChartScreenContent`. `AuthCallbackScreen` URL-deduplication guard was replaced with URL-keyed refs (`processingUrl`/`handledUrl`), all token-hash-exposing logs were removed, and auth errors now show an `Alert`. `useChartData` has mounted/load-ID cancellation guards. `upsertJournal` no longer sends `id: undefined` in create mode. `CompleteProfileScreen` top dead space was fixed. Jest now has 11 suites and 64 passing tests, including chart preference plumbing, Dashboard, guest chart creation, CompleteProfile, and InterpretationModal coverage. ESLint is configured and clean. Supabase generated types are checked in, the Supabase client is typed with `Database`, and shared DB row aliases derive from generated `Tables`.
+The cleanup/stabilization phase is complete enough for feature expansion. Persisted `chart_data` is validated before use (`parseChartData` in `client/lib/chartDataValidation.ts`). Chart preferences are now read through `getChartCalculationPreferences`, passed into `buildChartData` as `ChartCalculationPreferences`, and `orb_mode` is plumbed into `findAspects`; current output intentionally remains Whole Sign, Tropical, and medium-orb only. Guest Chart Creation UI v1 is built: `CreateGuestChartScreen` collects another person's birth details, `CreateGuestChart` is registered in navigation, Dashboard exposes "Create Someone Else's Chart", and submit navigates to `Chart` with `chartMode: 'guest'`. Auto-save failures are surfaced to users via a `saveWarning` card in `ChartScreenContent`. `AuthCallbackScreen` URL-deduplication guard was replaced with URL-keyed refs (`processingUrl`/`handledUrl`), all token-hash-exposing logs were removed, and auth errors now show an `Alert`. `useChartData` has mounted/load-ID cancellation guards. `upsertJournal` no longer sends `id: undefined` in create mode. `CompleteProfileScreen` top dead space was fixed. ESLint is configured and clean. Supabase generated types are checked in, the Supabase client is typed with `Database`, and shared DB row aliases derive from generated `Tables`.
+
+Since the previous review, three more slices landed and were verified during the 2026-06-13 re-entry audit:
+
+- **Interpretation paragraph/clipping fixes**: `InterpretationCard.tsx` was reworked to split content into paragraphs/sentences and render them as discrete text segments, fixing final-word/paragraph clipping. Manually verified — clipping appears fully fixed.
+- **InterpretationModal swipe/infinite restore**: the circular pager (duplicate first/last pages, `setPageWithoutAnimation`, internal-jump guard) was restored and manually verified. Per-page scroll position is preserved across swipes by current behavior; this is intentional/acceptable UX, not a bug.
+- **`SafeAreaProvider`** was added at the app root in `App.tsx`, wrapping `SpaceProvider`.
+- **Daily Transits / Today's Energy v1** is implemented end-to-end (see §2 for details) and confirmed loading in manual run-through. It is intentionally v1/basic/generic — transit Sun/Moon sign plus a single strongest fast-transit-to-natal aspect, with a fallback message when nothing is exact.
+
+Jest now has 13 suites and 77 passing tests (up from 11/64), including chart preference plumbing, Dashboard, guest chart creation, CompleteProfile, InterpretationModal, InterpretationCard, and daily transit helper coverage.
 
 `ProfileScreen` presentational and interactive cards have been extracted to `client/components/profile/`. Shared profile completeness helpers live in `client/lib/profileCompletion.ts`. `ChartScreen` is a route-validation shell; all hooks and rendering live in `ChartScreenContent`.
 
-The remaining open risks are product/automation gaps: guest chart persistence/profile management is not implemented, synastry/compatibility/composite charts and premium gating are not implemented, stubbed chat/subscription/service modules remain unimplemented, additional astrology systems are not implemented, and schema/migration validation is not automated or CI-backed. Future cleanup should be attached to specific feature work or real defects, not broad open-ended refactoring.
+Manual auth recheck during the re-entry audit confirmed login/signup/OTP/profile flows work as documented, **except password reset is not implemented** (see §3 and §7).
+
+The remaining open risks are product/automation gaps: guest chart persistence/profile management is not implemented, synastry/compatibility/composite charts and premium gating are not implemented, stubbed chat/subscription/service modules remain unimplemented, additional astrology systems are not implemented, password reset and account/data deletion are not implemented, and schema/migration validation is not automated or CI-backed. Future cleanup should be attached to specific feature work or real defects, not broad open-ended refactoring.
 
 ---
 

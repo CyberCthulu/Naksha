@@ -1,7 +1,7 @@
 # Naksha Decomposition Roadmap
 
 Generated: 2026-05-09
-Last updated: 2026-05-12 — Guest Chart Creation UI v1 complete.
+Last updated: 2026-06-13 — Today’s Energy v1 complete; verification/docs refresh.
 Scope: documentation-only roadmap for large-file cleanup before feature expansion.
 
 ## 1. Purpose
@@ -19,18 +19,20 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
 - `client/hooks/useChartData.ts`
 - `client/screens/ChartScreen.tsx`
 - `client/components/charts/InterpretationModal.tsx`
+- `client/components/charts/InterpretationCard.tsx`
 
 ## 3. Per-File Analysis
 
 | File | Risk | Current mixed responsibilities | Best extraction candidates | Behavior that must remain unchanged | Main value |
 | --- | --- | --- | --- | --- | --- |
 | `ProfileScreen.tsx` | Medium | Loads profile, chart preferences, subscription, purchases; creates default preference row; renders account, birth details, preferences, billing, purchases, privacy, and sign-out. | `useProfileScreenData`, `lib/chartPreferences.ts`, `ProfileHeader`, `BirthDetailsCard`, `ChartPreferencesCard`, `SubscriptionCard`, `PurchasesCard`, `AccountActionsCard`, reusable `InfoRow`/`ChoiceRow`. | No auth metadata preference writes; default `chart_preferences` row is created/upserted; unsupported options stay disabled/coming soon. | Mostly organization, plus lower future risk for preferences and billing work. |
-| `DashboardScreen.tsx` | High | Auth user lookup, user-row bootstrap, auth metadata repair, profile completion redirect, chart lookup/build/auto-save, sun/moon summary, navigation UI. | `lib/profileCompletion.ts`, `lib/dashboardChartSummary.ts`, `DashboardSignsCard`, `DashboardBirthDetailsCard`, `DashboardActions`. | Older-account repair remains; incomplete profiles still route to `CompleteProfile`; self chart opens with `chartMode: 'self'`; charts without coordinates do not save. | Focused tests now guard current behavior; future extraction should be tied to a feature or defect. |
+| `DashboardScreen.tsx` | High | Auth user lookup, user-row bootstrap, auth metadata repair, profile completion redirect, chart lookup/build/auto-save, sun/moon summary, Today’s Energy v1, navigation UI. | `lib/profileCompletion.ts`, `lib/dashboardChartSummary.ts`, `lib/dashboardTodayEnergy.ts`, `DashboardSignsCard`, `DashboardTodayEnergyCard`, `DashboardBirthDetailsCard`, `DashboardActions`. | Older-account repair remains; incomplete profiles still route to `CompleteProfile`; self chart opens with `chartMode: 'self'`; charts without coordinates do not save; Today’s Energy remains basic v1 unless intentionally expanded. | Focused tests now guard current behavior; future extraction should be tied to a feature or defect. |
 | `CompleteProfileScreen.tsx` | Medium | Loads user row, maps DB date/time to picker state, manages form state, validates, geocodes fallback, updates `public.users`, renders header/footer/form. | `useCompleteProfileForm`, `userRowToProfileForm`, `profileFormToUserUpdate`, `resolveBirthLocationForSave`, `CompleteProfileHeader`, `CompleteProfileFooter`. | Writes `public.users` only; manual typed location geocodes before save; OpenCage timezone can update `time_zone`; `navigation.goBack()` remains. | Save/geocode lifecycle tests now guard current behavior and prepare reuse for guest birth-data entry. |
 | `CheckEmailScreen.tsx` | Medium-High | OTP UI, resend, verify, session/user confirmation, signup profile upsert, fallback profile fetch, completion routing. | `lib/profileCompletion.ts`, `lib/signupProfileBootstrap.ts`, `OtpVerificationCard`. | Resend behavior, OTP alerts, route-param profile upsert, and deterministic reset to `Dashboard` or `CompleteProfile` remain. | Reduces auth-flow drift and future profile-rule risk. |
 | `useChartData.ts` | High | Saved-chart hydration, `chart_data` validation handling, auth lookup, canonical chart lookup, render-only charts, self auto-save, guest manual save, save warnings, async cancellation guards, alerts, chart state. | `lib/chartPersistence.ts`, `hydrateChartData`, `findSavedChartByIdentity`, `saveBuiltChart`, later `useChartLoader`/`useChartSaveAction`. | `fromSaved` path stays valid; self charts can auto-save; guest charts do not auto-save; missing-coordinate charts stay view-only; save warnings and cancellation behavior remain. | High future feature value; focused hook tests now guard current behavior. |
 | `ChartScreen.tsx` | Medium | Route guard, timezone validation, chart hook wiring, focus side effect, save button state, chart layout, page building, modal wiring. | `ChartScreenContent`, `ChartSaveControl`, `ChartViewOnlyNotice`, `useChartInterpretationPages`, `ChartBody`. | Invalid route empty state, saved chart flow, save button labels, initial Sun focus, guest manual-save behavior, and interpretation modal behavior remain. | Reduces crash/hook-order risk and now supports the guest chart entry flow. |
 | `InterpretationModal.tsx` | Medium | Modal shell, duplicate interpretation types, circular pager index math, previous/next controls, close/backdrop, page rendering. | Import shared `interpretationTypes`, `useCircularPager`, `InterpretationModalHeader`, `InterpretationPager`. | Circular swipe, first/last wrap, disabled arrows for one page, and close/reopen reset remain. | Pager tests now guard current behavior; extraction is optional and should be feature-attached. |
+| `InterpretationCard.tsx` | Low-Medium | Interpretation block filtering and paragraph/sentence text splitting for clipping-safe text rendering. | Shared text splitting helper only if another component needs identical behavior. | Long interpretation text must not clip final words; paragraph spacing should remain readable. | Current behavior is small and tested; avoid refactor unless text rendering changes. |
 
 ## 4. Ranked Roadmap
 
@@ -126,24 +128,49 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
     - Typed-location guest charts may pass null coordinates and rely on existing View Only behavior.
     - No schema, migration, `birth_profiles` table, synastry, compatibility, composite chart, report, or premium gating added.
 
+21. **Interpretation clipping and circular pager restoration**
+    - `InterpretationCard` splits long prose by paragraph and sentence so final words do not clip.
+    - `InterpretationModal` restores circular swipe/infinite pager behavior with sentinel pages.
+    - Manual verification confirms clipping appears fully fixed and swipe/infinite modal works.
+    - Current per-page scroll-position preservation is intentional and is not a release blocker.
+
+22. **App-root safe-area wrapper**
+    - `SafeAreaProvider` wraps the app root so screens and modal sheets can consistently use safe-area insets.
+
+23. **Daily Transits / Today’s Energy v1**
+    - `client/lib/dailyTransits.ts` added.
+    - Uses `computeTransitPlanets` from `astro`.
+    - Provides `findDailyTransitAspects`, `findStrongestDailyTransitAspect`, and `buildTodayEnergy`.
+    - Dashboard renders a Today’s Energy card with transit Sun/Moon signs and the strongest fast transit aspect when available.
+    - This is intentionally a basic v1 surface; no forecast detail screen, notifications, caching, premium gating, or user-configurable transit settings are implemented.
+
 ---
 
 ### REMAINING (re-ranked)
 
-- **Next feature slice: Guest chart polish/persistence decision** *(builds on Guest Chart UI v1)*
+- **Next release-readiness slice: password reset**
+   - Signup, login, OTP, and deep-link callback flows appear to work manually.
+   - Password reset / forgot-password is not implemented yet.
+
+- **Privacy/account slice: account deletion and data deletion basics**
+   - Profile has privacy/account surfaces, but account deletion, data deletion, export, and retention behavior are not complete product flows.
+
+- **UI/UX revamp slice**
+   - Give Dashboard, chart interpretation, guest chart entry, saved charts, and profile a cohesive pre-release interaction/visual pass.
+
+- **Release readiness slice**
+   - Add CI-backed verification, schema/migration validation, and a manual release QA checklist.
+
+- **Guest profile persistence / relationship metadata decision** *(builds on Guest Chart UI v1)*
    - Decide whether guest charts remain one-off entries, get UX polish only, or need reusable guest birth profiles/relationship labels.
    - Do not add a `birth_profiles` table or guest-specific schema until the product workflow is defined.
-
-- **Next feature slice: Daily transits / Today's Energy v1** *(feature-facing growth)*
-   - Add a small daily astrology surface using existing profile/chart data.
-   - Do not expand relationship analysis, premium gating, or unsupported chart systems in the same slice.
 
 - **Later feature slice: Additional chart systems** *(product/math scope)*
    - Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, and house-degree display are not implemented.
    - Add math, DB constraints, UI states, and tests together when each system is product-ready.
 
 - **Product decision slice: Chat, subscription, and service stubs** *(feature clarity)*
-   - Decide whether to implement or intentionally park `ChatScreen`, `SubscriptionScreen`, and placeholder service modules.
+   - Decide whether to implement or intentionally park zero-line `ChatScreen`, `SubscriptionScreen`, and placeholder service modules: `conversations`, `reports`, `notifications`, `subscriptions`, and `usage`.
    - The empty screens remain unregistered in `App.tsx`.
 
 - **Tooling slice: CI-backed schema/migration validation** *(release safety)*
@@ -219,23 +246,32 @@ Expo-compatible ESLint flat config and `"lint": "eslint ."` added. Targeted clea
 **Guest Chart Creation UI v1** ✅
 `CreateGuestChartScreen` added, `CreateGuestChart` route registered, and Dashboard now exposes "Create Someone Else's Chart". The form collects name, birth date, birth time, location, time zone, and selected coordinates when available. Submit navigates to `Chart` with `chartMode: 'guest'`. Typed-location guest charts may pass null coordinates and rely on existing View Only behavior. No schema, migrations, `birth_profiles` table, synastry, compatibility, composite chart, report, or premium gating added.
 
+**Interpretation clipping and circular pager restore** ✅
+`InterpretationCard` now splits long interpretation prose into paragraph/sentence nodes to avoid clipping final words. `InterpretationModal` circular swipe/infinite pager behavior is restored and manually verified. Per-page scroll position is preserved by current design and is not considered a bug or release blocker.
+
+**App-root SafeAreaProvider** ✅
+`SafeAreaProvider` wraps the app root, supporting safe-area-aware screens and modal sheets.
+
+**Daily Transits / Today’s Energy v1** ✅
+`client/lib/dailyTransits.ts` added. It uses `computeTransitPlanets`, `findDailyTransitAspects`, `findStrongestDailyTransitAspect`, and `buildTodayEnergy` to power a basic Dashboard Today’s Energy card. This is intentionally v1/basic.
+
 **Final cleanup verification baseline** ✅
-`npm run typecheck`, `npm test` (11 suites / 64 tests), and `npm run lint` pass cleanly.
+As of 2026-06-13: clean `main` in sync with `origin/main`; `npm run typecheck`, `npm test` (13 suites / 77 tests), `npm run lint`, and `git diff --check` pass. Manual app run-through works.
 
 ## 6. Next Safe Slice
 
-**Next feature slice: Guest chart polish/persistence decision**
+**Next release-readiness slice: password reset**
 
 Cleanup/stabilization is complete enough for feature expansion. Future cleanup should be attached to specific feature work or real defects, not broad open-ended refactoring.
 
-Guest Chart Creation UI v1 is now built. The best next feature-facing slice is deciding whether to keep guest charts as one-off chart entries or add persistence/profile-management affordances:
+Signup, login, OTP verification, and auth deep-link handling appear to work manually, but password recovery is not implemented. The best next safe slice is adding a forgot-password/reset-password flow while preserving existing auth behavior.
 
-- Polish the current form only where it improves the one-off flow.
-- Decide whether reusable guest birth profiles, relationship labels, or a future `birth_profiles` table are needed.
-- Preserve guest manual-save behavior and self chart auto-save behavior.
-- Keep missing-coordinate guest charts View Only.
+- Keep `public.users` as the durable profile/birth source of truth.
+- Keep auth metadata limited to signup/bootstrap and Dashboard repair.
+- Do not log reset callback URLs, tokens, or sensitive auth payloads.
+- Add focused tests around reset request, reset callback/update behavior, and preserved login/signup/OTP behavior.
 
-A viable alternate next feature slice is daily transits / Today's Energy v1. Do not claim synastry, compatibility, composite charts, reports, premium gating, guest-specific schema, Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, or house-degree display are implemented until their product behavior, math/schema needs, UI, and tests are defined.
+Next priorities after password reset: account deletion/data deletion/privacy basics, UI/UX revamp, release readiness, and only then guest profile persistence or relationship metadata after a product decision. Do not claim synastry, compatibility, composite charts, reports, premium gating, guest-specific schema, Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, or house-degree display are implemented until their product behavior, math/schema needs, UI, and tests are defined.
 
 ## 7. Deferred / High-Risk Refactors
 
@@ -243,8 +279,9 @@ A viable alternate next feature slice is daily transits / Today's Energy v1. Do 
 - Moving the entire `DashboardScreen.load` flow into a hook in one pass without a feature or defect reason.
 - Reworking `CheckEmailScreen` OTP/session/upsert flow beyond covered behavior without a product reason.
 - Changing `CompleteProfileScreen` geocode/timezone/save sequencing without updating focused tests.
+- Expanding Today’s Energy beyond v1 without deciding forecast scope, UI, performance, and tests.
 - Adding guest chart schema fields such as `chart_type`, `is_primary`, `relationship_label`, or a `birth_profiles` table before the guest profile-management workflow is defined.
-- Reworking subscriptions, purchases, account deletion, or exports before those features are product-ready.
+- Reworking subscriptions, purchases, account deletion, data deletion, or exports before those features are product-ready.
 - Implementing additional chart systems before math, DB constraints, UI, and tests are ready.
 
 ## 8. Guardrails For Future Work
@@ -253,6 +290,7 @@ These areas now have focused coverage or explicit contracts, but they remain hig
 
 - `useChartData` auto-save/manual-save/canonical lookup/save-warning/cancellation behavior.
 - `DashboardScreen` profile repair and self chart auto-save behavior.
+- `DashboardScreen` Today’s Energy rendering and `dailyTransits` helper behavior.
 - `CheckEmailScreen` OTP/session/upsert flow beyond the covered navigation paths.
 - `CompleteProfileScreen` manual geocode, timezone normalization, and `public.users` update lifecycle.
 - `InterpretationModal` circular pager logic.
@@ -287,3 +325,4 @@ Manual verification should match the touched surface:
 - CheckEmail slices: verify OTP success, resend, missing email/code alerts, profile-complete route to Dashboard, incomplete route to CompleteProfile.
 - CompleteProfile slices: save with selected autocomplete coordinates, save with manual typed location that needs geocoding, save with invalid/missing fields.
 - Interpretation slices: open planet modal, open house modal, swipe first-to-last and last-to-first, test one-page/empty-page behavior where possible.
+- Today’s Energy slices: load Dashboard with valid natal planets, verify transit Sun/Moon signs and strongest-aspect/fallback card states.
