@@ -203,6 +203,27 @@ describe('AuthCallbackScreen', () => {
     })
   })
 
+  it('routes recovery code callbacks to ResetPassword', async () => {
+    const url = 'naksha://auth/callback?code=auth-code-1&type=recovery'
+    mockedLinking().getInitialURL.mockResolvedValue(url)
+    mockParsedUrl(url, {
+      queryParams: {
+        code: 'auth-code-1',
+        type: 'recovery',
+      },
+    })
+
+    await renderScreen()
+
+    expect(mockedSupabase().auth.exchangeCodeForSession).toHaveBeenCalledWith(
+      'auth-code-1'
+    )
+    expect(mockNavigation.reset).toHaveBeenCalledWith({
+      index: 0,
+      routes: [{ name: 'ResetPassword' }],
+    })
+  })
+
   it('uses setSession for access_token/refresh_token fragments', async () => {
     const url = 'naksha://auth/callback#access_token=access-1&refresh_token=refresh-1'
     mockedLinking().getInitialURL.mockResolvedValue(url)
