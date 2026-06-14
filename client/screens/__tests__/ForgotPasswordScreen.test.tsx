@@ -117,6 +117,8 @@ describe('ForgotPasswordScreen', () => {
   it('validates missing email before requesting reset', async () => {
     const screen = await renderScreen()
 
+    expectText(screen, 'Forgot Password')
+
     await press(screen, 'Send Reset Email')
 
     expectText(screen, 'Email is required.')

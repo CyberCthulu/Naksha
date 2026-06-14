@@ -45,7 +45,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
 
   return (
     <AuthContainer centered>
-      <AppText style={uiStyles.h1}>Reset Password</AppText>
+      <AppText style={uiStyles.h1}>Forgot Password</AppText>
       <AppText style={[uiStyles.sub, { marginBottom: 14 }]}>
         Enter your email and we will send reset instructions.
       </AppText>

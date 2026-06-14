@@ -42,7 +42,7 @@ const linking = {
       CreateGuestChart: 'guest-chart/new',
       Chart: 'chart',
       MyCharts: 'my-charts',
-      AuthCallback: 'auth/callback',
+      AuthCallback: '',
       JournalEditor: 'journal/edit/:id?',
       JournalList: 'journal/list',
       Profile: 'profile',
