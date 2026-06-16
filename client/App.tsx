@@ -24,6 +24,7 @@ import MyChartsScreen from './screens/MyCharts'
 import JournalEditorScreen from './screens/JournalEditorScreen'
 import JournalListScreen from './screens/JournalListScreen'
 import ProfileScreen from './screens/ProfileScreen'
+import { normalizeAuthCallbackUrlForRouting } from './lib/authCallbackUrl'
 
 export const AuthContext = createContext<{ user: any | null }>({ user: null })
 const Stack = createNativeStackNavigator()
@@ -48,14 +49,17 @@ const linking = {
       Profile: 'profile',
     },
   },
-}
+  async getInitialURL() {
+    const url = await Linking.getInitialURL()
+    return normalizeAuthCallbackUrlForRouting(url)
+  },
+  subscribe(listener: (url: string) => void) {
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      listener(normalizeAuthCallbackUrlForRouting(url) ?? url)
+    })
 
-function logDeepLinkFlags(url?: string | null) {
-  const value = typeof url === 'string' ? url : ''
-
-  console.warn('[DeepLink] appears auth callback:', value.includes('auth/callback'))
-  console.warn('[DeepLink] contains query marker:', value.includes('?'))
-  console.warn('[DeepLink] contains fragment marker:', value.includes('#'))
+    return () => subscription.remove()
+  },
 }
 
 const TransparentTheme = {
@@ -74,34 +78,6 @@ const TransparentTheme = {
 export default function App() {
   const [user, setUser] = useState<any | null>(null)
   const [authReady, setAuthReady] = useState(false)
-
-  useEffect(() => {
-    let mounted = true
-
-    Linking.getInitialURL()
-      .then((url) => {
-        if (!mounted) return
-
-        console.warn('[DeepLink] initial URL present:', Boolean(url))
-        logDeepLinkFlags(url)
-      })
-      .catch(() => {
-        if (!mounted) return
-
-        console.warn('[DeepLink] initial URL present:', false)
-        logDeepLinkFlags(null)
-      })
-
-    const sub = Linking.addEventListener('url', ({ url }) => {
-      console.warn('[DeepLink] foreground URL event received:', Boolean(url))
-      logDeepLinkFlags(url)
-    })
-
-    return () => {
-      mounted = false
-      sub.remove()
-    }
-  }, [])
 
   useEffect(() => {
     let mounted = true

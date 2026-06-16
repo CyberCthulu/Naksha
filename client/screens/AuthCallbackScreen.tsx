@@ -3,18 +3,17 @@ import { useEffect, useRef } from 'react'
 import { View, Text, ActivityIndicator, StyleSheet, Alert } from 'react-native'
 import * as ExpoLinking from 'expo-linking'
 import supabase from '../lib/supabase'
+import { consumePendingAuthCallbackUrl } from '../lib/authCallbackUrl'
 
 type VerifyType = 'email' | 'recovery' | 'invite' | 'email_change'
 type FinishRoute = 'ResetPassword'
 
-export default function AuthCallbackScreen({ navigation }: any) {
+export default function AuthCallbackScreen({ navigation, route }: any) {
   const processingUrl = useRef<string | null>(null)
   const handledUrl = useRef<string | null>(null)
 
   useEffect(() => {
-    console.warn('[AuthCallback] mounted')
-
-    const finish = async (route?: FinishRoute) => {
+    const finish = async (finishRoute?: FinishRoute) => {
       const {
         data: { session },
         error,
@@ -25,9 +24,11 @@ export default function AuthCallbackScreen({ navigation }: any) {
       }
 
       const target =
-        route === 'ResetPassword' ? 'ResetPassword' : session?.user ? 'Dashboard' : 'Login'
-
-      console.warn('[AuthCallback] selected route target:', target)
+        finishRoute === 'ResetPassword'
+          ? 'ResetPassword'
+          : session?.user
+            ? 'Dashboard'
+            : 'Login'
 
       if (target === 'ResetPassword') {
         navigation.reset({
@@ -52,12 +53,28 @@ export default function AuthCallbackScreen({ navigation }: any) {
       Alert.alert('Verification failed', message)
     }
 
+    const getRouteParamUrl = () =>
+      typeof route?.params?.url === 'string' ? route.params.url : undefined
+
+    const getStartupUrl = async () =>
+      consumePendingAuthCallbackUrl() ??
+      getRouteParamUrl() ??
+      (await ExpoLinking.getInitialURL())
+
+    const getFragment = (url: string, parsed: ReturnType<typeof ExpoLinking.parse>) => {
+      const rawFragment = url.includes('#') ? url.slice(url.indexOf('#') + 1) : undefined
+      const parsedFragment =
+        typeof (parsed as any)?.fragment === 'string'
+          ? ((parsed as any).fragment as string)
+          : undefined
+
+      return rawFragment || parsedFragment
+    }
+
     const handleUrl = async (incomingUrl?: string | null) => {
       let url: string | null | undefined
       try {
-        url = incomingUrl ?? (await ExpoLinking.getInitialURL())
-
-        console.warn('[AuthCallback] source URL present:', Boolean(url))
+        url = incomingUrl ?? (await getStartupUrl())
 
         if (!url) {
           await finish()
@@ -87,21 +104,12 @@ export default function AuthCallbackScreen({ navigation }: any) {
             ? parsed.queryParams.code
             : undefined
 
-        const fragment =
-          typeof (parsed as any)?.fragment === 'string'
-            ? ((parsed as any).fragment as string)
-            : undefined
+        const fragment = getFragment(url, parsed)
 
         const fragmentParams = fragment ? new URLSearchParams(fragment) : undefined
         const accessToken = fragmentParams?.get('access_token') ?? undefined
         const refreshToken = fragmentParams?.get('refresh_token') ?? undefined
         const fragmentType = fragmentParams?.get('type') ?? undefined
-
-        console.warn('[AuthCallback] has code:', Boolean(code))
-        console.warn('[AuthCallback] has token_hash:', Boolean(tokenHash))
-        console.warn('[AuthCallback] fragment has access_token:', Boolean(accessToken))
-        console.warn('[AuthCallback] query type:', type ?? 'none')
-        console.warn('[AuthCallback] fragment type:', fragmentType ?? 'none')
 
         if (tokenHash && type) {
           const { error } = await supabase.auth.verifyOtp({
@@ -177,7 +185,7 @@ export default function AuthCallbackScreen({ navigation }: any) {
     })
 
     return () => sub.remove()
-  }, [navigation])
+  }, [navigation, route?.params?.url])
 
   return (
     <View style={styles.container}>

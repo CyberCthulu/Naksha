@@ -4,11 +4,6 @@ import {
   resendSignupEmail,
   signUpWithEmail,
 } from '../auth'
-import * as Linking from 'expo-linking'
-
-jest.mock('expo-linking', () => ({
-  createURL: jest.fn(() => 'exp://127.0.0.1:8081/--/auth/callback'),
-}))
 
 jest.mock('../supabase', () => ({
   __esModule: true,
@@ -31,12 +26,6 @@ function mockedSupabase() {
   }
 }
 
-function mockedLinking() {
-  return Linking as unknown as {
-    createURL: jest.Mock
-  }
-}
-
 describe('auth helpers', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -54,42 +43,39 @@ describe('auth helpers', () => {
     })
   })
 
-  it('signs up with the Expo-created auth callback redirect', async () => {
+  it('signs up with the custom-scheme auth callback redirect', async () => {
     await signUpWithEmail('ada@example.com', 'password123')
 
-    expect(mockedLinking().createURL).toHaveBeenCalledWith('auth/callback')
     expect(mockedSupabase().auth.signUp).toHaveBeenCalledWith({
       email: 'ada@example.com',
       password: 'password123',
       options: {
-        emailRedirectTo: 'exp://127.0.0.1:8081/--/auth/callback',
+        emailRedirectTo: 'naksha://auth/callback',
         data: {},
       },
     })
   })
 
-  it('resends signup email with the Expo-created auth callback redirect', async () => {
+  it('resends signup email with the custom-scheme auth callback redirect', async () => {
     await resendSignupEmail('ada@example.com')
 
-    expect(mockedLinking().createURL).toHaveBeenCalledWith('auth/callback')
     expect(mockedSupabase().auth.resend).toHaveBeenCalledWith({
       type: 'signup',
       email: 'ada@example.com',
       options: {
-        emailRedirectTo: 'exp://127.0.0.1:8081/--/auth/callback',
+        emailRedirectTo: 'naksha://auth/callback',
       },
     })
   })
 
-  it('requests password reset email with the Expo-created auth callback redirect', async () => {
+  it('requests password reset email with the custom-scheme auth callback redirect', async () => {
     const result = await requestPasswordResetEmail('ada@example.com')
 
     expect(result).toEqual({ data: null, error: null })
-    expect(mockedLinking().createURL).toHaveBeenCalledWith('auth/callback')
     expect(
       mockedSupabase().auth.resetPasswordForEmail
     ).toHaveBeenCalledWith('ada@example.com', {
-      redirectTo: 'exp://127.0.0.1:8081/--/auth/callback',
+      redirectTo: 'naksha://auth/callback',
     })
   })
 })

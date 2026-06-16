@@ -5,6 +5,10 @@ import TestRenderer from 'react-test-renderer'
 
 import AuthCallbackScreen from '../AuthCallbackScreen'
 import supabase from '../../lib/supabase'
+import {
+  consumePendingAuthCallbackUrl,
+  storePendingAuthCallbackUrl,
+} from '../../lib/authCallbackUrl'
 
 jest.mock('expo-linking', () => ({
   getInitialURL: jest.fn(),
@@ -99,6 +103,7 @@ describe('AuthCallbackScreen', () => {
     jest.clearAllMocks()
     jest.spyOn(Alert, 'alert').mockImplementation(jest.fn())
     jest.spyOn(console, 'warn').mockImplementation(jest.fn())
+    consumePendingAuthCallbackUrl()
 
     renderer = null
     capturedUrlHandler = null
@@ -136,6 +141,7 @@ describe('AuthCallbackScreen', () => {
     }
     renderer = null
     capturedUrlHandler = null
+    consumePendingAuthCallbackUrl()
     jest.restoreAllMocks()
   })
 
@@ -263,6 +269,33 @@ describe('AuthCallbackScreen', () => {
       index: 0,
       routes: [{ name: 'ResetPassword' }],
     })
+  })
+
+  it('consumes a pending raw recovery fragment URL when the initial URL is missing', async () => {
+    const url =
+      'naksha://auth/callback#access_token=access-1&refresh_token=refresh-1&type=recovery'
+    mockedLinking().getInitialURL.mockResolvedValue(null)
+    mockedLinking().parse.mockImplementation((incomingUrl: string) => {
+      if (incomingUrl !== url) {
+        return { queryParams: {} }
+      }
+
+      return { queryParams: {} }
+    })
+    storePendingAuthCallbackUrl(url)
+
+    await renderScreen()
+
+    expect(mockedLinking().getInitialURL).not.toHaveBeenCalled()
+    expect(mockedSupabase().auth.setSession).toHaveBeenCalledWith({
+      access_token: 'access-1',
+      refresh_token: 'refresh-1',
+    })
+    expect(mockNavigation.reset).toHaveBeenCalledWith({
+      index: 0,
+      routes: [{ name: 'ResetPassword' }],
+    })
+    expect(consumePendingAuthCallbackUrl()).toBeNull()
   })
 
   it('processes a delayed URL event after a null initial URL', async () => {
