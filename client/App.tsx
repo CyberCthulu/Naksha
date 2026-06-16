@@ -42,12 +42,20 @@ const linking = {
       CreateGuestChart: 'guest-chart/new',
       Chart: 'chart',
       MyCharts: 'my-charts',
-      AuthCallback: '',
+      AuthCallback: 'auth/callback',
       JournalEditor: 'journal/edit/:id?',
       JournalList: 'journal/list',
       Profile: 'profile',
     },
   },
+}
+
+function logDeepLinkFlags(url?: string | null) {
+  const value = typeof url === 'string' ? url : ''
+
+  console.warn('[DeepLink] appears auth callback:', value.includes('auth/callback'))
+  console.warn('[DeepLink] contains query marker:', value.includes('?'))
+  console.warn('[DeepLink] contains fragment marker:', value.includes('#'))
 }
 
 const TransparentTheme = {
@@ -66,6 +74,34 @@ const TransparentTheme = {
 export default function App() {
   const [user, setUser] = useState<any | null>(null)
   const [authReady, setAuthReady] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+
+    Linking.getInitialURL()
+      .then((url) => {
+        if (!mounted) return
+
+        console.warn('[DeepLink] initial URL present:', Boolean(url))
+        logDeepLinkFlags(url)
+      })
+      .catch(() => {
+        if (!mounted) return
+
+        console.warn('[DeepLink] initial URL present:', false)
+        logDeepLinkFlags(null)
+      })
+
+    const sub = Linking.addEventListener('url', ({ url }) => {
+      console.warn('[DeepLink] foreground URL event received:', Boolean(url))
+      logDeepLinkFlags(url)
+    })
+
+    return () => {
+      mounted = false
+      sub.remove()
+    }
+  }, [])
 
   useEffect(() => {
     let mounted = true

@@ -12,6 +12,8 @@ export default function AuthCallbackScreen({ navigation }: any) {
   const handledUrl = useRef<string | null>(null)
 
   useEffect(() => {
+    console.warn('[AuthCallback] mounted')
+
     const finish = async (route?: FinishRoute) => {
       const {
         data: { session },
@@ -22,12 +24,17 @@ export default function AuthCallbackScreen({ navigation }: any) {
         console.warn('Auth callback session lookup failed:', error.message)
       }
 
-      if (route === 'ResetPassword') {
+      const target =
+        route === 'ResetPassword' ? 'ResetPassword' : session?.user ? 'Dashboard' : 'Login'
+
+      console.warn('[AuthCallback] selected route target:', target)
+
+      if (target === 'ResetPassword') {
         navigation.reset({
           index: 0,
           routes: [{ name: 'ResetPassword' }],
         })
-      } else if (session?.user) {
+      } else if (target === 'Dashboard') {
         navigation.reset({
           index: 0,
           routes: [{ name: 'Dashboard' }],
@@ -49,6 +56,8 @@ export default function AuthCallbackScreen({ navigation }: any) {
       let url: string | null | undefined
       try {
         url = incomingUrl ?? (await ExpoLinking.getInitialURL())
+
+        console.warn('[AuthCallback] source URL present:', Boolean(url))
 
         if (!url) {
           await finish()
@@ -73,6 +82,27 @@ export default function AuthCallbackScreen({ navigation }: any) {
             ? (parsed.queryParams.type as VerifyType)
             : undefined
 
+        const code =
+          typeof parsed.queryParams?.code === 'string'
+            ? parsed.queryParams.code
+            : undefined
+
+        const fragment =
+          typeof (parsed as any)?.fragment === 'string'
+            ? ((parsed as any).fragment as string)
+            : undefined
+
+        const fragmentParams = fragment ? new URLSearchParams(fragment) : undefined
+        const accessToken = fragmentParams?.get('access_token') ?? undefined
+        const refreshToken = fragmentParams?.get('refresh_token') ?? undefined
+        const fragmentType = fragmentParams?.get('type') ?? undefined
+
+        console.warn('[AuthCallback] has code:', Boolean(code))
+        console.warn('[AuthCallback] has token_hash:', Boolean(tokenHash))
+        console.warn('[AuthCallback] fragment has access_token:', Boolean(accessToken))
+        console.warn('[AuthCallback] query type:', type ?? 'none')
+        console.warn('[AuthCallback] fragment type:', fragmentType ?? 'none')
+
         if (tokenHash && type) {
           const { error } = await supabase.auth.verifyOtp({
             token_hash: tokenHash,
@@ -91,11 +121,6 @@ export default function AuthCallbackScreen({ navigation }: any) {
         }
 
         // Fallbacks kept in case other auth flows still use them
-        const code =
-          typeof parsed.queryParams?.code === 'string'
-            ? parsed.queryParams.code
-            : undefined
-
         if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code)
 
@@ -110,21 +135,11 @@ export default function AuthCallbackScreen({ navigation }: any) {
           return
         }
 
-        const fragment =
-          typeof (parsed as any)?.fragment === 'string'
-            ? ((parsed as any).fragment as string)
-            : undefined
-
         if (fragment) {
-          const params = new URLSearchParams(fragment)
-          const access_token = params.get('access_token') ?? undefined
-          const refresh_token = params.get('refresh_token') ?? undefined
-          const fragmentType = params.get('type') ?? undefined
-
-          if (access_token && refresh_token) {
+          if (accessToken && refreshToken) {
             const { error } = await supabase.auth.setSession({
-              access_token,
-              refresh_token,
+              access_token: accessToken,
+              refresh_token: refreshToken,
             })
 
             if (error) {
