@@ -8,18 +8,21 @@ type Props = {
   onExportData: () => void
   onDeleteAccount: () => void
   onSignOut: () => void
+  deletingAccount?: boolean
 }
 
 export default function AccountActionsCard({
   onExportData,
   onDeleteAccount,
   onSignOut,
+  deletingAccount = false,
 }: Props) {
   return (
     <>
       <DataPrivacyCard
         onExportData={onExportData}
         onDeleteAccount={onDeleteAccount}
+        deletingAccount={deletingAccount}
       />
 
       <View style={uiStyles.card}>

@@ -13,6 +13,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import supabase from '../lib/supabase'
 import { signOut } from '../lib/auth'
+import { deleteAccount } from '../lib/accountDeletion'
 
 import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
@@ -80,6 +81,7 @@ export default function ProfileScreen() {
 
   const [loading, setLoading] = useState(true)
   const [savingPrefs, setSavingPrefs] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const [userProfile, setUserProfile] = useState<UserRow | null>(null)
@@ -227,11 +229,34 @@ export default function ProfileScreen() {
     )
   }
 
+  const confirmDeleteAccount = async () => {
+    try {
+      setDeletingAccount(true)
+      await deleteAccount()
+      await signOut()
+    } catch (e: any) {
+      setDeletingAccount(false)
+      Alert.alert(
+        'Account deletion failed',
+        e?.message ?? 'Could not delete your account. Please try again.'
+      )
+    }
+  }
+
   const onDeleteAccount = () => {
+    if (deletingAccount) return
+
     Alert.alert(
-      'Delete account?',
-      "This action can't be done from the app yet. In a future version it will request deletion of your data. For now, please contact support and we'll handle it.",
-      [{ text: 'OK' }]
+      'Delete your account?',
+      'This will permanently delete your charts, journals, profile data, and account access. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: confirmDeleteAccount,
+        },
+      ]
     )
   }
 
@@ -302,6 +327,7 @@ export default function ProfileScreen() {
         onExportData={onExportData}
         onDeleteAccount={onDeleteAccount}
         onSignOut={onSignOut}
+        deletingAccount={deletingAccount}
       />
     </ScrollView>
   )

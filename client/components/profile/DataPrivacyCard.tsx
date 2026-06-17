@@ -6,11 +6,13 @@ import { theme } from '../ui/theme'
 type Props = {
   onExportData: () => void
   onDeleteAccount: () => void
+  deletingAccount?: boolean
 }
 
 export default function DataPrivacyCard({
   onExportData,
   onDeleteAccount,
+  deletingAccount = false,
 }: Props) {
   return (
     <View style={uiStyles.card}>
@@ -18,9 +20,13 @@ export default function DataPrivacyCard({
       <TouchableOpacity style={styles.actionRow} onPress={onExportData}>
         <Text style={styles.link}>Export my data</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.actionRow} onPress={onDeleteAccount}>
+      <TouchableOpacity
+        style={styles.actionRow}
+        onPress={onDeleteAccount}
+        disabled={deletingAccount}
+      >
         <Text style={[styles.link, { color: theme.colors.danger }]}>
-          Request account deletion
+          {deletingAccount ? 'Deleting account…' : 'Delete account'}
         </Text>
       </TouchableOpacity>
     </View>
