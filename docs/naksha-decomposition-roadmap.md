@@ -1,7 +1,7 @@
 # Naksha Decomposition Roadmap
 
 Generated: 2026-05-09
-Last updated: 2026-06-13 — Today’s Energy v1 complete; verification/docs refresh.
+Last updated: 2026-06-17 — password reset and account deletion MVP complete.
 Scope: documentation-only roadmap for large-file cleanup before feature expansion.
 
 ## 1. Purpose
@@ -25,7 +25,7 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
 
 | File | Risk | Current mixed responsibilities | Best extraction candidates | Behavior that must remain unchanged | Main value |
 | --- | --- | --- | --- | --- | --- |
-| `ProfileScreen.tsx` | Medium | Loads profile, chart preferences, subscription, purchases; creates default preference row; renders account, birth details, preferences, billing, purchases, privacy, and sign-out. | `useProfileScreenData`, `lib/chartPreferences.ts`, `ProfileHeader`, `BirthDetailsCard`, `ChartPreferencesCard`, `SubscriptionCard`, `PurchasesCard`, `AccountActionsCard`, reusable `InfoRow`/`ChoiceRow`. | No auth metadata preference writes; default `chart_preferences` row is created/upserted; unsupported options stay disabled/coming soon. | Mostly organization, plus lower future risk for preferences and billing work. |
+| `ProfileScreen.tsx` | Medium | Loads profile, chart preferences, subscription, purchases; creates default preference row; renders account, birth details, preferences, billing, purchases, privacy, account deletion confirmation, and sign-out. | `useProfileScreenData`, `lib/chartPreferences.ts`, `ProfileHeader`, `BirthDetailsCard`, `ChartPreferencesCard`, `SubscriptionCard`, `PurchasesCard`, `AccountActionsCard`, reusable `InfoRow`/`ChoiceRow`. | No auth metadata preference writes; default `chart_preferences` row is created/upserted; unsupported options stay disabled/coming soon; account deletion remains server-side through the `delete-account` Edge Function. | Mostly organization, plus lower future risk for preferences, billing, and privacy work. |
 | `DashboardScreen.tsx` | High | Auth user lookup, user-row bootstrap, auth metadata repair, profile completion redirect, chart lookup/build/auto-save, sun/moon summary, Today’s Energy v1, navigation UI. | `lib/profileCompletion.ts`, `lib/dashboardChartSummary.ts`, `lib/dashboardTodayEnergy.ts`, `DashboardSignsCard`, `DashboardTodayEnergyCard`, `DashboardBirthDetailsCard`, `DashboardActions`. | Older-account repair remains; incomplete profiles still route to `CompleteProfile`; self chart opens with `chartMode: 'self'`; charts without coordinates do not save; Today’s Energy remains basic v1 unless intentionally expanded. | Focused tests now guard current behavior; future extraction should be tied to a feature or defect. |
 | `CompleteProfileScreen.tsx` | Medium | Loads user row, maps DB date/time to picker state, manages form state, validates, geocodes fallback, updates `public.users`, renders header/footer/form. | `useCompleteProfileForm`, `userRowToProfileForm`, `profileFormToUserUpdate`, `resolveBirthLocationForSave`, `CompleteProfileHeader`, `CompleteProfileFooter`. | Writes `public.users` only; manual typed location geocodes before save; OpenCage timezone can update `time_zone`; `navigation.goBack()` remains. | Save/geocode lifecycle tests now guard current behavior and prepare reuse for guest birth-data entry. |
 | `CheckEmailScreen.tsx` | Medium-High | OTP UI, resend, verify, session/user confirmation, signup profile upsert, fallback profile fetch, completion routing. | `lib/profileCompletion.ts`, `lib/signupProfileBootstrap.ts`, `OtpVerificationCard`. | Resend behavior, OTP alerts, route-param profile upsert, and deterministic reset to `Dashboard` or `CompleteProfile` remain. | Reduces auth-flow drift and future profile-rule risk. |
@@ -144,16 +144,33 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
     - Dashboard renders a Today’s Energy card with transit Sun/Moon signs and the strongest fast transit aspect when available.
     - This is intentionally a basic v1 surface; no forecast detail screen, notifications, caching, premium gating, or user-configurable transit settings are implemented.
 
+24. **Password reset / forgot-password**
+    - Login exposes a Forgot Password entry point.
+    - `ForgotPasswordScreen` requests a Supabase reset email and uses neutral success copy.
+    - `AuthCallbackScreen` routes recovery callbacks to `ResetPasswordScreen`.
+    - Auth callback URL handoff handles fragment recovery links without logging sensitive callback URLs or tokens.
+    - `ResetPasswordScreen` validates and updates the password.
+    - Automated verification passes and the flow has been manually verified.
+
+25. **Account deletion MVP**
+    - Profile exposes a Delete account action with destructive confirmation.
+    - `client/lib/accountDeletion.ts` invokes the authenticated `delete-account` Edge Function.
+    - `supabase/functions/delete-account/index.ts` verifies the JWT server-side and derives `user.id` from the verified JWT, not request body input.
+    - The Edge Function deletes app-owned rows first, then calls `auth.admin.deleteUser(user.id)` last.
+    - Existing cascades remove `public.users` and `chart_preferences`.
+    - `deno.json` and `deno.lock` live with the function for Deno/editor dependency resolution.
+    - Automated verification passes. Production Edge Function deployment/manual delete-account QA should still be confirmed before release claims.
+
 ---
 
 ### REMAINING (re-ranked)
 
-- **Next release-readiness slice: password reset**
-   - Signup, login, OTP, and deep-link callback flows appear to work manually.
-   - Password reset / forgot-password is not implemented yet.
+- **Next release-readiness slice: Edge Function deployment/manual QA**
+   - Deploy `delete-account` to the target Supabase project and manually verify account deletion end-to-end.
+   - Confirm app-owned rows are deleted before `auth.users`, and `public.users` plus `chart_preferences` cascade as expected.
 
-- **Privacy/account slice: account deletion and data deletion basics**
-   - Profile has privacy/account surfaces, but account deletion, data deletion, export, and retention behavior are not complete product flows.
+- **Privacy/account follow-up slice**
+   - Account deletion MVP exists, but data export, retention policy, external subscription cancellation/refunds, and optional delete-data-without-deleting-account behavior remain open.
 
 - **UI/UX revamp slice**
    - Give Dashboard, chart interpretation, guest chart entry, saved charts, and profile a cohesive pre-release interaction/visual pass.
@@ -187,7 +204,7 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
 Extracted `ProfileHeader`, `BirthDetailsCard`, `SubscriptionCard`, `PurchasesCard`, `DataPrivacyCard`, `InfoRow`. Supabase calls, `onUpdatePrefs`, `onSignOut`, and navigation handlers remained in `ProfileScreen`.
 
 **Slice 1B — ProfileScreen interactive card extraction** ✅
-Extracted `ChartPreferencesCard`, `ChoiceRow`, `AccountActionsCard`. `onUpdatePrefs` passed as prop. No Supabase logic moved to components. `ProfileScreen` is now 312 lines.
+Extracted `ChartPreferencesCard`, `ChoiceRow`, `AccountActionsCard`. `onUpdatePrefs` passed as prop. No Supabase logic moved to components. `ProfileScreen` remains a large screen because account/privacy data loading and action wiring still live there.
 
 **Shared profileCompletion helpers** ✅
 `client/lib/profileCompletion.ts` created with `isProfileComplete`, `needsProfileCompletion`, `profileFromAuthMetadata`, and `ProfileCompletionData`. Both `DashboardScreen` and `CheckEmailScreen` import from there. Dashboard repair behavior and CheckEmail navigation behavior unchanged.
@@ -255,23 +272,30 @@ Expo-compatible ESLint flat config and `"lint": "eslint ."` added. Targeted clea
 **Daily Transits / Today’s Energy v1** ✅
 `client/lib/dailyTransits.ts` added. It uses `computeTransitPlanets`, `findDailyTransitAspects`, `findStrongestDailyTransitAspect`, and `buildTodayEnergy` to power a basic Dashboard Today’s Energy card. This is intentionally v1/basic.
 
+**Password reset / forgot-password** ✅
+Login now links to `ForgotPasswordScreen`, reset email requests use Supabase Auth, recovery callbacks route through `AuthCallbackScreen`, fragment recovery links are handed off safely, and `ResetPasswordScreen` updates the password. Automated verification passes and the flow has been manually verified.
+
+**Account deletion MVP** ✅
+Profile now exposes a destructive Delete account confirmation. `client/lib/accountDeletion.ts` invokes the authenticated `delete-account` Edge Function. `supabase/functions/delete-account/index.ts` verifies the JWT server-side, derives `user.id` from that verified JWT, deletes app-owned rows first, then calls `auth.admin.deleteUser(user.id)` last. Existing cascades remove `public.users` and `chart_preferences`. Automated verification passes; production deployment/manual delete-account QA remains a release-readiness task.
+
 **Final cleanup verification baseline** ✅
-As of 2026-06-13: clean `main` in sync with `origin/main`; `npm run typecheck`, `npm test` (13 suites / 77 tests), `npm run lint`, and `git diff --check` pass. Manual app run-through works.
+As of 2026-06-17: `npm run typecheck`, `npm test` (19 suites / 106 tests), `npm run lint`, and `git diff --check` pass. Password reset is manually verified. Account deletion MVP is automated verified; Edge Function deployment/manual delete-account QA should still be confirmed in the target Supabase project.
 
 ## 6. Next Safe Slice
 
-**Next release-readiness slice: password reset**
+**Next release-readiness slice: Edge Function deployment/manual QA**
 
 Cleanup/stabilization is complete enough for feature expansion. Future cleanup should be attached to specific feature work or real defects, not broad open-ended refactoring.
 
-Signup, login, OTP verification, and auth deep-link handling appear to work manually, but password recovery is not implemented. The best next safe slice is adding a forgot-password/reset-password flow while preserving existing auth behavior.
+Password reset and account deletion MVP are implemented. The best next safe slice is confirming the deployed account deletion Edge Function in the target Supabase project and tightening release/privacy expectations without broad refactors.
 
 - Keep `public.users` as the durable profile/birth source of truth.
 - Keep auth metadata limited to signup/bootstrap and Dashboard repair.
-- Do not log reset callback URLs, tokens, or sensitive auth payloads.
-- Add focused tests around reset request, reset callback/update behavior, and preserved login/signup/OTP behavior.
+- Keep service-role keys server-side only; never expose them in the React Native client.
+- Confirm account deletion removes app-owned rows before deleting `auth.users`, and that existing cascades remove `public.users` and `chart_preferences`.
+- Add or update focused tests only when behavior changes.
 
-Next priorities after password reset: account deletion/data deletion/privacy basics, UI/UX revamp, release readiness, and only then guest profile persistence or relationship metadata after a product decision. Do not claim synastry, compatibility, composite charts, reports, premium gating, guest-specific schema, Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, or house-degree display are implemented until their product behavior, math/schema needs, UI, and tests are defined.
+Next priorities after deployment/manual QA: privacy copy/data export/retention policy, external subscription cancellation/refund handling, UI/UX revamp, CI/schema validation, and only then guest profile persistence or relationship metadata after a product decision. Do not claim synastry, compatibility, composite charts, reports, premium gating, guest-specific schema, Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, or house-degree display are implemented until their product behavior, math/schema needs, UI, and tests are defined.
 
 ## 7. Deferred / High-Risk Refactors
 
@@ -281,7 +305,7 @@ Next priorities after password reset: account deletion/data deletion/privacy bas
 - Changing `CompleteProfileScreen` geocode/timezone/save sequencing without updating focused tests.
 - Expanding Today’s Energy beyond v1 without deciding forecast scope, UI, performance, and tests.
 - Adding guest chart schema fields such as `chart_type`, `is_primary`, `relationship_label`, or a `birth_profiles` table before the guest profile-management workflow is defined.
-- Reworking subscriptions, purchases, account deletion, data deletion, or exports before those features are product-ready.
+- Reworking subscriptions, purchases, data export, retention policy, or external billing cancellation/refunds before those features are product-ready.
 - Implementing additional chart systems before math, DB constraints, UI, and tests are ready.
 
 ## 8. Guardrails For Future Work
@@ -302,6 +326,8 @@ These areas now have focused coverage or explicit contracts, but they remain hig
   - guest charts can be manually saved when coordinates exist;
   - missing-coordinate charts remain view-only.
 - `AuthCallbackScreen` deep-link behavior beyond the covered token/code/fragment/delayed URL paths.
+- Password reset callback handoff and `ResetPasswordScreen` update behavior.
+- Account deletion helper/Profile confirmation/Edge Function contract; keep JWT-derived user id and service-role deletion server-side.
 - Journal UI flows beyond the pure `upsertJournal` payload tests.
 - Supabase schema/migration validation, which is still manual rather than CI-backed.
 
@@ -323,6 +349,8 @@ Manual verification should match the touched surface:
 - Chart slices: open self chart from Dashboard, open saved chart from My Charts, open chart without coordinates and confirm `View Only`.
 - Guest chart slices: confirm guest charts do not auto-save before tapping save, and missing-coordinate guest charts do not persist.
 - CheckEmail slices: verify OTP success, resend, missing email/code alerts, profile-complete route to Dashboard, incomplete route to CompleteProfile.
+- Password reset slices: request reset email, open recovery callback, update password, confirm existing signup/login/OTP behavior still works.
+- Account deletion slices: confirm destructive cancel does nothing, confirmed deletion calls the deployed Edge Function, app returns to Login, auth user cannot log in, and user-owned public rows are removed.
 - CompleteProfile slices: save with selected autocomplete coordinates, save with manual typed location that needs geocoding, save with invalid/missing fields.
 - Interpretation slices: open planet modal, open house modal, swipe first-to-last and last-to-first, test one-page/empty-page behavior where possible.
 - Today’s Energy slices: load Dashboard with valid natal planets, verify transit Sun/Moon signs and strongest-aspect/fallback card states.

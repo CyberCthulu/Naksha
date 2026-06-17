@@ -1,9 +1,9 @@
 # Naksha Codebase Handoff
 
 Generated: 2026-05-07  
-Last updated: 2026-06-13 — verification/docs refresh after Today’s Energy v1 and modal/auth manual recheck.
+Last updated: 2026-06-17 — password reset and account deletion MVP docs refresh.
 Scope: source-of-truth repository handoff. This update is documentation-only.
-Last recorded verification: clean `main` in sync with `origin/main`; `cd client && npm run typecheck`, `cd client && npm test` (13 suites / 77 tests), `cd client && npm run lint`, and `git diff --check` pass. Manual app run-through is working. Auth signup/login/OTP/deep-link flow was manually rechecked and works; password reset is not implemented.
+Last recorded verification: `cd client && npm run typecheck`, `cd client && npm test` (19 suites / 106 tests), `cd client && npm run lint`, and `git diff --check` pass. Password reset / forgot-password is implemented, automated verified, and manually verified. Account deletion MVP is implemented and automated verified; Edge Function deployment/manual delete-account QA should still be confirmed in the target Supabase project.
 
 ## 1. Executive Summary
 
@@ -13,7 +13,9 @@ What already works:
 
 - Email/password auth with Supabase, persisted through AsyncStorage.
 - Signup flow that collects birth details, passes them through auth metadata for bootstrap, and persists them durably in `public.users`.
-- Login, check-email OTP verification with deterministic navigation reset, deep-link callback handling, profile completion, dashboard, chart view, saved chart list, profile screen, and journal list/editor.
+- Login, check-email OTP verification with deterministic navigation reset, password reset / forgot-password, deep-link callback handling, profile completion, dashboard, chart view, saved chart list, profile screen, and journal list/editor.
+- Password reset uses a Forgot Password entry from Login, Supabase reset email, `AuthCallbackScreen`, robust callback URL handoff for fragment recovery links, and `ResetPasswordScreen`.
+- Account deletion MVP is implemented from Profile with destructive confirmation. The client calls a `delete-account` Supabase Edge Function; the function verifies the JWT server-side, derives `user.id` from the verified JWT, deletes app-owned rows first, then calls `auth.admin.deleteUser(user.id)` last.
 - Natal chart computation from birth date/time/time zone using `luxon` and `astronomy-engine`.
 - Whole-sign house calculation when latitude/longitude are available.
 - Local chart interpretation from lexicon files for planet/sign, planet/house, house/sign, generic house, and aspect meanings.
@@ -38,7 +40,7 @@ What already works:
 - Journal create-mode payloads omit `id` when no id exists, while update-mode payloads preserve `id`.
 - InterpretationCard long text clipping has been fixed by paragraph/sentence splitting; focused coverage verifies final words are not dropped.
 - InterpretationModal circular swipe/infinite pager behavior has been restored and manually verified; current per-page scroll-position preservation is intentional and is not a bug or release blocker.
-- Jest is configured with 13 suites and 77 tests: pure-helper coverage, daily transit helper coverage, chart generation/persistence helper coverage, chart preference plumbing/default-fallback coverage, `useChartData` branch coverage, auth/profile navigation coverage, Dashboard profile repair/chart summary/Today’s Energy coverage, CompleteProfile save/geocode lifecycle coverage, InterpretationCard clipping coverage, InterpretationModal pager coverage, and guest chart creation flow coverage.
+- Jest is configured with 19 suites and 106 tests: pure-helper coverage, password reset helper/screen coverage, account deletion helper/Profile coverage, daily transit helper coverage, chart generation/persistence helper coverage, chart preference plumbing/default-fallback coverage, `useChartData` branch coverage, auth/profile navigation coverage, Dashboard profile repair/chart summary/Today’s Energy coverage, CompleteProfile save/geocode lifecycle coverage, InterpretationCard clipping coverage, InterpretationModal pager coverage, and guest chart creation flow coverage.
 - ESLint is configured through Expo's flat config; `npm run lint` passes cleanly after the targeted warning cleanup.
 - Supabase generated types live in `client/lib/database.types.ts`; the Supabase client is typed with `Database`, and shared DB row aliases in `domainTypes.ts` derive from the generated schema.
 - `CompleteProfileScreen` top spacing was tightened by removing duplicate safe-area padding from its in-screen header.
@@ -48,10 +50,10 @@ What is incomplete or unstable:
 
 - `server/` is empty, and several service files are placeholders: `conversations.ts`, `notifications.ts`, `reports.ts`, `subscriptions.ts`, `usage.ts`.
 - `ChatScreen.tsx` and `SubscriptionScreen.tsx` are empty stub files and are not registered in `App.tsx` navigation or linking config.
-- Password reset is not implemented yet.
 - Additional chart systems remain disabled/coming soon. The calculation path accepts the current supported preference defaults only: Whole Sign, Tropical, and medium orbs.
 - Guest chart persistence/profile management is not implemented yet; there is no `birth_profiles` table or reusable guest birth-profile library.
 - Synastry, compatibility, composite charts, reports, and premium gating are not implemented yet.
+- Account deletion MVP exists, but production Edge Function deployment/manual delete-account QA, data export, retention policy, external subscription cancellation/refunds, and delete-data-without-deleting-account flows are not complete.
 - Charts without birth coordinates are intentionally view-only: they can render planet data, but are not persisted because canonical saved-chart identity requires coordinates.
 - `auth.user_metadata` still carries signup/bootstrap profile data for `handle_new_user` and older-account repair, but profile edits no longer mirror back to auth metadata.
 - Schema/migration validation is not automated or CI-backed yet.
@@ -93,7 +95,9 @@ Important files:
 - `client/App.tsx`: root auth session bootstrap, linking config, stack navigation split, `AuthContext`, `SafeAreaProvider`, `SpaceProvider`.
 - `client/lib/supabase.ts`: typed Supabase client, AsyncStorage persistence, Expo public env vars.
 - `client/lib/database.types.ts`: generated Supabase `public` schema types.
-- `client/lib/auth.ts`: sign up, resend, OTP verify, login, logout, get user.
+- `client/lib/auth.ts`: sign up, resend, OTP verify, login, password reset request, logout, get user.
+- `client/lib/authCallbackUrl.ts`: transient in-memory auth callback URL handoff for fragment recovery links before `AuthCallbackScreen` mounts.
+- `client/lib/accountDeletion.ts`: authenticated client helper that invokes the `delete-account` Edge Function with the current bearer token.
 - `client/lib/domainTypes.ts`: shared frontend domain types, chart calculation preference defaults/parsing, plus DB row aliases derived from generated Supabase types.
 - `client/lib/profileCompletion.ts`: `isProfileComplete`, `needsProfileCompletion`, `profileFromAuthMetadata`, `ProfileCompletionData` type; shared by `DashboardScreen` and `CheckEmailScreen`.
 - `client/lib/chartDataValidation.ts`: runtime parser for persisted `ChartData` JSON; returns `null` for malformed or schema-drifted rows.
@@ -102,6 +106,8 @@ Important files:
 - `client/screens/DashboardScreen.tsx`: profile load/repair, profile completion redirect, preference-aware sun/moon summary build, Today’s Energy card, and self chart entry with `chartMode: 'self'`.
 - `client/screens/CreateGuestChartScreen.tsx`: guest birth-detail entry flow; validates required fields and navigates to `Chart` with `chartMode: 'guest'`. Typed-only locations can pass null coordinates and rely on existing View Only behavior.
 - `client/screens/CompleteProfileScreen.tsx`: profile edit form, geocoding fallback, durable `users` table update, and auth-container safe-area layout.
+- `client/screens/ForgotPasswordScreen.tsx`: neutral forgot-password request flow that calls Supabase reset email.
+- `client/screens/ResetPasswordScreen.tsx`: password update form reached after recovery callback handling.
 - `client/screens/ProfileScreen.tsx`: account/profile display plus chart preferences backed by `public.chart_preferences`; presentational cards are in `components/profile/`.
 - `client/screens/ChartScreen.tsx`: route-validation shell — guards missing birth fields and invalid time zone, then delegates to `ChartScreenContent`.
 - `client/components/charts/ChartScreenContent.tsx`: valid-chart compositor — owns `useChartData`, `useChartInterpretation`, `useSpace`, page building, and all chart UI rendering.
@@ -119,9 +125,13 @@ Important files:
 - `client/lib/__tests__/journals.test.ts`: journal upsert payload coverage.
 - `client/lib/__tests__/charts.test.ts`: chart generation, preference plumbing/fallback, and persistence helper coverage for `buildChartData`, `getChartCalculationPreferences`, and `saveChart`.
 - `client/lib/__tests__/dailyTransits.test.ts`: deterministic transit planet shape, transit-to-natal identity separation, strongest fast transit selection, Today’s Energy build, and no-aspect fallback coverage.
+- `client/lib/__tests__/accountDeletion.test.ts`: account deletion helper coverage for no-session, successful function invoke, and function error behavior.
 - `client/hooks/__tests__/useChartData.test.tsx`: `useChartData` branch coverage — valid saved-chart load, invalid saved data fallback, missing-coordinate view-only, self auto-save, guest no-auto-save, save-warning on failure, manual save clearing the warning.
 - `client/screens/__tests__/CheckEmailScreen.test.tsx`: auth/profile navigation coverage for missing email/code validation, resend success/failure, and OTP complete/incomplete profile reset paths.
 - `client/screens/__tests__/AuthCallbackScreen.test.tsx`: deep-link callback coverage for token hash, auth code, fragment tokens, delayed URL events, and auth error alert plus finish routing.
+- `client/screens/__tests__/ForgotPasswordScreen.test.tsx`: reset-email request coverage for missing email, neutral success copy, request failure, and back/login navigation.
+- `client/screens/__tests__/ResetPasswordScreen.test.tsx`: password update coverage for validation, success routing, and Supabase update failures.
+- `client/screens/__tests__/ProfileScreen.test.tsx`: destructive account deletion confirmation, cancel behavior, confirmed delete/sign-out, and failure/no-sign-out coverage.
 - `client/screens/__tests__/DashboardScreen.test.tsx`: Dashboard complete/incomplete profile, auth metadata repair, saved summary hydration, Today’s Energy rendering, invalid `chart_data` fallback, auto-save, and missing-coordinate no-save coverage.
 - `client/screens/__tests__/CreateGuestChartScreen.test.tsx`: guest form required-field validation, selected-coordinate guest navigation, and typed-location/null-coordinate guest navigation coverage.
 - `client/screens/__tests__/CompleteProfileScreen.test.tsx`: load/prefill, validation, selected-coordinate save, manual geocode fallback, geocode failure, timezone, and `public.users` update coverage.
@@ -133,6 +143,9 @@ Important files:
 - `supabase/migrations/20260508021300_journals_chart_delete_set_null.sql`: makes `journals.chart_id` nullable on chart delete.
 - `supabase/migrations/20260508021400_users_charts_updated_at_triggers.sql`: adds `updated_at` triggers for `users` and `charts`.
 - `supabase/migrations/20260508021500_chart_preferences.sql`: adds durable chart preference storage with RLS, checks, and an `updated_at` trigger.
+- `supabase/functions/delete-account/index.ts`: account deletion Edge Function that verifies the caller JWT, deletes user-owned app rows, then deletes the auth user through Supabase admin auth.
+- `supabase/functions/delete-account/deno.json`: function-local Deno/editor config and Supabase JS import mapping.
+- `supabase/functions/delete-account/deno.lock`: Deno dependency lockfile for the Edge Function.
 
 ## 4. Auth Flow
 
@@ -158,6 +171,17 @@ Login:
 
 - `LoginScreen.tsx` calls `signInWithEmail`, which uses `supabase.auth.signInWithPassword`.
 - `App.tsx` listens to `supabase.auth.onAuthStateChange` and switches from the unauthenticated stack to the authenticated stack when a session exists.
+
+Password reset:
+
+- `LoginScreen.tsx` links to `ForgotPasswordScreen`.
+- `ForgotPasswordScreen` validates that an email is present, calls `requestPasswordResetEmail`, and shows neutral success copy that does not reveal whether an account exists.
+- `requestPasswordResetEmail` sends a Supabase reset email using the configured auth callback redirect.
+- Supabase recovery links return through `AuthCallbackScreen`.
+- `App.tsx` and `client/lib/authCallbackUrl.ts` normalize auth callback URLs for navigation matching while preserving the raw callback URL transiently in memory, so fragment recovery links can still be parsed after `AuthCallbackScreen` mounts.
+- `AuthCallbackScreen` routes recovery callbacks to `ResetPasswordScreen` for token hash, auth code, and fragment-token paths.
+- `ResetPasswordScreen` validates password length and confirmation, calls `supabase.auth.updateUser({ password })`, and routes after success based on current session behavior.
+- Password reset / forgot-password is automated verified and manually verified.
 
 Session persistence:
 
@@ -185,8 +209,7 @@ Profile completion:
 
 Known auth/profile issues:
 
-- Signup, login, OTP verification, and auth deep-link callback flows were manually rechecked on 2026-06-13 and appear to work.
-- Password reset/forgot-password is not implemented yet.
+- Signup, login, OTP verification, auth deep-link callback, and password reset / forgot-password flows appear to work. Password reset has been automated verified and manually verified.
 - Auth metadata still exists as signup/bootstrap handoff data and a Dashboard repair source for older/incomplete accounts.
 - `AuthContext` exposes only `{ user }`, not auth actions or loading state.
 - Navigation route types are mostly `any`, so auth flow route params are not compile-time enforced.
@@ -297,6 +320,18 @@ RLS assumptions:
 - Signup/profile flows require `users.upsert` to be permitted for the authenticated user id.
 - The unsafe client purchase INSERT policy has been removed; purchases should be backend/service-role managed only.
 - `journals.chart_id` now uses `ON DELETE SET NULL`, so deleting a chart should not fail solely because journals reference it.
+
+Account deletion / data privacy:
+
+- `ProfileScreen` exposes a Delete account action through the existing Data & Privacy card and shows a destructive confirmation before deleting.
+- `client/lib/accountDeletion.ts` gets the current Supabase session and invokes the `delete-account` Edge Function with the bearer token.
+- The React Native client never uses `SUPABASE_SERVICE_ROLE_KEY` and does not call `supabase.auth.admin.deleteUser`.
+- `supabase/functions/delete-account/index.ts` accepts authenticated POST requests, verifies the JWT server-side with Supabase Auth, and derives `user.id` from the verified JWT rather than request body input.
+- The Edge Function uses a service-role Supabase client server-side to delete app-owned rows in order: `messages`, `conversations`, `reports`, `journals`, `notifications`, `purchases`, `subscriptions`, `usage_events`, then `charts`.
+- After app-owned rows are deleted, the Edge Function calls `auth.admin.deleteUser(user.id)` last.
+- Existing cascades remove `public.users` from `auth.users` deletion and remove `chart_preferences` from `public.users` deletion.
+- Account deletion MVP is implemented and automated verified. Production Edge Function deployment/manual delete-account QA should still be confirmed before claiming a production release baseline.
+- Remaining privacy/account gaps are data export, retention policy, external subscription cancellation/refunds, and any future delete-data-without-deleting-account flow.
 
 Schema/frontend contract:
 
@@ -447,7 +482,7 @@ Screens that need polish:
 
 Component size/coupling concerns:
 
-- `ProfileScreen.tsx`: 312 lines. Presentational card extraction is done; all Supabase calls and preference save handlers remain in the screen. The screen now mixes data loading with glue for chart preferences and account action callbacks.
+- `ProfileScreen.tsx`: Presentational card extraction is done; all Supabase calls, preference save handlers, and account/privacy action callbacks remain in the screen.
 - `DashboardScreen.tsx`: 455 lines, mixes profile repair, chart lookup/generation, summary derivation, Today’s Energy construction/rendering, and dashboard UI.
 - `CompleteProfileScreen.tsx`: 323 lines, mixes data load/save, geocoding fallback, and UI.
 - `CheckEmailScreen.tsx`: 350 lines, mixes OTP flow and custom UI.
@@ -461,9 +496,9 @@ Component size/coupling concerns:
 | --- | --- | --- | --- |
 | Additional chart modes are not implemented | `ProfileScreen.tsx`, `lib/astro.ts`, `lib/charts.ts`, `chart_preferences` migration | Users can see unsupported modes as coming soon, but charts remain Whole Sign/Tropical with medium aspect orbs. | Preference plumbing now reads/passes the supported defaults, but math, DB constraints, UI, and tests for additional systems do not exist yet. |
 | Stub screens and service modules exist | `ChatScreen.tsx`, `SubscriptionScreen.tsx`, `lib/conversations.ts`, `lib/subscriptions.ts`, `lib/reports.ts`, `lib/notifications.ts`, `lib/usage.ts` | Future features have placeholder files but no implementation; the empty screens are not registered in `App.tsx`. | Scaffolding exists ahead of feature work. |
-| Password reset is not implemented | Auth screens/service layer | Signup, login, OTP, and deep-link callback flows appear to work manually, but there is no forgot-password/reset flow. | Auth MVP has not added password recovery yet. |
 | Signup metadata can become stale after bootstrap | `SignupScreen.tsx`, `lib/auth.ts`, `DashboardScreen.tsx`, `handle_new_user` migration | Auth metadata may not match later edits in `public.users`. | Auth metadata is intentionally retained as signup/bootstrap handoff and Dashboard repair input, not as durable profile storage. |
 | Guest chart persistence/profile management is not implemented | `CreateGuestChartScreen.tsx`, `ChartScreen.tsx`, `useChartData.ts`, schema | Users can create and view a one-off guest chart, but there is no reusable guest birth-profile library, relationship metadata, or `birth_profiles` table. | Guest Chart UI v1 intentionally avoided schema and profile-management scope. |
+| Edge Function deployment/manual account deletion QA pending | `supabase/functions/delete-account/`, Supabase project config | Account deletion MVP is implemented in source and automated verified, but production deployment/manual delete-account verification should be completed before release claims. | Edge Functions are deployed/configured outside normal client test execution. |
 | Migration history starts from a remote schema dump | `supabase/migrations/20260508015720_remote_schema.sql`, later migrations | The schema is now reproducible, but history before the dump is not incremental. | The remote project schema was pulled into the repo after initial development. |
 | Schema/migration validation is not automated | `supabase/migrations/`, CI/not configured | App tests cover high-risk client flows, but migration reset/diff validation is still a manual local step. | No CI-backed Supabase validation command exists yet. |
 
@@ -509,19 +544,19 @@ Naming and consistency issues:
 
 Testing baseline:
 
-- `npm test` runs 13 suites (77 tests): `profileCompletion`, `chartDataValidation`, `journals`, `charts`, `dailyTransits`, `useChartData`, `CheckEmailScreen`, `AuthCallbackScreen`, `DashboardScreen`, `CreateGuestChartScreen`, `CompleteProfileScreen`, `InterpretationCard`, and `InterpretationModal`.
-- Dashboard profile repair/chart summary/Today’s Energy, CompleteProfile save/geocode lifecycle, InterpretationCard clipping, and InterpretationModal pager behavior are covered.
+- `npm test` runs 19 suites (106 tests), including password reset, account deletion, profile completion, chart data validation, journals, charts, daily transits, `useChartData`, auth callback, CheckEmail, Dashboard, CreateGuestChart, CompleteProfile, Profile, InterpretationCard, and InterpretationModal coverage.
+- Dashboard profile repair/chart summary/Today’s Energy, password reset, account deletion confirmation/helper behavior, CompleteProfile save/geocode lifecycle, InterpretationCard clipping, and InterpretationModal pager behavior are covered.
 - No schema tests or automated Supabase migration validation commands are configured.
 
 ## 11. Recommended Next 5 Tasks
 
 Note: cleanup/stabilization is complete enough for feature expansion. Runtime chart validation, chart preference plumbing for current defaults, save-warning visibility, AuthCallback hardening, journal payload coverage, async cancellation guards, Jest coverage, ESLint, lint cleanup, generated Supabase types, Dashboard tests, CompleteProfile tests, InterpretationCard clipping tests, InterpretationModal pager tests, and Today’s Energy v1 are complete.
 
-1. Add password reset.
-   - Signup, login, OTP, and deep-link callback flows appear to work manually, but password recovery is still missing.
+1. Edge Function release QA and deployment checklist.
+   - Deploy `delete-account`, manually verify account deletion against the target Supabase project, and document rollback/failure handling before broader release claims.
 
-2. Add account deletion / data deletion / privacy basics.
-   - Profile has a privacy surface, but deletion/export/privacy guarantees are not implemented as a complete user-facing flow.
+2. Privacy copy and data export planning.
+   - Account deletion MVP exists, but data export, retention policy, external subscription cancellation/refunds, and any delete-data-without-deleting-account flow remain product gaps.
 
 3. UI/UX revamp and release QA polish.
    - Dashboard, chart interpretation, guest chart entry, saved charts, and profile should get a cohesive visual/interaction pass before release.
@@ -534,27 +569,27 @@ Note: cleanup/stabilization is complete enough for feature expansion. Runtime ch
 
 ## 12. Best Next Vertical Slice
 
-Recommended slice: password reset.
+Recommended slice: Edge Function release QA and privacy copy.
 
-The main auth flow has been manually rechecked and appears to work, but users cannot recover an account yet. Password reset is the cleanest next release-readiness slice because it closes a core auth gap without changing chart math, chart identity, guest save semantics, or profile data ownership.
+Password reset and account deletion MVP are implemented. The next release-readiness slice should verify the server-side deletion path in the target Supabase environment and tighten user-facing privacy expectations without changing chart math, chart identity, guest save semantics, or profile data ownership.
 
 Goal:
 
-- Add a forgot-password/reset-password flow that matches Supabase Auth behavior and the existing deep-link/session model.
-- Keep `public.users` as the durable profile/birth source of truth; do not use password-reset work to add new profile metadata writes.
-- Preserve existing signup/login/OTP/deep-link behavior.
-- Add focused tests for the reset route and auth helper behavior.
+- Deploy and manually QA the `delete-account` Edge Function against the target Supabase project.
+- Confirm app-owned rows are deleted before `auth.users`, and `public.users` plus `chart_preferences` are removed by existing cascades.
+- Document or implement minimal privacy copy for account deletion, data export expectations, retention policy, and external billing caveats.
+- Keep service-role secrets server-side only.
 
 Files likely involved:
 
-- `client/lib/auth.ts`, login/auth screens, `App.tsx` linking/navigation, and focused tests.
-- No schema migration should be needed unless the product chooses to store reset-related audit events.
+- `supabase/functions/delete-account/`, Profile privacy copy, release QA checklist/docs, and focused tests only if behavior changes.
+- No migration should be needed unless the product chooses to add retention/audit/export tables.
 
 Expected behavior:
 
-- Users can request a reset email and land back in the app to set a new password.
-- Existing signup/login/OTP/deep-link callback behavior remains intact.
-- Errors are user-visible and do not log sensitive callback URLs or tokens.
+- Users can request password reset and delete their account through the app.
+- Account deletion remains authenticated, server-side, and derived from the verified JWT user id.
+- Manual release QA confirms the deployed Edge Function works in the target Supabase project.
 - Guest chart persistence, relationship metadata, and any `birth_profiles` table remain separate product decisions.
 
 Verification steps:
