@@ -1,9 +1,9 @@
 # Claude's Architectural Review — Naksha Codebase
 
-Last updated: 2026-06-13 (post re-entry audit — Today's Energy v1, interpretation clipping/swipe fixes, SafeAreaProvider)
+Last updated: 2026-06-16 (post password reset + account deletion MVP)
 Reviewer: Claude (Sonnet 4.6)
 Scope: source code + all migrations through `20260508021500_chart_preferences.sql`
-Verification: `cd client && npm run typecheck` passes with zero errors. `npm test` passes (13 suites, 77 tests). `npm run lint` passes cleanly. `git diff --check` passes. `git status` clean on `main`, in sync with `origin/main`.
+Verification: `cd client && npm run typecheck` passes with zero errors. `npm test` passes (19 suites, 106 tests). `npm run lint` passes cleanly. `git diff --check` passes.
 
 ---
 
@@ -22,9 +22,12 @@ Jest now has 13 suites and 77 passing tests (up from 11/64), including chart pre
 
 `ProfileScreen` presentational and interactive cards have been extracted to `client/components/profile/`. Shared profile completeness helpers live in `client/lib/profileCompletion.ts`. `ChartScreen` is a route-validation shell; all hooks and rendering live in `ChartScreenContent`.
 
-Manual auth recheck during the re-entry audit confirmed login/signup/OTP/profile flows work as documented, **except password reset is not implemented** (see §3 and §7).
+Manual auth recheck during the re-entry audit confirmed login/signup/OTP/profile flows work as documented. Since then, two more release-readiness slices landed:
 
-The remaining open risks are product/automation gaps: guest chart persistence/profile management is not implemented, synastry/compatibility/composite charts and premium gating are not implemented, stubbed chat/subscription/service modules remain unimplemented, additional astrology systems are not implemented, password reset and account/data deletion are not implemented, and schema/migration validation is not automated or CI-backed. Future cleanup should be attached to specific feature work or real defects, not broad open-ended refactoring.
+- **Password reset / forgot password**: `LoginScreen` links to `ForgotPasswordScreen`, which sends a Supabase reset email via `requestPasswordResetEmail`. The Supabase redirect remains `naksha://auth/callback`. `AuthCallbackScreen` now normalizes callback URLs through `client/lib/authCallbackUrl.ts` before routing, while transiently preserving the raw fragment URL needed for recovery token parsing; recovery callbacks route to `ResetPasswordScreen`, which updates the password via Supabase Auth. Manually verified end-to-end.
+- **Account deletion MVP**: `ProfileScreen` shows a destructive confirmation before deleting; the `deleteAccount` client helper (`client/lib/accountDeletion.ts`) calls the `delete-account` Supabase Edge Function with the current user's bearer token. The Edge Function verifies the JWT server-side, derives `user.id` from the verified JWT (never from the request body), deletes app-owned rows first (`messages`, `conversations`, `reports`, `journals`, `notifications`, `purchases`, `subscriptions`, `usage_events`, `charts`), then calls `auth.admin.deleteUser(user.id)` last, relying on existing cascades to remove `public.users` and `chart_preferences`. Implementation, security review, and automated tests have passed; **production Edge Function deployment and manual destructive QA are still pending** (see §3.7).
+
+The remaining open risks are narrower now: guest chart persistence/profile management is not implemented, synastry/compatibility/composite charts and premium gating are not implemented, stubbed chat/subscription/service modules remain unimplemented, additional astrology systems are not implemented, data export/retention policy/external billing-refund cancellation are not implemented, production deployment and manual QA of the account-deletion Edge Function are still pending, and schema/migration validation is not automated or CI-backed. Future cleanup should be attached to specific feature work or real defects, not broad open-ended refactoring.
 
 ---
 
@@ -89,6 +92,13 @@ The remaining open risks are product/automation gaps: guest chart persistence/pr
 | No safe-area context at app root | `SafeAreaProvider` (from `react-native-safe-area-context`) added in `App.tsx`, wrapping `SpaceProvider`. |
 | No daily astrology surface | Daily Transits / Today's Energy v1 implemented: `client/lib/dailyTransits.ts` exports `computeTransitPlanets`, `findDailyTransitAspects`, and `findStrongestDailyTransitAspect`; `buildTodayEnergy` assembles the card data (transit Sun/Moon sign plus the single strongest fast-transit-to-natal aspect, with a fallback message when nothing is exact). Covered by `lib/__tests__/dailyTransits.test.ts`. `DashboardScreen` renders a "Today's Energy" card using this data. |
 
+### Password reset and account deletion (2026-06-16)
+
+| Item | Resolution |
+|---|---|
+| No "Forgot password" flow | `LoginScreen` links to `ForgotPasswordScreen`, which calls `requestPasswordResetEmail` (`client/lib/auth.ts`) using the existing `naksha://auth/callback` redirect. `client/lib/authCallbackUrl.ts` normalizes incoming callback URLs for navigation while transiently preserving the raw fragment URL so recovery tokens can still be parsed. `AuthCallbackScreen` routes recovery callbacks to `ResetPasswordScreen`, which updates the password via Supabase Auth. Manually verified end-to-end. |
+| No account/data deletion path | `ProfileScreen` shows a destructive confirmation, then calls `deleteAccount()` (`client/lib/accountDeletion.ts`), which invokes the `delete-account` Supabase Edge Function (`supabase/functions/delete-account/index.ts`) with the caller's bearer token. The Edge Function verifies the JWT server-side via `auth.getUser`, derives `user.id` only from the verified JWT, deletes `messages`, `conversations`, `reports`, `journals`, `notifications`, `purchases`, `subscriptions`, `usage_events`, and `charts` for that user, then calls `auth.admin.deleteUser(user.id)` last — existing cascades remove `public.users` and `chart_preferences`. The client never calls `supabase.auth.admin.deleteUser` and the service-role key never leaves the Edge Function. Implementation passed security review and has automated test coverage; **production deployment of the Edge Function and manual destructive QA are still pending.** |
+
 ---
 
 ## 3. Remaining Architectural Risks
@@ -123,7 +133,7 @@ Stale `pref_*` keys in auth metadata for pre-migration users are inert — nothi
 
 | File | Lines | Status |
 |---|---|---|
-| `ProfileScreen.tsx` | 312 | Presentational cards extracted; data loading and save handlers still inline |
+| `ProfileScreen.tsx` | 338 | Presentational cards extracted; data loading, save handlers, and the account-deletion confirmation/handler are still inline |
 | `DashboardScreen.tsx` | 455 | Profile repair + chart generation + Today's Energy card + UI; covered by focused tests, not yet extracted. Growth from 351 lines is due to the new Today's Energy card. |
 | `CompleteProfileScreen.tsx` | 323 | Data load + geocoding + timezone inference + UI; covered by focused tests, not yet extracted |
 | `CheckEmailScreen.tsx` | 350 | OTP + upsert + navigation — not yet extracted |
@@ -153,9 +163,17 @@ Future decomposition should be attached to a feature, product requirement, or re
 
 ---
 
-### 3.7 — Password reset and account/data deletion are not implemented (MEDIUM, release gap)
+### 3.7 — Privacy/account gaps remaining after password reset and account deletion (MEDIUM, release gap)
 
-Manual auth recheck during the 2026-06-13 re-entry audit confirmed login/signup/OTP/profile flows work as documented, but there is no "Forgot password" flow and no account/data deletion path. Both are expected basics before a wider release and are not blocked by any other open item in this doc.
+Password reset and account deletion (MVP) are now implemented — see §2 "Password reset and account deletion (2026-06-16)". The account-deletion Edge Function has passed implementation, security review, and automated tests, but **has not yet been deployed to production and has not had manual destructive QA performed against a real account.** Do not assume it works end-to-end in production until that QA pass happens.
+
+Remaining gaps, none of which are blocked by any other open item in this doc:
+
+- Data export (`ProfileScreen`'s "Export my data" action is still a stub directing users to contact support).
+- A documented data-retention policy.
+- External billing/subscription refund or cancellation handling (App Store/Play Store side).
+- A "delete my data without deleting my account" option, if product wants one distinct from full account deletion.
+- Production deployment of the `delete-account` Edge Function and a manual destructive-QA pass (see above).
 
 ---
 
@@ -164,13 +182,13 @@ Manual auth recheck during the 2026-06-13 re-entry audit confirmed login/signup/
 Ranked by user impact × risk reduction × demo readiness.
 
 **1. Docs refresh — complete**
-The 2026-06-13 re-entry audit updated this doc to reflect the InterpretationCard clipping fix, InterpretationModal swipe/infinite restore, `SafeAreaProvider` addition, and Today's Energy v1 (this was previously tracked as "Build daily transits / Today's Energy v1" and is now done — see §2 "Re-entry audit (2026-06-13)").
+The 2026-06-13 re-entry audit and this 2026-06-16 update have kept this doc in sync with the InterpretationCard clipping fix, InterpretationModal swipe/infinite restore, `SafeAreaProvider` addition, Today's Energy v1, password reset, and the account deletion MVP.
 
-**2. Implement password reset ("Forgot password")** *(release gap)*
-Add a forgot-password entry point from `LoginScreen`, a Supabase `resetPasswordForEmail` flow, and a reset-password screen reachable via the existing auth-callback deep link. Files: `LoginScreen.tsx`, `AuthCallbackScreen.tsx`, `App.tsx` navigation/linking config, `lib/auth.ts`, new reset-password screen + tests.
+**2. Deploy and manually QA the account-deletion Edge Function** *(release gap)*
+Implementation, security review, and automated tests have passed (see §2, §3.7), but the `delete-account` Edge Function has not been deployed to production and has not had a manual destructive-QA pass against a real account. Files: `supabase/functions/delete-account/` (deploy only — no code change expected unless QA finds a defect).
 
-**3. Implement account deletion / data deletion / privacy basics** *(release gap)*
-Provide a user-facing way to delete their account and associated data (charts, journals, chart preferences), satisfying baseline privacy expectations before wider release. Files: `ProfileScreen.tsx` / `AccountActionsCard`, a new Supabase RPC or edge function for cascading deletion, migrations if needed, tests.
+**3. Remaining privacy basics** *(release gap)*
+Data export, a documented retention policy, and external billing/refund cancellation handling are still stubs or unimplemented (see §3.7). Files: `ProfileScreen.tsx` / `DataPrivacyCard.tsx` for export; billing work depends on App Store/Play Store integration, which does not exist yet.
 
 **4. UI/UX revamp** *(quality pass)*
 With Today's Energy, guest chart creation, and interpretation rendering all stable, do a focused UI/UX pass across Dashboard, Chart, and Interpretation surfaces now that the underlying data and layout bugs are resolved.
@@ -225,6 +243,8 @@ Files: CI config or project scripts/docs.
 - `client/lib/dailyTransits.ts` owns `computeTransitPlanets`, `findDailyTransitAspects`, `findStrongestDailyTransitAspect`, and `buildTodayEnergy`. Today's Energy is intentionally v1/basic per §3.6 — do not expand its scope without a product decision.
 - Do not casually modify `InterpretationCard.tsx` or `InterpretationModal.tsx` unless a real bug appears. Both were reworked during the 2026-06-13 re-entry audit (paragraph/sentence splitting to fix clipping; circular pager restore). In `InterpretationModal.tsx`, per-page scroll position being preserved across swipes is intentional, not a bug.
 - `App.tsx` is wrapped in `SafeAreaProvider` (from `react-native-safe-area-context`) at the root. Do not remove or duplicate this wrapper.
+- `client/lib/authCallbackUrl.ts` normalizes incoming auth callback URLs for navigation while transiently preserving the raw fragment URL so recovery tokens can still be parsed. `AuthCallbackScreen` depends on this; do not bypass it when changing callback handling.
+- Account deletion must stay server-side: the client (`client/lib/accountDeletion.ts`) only calls the `delete-account` Supabase Edge Function with the caller's bearer token. Never call `supabase.auth.admin.deleteUser` from client code, and never let the service-role key reach the client. The Edge Function verifies the JWT and derives `user.id` from it — never from a request body. Deletion order is fixed: `messages`, `conversations`, `reports`, `journals`, `notifications`, `purchases`, `subscriptions`, `usage_events`, `charts`, then `auth.admin.deleteUser` last. `public.users` and `chart_preferences` are removed by existing cascades, not explicit deletes.
 
 **What not to touch casually:**
 - `client/.env`
