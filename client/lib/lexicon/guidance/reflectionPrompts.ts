@@ -54,7 +54,7 @@ export const REFLECTION_PROMPTS = [
     sourceIds: ['guidance.transit.venus', 'guidance.target.venus'],
   },
   {
-    id: 'guidance.prompt-directed-action',
+    id: 'guidance.prompt.directed-action',
     category: 'reflection-prompt',
     promptCategory: 'action',
     tone: 'intensifying',
@@ -66,7 +66,7 @@ export const REFLECTION_PROMPTS = [
     sourceIds: ['guidance.transit.mars', 'guidance.target.mars'],
   },
   {
-    id: 'guidance.prompt-grounded-growth',
+    id: 'guidance.prompt.grounded-growth',
     category: 'reflection-prompt',
     promptCategory: 'integration',
     tone: 'supportive',
@@ -78,7 +78,7 @@ export const REFLECTION_PROMPTS = [
     sourceIds: ['guidance.transit.jupiter', 'guidance.target.jupiter'],
   },
   {
-    id: 'guidance.prompt-sustainable-structure',
+    id: 'guidance.prompt.sustainable-structure',
     category: 'reflection-prompt',
     promptCategory: 'action',
     tone: 'challenging',
@@ -90,7 +90,7 @@ export const REFLECTION_PROMPTS = [
     sourceIds: ['guidance.transit.saturn', 'guidance.target.saturn'],
   },
   {
-    id: 'guidance.prompt-balance-polarity',
+    id: 'guidance.prompt.balance-polarity',
     category: 'reflection-prompt',
     promptCategory: 'boundaries',
     tone: 'integrative',
@@ -102,7 +102,7 @@ export const REFLECTION_PROMPTS = [
     sourceIds: ['guidance.aspect.opp', 'guidance.house.7'],
   },
   {
-    id: 'guidance.prompt-friction-adjustment',
+    id: 'guidance.prompt.friction-adjustment',
     category: 'reflection-prompt',
     promptCategory: 'action',
     tone: 'challenging',
@@ -114,7 +114,7 @@ export const REFLECTION_PROMPTS = [
     sourceIds: ['guidance.aspect.square'],
   },
   {
-    id: 'guidance.prompt-use-the-ease',
+    id: 'guidance.prompt.use-the-ease',
     category: 'reflection-prompt',
     promptCategory: 'action',
     tone: 'supportive',
@@ -126,7 +126,7 @@ export const REFLECTION_PROMPTS = [
     sourceIds: ['guidance.aspect.trine'],
   },
   {
-    id: 'guidance.prompt-quiet-opening',
+    id: 'guidance.prompt.quiet-opening',
     category: 'reflection-prompt',
     promptCategory: 'awareness',
     tone: 'supportive',
@@ -138,7 +138,7 @@ export const REFLECTION_PROMPTS = [
     sourceIds: ['guidance.aspect.sextile'],
   },
   {
-    id: 'guidance.prompt-intensity-choice',
+    id: 'guidance.prompt.intensity-choice',
     category: 'reflection-prompt',
     promptCategory: 'integration',
     tone: 'intensifying',
@@ -150,7 +150,7 @@ export const REFLECTION_PROMPTS = [
     sourceIds: ['guidance.aspect.conj'],
   },
   {
-    id: 'guidance.prompt-resource-stewardship',
+    id: 'guidance.prompt.resource-stewardship',
     category: 'reflection-prompt',
     promptCategory: 'values',
     tone: 'integrative',
@@ -161,7 +161,7 @@ export const REFLECTION_PROMPTS = [
     sourceIds: ['guidance.house.2'],
   },
   {
-    id: 'guidance.prompt-inner-foundation',
+    id: 'guidance.prompt.inner-foundation',
     category: 'reflection-prompt',
     promptCategory: 'awareness',
     tone: 'integrative',
@@ -172,7 +172,7 @@ export const REFLECTION_PROMPTS = [
     sourceIds: ['guidance.house.4'],
   },
   {
-    id: 'guidance.prompt-create-without-performance',
+    id: 'guidance.prompt.create-without-performance',
     category: 'reflection-prompt',
     promptCategory: 'action',
     tone: 'supportive',
@@ -183,7 +183,7 @@ export const REFLECTION_PROMPTS = [
     sourceIds: ['guidance.house.5'],
   },
   {
-    id: 'guidance.prompt-shared-future',
+    id: 'guidance.prompt.shared-future',
     category: 'reflection-prompt',
     promptCategory: 'integration',
     tone: 'supportive',
@@ -194,7 +194,7 @@ export const REFLECTION_PROMPTS = [
     sourceIds: ['guidance.house.11'],
   },
   {
-    id: 'guidance.prompt-gentle-release',
+    id: 'guidance.prompt.gentle-release',
     category: 'reflection-prompt',
     promptCategory: 'integration',
     tone: 'integrative',
@@ -205,7 +205,7 @@ export const REFLECTION_PROMPTS = [
     sourceIds: ['guidance.house.12'],
   },
   {
-    id: 'guidance.prompt-flexible-change',
+    id: 'guidance.prompt.flexible-change',
     category: 'reflection-prompt',
     promptCategory: 'action',
     tone: 'intensifying',
@@ -216,7 +216,7 @@ export const REFLECTION_PROMPTS = [
     sourceIds: ['guidance.target.uranus'],
   },
   {
-    id: 'guidance.prompt-ground-the-vision',
+    id: 'guidance.prompt.ground-the-vision',
     category: 'reflection-prompt',
     promptCategory: 'integration',
     tone: 'integrative',
@@ -227,7 +227,7 @@ export const REFLECTION_PROMPTS = [
     sourceIds: ['guidance.target.neptune'],
   },
   {
-    id: 'guidance.prompt-power-and-choice',
+    id: 'guidance.prompt.power-and-choice',
     category: 'reflection-prompt',
     promptCategory: 'boundaries',
     tone: 'intensifying',
