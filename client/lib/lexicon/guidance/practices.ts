@@ -1,0 +1,212 @@
+import {
+  hasAnyGuidanceTag,
+  type GuidanceTag,
+  type SuggestedPractice,
+} from './types'
+
+export const SUGGESTED_PRACTICES = [
+  {
+    id: 'guidance.practice.sensory-grounding',
+    category: 'practice',
+    practiceCategory: 'grounding',
+    tone: 'integrative',
+    intensity: 'low',
+    tags: ['grounding', 'awareness', 'emotions', 'rest'],
+    title: 'Five-sense grounding',
+    summary: 'Pause and reconnect with the immediate environment.',
+    steps: [
+      'Notice one thing you can see, hear, feel, smell, and taste.',
+      'Name the next small action you want to take.',
+    ],
+    durationMinutes: 3,
+    sourceIds: ['guidance.transit.moon', 'guidance.sign.taurus'],
+  },
+  {
+    id: 'guidance.practice.pause-before-responding',
+    category: 'practice',
+    practiceCategory: 'relationships',
+    tone: 'integrative',
+    intensity: 'low',
+    tags: ['communication', 'relationships', 'boundaries', 'awareness'],
+    title: 'Pause before responding',
+    summary: 'Create a brief space between the first reaction and the reply.',
+    steps: [
+      'Read or hear the message once without composing a response.',
+      'Write the essential point you want to communicate, then respond simply.',
+    ],
+    durationMinutes: 5,
+    sourceIds: ['guidance.transit.mercury', 'guidance.aspect.opp'],
+  },
+  {
+    id: 'guidance.practice.single-task-reset',
+    category: 'practice',
+    practiceCategory: 'focus',
+    tone: 'supportive',
+    intensity: 'low',
+    tags: ['focus', 'structure', 'work', 'routines'],
+    title: 'Single-task reset',
+    summary: 'Reduce noise by completing one bounded task.',
+    steps: [
+      'Choose one task that can be advanced in fifteen minutes.',
+      'Silence avoidable distractions and work only on that task.',
+    ],
+    durationMinutes: 15,
+    sourceIds: ['guidance.transit.sun', 'guidance.house.6'],
+  },
+  {
+    id: 'guidance.practice.short-walk',
+    category: 'practice',
+    practiceCategory: 'movement',
+    tone: 'supportive',
+    intensity: 'low',
+    tags: ['action', 'grounding', 'perspective', 'rest'],
+    title: 'Short walk and reset',
+    summary: 'Use gentle movement to create space around a busy moment.',
+    steps: [
+      'Take a comfortable walk at an easy pace.',
+      'Return with one sentence describing what feels clearer.',
+    ],
+    durationMinutes: 10,
+    sourceIds: ['guidance.transit.mars', 'guidance.sign.sagittarius'],
+  },
+  {
+    id: 'guidance.practice.values-check',
+    category: 'practice',
+    practiceCategory: 'journaling',
+    tone: 'integrative',
+    intensity: 'low',
+    tags: ['values', 'decisions', 'resources', 'self-worth'],
+    title: 'Three-value check',
+    summary: 'Compare a choice with the values you want it to express.',
+    steps: [
+      'Write three values that matter in this decision.',
+      'Note which available option best respects those values and why.',
+    ],
+    durationMinutes: 8,
+    sourceIds: ['guidance.transit.venus', 'guidance.house.2'],
+  },
+  {
+    id: 'guidance.practice.boundary-review',
+    category: 'practice',
+    practiceCategory: 'relationships',
+    tone: 'challenging',
+    intensity: 'low',
+    tags: ['boundaries', 'relationships', 'communication', 'power'],
+    title: 'Boundary review',
+    summary: 'Turn a vague discomfort into a respectful, specific limit.',
+    steps: [
+      'Name the behavior or request that needs clarity.',
+      'Draft one calm sentence stating what you can or cannot do.',
+    ],
+    durationMinutes: 8,
+    sourceIds: ['guidance.target.mars', 'guidance.house.7'],
+  },
+  {
+    id: 'guidance.practice.gratitude-list',
+    category: 'practice',
+    practiceCategory: 'gratitude',
+    tone: 'supportive',
+    intensity: 'low',
+    tags: ['gratitude', 'values', 'relationships', 'resources'],
+    title: 'Specific gratitude list',
+    summary: 'Notice support that is already present without denying difficulty.',
+    steps: [
+      'Write three specific things you appreciate today.',
+      'Choose one small way to acknowledge or care for one of them.',
+    ],
+    durationMinutes: 5,
+    sourceIds: ['guidance.transit.venus', 'guidance.aspect.trine'],
+  },
+  {
+    id: 'guidance.practice.creative-free-write',
+    category: 'practice',
+    practiceCategory: 'creativity',
+    tone: 'supportive',
+    intensity: 'low',
+    tags: ['creativity', 'imagination', 'identity', 'awareness'],
+    title: 'Creative free-write',
+    summary: 'Let an idea move without editing it into usefulness too soon.',
+    steps: [
+      'Set a short timer and write continuously from the prompt: I keep noticing...',
+      'Underline one sentence that feels alive or surprising.',
+    ],
+    durationMinutes: 10,
+    sourceIds: ['guidance.house.5', 'guidance.target.neptune'],
+  },
+  {
+    id: 'guidance.practice.tidy-one-area',
+    category: 'practice',
+    practiceCategory: 'grounding',
+    tone: 'integrative',
+    intensity: 'low',
+    tags: ['grounding', 'structure', 'home', 'routines'],
+    title: 'Tidy one small area',
+    summary: 'Create visible order without turning the whole day into a project.',
+    steps: [
+      'Choose one surface, drawer, or digital folder.',
+      'Stop when that defined area is usable, even if more remains elsewhere.',
+    ],
+    durationMinutes: 10,
+    sourceIds: ['guidance.sign.virgo', 'guidance.house.4'],
+  },
+  {
+    id: 'guidance.practice.reciprocity-check-in',
+    category: 'practice',
+    practiceCategory: 'relationships',
+    tone: 'integrative',
+    intensity: 'low',
+    tags: ['relationships', 'communication', 'values', 'boundaries'],
+    title: 'Reciprocity check-in',
+    summary: 'Notice what is being given, received, and left unsaid.',
+    steps: [
+      'Write what you are offering and what you are asking for.',
+      'Choose one respectful conversation or boundary that would add clarity.',
+    ],
+    durationMinutes: 8,
+    sourceIds: ['guidance.sign.libra', 'guidance.target.venus'],
+  },
+  {
+    id: 'guidance.practice.rest-window',
+    category: 'practice',
+    practiceCategory: 'grounding',
+    tone: 'integrative',
+    intensity: 'low',
+    tags: ['rest', 'grounding', 'compassion', 'awareness'],
+    title: 'Protected rest window',
+    summary: 'Set aside a short period with no requirement to produce or solve.',
+    steps: [
+      'Choose a brief window and silence avoidable demands.',
+      'Rest quietly or do one gentle activity that feels restorative.',
+    ],
+    durationMinutes: 15,
+    sourceIds: ['guidance.house.12', 'guidance.sign.pisces'],
+  },
+  {
+    id: 'guidance.practice.decision-notes',
+    category: 'practice',
+    practiceCategory: 'journaling',
+    tone: 'integrative',
+    intensity: 'low',
+    tags: ['decisions', 'communication', 'perspective', 'focus'],
+    title: 'Decision notes',
+    summary: 'Separate facts, preferences, and unknowns before choosing.',
+    steps: [
+      'Make three short lists: facts, preferences, and unknowns.',
+      'Identify the next decision that can be made with the information available.',
+    ],
+    durationMinutes: 10,
+    sourceIds: ['guidance.transit.mercury', 'guidance.aspect.sextile'],
+  },
+] as const satisfies readonly SuggestedPractice[]
+
+export function getSuggestedPractice(id: string): SuggestedPractice | null {
+  return SUGGESTED_PRACTICES.find((practice) => practice.id === id) ?? null
+}
+
+export function findSuggestedPracticesByTags(
+  tags: readonly GuidanceTag[]
+): SuggestedPractice[] {
+  return SUGGESTED_PRACTICES.filter((practice) =>
+    hasAnyGuidanceTag(practice.tags, tags)
+  )
+}
