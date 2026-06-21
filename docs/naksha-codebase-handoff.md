@@ -1,9 +1,9 @@
 # Naksha Codebase Handoff
 
 Generated: 2026-05-07  
-Last updated: 2026-06-17 — password reset and account deletion MVP docs refresh.
+Last updated: 2026-06-20 — deployed account deletion disposable-account QA refresh.
 Scope: source-of-truth repository handoff. This update is documentation-only.
-Last recorded verification: `cd client && npm run typecheck`, `cd client && npm test` (19 suites / 106 tests), `cd client && npm run lint`, and `git diff --check` pass. Password reset / forgot-password is implemented, automated verified, and manually verified. Account deletion MVP is implemented and automated verified; Edge Function deployment/manual delete-account QA should still be confirmed in the target Supabase project.
+Last recorded verification: `cd client && npm run typecheck`, `cd client && npm test` (19 suites / 106 tests), `cd client && npm run lint`, and `git diff --check` pass. Password reset / forgot-password is implemented, automated verified, and manually verified. Account deletion MVP is implemented and automated verified; the `delete-account` Edge Function is deployed to Supabase project `ujupnlkobzhpjewruiac` and has passed disposable-account manual QA.
 
 ## 1. Executive Summary
 
@@ -15,7 +15,7 @@ What already works:
 - Signup flow that collects birth details, passes them through auth metadata for bootstrap, and persists them durably in `public.users`.
 - Login, check-email OTP verification with deterministic navigation reset, password reset / forgot-password, deep-link callback handling, profile completion, dashboard, chart view, saved chart list, profile screen, and journal list/editor.
 - Password reset uses a Forgot Password entry from Login, Supabase reset email, `AuthCallbackScreen`, robust callback URL handoff for fragment recovery links, and `ResetPasswordScreen`.
-- Account deletion MVP is implemented from Profile with destructive confirmation. The client calls a `delete-account` Supabase Edge Function; the function verifies the JWT server-side, derives `user.id` from the verified JWT, deletes app-owned rows first, then calls `auth.admin.deleteUser(user.id)` last.
+- Account deletion MVP is implemented from Profile with destructive confirmation. The client calls a deployed `delete-account` Supabase Edge Function; the function verifies the JWT server-side, derives `user.id` from the verified JWT, deletes app-owned rows first, then calls `auth.admin.deleteUser(user.id)` last. Disposable-account manual QA has passed in project `ujupnlkobzhpjewruiac`.
 - Natal chart computation from birth date/time/time zone using `luxon` and `astronomy-engine`.
 - Whole-sign house calculation when latitude/longitude are available.
 - Local chart interpretation from lexicon files for planet/sign, planet/house, house/sign, generic house, and aspect meanings.
@@ -53,7 +53,7 @@ What is incomplete or unstable:
 - Additional chart systems remain disabled/coming soon. The calculation path accepts the current supported preference defaults only: Whole Sign, Tropical, and medium orbs.
 - Guest chart persistence/profile management is not implemented yet; there is no `birth_profiles` table or reusable guest birth-profile library.
 - Synastry, compatibility, composite charts, reports, and premium gating are not implemented yet.
-- Account deletion MVP exists, but production Edge Function deployment/manual delete-account QA, data export, retention policy, external subscription cancellation/refunds, and delete-data-without-deleting-account flows are not complete.
+- Account deletion is deployed and manually verified with a disposable account, but data export, retention policy, external subscription cancellation/refunds, and delete-data-without-deleting-account flows are not complete.
 - Charts without birth coordinates are intentionally view-only: they can render planet data, but are not persisted because canonical saved-chart identity requires coordinates.
 - `auth.user_metadata` still carries signup/bootstrap profile data for `handle_new_user` and older-account repair, but profile edits no longer mirror back to auth metadata.
 - Schema/migration validation is not automated or CI-backed yet.
@@ -330,7 +330,8 @@ Account deletion / data privacy:
 - The Edge Function uses a service-role Supabase client server-side to delete app-owned rows in order: `messages`, `conversations`, `reports`, `journals`, `notifications`, `purchases`, `subscriptions`, `usage_events`, then `charts`.
 - After app-owned rows are deleted, the Edge Function calls `auth.admin.deleteUser(user.id)` last.
 - Existing cascades remove `public.users` from `auth.users` deletion and remove `chart_preferences` from `public.users` deletion.
-- Account deletion MVP is implemented and automated verified. Production Edge Function deployment/manual delete-account QA should still be confirmed before claiming a production release baseline.
+- The `delete-account` Edge Function is deployed to Supabase project `ujupnlkobzhpjewruiac` and passed disposable-account manual QA. The tested user had app-owned data including saved charts; deletion completed, exited the authenticated account flow, prevented subsequent login, and left no rows for that user in the checked `auth.users`, `public.users`, `public.chart_preferences`, `public.charts`, and `public.journals` tables.
+- This confirms the tested end-to-end deletion path; it is not a claim of broader production hardening, monitoring, or recovery coverage.
 - Remaining privacy/account gaps are data export, retention policy, external subscription cancellation/refunds, and any future delete-data-without-deleting-account flow.
 
 Schema/frontend contract:
@@ -498,7 +499,6 @@ Component size/coupling concerns:
 | Stub screens and service modules exist | `ChatScreen.tsx`, `SubscriptionScreen.tsx`, `lib/conversations.ts`, `lib/subscriptions.ts`, `lib/reports.ts`, `lib/notifications.ts`, `lib/usage.ts` | Future features have placeholder files but no implementation; the empty screens are not registered in `App.tsx`. | Scaffolding exists ahead of feature work. |
 | Signup metadata can become stale after bootstrap | `SignupScreen.tsx`, `lib/auth.ts`, `DashboardScreen.tsx`, `handle_new_user` migration | Auth metadata may not match later edits in `public.users`. | Auth metadata is intentionally retained as signup/bootstrap handoff and Dashboard repair input, not as durable profile storage. |
 | Guest chart persistence/profile management is not implemented | `CreateGuestChartScreen.tsx`, `ChartScreen.tsx`, `useChartData.ts`, schema | Users can create and view a one-off guest chart, but there is no reusable guest birth-profile library, relationship metadata, or `birth_profiles` table. | Guest Chart UI v1 intentionally avoided schema and profile-management scope. |
-| Edge Function deployment/manual account deletion QA pending | `supabase/functions/delete-account/`, Supabase project config | Account deletion MVP is implemented in source and automated verified, but production deployment/manual delete-account verification should be completed before release claims. | Edge Functions are deployed/configured outside normal client test execution. |
 | Migration history starts from a remote schema dump | `supabase/migrations/20260508015720_remote_schema.sql`, later migrations | The schema is now reproducible, but history before the dump is not incremental. | The remote project schema was pulled into the repo after initial development. |
 | Schema/migration validation is not automated | `supabase/migrations/`, CI/not configured | App tests cover high-risk client flows, but migration reset/diff validation is still a manual local step. | No CI-backed Supabase validation command exists yet. |
 
@@ -552,44 +552,45 @@ Testing baseline:
 
 Note: cleanup/stabilization is complete enough for feature expansion. Runtime chart validation, chart preference plumbing for current defaults, save-warning visibility, AuthCallback hardening, journal payload coverage, async cancellation guards, Jest coverage, ESLint, lint cleanup, generated Supabase types, Dashboard tests, CompleteProfile tests, InterpretationCard clipping tests, InterpretationModal pager tests, and Today’s Energy v1 are complete.
 
-1. Edge Function release QA and deployment checklist.
-   - Deploy `delete-account`, manually verify account deletion against the target Supabase project, and document rollback/failure handling before broader release claims.
+1. Privacy copy and data export planning.
+   - Account deletion is deployed and manually verified, but data export expectations and user-facing privacy language remain product gaps.
 
-2. Privacy copy and data export planning.
-   - Account deletion MVP exists, but data export, retention policy, external subscription cancellation/refunds, and any delete-data-without-deleting-account flow remain product gaps.
+2. Release readiness and CI-backed schema/migration validation.
+   - Automate or document a reliable `supabase db reset`/`db diff` workflow so migration drift is caught before release.
 
 3. UI/UX revamp and release QA polish.
    - Dashboard, chart interpretation, guest chart entry, saved charts, and profile should get a cohesive visual/interaction pass before release.
 
-4. Release readiness and CI-backed schema/migration validation.
-   - Automate or document a reliable `supabase db reset`/`db diff` workflow so migration drift is caught before release.
+4. Account lifecycle policy decisions.
+   - Define retention policy, external subscription cancellation/refund responsibilities, and whether delete-data-without-deleting-account is needed.
 
 5. Decide guest profile persistence / relationship metadata scope.
    - Guest Chart UI v1 exists without schema changes. Add reusable guest profiles, relationship labels, or a `birth_profiles` model only after the product workflow is explicit.
 
 ## 12. Best Next Vertical Slice
 
-Recommended slice: Edge Function release QA and privacy copy.
+Recommended slice: privacy copy and data export planning.
 
-Password reset and account deletion MVP are implemented. The next release-readiness slice should verify the server-side deletion path in the target Supabase environment and tighten user-facing privacy expectations without changing chart math, chart identity, guest save semantics, or profile data ownership.
+Password reset and account deletion MVP are implemented and manually verified. The deployed deletion path has passed disposable-account QA; the next release-readiness slice should tighten user-facing privacy and export expectations without changing chart math, chart identity, guest save semantics, or profile data ownership.
 
 Goal:
 
-- Deploy and manually QA the `delete-account` Edge Function against the target Supabase project.
-- Confirm app-owned rows are deleted before `auth.users`, and `public.users` plus `chart_preferences` are removed by existing cascades.
-- Document or implement minimal privacy copy for account deletion, data export expectations, retention policy, and external billing caveats.
+- Document or implement minimal privacy copy for account deletion and data export expectations.
+- Decide the MVP export scope and delivery method, plus the retention policy.
+- Document external subscription cancellation/refund responsibilities and decide whether delete-data-without-deleting-account is needed.
 - Keep service-role secrets server-side only.
 
 Files likely involved:
 
-- `supabase/functions/delete-account/`, Profile privacy copy, release QA checklist/docs, and focused tests only if behavior changes.
+- Profile privacy copy, export/backend planning or implementation files, release checklist/docs, and focused tests only if behavior changes.
 - No migration should be needed unless the product chooses to add retention/audit/export tables.
 
 Expected behavior:
 
 - Users can request password reset and delete their account through the app.
 - Account deletion remains authenticated, server-side, and derived from the verified JWT user id.
-- Manual release QA confirms the deployed Edge Function works in the target Supabase project.
+- The deployed Edge Function remains covered by the completed disposable-account QA without implying broader production hardening.
+- Users receive accurate expectations about deletion, export availability, retention, and external billing responsibilities.
 - Guest chart persistence, relationship metadata, and any `birth_profiles` table remain separate product decisions.
 
 Verification steps:

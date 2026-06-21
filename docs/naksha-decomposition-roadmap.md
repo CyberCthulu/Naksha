@@ -1,7 +1,7 @@
 # Naksha Decomposition Roadmap
 
 Generated: 2026-05-09
-Last updated: 2026-06-17 — password reset and account deletion MVP complete.
+Last updated: 2026-06-20 — deployed account deletion disposable-account QA complete.
 Scope: documentation-only roadmap for large-file cleanup before feature expansion.
 
 ## 1. Purpose
@@ -159,18 +159,15 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
     - The Edge Function deletes app-owned rows first, then calls `auth.admin.deleteUser(user.id)` last.
     - Existing cascades remove `public.users` and `chart_preferences`.
     - `deno.json` and `deno.lock` live with the function for Deno/editor dependency resolution.
-    - Automated verification passes. Production Edge Function deployment/manual delete-account QA should still be confirmed before release claims.
+    - Automated verification passes. The function is deployed to Supabase project `ujupnlkobzhpjewruiac` and passed disposable-account manual QA, including post-delete checks of `auth.users`, `public.users`, `public.chart_preferences`, `public.charts`, and `public.journals`.
+    - This confirms the tested end-to-end path without claiming broader production hardening, monitoring, or recovery coverage.
 
 ---
 
 ### REMAINING (re-ranked)
 
-- **Next release-readiness slice: Edge Function deployment/manual QA**
-   - Deploy `delete-account` to the target Supabase project and manually verify account deletion end-to-end.
-   - Confirm app-owned rows are deleted before `auth.users`, and `public.users` plus `chart_preferences` cascade as expected.
-
 - **Privacy/account follow-up slice**
-   - Account deletion MVP exists, but data export, retention policy, external subscription cancellation/refunds, and optional delete-data-without-deleting-account behavior remain open.
+   - Account deletion is deployed and manually verified, but data export, retention policy, external subscription cancellation/refunds, and optional delete-data-without-deleting-account behavior remain open.
 
 - **UI/UX revamp slice**
    - Give Dashboard, chart interpretation, guest chart entry, saved charts, and profile a cohesive pre-release interaction/visual pass.
@@ -276,26 +273,26 @@ Expo-compatible ESLint flat config and `"lint": "eslint ."` added. Targeted clea
 Login now links to `ForgotPasswordScreen`, reset email requests use Supabase Auth, recovery callbacks route through `AuthCallbackScreen`, fragment recovery links are handed off safely, and `ResetPasswordScreen` updates the password. Automated verification passes and the flow has been manually verified.
 
 **Account deletion MVP** ✅
-Profile now exposes a destructive Delete account confirmation. `client/lib/accountDeletion.ts` invokes the authenticated `delete-account` Edge Function. `supabase/functions/delete-account/index.ts` verifies the JWT server-side, derives `user.id` from that verified JWT, deletes app-owned rows first, then calls `auth.admin.deleteUser(user.id)` last. Existing cascades remove `public.users` and `chart_preferences`. Automated verification passes; production deployment/manual delete-account QA remains a release-readiness task.
+Profile now exposes a destructive Delete account confirmation. `client/lib/accountDeletion.ts` invokes the authenticated `delete-account` Edge Function. `supabase/functions/delete-account/index.ts` verifies the JWT server-side, derives `user.id` from that verified JWT, deletes app-owned rows first, then calls `auth.admin.deleteUser(user.id)` last. Existing cascades remove `public.users` and `chart_preferences`. Automated verification passes; the function is deployed to project `ujupnlkobzhpjewruiac` and disposable-account manual QA passed.
 
 **Final cleanup verification baseline** ✅
-As of 2026-06-17: `npm run typecheck`, `npm test` (19 suites / 106 tests), `npm run lint`, and `git diff --check` pass. Password reset is manually verified. Account deletion MVP is automated verified; Edge Function deployment/manual delete-account QA should still be confirmed in the target Supabase project.
+As of 2026-06-20: `npm run typecheck`, `npm test` (19 suites / 106 tests), `npm run lint`, and `git diff --check` pass. Password reset is manually verified. Account deletion is automated verified, deployed to project `ujupnlkobzhpjewruiac`, and manually verified with a disposable account.
 
 ## 6. Next Safe Slice
 
-**Next release-readiness slice: Edge Function deployment/manual QA**
+**Next release-readiness slice: privacy copy and data export planning**
 
 Cleanup/stabilization is complete enough for feature expansion. Future cleanup should be attached to specific feature work or real defects, not broad open-ended refactoring.
 
-Password reset and account deletion MVP are implemented. The best next safe slice is confirming the deployed account deletion Edge Function in the target Supabase project and tightening release/privacy expectations without broad refactors.
+Password reset and account deletion MVP are implemented and manually verified. The best next safe slice is tightening privacy, export, retention, and external billing expectations without broad refactors.
 
 - Keep `public.users` as the durable profile/birth source of truth.
 - Keep auth metadata limited to signup/bootstrap and Dashboard repair.
 - Keep service-role keys server-side only; never expose them in the React Native client.
-- Confirm account deletion removes app-owned rows before deleting `auth.users`, and that existing cascades remove `public.users` and `chart_preferences`.
+- Define data export scope and delivery, retention policy, external subscription cancellation/refund responsibilities, and whether delete-data-without-deleting-account is needed.
 - Add or update focused tests only when behavior changes.
 
-Next priorities after deployment/manual QA: privacy copy/data export/retention policy, external subscription cancellation/refund handling, UI/UX revamp, CI/schema validation, and only then guest profile persistence or relationship metadata after a product decision. Do not claim synastry, compatibility, composite charts, reports, premium gating, guest-specific schema, Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, or house-degree display are implemented until their product behavior, math/schema needs, UI, and tests are defined.
+Next priorities: privacy copy/data export/retention policy, external subscription cancellation/refund handling, UI/UX revamp, CI/schema validation, and only then guest profile persistence or relationship metadata after a product decision. Do not claim synastry, compatibility, composite charts, reports, premium gating, guest-specific schema, Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, or house-degree display are implemented until their product behavior, math/schema needs, UI, and tests are defined.
 
 ## 7. Deferred / High-Risk Refactors
 
@@ -350,7 +347,7 @@ Manual verification should match the touched surface:
 - Guest chart slices: confirm guest charts do not auto-save before tapping save, and missing-coordinate guest charts do not persist.
 - CheckEmail slices: verify OTP success, resend, missing email/code alerts, profile-complete route to Dashboard, incomplete route to CompleteProfile.
 - Password reset slices: request reset email, open recovery callback, update password, confirm existing signup/login/OTP behavior still works.
-- Account deletion slices: confirm destructive cancel does nothing, confirmed deletion calls the deployed Edge Function, app returns to Login, auth user cannot log in, and user-owned public rows are removed.
+- Account deletion slices: confirm destructive cancel does nothing, confirmed deletion calls the deployed Edge Function, the app exits the authenticated account flow, the deleted user cannot log in, and user-owned public rows are removed.
 - CompleteProfile slices: save with selected autocomplete coordinates, save with manual typed location that needs geocoding, save with invalid/missing fields.
 - Interpretation slices: open planet modal, open house modal, swipe first-to-last and last-to-first, test one-page/empty-page behavior where possible.
 - Today’s Energy slices: load Dashboard with valid natal planets, verify transit Sun/Moon signs and strongest-aspect/fallback card states.
