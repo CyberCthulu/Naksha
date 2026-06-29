@@ -12,9 +12,9 @@ import {
   type ChartData,
 } from '../../lib/charts'
 import {
-  buildTodayEnergy,
-  type TodayEnergy,
-} from '../../lib/dailyTransits'
+  buildDailyGuidance,
+  type DailyGuidance,
+} from '../../lib/guidance'
 import {
   DEFAULT_CHART_CALCULATION_PREFERENCES,
   type UserProfileFields,
@@ -52,9 +52,9 @@ jest.mock('../../lib/charts', () => ({
   saveChart: jest.fn(),
 }))
 
-jest.mock('../../lib/dailyTransits', () => ({
+jest.mock('../../lib/guidance', () => ({
   __esModule: true,
-  buildTodayEnergy: jest.fn(),
+  buildDailyGuidance: jest.fn(),
 }))
 
 jest.mock('../../lib/supabase', () => ({
@@ -138,29 +138,81 @@ function makeChartData({
   }
 }
 
-function makeTodayEnergy(
-  overrides: Partial<TodayEnergy> = {}
-): TodayEnergy {
+function makeDailyGuidance(
+  overrides: Partial<DailyGuidance> = {}
+): DailyGuidance {
   return {
+    schemaVersion: 1,
+    source: 'deterministic',
+    date: '2026-05-17',
+    evaluatedAt: '2026-05-17T12:00:00.000Z',
     transitMoonSign: 'Virgo',
     transitSunSign: 'Taurus',
-    strongestAspect: {
-      transit: {
-        kind: 'transit',
-        id: 'transit:Moon:0',
-        name: 'Moon',
-        lon: 150,
-      },
-      natal: {
-        kind: 'natal',
-        id: 'natal:Mars:0',
-        name: 'Mars',
-        lon: 60,
-      },
-      type: 'square',
+    primaryTransit: {
+      transitPlanet: 'Moon',
+      natalPlanet: 'Mars',
+      aspect: 'square',
       orb: 0.75,
-      aspectMeaning: 'Friction that pushes you toward growth and action.',
+      tone: 'challenging',
+      intensity: 'high',
+      sourceIds: [
+        'guidance.transit.moon',
+        'guidance.target.mars',
+        'guidance.aspect.square',
+      ],
     },
+    tone: 'challenging',
+    mood: {
+      title: 'Mood',
+      body: 'A practical mood supports thoughtful adjustment.',
+      sourceIds: ['guidance.sign.virgo'],
+    },
+    warning: {
+      title: 'Watch for',
+      body: 'Watch for forcing movement before the tension is understood.',
+      sourceIds: ['guidance.aspect.square'],
+    },
+    opportunity: {
+      title: 'Opportunity',
+      body: 'Turn friction into one useful and proportionate adjustment.',
+      sourceIds: ['guidance.aspect.square'],
+    },
+    transitSummary: {
+      title: 'Transit summary',
+      body: 'Moon squares natal Mars within 0.75°.',
+      sourceIds: ['guidance.aspect.square'],
+    },
+    reflectionPrompt: {
+      id: 'guidance.prompt.friction-adjustment',
+      category: 'reflection-prompt',
+      promptCategory: 'action',
+      tone: 'challenging',
+      intensity: 'high',
+      tags: ['change', 'action', 'growth'],
+      title: 'Use the friction',
+      prompt: 'What recurring friction is asking for an adjustment?',
+      followUp: 'What can change first?',
+      sourceIds: ['guidance.aspect.square'],
+    },
+    suggestedPractice: {
+      id: 'guidance.practice.single-task-reset',
+      category: 'practice',
+      practiceCategory: 'focus',
+      tone: 'supportive',
+      intensity: 'low',
+      tags: ['focus', 'structure', 'work', 'routines'],
+      title: 'Single-task reset',
+      summary: 'Reduce noise by completing one bounded task.',
+      steps: ['Choose one task.', 'Work only on that task.'],
+      durationMinutes: 15,
+      sourceIds: ['guidance.transit.sun'],
+    },
+    sourceIds: [
+      'guidance.sign.virgo',
+      'guidance.aspect.square',
+      'guidance.prompt.friction-adjustment',
+      'guidance.practice.single-task-reset',
+    ],
     ...overrides,
   }
 }
@@ -204,8 +256,10 @@ function mockedSaveChart() {
   return saveChart as jest.MockedFunction<typeof saveChart>
 }
 
-function mockedBuildTodayEnergy() {
-  return buildTodayEnergy as jest.MockedFunction<typeof buildTodayEnergy>
+function mockedBuildDailyGuidance() {
+  return buildDailyGuidance as jest.MockedFunction<
+    typeof buildDailyGuidance
+  >
 }
 
 function mockSignedInUser(metadata: Record<string, unknown> = {}) {
@@ -349,7 +403,7 @@ describe('DashboardScreen', () => {
       DEFAULT_CHART_CALCULATION_PREFERENCES
     )
     mockedSaveChart().mockResolvedValue({ id: 1 } as any)
-    mockedBuildTodayEnergy().mockReturnValue(makeTodayEnergy())
+    mockedBuildDailyGuidance().mockReturnValue(makeDailyGuidance())
   })
 
   afterEach(() => {
@@ -469,35 +523,57 @@ describe('DashboardScreen', () => {
     expect(mockedBuildChartData()).not.toHaveBeenCalled()
     expect(mockedGetChartCalculationPreferences()).not.toHaveBeenCalled()
     expect(mockedSaveChart()).not.toHaveBeenCalled()
-    expect(mockedBuildTodayEnergy()).toHaveBeenCalledWith(
-      savedChart.planets,
-      expect.any(Date)
-    )
+    expect(mockedBuildDailyGuidance()).toHaveBeenCalledWith({
+      natalPlanets: savedChart.planets,
+      evaluatedAt: expect.any(Date),
+    })
   })
 
-  it('renders Today’s Energy with a strongest fast transit aspect', async () => {
+  it('renders structured Today’s Energy guidance', async () => {
     const screen = await renderScreen()
 
     expectText(screen, 'Today’s Energy')
-    expectText(screen, 'Transit Moon: Virgo')
-    expectText(screen, 'Transit Sun: Taurus')
-    expectText(screen, 'Transit Moon square natal Mars · 0.8°')
-    expectText(screen, 'Friction that pushes you toward growth and action.')
+    expectText(screen, 'Moon in Virgo | Sun in Taurus')
+    expectText(screen, 'Mood')
+    expectText(screen, 'A practical mood supports thoughtful adjustment.')
+    expectText(screen, 'Watch for')
+    expectText(screen, 'Opportunity')
+    expectText(screen, 'Transit summary')
+    expectText(screen, 'Moon squares natal Mars within 0.75°.')
+    expectText(screen, 'Reflection prompt')
+    expectText(screen, 'Use the friction')
+    expectText(screen, 'Suggested practice')
+    expectText(screen, 'Single-task reset')
   })
 
   it('renders Today’s Energy fallback when no strongest aspect exists', async () => {
-    mockedBuildTodayEnergy().mockReturnValue(
-      makeTodayEnergy({
-        strongestAspect: null,
+    mockedBuildDailyGuidance().mockReturnValue(
+      makeDailyGuidance({
+        primaryTransit: null,
+        tone: 'integrative',
+        transitSummary: {
+          title: 'Transit summary',
+          body: 'No tight personal transit aspect is emphasized right now.',
+          sourceIds: [
+            'guidance.sign.virgo',
+            'guidance.sign.taurus',
+          ],
+        },
       })
     )
 
     const screen = await renderScreen()
 
     expectText(screen, 'Today’s Energy')
-    expectText(screen, 'Transit Moon: Virgo')
-    expectText(screen, 'Transit Sun: Taurus')
-    expectText(screen, 'No major fast transit aspect is exact right now.')
+    expectText(screen, 'Mood')
+    expectText(screen, 'Watch for')
+    expectText(screen, 'Opportunity')
+    expectText(
+      screen,
+      'No tight personal transit aspect is emphasized right now.'
+    )
+    expectText(screen, 'Reflection prompt')
+    expectText(screen, 'Suggested practice')
   })
 
   it('falls back to built chart data when saved chart_data is invalid', async () => {

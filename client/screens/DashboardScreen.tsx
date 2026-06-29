@@ -19,7 +19,7 @@ import {
   getChartCalculationPreferences,
 } from '../lib/charts'
 import { parseChartData } from '../lib/chartDataValidation'
-import { buildTodayEnergy, type TodayEnergy } from '../lib/dailyTransits'
+import { buildDailyGuidance, type DailyGuidance } from '../lib/guidance'
 import type { UserRow } from '../lib/domainTypes'
 import {
   needsProfileCompletion,
@@ -32,6 +32,7 @@ import { formatShortTimeFromHHMM } from '../lib/time'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { theme } from '../components/ui/theme'
+import { TodayEnergyCard } from '../components/guidance/TodayEnergyCard'
 
 const ZODIAC = [
   'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
@@ -42,24 +43,13 @@ const ZODIAC_GLY = ['♈︎', '♉︎', '♊︎', '♋︎', '♌︎', '♍︎', 
 
 const signOf = (lon: number) => Math.floor((((lon % 360) + 360) % 360) / 30)
 
-const ASPECT_LABELS: Record<
-  NonNullable<TodayEnergy['strongestAspect']>['type'],
-  string
-> = {
-  conj: 'conjunct',
-  opp: 'opposite',
-  trine: 'trine',
-  square: 'square',
-  sextile: 'sextile',
-}
-
 export default function DashboardScreen() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<UserRow | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [sunSign, setSunSign] = useState<string | null>(null)
   const [moonSign, setMoonSign] = useState<string | null>(null)
-  const [todayEnergy, setTodayEnergy] = useState<TodayEnergy | null>(null)
+  const [todayEnergy, setTodayEnergy] = useState<DailyGuidance | null>(null)
 
   const nav = useNavigation<any>()
   const insets = useSafeAreaInsets()
@@ -203,7 +193,12 @@ export default function DashboardScreen() {
         setMoonSign(
           moon ? `${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}` : null
         )
-        setTodayEnergy(buildTodayEnergy(planets, new Date()))
+        setTodayEnergy(
+          buildDailyGuidance({
+            natalPlanets: planets,
+            evaluatedAt: new Date(),
+          })
+        )
 
         return
       }
@@ -249,7 +244,12 @@ export default function DashboardScreen() {
       setMoonSign(
         moon ? `${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}` : null
       )
-      setTodayEnergy(buildTodayEnergy(payload.planets, new Date()))
+      setTodayEnergy(
+        buildDailyGuidance({
+          natalPlanets: payload.planets,
+          evaluatedAt: new Date(),
+        })
+      )
     } catch (e: any) {
       if (!unmounted.current) {
         setError(e?.message ?? 'Failed to load dashboard.')
@@ -293,8 +293,6 @@ export default function DashboardScreen() {
   const prettyTime = profile?.birth_time
     ? formatShortTimeFromHHMM(profile.birth_time)
     : '—'
-  const strongestAspect = todayEnergy?.strongestAspect ?? null
-
   if (loading) {
     return (
       <View style={uiStyles.center}>
@@ -340,27 +338,7 @@ export default function DashboardScreen() {
         </Card>
       )}
 
-      {todayEnergy && (
-        <Card>
-          <AppText style={uiStyles.cardTitle}>Today’s Energy</AppText>
-          <AppText>Transit Moon: {todayEnergy.transitMoonSign ?? '—'}</AppText>
-          <AppText>Transit Sun: {todayEnergy.transitSunSign ?? '—'}</AppText>
-          {strongestAspect ? (
-            <>
-              <AppText>
-                {`Transit ${strongestAspect.transit.name} ${
-                  ASPECT_LABELS[strongestAspect.type]
-                } natal ${strongestAspect.natal.name} · ${strongestAspect.orb.toFixed(1)}°`}
-              </AppText>
-              {!!strongestAspect.aspectMeaning && (
-                <MutedText>{strongestAspect.aspectMeaning}</MutedText>
-              )}
-            </>
-          ) : (
-            <MutedText>No major fast transit aspect is exact right now.</MutedText>
-          )}
-        </Card>
-      )}
+      {todayEnergy && <TodayEnergyCard guidance={todayEnergy} />}
 
       {profile ? (
         <Card>
