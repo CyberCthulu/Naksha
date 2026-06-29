@@ -10,6 +10,34 @@ Inputs inspected: `lib/dailyTransits.ts`, `lib/astro.ts`, `lib/charts.ts`, `lib/
 
 ---
 
+## 0. Implementation Status Update (2026-06-28)
+
+**This plan is no longer future-only — its core (Slices 1-4 below) has been implemented, reviewed, and committed.** This section records what actually shipped and how it maps onto the original plan; the rest of this document is preserved as written at planning time for context, except where a section is explicitly annotated below as superseded.
+
+Baseline has moved from the planning-time **19 suites / 106 tests** to **22 suites / 129 tests** (typecheck/lint/`git diff --check` all still pass).
+
+What's complete (each reviewed independently, APPROVE on all, zero required fixes, all committed):
+
+| Plan section | Actual implementation | Status |
+|---|---|---|
+| §5/§12 Slice 1 (transit tone tables) + §12 Slice 3 (reflection/practice libraries) | `client/lib/lexicon/guidance/` — transit-planet guidance, natal-target guidance, aspect-dynamic guidance, sign guidance, house guidance, a 20-entry reflection-prompt library, a 12-entry suggested-practice library, all with stable IDs/`sourceIds` and a coverage/integrity test suite | **DONE** — shipped as one combined "guidance primitives" slice, under `lexicon/guidance/` rather than the originally proposed split of `lexicon/transits/` + `lexicon/prompts/` (see note below) |
+| §7/§12 Slice 2 (DailyGuidance + Dashboard swap) | `client/lib/guidance/dailyGuidance.ts`, `client/lib/guidance/types.ts`, `client/components/guidance/TodayEnergyCard.tsx` wired into `DashboardScreen.tsx` | **DONE** — builder and UI swap shipped as two separately reviewed slices instead of one |
+| §8/§12 Slice 4 (WeeklyForecast + UI) | `client/lib/guidance/weeklyForecast.ts`, `client/components/guidance/WeeklyForecastCard.tsx` wired into `DashboardScreen.tsx` | **DONE** — builder and UI shipped as two separately reviewed slices instead of one; week-start decision resolved as **Monday, user profile timezone** (the plan's open question in §8 is now closed) |
+
+What's still **not** done (unchanged from this plan's original deferrals/§9 design — do not treat as implemented):
+
+- **§9 Shadow Prompt Library v1** (`buildShadowPrompts`, `SHADOW_PROMPTS`) — **not built in this pass.** This was planned as its own slice 5 and remains exactly that: a future slice. The reflection-prompt/suggested-practice primitives that exist today are the *daily/weekly* guidance primitives from §4 item 4/5, not the natal-hard-aspect-sourced shadow-work primitives described in §9.
+- Journal-prompt handoff — `DailyGuidance.reflectionPrompt` / `WeeklyForecast.journalPrompts` are not yet wired into `JournalEditorScreen` as a seed/prefill (mentioned as a future hook in §9's "surface in journaling entry-point," never built).
+- Everything in §13 "Explicit Deferrals" remains deferred exactly as written: AI integration, retrograde/moon phase/applying-separating/planetary speed, slow-planet transits and transit-to-house, additional house systems/zodiac/orb modes, an exhaustive hand-written transit table, notifications, persisted/saved guidance history, localization.
+
+Implementation notes worth knowing if you work in this code next:
+
+- The actual `GuidanceTone` union is `'supportive' | 'challenging' | 'intensifying' | 'integrative'` (defined in `client/lib/lexicon/guidance/types.ts`), **not** the `'flow' | 'tension' | 'amplify' | 'neutral'` sketched in §6 below. §6's types were a planning-time sketch; the shipped types differ in naming (and `integrative` covers what §6 called `neutral`) while preserving the same underlying tone-mapping intent (trine/sextile → supportive/flow, square/opp → challenging/tension, conj → intensifying/amplify).
+- `DailyGuidance`/`WeeklyForecast` field names also differ slightly from §6's sketch (e.g. shipped `mood`/`warning`/`opportunity`/`transitSummary` are `{title, body, sourceIds}` sections, not bare strings) — §6 should be read as directional, not as the literal shipped contract. The shipped contract lives in `client/lib/guidance/types.ts`.
+- Both builders take their evaluation instant as an explicit parameter (`evaluatedAt: Date`); `new Date()` is called exactly once per Dashboard load and shared between both builders — never called inside `lib/guidance` itself.
+
+---
+
 ## 1. Executive Summary
 
 Naksha already has a **complete, deterministic natal interpretation lexicon** (sign, planet-in-sign, planet-in-house, house, house-sign, and generic aspect meanings — ~2,994 lines, all hand-written `{short, long}` blocks). What it lacks is a **transit/forecast/guidance content layer**: today's card is a thin three-field object (`transitSunSign`, `transitMoonSign`, `strongestAspect`) whose only interpretive text is the *generic* aspect meaning reused from the natal lexicon. There is no transit meaning, no mood/warning/opportunity framing, no weekly aggregation, and no shadow-work prompt library.
@@ -243,11 +271,13 @@ All pure functions → high-value, cheap tests. Target ~5–6 new suites (keeps 
 
 ## 12. Implementation Slices (Recommended Order)
 
-1. **Transit tone tables + composed transit meaning** (`lexicon/transits/*`). Pure data + `getTransitAspectMeaning`. Tests. No UI change yet. *Unlocks everything else.*
-2. **DailyGuidance** (`guidance/dailyGuidance.ts` + types). Build the structured object from existing `buildTodayEnergy` + tone tables. Tests. Then swap `DashboardScreen`'s Today's Energy card to render mood/warning/opportunity/summary/prompt/practice. *Immediate visible upgrade.*
-3. **Reflection + practice libraries** (`lexicon/prompts/reflection.ts`, `practices.ts`). Wire into DailyGuidance fields. Tests. (Can merge into slice 2 if small.)
-4. **WeeklyForecast** (`guidance/weeklyForecast.ts`). Aggregate dailies. Tests. Add a Dashboard or dedicated weekly surface (UI scope per product). Decide week-start convention.
-5. **Shadow prompt library** (`lexicon/prompts/shadow.ts`, `guidance/shadowPrompts.ts`). Natal + transit sourced. Tests. Surface in journaling entry-point (e.g. "prompt of the day" seed into `JournalEditorScreen`).
+**Slices 1-4 below are DONE — see §0 for what actually shipped and how it maps onto this list. Slice 5 (shadow prompts) is NOT done.** This section is preserved as originally planned.
+
+1. **Transit tone tables + composed transit meaning** (`lexicon/transits/*`). Pure data + `getTransitAspectMeaning`. Tests. No UI change yet. *Unlocks everything else.* — ✅ **DONE**, shipped under `lexicon/guidance/` combined with slice 3 (see §0).
+2. **DailyGuidance** (`guidance/dailyGuidance.ts` + types). Build the structured object from existing `buildTodayEnergy` + tone tables. Tests. Then swap `DashboardScreen`'s Today's Energy card to render mood/warning/opportunity/summary/prompt/practice. *Immediate visible upgrade.* — ✅ **DONE**, builder and UI swap shipped as two separately reviewed slices (see §0).
+3. **Reflection + practice libraries** (`lexicon/prompts/reflection.ts`, `practices.ts`). Wire into DailyGuidance fields. Tests. (Can merge into slice 2 if small.) — ✅ **DONE**, merged into slice 1's combined guidance-primitives slice (see §0).
+4. **WeeklyForecast** (`guidance/weeklyForecast.ts`). Aggregate dailies. Tests. Add a Dashboard or dedicated weekly surface (UI scope per product). Decide week-start convention. — ✅ **DONE**, builder and UI shipped as two separately reviewed slices; week-start resolved as Monday/user-profile-timezone (see §0).
+5. **Shadow prompt library** (`lexicon/prompts/shadow.ts`, `guidance/shadowPrompts.ts`). Natal + transit sourced. Tests. Surface in journaling entry-point (e.g. "prompt of the day" seed into `JournalEditorScreen`). — ❌ **NOT done.** Still a future slice; see §0 and §3.6 of `docs/claudes-review.md`.
 
 Each slice is independently committable, additive, and verified with `typecheck`/`test`/`lint`/`git diff --check`. None touches chart identity, the natal lexicon, or auth.
 

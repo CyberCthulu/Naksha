@@ -1,8 +1,46 @@
 # Naksha Feature List
 
-Personalized astrology, forecasts, journaling, relationship mapping, and future AI-guided spiritual insight.
+Personalized astrology, deterministic forecasts, journaling, and future AI-guided spiritual insight.
 
-This document separates implemented V1 functionality from planned roadmap features. It should not be read as a list of completed features unless an item is marked **DONE**.
+This document separates implemented V1 functionality from planned roadmap features. It should not be read as a list of completed features unless an item is marked **DONE**. Last reviewed for accuracy: 2026-06-28 (Naksha Forecast + Guidance Library v1 status confirmed).
+
+## Status Overview
+
+A quick index of every section below, grouped into four buckets. Each section still carries its own detailed status — this is a map, not a replacement for the detail.
+
+**Current V1 Implemented**
+
+* Account & Profile
+* Natal Chart Engine (Tropical / Whole Sign)
+* Chart UI & Interpretation (core)
+* Journaling (basic)
+* Guidance Primitives
+* Daily Guidance / Today's Energy
+* Weekly Forecast
+
+**Partial / Foundation**
+
+* Chart Preferences (only Tropical/Whole Sign/medium supported)
+* Saved Charts & Guest Charts (one-off guest charts only)
+* Shadow Work & Self-Development (prompt/practice primitives exist; no dedicated workflow)
+* Data Privacy & Account Controls (deletion done; export/retention open)
+* Testing (active and improving, not exhaustive)
+
+**Planned Roadmap**
+
+* AI Features — Ask-Astrologer Chat
+* Saved AI Conversations / Readings
+* Relationship / Synastry
+* Notifications
+* Analytics / Usage Events
+* Admin / Support Tools
+* CI / Release Readiness
+
+**Post-MVP / Long-term Platform**
+
+* Reports, Monetization & Subscriptions
+* Calendar & Advanced Forecasting
+* Multi-System Astrology (Vedic, Chinese, and other systems)
 
 ## Current V1 Scope — Tropical / Western System
 
@@ -175,7 +213,7 @@ Current limitations:
 
 ### Weekly Forecast
 
-Status: **IMPLEMENTED — pending final review/commit if not already committed**
+Status: **DONE**
 
 Implemented:
 

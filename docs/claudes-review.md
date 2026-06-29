@@ -1,9 +1,9 @@
 # Claude's Architectural Review — Naksha Codebase
 
-Last updated: 2026-06-20 (account-deletion Edge Function deployed + disposable-account QA passed)
+Last updated: 2026-06-28 (Naksha Forecast + Guidance Library v1 — Slices 1-5 implemented, reviewed, and approved)
 Reviewer: Claude (Sonnet 4.6)
 Scope: source code + all migrations through `20260508021500_chart_preferences.sql`
-Verification: `cd client && npm run typecheck` passes with zero errors. `npm test` passes (19 suites, 106 tests). `npm run lint` passes cleanly. `git diff --check` passes.
+Verification: `cd client && npm run typecheck` passes with zero errors. `npm test` passes (22 suites, 129 tests). `npm run lint` passes cleanly. `git diff --check` passes.
 
 ---
 
@@ -16,7 +16,7 @@ Since the previous review, three more slices landed and were verified during the
 - **Interpretation paragraph/clipping fixes**: `InterpretationCard.tsx` was reworked to split content into paragraphs/sentences and render them as discrete text segments, fixing final-word/paragraph clipping. Manually verified — clipping appears fully fixed.
 - **InterpretationModal swipe/infinite restore**: the circular pager (duplicate first/last pages, `setPageWithoutAnimation`, internal-jump guard) was restored and manually verified. Per-page scroll position is preserved across swipes by current behavior; this is intentional/acceptable UX, not a bug.
 - **`SafeAreaProvider`** was added at the app root in `App.tsx`, wrapping `SpaceProvider`.
-- **Daily Transits / Today's Energy v1** is implemented end-to-end (see §2 for details) and confirmed loading in manual run-through. It is intentionally v1/basic/generic — transit Sun/Moon sign plus a single strongest fast-transit-to-natal aspect, with a fallback message when nothing is exact.
+- **Daily Transits / Today's Energy v1** (transit Sun/Moon sign plus a single strongest fast-transit-to-natal aspect, with a fallback message when nothing is exact) was implemented end-to-end and confirmed loading in manual run-through. **This basic v1 has since been superseded** — see "Naksha Forecast + Guidance Library v1" immediately below and §3.6.
 
 Jest now has 13 suites and 77 passing tests (up from 11/64), including chart preference plumbing, Dashboard, guest chart creation, CompleteProfile, InterpretationModal, InterpretationCard, and daily transit helper coverage.
 
@@ -27,7 +27,17 @@ Manual auth recheck during the re-entry audit confirmed login/signup/OTP/profile
 - **Password reset / forgot password**: `LoginScreen` links to `ForgotPasswordScreen`, which sends a Supabase reset email via `requestPasswordResetEmail`. The Supabase redirect remains `naksha://auth/callback`. `AuthCallbackScreen` now normalizes callback URLs through `client/lib/authCallbackUrl.ts` before routing, while transiently preserving the raw fragment URL needed for recovery token parsing; recovery callbacks route to `ResetPasswordScreen`, which updates the password via Supabase Auth. Manually verified end-to-end.
 - **Account deletion MVP**: `ProfileScreen` shows a destructive confirmation before deleting; the `deleteAccount` client helper (`client/lib/accountDeletion.ts`) calls the `delete-account` Supabase Edge Function with the current user's bearer token. The Edge Function verifies the JWT server-side, derives `user.id` from the verified JWT (never from the request body), deletes app-owned rows first (`messages`, `conversations`, `reports`, `journals`, `notifications`, `purchases`, `subscriptions`, `usage_events`, `charts`), then calls `auth.admin.deleteUser(user.id)` last, relying on existing cascades to remove `public.users` and `chart_preferences`. Implementation, Opus deep review, and automated tests have passed. The Edge Function is **deployed** (project `ujupnlkobzhpjewruiac`, with `SUPABASE_SERVICE_ROLE_KEY` set as a function secret) and has passed **manual disposable-account QA**: a disposable user with saved chart rows was deleted end-to-end, login afterward failed, and post-delete SQL confirmed no remaining rows in `auth.users`, `public.users`, `chart_preferences`, `charts`, or `journals` (see §3.7).
 
-The remaining open risks are narrower now: guest chart persistence/profile management is not implemented, synastry/compatibility/composite charts and premium gating are not implemented, stubbed chat/subscription/service modules remain unimplemented, additional astrology systems are not implemented, data export/retention policy/external billing-refund cancellation are not implemented, optional production hardening of the deletion path (transactional/RPC deletion, rate limiting, expanded coverage) is not done, and schema/migration validation is not automated or CI-backed. Future cleanup should be attached to specific feature work or real defects, not broad open-ended refactoring.
+**Naksha Forecast + Guidance Library v1** (Slices 1-5, 2026-06-28) replaced the basic Today's Energy card with a deterministic, fully tested guidance/forecast content layer, reviewed and approved slice-by-slice:
+
+- **Slice 1 — Guidance lexicon primitives** (`client/lib/lexicon/guidance/`): deterministic content tables for transit-planet guidance (7 fast/social planets), natal-target guidance (all 10 planets), aspect dynamics (conj/opp/trine/square/sextile), sign guidance (12 signs), house guidance (12 houses), a 20-entry reflection-prompt library, and a 12-entry suggested-practice library — all with stable IDs, `sourceIds` for traceability, and a dedicated coverage/integrity test suite (`__tests__/guidanceCoverage.test.ts`).
+- **Slice 2 — Deterministic `DailyGuidance` builder** (`client/lib/guidance/dailyGuidance.ts`, `types.ts`): composes the existing `buildTodayEnergy` (from `dailyTransits.ts`) with the Slice 1 primitives into a structured object — mood, "Watch for," opportunity, transit summary, a deterministically selected reflection prompt, and a deterministically selected suggested practice. Pure and deterministic: no `new Date()`/`Date.now()`/`Math.random()` inside the builder; selection uses a stable FNV-1a-style hash, not randomness. Provides a complete, honest fallback (no invented transits) when no aspect is exact.
+- **Slice 3 — Deterministic `WeeklyForecast` builder** (`client/lib/guidance/weeklyForecast.ts`): composes `buildDailyGuidance` across a Monday-Sunday local week (via `luxon`), with local-noon daily snapshots that correctly account for DST. Produces exactly seven daily themes, deduplicated/bounded strongest-transit highlights (≤5), bounded weekly themes (≤3), and bounded/deduplicated journal prompts and suggested practices (≤3 each), with a complete no-aspect fallback.
+- **Slice 4 — Dashboard Today's Energy UI** (`client/components/guidance/TodayEnergyCard.tsx`, `DashboardScreen.tsx`): the Dashboard now renders `DailyGuidance` directly — mood, Watch for, opportunity, transit summary, reflection prompt (with optional follow-up), and suggested practice (with numbered steps). The old raw Today's Energy rendering was fully replaced, not duplicated alongside the new card.
+- **Slice 5 — Dashboard Weekly Forecast UI** (`client/components/guidance/WeeklyForecastCard.tsx`, `DashboardScreen.tsx`): the Dashboard now also renders `WeeklyForecast` — week range, weekly themes, strongest transits (with a clean fallback message when none are present), journal prompts, and suggested practices. `DashboardScreen` creates a single shared `evaluatedAt` instant per load and passes it to both `buildDailyGuidance` and `buildWeeklyForecast`, alongside the user's actual profile timezone; `new Date()` is only ever called at this UI boundary, never inside `lib/guidance`.
+
+All five slices were reviewed independently (APPROVE on each, zero required fixes) and are committed. Verified end-to-end: `npm run typecheck` clean, `npm run lint` clean, `npm test` → 22 suites / 129 tests, `git diff --check` clean.
+
+The remaining open risks are narrower now: AI Ask-Astrologer chat is not implemented, push notifications are not implemented, synastry/compatibility/composite charts and premium gating are not implemented, a dedicated shadow-work prompt builder/screen/milestone-tracking workflow is not implemented (the underlying reflection-prompt/suggested-practice primitives exist and are already surfaced through daily/weekly guidance, but there is no standalone shadow-work surface yet), journal-prompt handoff from DailyGuidance/WeeklyForecast into the journal editor is not implemented, guest chart persistence/profile management is not implemented, stubbed chat/subscription/service modules remain unimplemented, additional astrology systems are not implemented, data export/retention policy/external billing-refund cancellation are not implemented, production telemetry/analytics/crash reporting is not implemented, optional production hardening of the deletion path (transactional/RPC deletion, rate limiting, expanded coverage) is not done, and schema/migration validation is not automated or CI-backed. Deterministic daily and weekly forecasts are **no longer** on this list — that gap is closed. Future cleanup should be attached to specific feature work or real defects, not broad open-ended refactoring.
 
 ---
 
@@ -99,6 +109,15 @@ The remaining open risks are narrower now: guest chart persistence/profile manag
 | No "Forgot password" flow | `LoginScreen` links to `ForgotPasswordScreen`, which calls `requestPasswordResetEmail` (`client/lib/auth.ts`) using the existing `naksha://auth/callback` redirect. `client/lib/authCallbackUrl.ts` normalizes incoming callback URLs for navigation while transiently preserving the raw fragment URL so recovery tokens can still be parsed. `AuthCallbackScreen` routes recovery callbacks to `ResetPasswordScreen`, which updates the password via Supabase Auth. Manually verified end-to-end. |
 | No account/data deletion path | `ProfileScreen` shows a destructive confirmation, then calls `deleteAccount()` (`client/lib/accountDeletion.ts`), which invokes the `delete-account` Supabase Edge Function (`supabase/functions/delete-account/index.ts`) with the caller's bearer token. The Edge Function verifies the JWT server-side via `auth.getUser`, derives `user.id` only from the verified JWT, deletes `messages`, `conversations`, `reports`, `journals`, `notifications`, `purchases`, `subscriptions`, `usage_events`, and `charts` for that user, then calls `auth.admin.deleteUser(user.id)` last — existing cascades remove `public.users` and `chart_preferences`. The client never calls `supabase.auth.admin.deleteUser` and the service-role key never leaves the Edge Function. Implementation passed Opus deep review and has automated test coverage. The function is **deployed** to project `ujupnlkobzhpjewruiac` (`SUPABASE_SERVICE_ROLE_KEY` set as a function secret) and passed **manual disposable-account QA**: a disposable user with saved chart rows was fully deleted, post-delete login failed, and SQL verification confirmed no remaining rows in `auth.users`, `public.users`, `chart_preferences`, `charts`, or `journals`. |
 
+### Naksha Forecast + Guidance Library v1 (2026-06-28)
+
+| Item | Resolution |
+|---|---|
+| Today's Energy v1 was intentionally basic/generic (transit Sun/Moon sign + one generic aspect blurb, no mood/warning/opportunity framing) | New deterministic guidance/forecast content layer, planned in `docs/naksha-forecast-guidance-library-plan-claude.md` and implemented as five reviewed slices. `client/lib/lexicon/guidance/` adds transit-planet, natal-target, aspect-dynamic, sign, and house guidance tables plus reflection-prompt and suggested-practice libraries (stable IDs, `sourceIds`, coverage/integrity tests). `client/lib/guidance/dailyGuidance.ts` composes these with the existing `buildTodayEnergy` into a structured, deterministic `DailyGuidance` object (mood / Watch for / opportunity / transit summary / reflection prompt / suggested practice), with an honest no-aspect fallback. `client/components/guidance/TodayEnergyCard.tsx` renders it on the Dashboard, fully replacing the old raw Today's Energy rendering. |
+| No weekly forecast existed | `client/lib/guidance/weeklyForecast.ts` adds a deterministic `buildWeeklyForecast`, composing `buildDailyGuidance` across a Monday-Sunday local week (via `luxon`) with local-noon daily snapshots that correctly handle DST. Produces exactly seven daily themes, deduplicated/bounded strongest-transit highlights, bounded weekly themes, and bounded/deduplicated journal prompts and suggested practices, with a complete no-aspect fallback. `client/components/guidance/WeeklyForecastCard.tsx` renders it on the Dashboard (week range, weekly themes, strongest transits, journal prompts, suggested practices). |
+| Daily/weekly guidance risked drifting from real-time correctness or determinism | Both builders are pure: no `new Date()`/`Date.now()`/`Math.random()` inside `client/lib/guidance/` or `client/lib/lexicon/guidance/`. `new Date()` is called exactly once per Dashboard load, in `DashboardScreen.tsx`, and the same instant is passed to both builders alongside the user's actual profile timezone. Determinism (same chart + same instant → identical output) and non-mutation of chart input are directly asserted by tests, including fake-timer tests proving no wall-clock dependency. |
+| No automated coverage for the new content layer | Five new/expanded test suites: `lib/lexicon/guidance/__tests__/guidanceCoverage.test.ts`, `lib/guidance/__tests__/dailyGuidance.test.ts`, `lib/guidance/__tests__/weeklyForecast.test.ts`, plus expanded `DashboardScreen.test.tsx` coverage for both guidance cards (full content and no-aspect fallback for each). Baseline grew from 19 suites / 106 tests to 22 suites / 129 tests. |
+
 ---
 
 ## 3. Remaining Architectural Risks
@@ -134,7 +153,7 @@ Stale `pref_*` keys in auth metadata for pre-migration users are inert — nothi
 | File | Lines | Status |
 |---|---|---|
 | `ProfileScreen.tsx` | 338 | Presentational cards extracted; data loading, save handlers, and the account-deletion confirmation/handler are still inline |
-| `DashboardScreen.tsx` | 455 | Profile repair + chart generation + Today's Energy card + UI; covered by focused tests, not yet extracted. Growth from 351 lines is due to the new Today's Energy card. |
+| `DashboardScreen.tsx` | 465 | Profile repair + chart generation + Today's Energy (`DailyGuidance`) card + Weekly Forecast card + UI; covered by focused tests, not yet extracted. Growth from 455 lines is due to wiring `buildWeeklyForecast`/`WeeklyForecastCard` alongside the existing `buildDailyGuidance`/`TodayEnergyCard`. |
 | `CompleteProfileScreen.tsx` | 323 | Data load + geocoding + timezone inference + UI; covered by focused tests, not yet extracted |
 | `CheckEmailScreen.tsx` | 350 | OTP + upsert + navigation — not yet extracted |
 | `useChartData.ts` | 422 | Load + lookup + hydrate + compute + save — not yet split |
@@ -157,9 +176,20 @@ Future decomposition should be attached to a feature, product requirement, or re
 
 ---
 
-### 3.6 — Today's Energy v1 is intentionally basic (LOW, future feature)
+### 3.6 — Today's Energy / Weekly Forecast are now deterministic guidance v1, with known v2 deferrals (LOW, future feature)
 
-`buildTodayEnergy` (in `client/lib/dailyTransits.ts`) currently surfaces transit Sun/Moon sign plus a single strongest fast-transit-to-natal aspect, with a fallback message when nothing is exact. This is a deliberate v1 scope, not a placeholder bug. Do not expand it (additional transit bodies, multi-aspect summaries, retrograde/void-of-course callouts, etc.) without a product decision on the desired depth.
+`buildTodayEnergy` (in `client/lib/dailyTransits.ts`) still surfaces transit Sun/Moon sign plus a single strongest fast-transit-to-natal aspect, with a fallback message when nothing is exact — but it is no longer rendered raw. `client/lib/guidance/dailyGuidance.ts` composes it with the Slice 1 lexicon-guidance tables into a structured `DailyGuidance` (mood / Watch for / opportunity / transit summary / reflection prompt / suggested practice), and `client/lib/guidance/weeklyForecast.ts` aggregates seven such days into a `WeeklyForecast`. Both are rendered on the Dashboard. This is a deliberate, deterministic v1 — not AI-generated, not a placeholder.
+
+Known, deliberately deferred v2 work (do not start without a product decision):
+
+- Astro-signal depth: retrograde detection, moon phase, applying/separating aspects, planetary speed — `findAspects` and `dailyTransits.ts` remain position + medium-orb-aspect only.
+- Slow-planet transits (Jupiter through Pluto) and transit-to-house — v1 stays scoped to fast-planet transit-to-natal-planet, matching `dailyTransits.ts`'s existing scoping.
+- A dedicated shadow-work prompt builder/screen — the reflection-prompt and suggested-practice primitives exist and are already surfaced through daily/weekly guidance, but there is no standalone shadow-work workflow, milestone tracking, or natal-hard-aspect-sourced prompt set yet (this was Slice 5 in the original plan doc and was **not** built in this pass).
+- Journal-prompt handoff — `DailyGuidance.reflectionPrompt` / `WeeklyForecast.journalPrompts` are not yet wired into `JournalEditorScreen` as a seed/prefill.
+- AI synthesis of these structured objects — explicitly out of scope; see `docs/naksha-forecast-guidance-library-plan-claude.md` §10 for the intended grounding design once AI chat exists.
+- Persisted/saved guidance history — both builders compute on demand; nothing is cached or saved per day/week yet.
+
+Do not casually expand `dailyTransits.ts`, `client/lib/guidance/`, or `client/lib/lexicon/guidance/` scope without a product decision — see §5 guardrails.
 
 ---
 
@@ -183,23 +213,26 @@ Remaining gaps, none of which are blocked by any other open item in this doc:
 Ranked by user impact × risk reduction × demo readiness.
 
 **1. Docs refresh — complete**
-The 2026-06-13 re-entry audit and this 2026-06-16 update have kept this doc in sync with the InterpretationCard clipping fix, InterpretationModal swipe/infinite restore, `SafeAreaProvider` addition, Today's Energy v1, password reset, and the account deletion MVP.
+The 2026-06-13 re-entry audit, the 2026-06-16 update, and this 2026-06-28 update have kept this doc in sync with the InterpretationCard clipping fix, InterpretationModal swipe/infinite restore, `SafeAreaProvider` addition, Today's Energy v1, password reset, the account deletion MVP, and the Naksha Forecast + Guidance Library v1.
 
 **2. Account-deletion deployment + disposable-account QA — complete**
 The `delete-account` Edge Function is deployed to project `ujupnlkobzhpjewruiac` (`SUPABASE_SERVICE_ROLE_KEY` set as a function secret) and has passed manual disposable-account QA (see §2, §3.7). Optional follow-up production hardening — transactional/RPC deletion, rate limiting, expanded coverage — is tracked in §3.7 but is not required for the MVP.
 
-**3. Remaining privacy basics** *(release gap)*
+**3. Naksha Forecast + Guidance Library v1 (Slices 1-5) — complete**
+Deterministic `DailyGuidance` and `WeeklyForecast` builders, backed by a new guidance-lexicon content layer, are implemented, reviewed (APPROVE on all five slices), and rendered on the Dashboard — see §2 "Naksha Forecast + Guidance Library v1 (2026-06-28)" and §3.6. Remaining deferrals from that track (shadow-work prompt builder/screen, journal-prompt handoff, deeper astro signals) are tracked in §3.6, not here.
+
+**4. Remaining privacy basics** *(release gap)*
 Data export, a documented retention policy, and external billing/refund cancellation handling are still stubs or unimplemented (see §3.7). Files: `ProfileScreen.tsx` / `DataPrivacyCard.tsx` for export; billing work depends on App Store/Play Store integration, which does not exist yet.
 
-**4. UI/UX revamp** *(quality pass)*
-With Today's Energy, guest chart creation, and interpretation rendering all stable, do a focused UI/UX pass across Dashboard, Chart, and Interpretation surfaces now that the underlying data and layout bugs are resolved.
+**5. UI/UX revamp** *(quality pass)*
+With Today's Energy, Weekly Forecast, guest chart creation, and interpretation rendering all stable, do a focused UI/UX pass across Dashboard, Chart, and Interpretation surfaces now that the underlying data and layout bugs are resolved. Includes confirming the new guidance cards read well on-device, not just in static review (see §3.6).
 Files: depends on chosen scope.
 
-**5. Release prep / CI-backed schema validation** *(release safety)*
+**6. Release prep / CI-backed schema validation** *(release safety)*
 Automate or document a reliable `supabase db reset`/`db diff` workflow so migration drift is caught before release, alongside other release-readiness checks.
 Files: CI config or project scripts/docs.
 
-**Deferred** (not in the next 5, but tracked): guest chart profile persistence/relationship metadata (decide UX polish vs. saved `birth_profiles` table — see §3.3); `ChatScreen`/`SubscriptionScreen`/placeholder service modules remain intentionally unimplemented and unregistered; additional chart systems (Placidus, Equal House, Sidereal, Vedic, tight/loose orbs) remain future product/math scope (see §3.2).
+**Deferred** (not in the next slate, but tracked): guest chart profile persistence/relationship metadata (decide UX polish vs. saved `birth_profiles` table — see §3.3); `ChatScreen`/`SubscriptionScreen`/placeholder service modules remain intentionally unimplemented and unregistered; additional chart systems (Placidus, Equal House, Sidereal, Vedic, tight/loose orbs) remain future product/math scope (see §3.2); shadow-work prompt builder/screen, journal-prompt handoff, and deeper astro signals (retrograde/moon phase/applying-separating/slow-planet transits) remain future guidance-layer scope (see §3.6); AI Ask-Astrologer chat and push notifications remain unimplemented and out of scope for this track entirely.
 
 ---
 
@@ -241,7 +274,8 @@ Files: CI config or project scripts/docs.
 - Run `cd client && npm run typecheck` before any handoff. Zero errors required.
 - Run `cd client && npm test` before any handoff. All suites must pass.
 - Run `cd client && npm run lint` before any handoff. Zero warnings/errors expected.
-- `client/lib/dailyTransits.ts` owns `computeTransitPlanets`, `findDailyTransitAspects`, `findStrongestDailyTransitAspect`, and `buildTodayEnergy`. Today's Energy is intentionally v1/basic per §3.6 — do not expand its scope without a product decision.
+- `client/lib/dailyTransits.ts` owns `computeTransitPlanets`, `findDailyTransitAspects`, `findStrongestDailyTransitAspect`, and `buildTodayEnergy`. It remains intentionally v1/basic (fast-planet transit-to-natal only) — `client/lib/guidance/dailyGuidance.ts` composes on top of it rather than reimplementing it. Do not expand `dailyTransits.ts` scope without a product decision.
+- `client/lib/lexicon/guidance/` and `client/lib/guidance/` (Naksha Forecast + Guidance Library v1) must stay pure, deterministic, and free of `new Date()`/`Date.now()`/`Math.random()`. `buildDailyGuidance` and `buildWeeklyForecast` take their evaluation instant (and, for the weekly builder, the timezone) as explicit input parameters — `new Date()` belongs only at the UI boundary (currently `DashboardScreen.tsx`). Selection of reflection prompts/suggested practices must stay hash-based and stable, never random. See §3.6 for the deliberately deferred v2 scope (shadow-work builder/screen, journal-prompt handoff, retrograde/moon-phase/applying-separating, slow-planet transits, AI synthesis) — do not start that work without a product decision.
 - Do not casually modify `InterpretationCard.tsx` or `InterpretationModal.tsx` unless a real bug appears. Both were reworked during the 2026-06-13 re-entry audit (paragraph/sentence splitting to fix clipping; circular pager restore). In `InterpretationModal.tsx`, per-page scroll position being preserved across swipes is intentional, not a bug.
 - `App.tsx` is wrapped in `SafeAreaProvider` (from `react-native-safe-area-context`) at the root. Do not remove or duplicate this wrapper.
 - `client/lib/authCallbackUrl.ts` normalizes incoming auth callback URLs for navigation while transiently preserving the raw fragment URL so recovery tokens can still be parsed. `AuthCallbackScreen` depends on this; do not bypass it when changing callback handling.
