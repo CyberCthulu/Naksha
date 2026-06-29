@@ -19,7 +19,12 @@ import {
   getChartCalculationPreferences,
 } from '../lib/charts'
 import { parseChartData } from '../lib/chartDataValidation'
-import { buildDailyGuidance, type DailyGuidance } from '../lib/guidance'
+import {
+  buildDailyGuidance,
+  buildWeeklyForecast,
+  type DailyGuidance,
+  type WeeklyForecast,
+} from '../lib/guidance'
 import type { UserRow } from '../lib/domainTypes'
 import {
   needsProfileCompletion,
@@ -33,6 +38,7 @@ import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { theme } from '../components/ui/theme'
 import { TodayEnergyCard } from '../components/guidance/TodayEnergyCard'
+import { WeeklyForecastCard } from '../components/guidance/WeeklyForecastCard'
 
 const ZODIAC = [
   'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
@@ -50,6 +56,8 @@ export default function DashboardScreen() {
   const [sunSign, setSunSign] = useState<string | null>(null)
   const [moonSign, setMoonSign] = useState<string | null>(null)
   const [todayEnergy, setTodayEnergy] = useState<DailyGuidance | null>(null)
+  const [weeklyForecast, setWeeklyForecast] =
+    useState<WeeklyForecast | null>(null)
 
   const nav = useNavigation<any>()
   const insets = useSafeAreaInsets()
@@ -87,6 +95,7 @@ export default function DashboardScreen() {
         setSunSign(null)
         setMoonSign(null)
         setTodayEnergy(null)
+        setWeeklyForecast(null)
         setError('No active session found.')
         return
       }
@@ -143,6 +152,7 @@ export default function DashboardScreen() {
         setSunSign(null)
         setMoonSign(null)
         setTodayEnergy(null)
+        setWeeklyForecast(null)
 
         if (!didNavigateRef.current) {
           didNavigateRef.current = true
@@ -157,6 +167,7 @@ export default function DashboardScreen() {
         setSunSign(null)
         setMoonSign(null)
         setTodayEnergy(null)
+        setWeeklyForecast(null)
         return
       }
 
@@ -193,10 +204,18 @@ export default function DashboardScreen() {
         setMoonSign(
           moon ? `${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}` : null
         )
+        const evaluatedAt = new Date()
         setTodayEnergy(
           buildDailyGuidance({
             natalPlanets: planets,
-            evaluatedAt: new Date(),
+            evaluatedAt,
+          })
+        )
+        setWeeklyForecast(
+          buildWeeklyForecast({
+            natalPlanets: planets,
+            evaluatedAt,
+            timeZone: tz,
           })
         )
 
@@ -244,10 +263,18 @@ export default function DashboardScreen() {
       setMoonSign(
         moon ? `${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}` : null
       )
+      const evaluatedAt = new Date()
       setTodayEnergy(
         buildDailyGuidance({
           natalPlanets: payload.planets,
-          evaluatedAt: new Date(),
+          evaluatedAt,
+        })
+      )
+      setWeeklyForecast(
+        buildWeeklyForecast({
+          natalPlanets: payload.planets,
+          evaluatedAt,
+          timeZone: tz,
         })
       )
     } catch (e: any) {
@@ -256,6 +283,7 @@ export default function DashboardScreen() {
         setSunSign(null)
         setMoonSign(null)
         setTodayEnergy(null)
+        setWeeklyForecast(null)
       }
     } finally {
       loadingRef.current = false
@@ -339,6 +367,10 @@ export default function DashboardScreen() {
       )}
 
       {todayEnergy && <TodayEnergyCard guidance={todayEnergy} />}
+
+      {weeklyForecast && (
+        <WeeklyForecastCard forecast={weeklyForecast} />
+      )}
 
       {profile ? (
         <Card>

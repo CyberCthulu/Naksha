@@ -13,7 +13,9 @@ import {
 } from '../../lib/charts'
 import {
   buildDailyGuidance,
+  buildWeeklyForecast,
   type DailyGuidance,
+  type WeeklyForecast,
 } from '../../lib/guidance'
 import {
   DEFAULT_CHART_CALCULATION_PREFERENCES,
@@ -55,6 +57,7 @@ jest.mock('../../lib/charts', () => ({
 jest.mock('../../lib/guidance', () => ({
   __esModule: true,
   buildDailyGuidance: jest.fn(),
+  buildWeeklyForecast: jest.fn(),
 }))
 
 jest.mock('../../lib/supabase', () => ({
@@ -217,6 +220,52 @@ function makeDailyGuidance(
   }
 }
 
+function makeWeeklyForecast(
+  overrides: Partial<WeeklyForecast> = {}
+): WeeklyForecast {
+  const daily = makeDailyGuidance()
+
+  return {
+    schemaVersion: 1,
+    source: 'deterministic',
+    startDate: '2026-05-11',
+    endDate: '2026-05-17',
+    timeZone: completeUser.time_zone!,
+    evaluatedAt: daily.evaluatedAt,
+    dailyThemes: [
+      {
+        date: '2026-05-11',
+        evaluatedAt: daily.evaluatedAt,
+        tone: daily.tone,
+        title: 'Moon square natal Mars',
+        summary: daily.transitSummary.body,
+        primaryTransit: daily.primaryTransit,
+        reflectionPrompt: daily.reflectionPrompt,
+        suggestedPractice: daily.suggestedPractice,
+        sourceIds: daily.sourceIds,
+      },
+    ],
+    strongestTransits: [
+      {
+        ...daily.primaryTransit!,
+        date: '2026-05-11',
+      },
+    ],
+    weeklyThemes: [
+      {
+        title: 'Adjustments to make',
+        body: 'Use friction as information and choose practical adjustments.',
+        tone: 'challenging',
+        sourceIds: ['guidance.aspect.square'],
+      },
+    ],
+    suggestions: [daily.suggestedPractice],
+    journalPrompts: [daily.reflectionPrompt],
+    sourceIds: daily.sourceIds,
+    ...overrides,
+  }
+}
+
 async function settleAsyncWork() {
   for (let i = 0; i < 20; i += 1) {
     await Promise.resolve()
@@ -259,6 +308,12 @@ function mockedSaveChart() {
 function mockedBuildDailyGuidance() {
   return buildDailyGuidance as jest.MockedFunction<
     typeof buildDailyGuidance
+  >
+}
+
+function mockedBuildWeeklyForecast() {
+  return buildWeeklyForecast as jest.MockedFunction<
+    typeof buildWeeklyForecast
   >
 }
 
@@ -404,6 +459,7 @@ describe('DashboardScreen', () => {
     )
     mockedSaveChart().mockResolvedValue({ id: 1 } as any)
     mockedBuildDailyGuidance().mockReturnValue(makeDailyGuidance())
+    mockedBuildWeeklyForecast().mockReturnValue(makeWeeklyForecast())
   })
 
   afterEach(() => {
@@ -527,6 +583,14 @@ describe('DashboardScreen', () => {
       natalPlanets: savedChart.planets,
       evaluatedAt: expect.any(Date),
     })
+    expect(mockedBuildWeeklyForecast()).toHaveBeenCalledWith({
+      natalPlanets: savedChart.planets,
+      evaluatedAt: expect.any(Date),
+      timeZone: completeUser.time_zone,
+    })
+    expect(
+      mockedBuildWeeklyForecast().mock.calls[0][0].evaluatedAt
+    ).toBe(mockedBuildDailyGuidance().mock.calls[0][0].evaluatedAt)
   })
 
   it('renders structured Today’s Energy guidance', async () => {
@@ -574,6 +638,52 @@ describe('DashboardScreen', () => {
     )
     expectText(screen, 'Reflection prompt')
     expectText(screen, 'Suggested practice')
+  })
+
+  it('renders the compact weekly forecast sections', async () => {
+    const screen = await renderScreen()
+
+    expectText(screen, 'Weekly Forecast')
+    expectText(screen, 'May 11, 2026 - May 17, 2026')
+    expectText(screen, 'Weekly themes')
+    expectText(screen, 'Adjustments to make')
+    expectText(screen, 'Strongest transits')
+    expectText(screen, 'Moon square natal Mars')
+    expectText(screen, 'Journal prompts')
+    expectText(screen, 'Use the friction')
+    expectText(screen, 'Suggested practices')
+    expectText(screen, 'Single-task reset')
+  })
+
+  it('renders the weekly no-aspect fallback without transit rows', async () => {
+    mockedBuildWeeklyForecast().mockReturnValue(
+      makeWeeklyForecast({
+        strongestTransits: [],
+        weeklyThemes: [
+          {
+            title: 'Background rhythm',
+            body: 'This week is guided more by the changing Sun and Moon background tone.',
+            tone: 'integrative',
+            sourceIds: [
+              'guidance.sign.virgo',
+              'guidance.sign.taurus',
+            ],
+          },
+        ],
+      })
+    )
+
+    const screen = await renderScreen()
+
+    expectText(screen, 'Weekly Forecast')
+    expectText(screen, 'Background rhythm')
+    expectText(
+      screen,
+      'guided more by the changing Sun and Moon background tone'
+    )
+    expectText(screen, 'No tight personal transit highlights this week.')
+    expectText(screen, 'Journal prompts')
+    expectText(screen, 'Suggested practices')
   })
 
   it('falls back to built chart data when saved chart_data is invalid', async () => {
