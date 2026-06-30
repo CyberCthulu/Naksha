@@ -359,7 +359,7 @@ export default function DashboardScreen() {
       <View style={uiStyles.center}>
         <ActivityIndicator />
         <AppText style={[uiStyles.text, { marginTop: 8, textAlign: 'center' }]}>
-          Loading your dashboard…
+          Loading…
         </AppText>
       </View>
     )
@@ -399,6 +399,23 @@ export default function DashboardScreen() {
         </Card>
       )}
 
+      {profile ? (
+        <Card>
+          <AppText style={uiStyles.cardTitle}>Your Birth Details</AppText>
+          <AppText>Email: {profile.email ?? '—'}</AppText>
+          <AppText>Date: {profile.birth_date ?? '—'}</AppText>
+          <AppText>Time: {prettyTime}</AppText>
+          <AppText>Location: {profile.birth_location ?? '—'}</AppText>
+          <AppText>Time Zone: {profile.time_zone ?? '—'}</AppText>
+        </Card>
+      ) : (
+        <Card>
+          <AppText style={uiStyles.cardTitle}>Profile</AppText>
+          <AppText>No profile row found yet.</AppText>
+          <MutedText>(You’ll get one after confirming email from Sign Up.)</MutedText>
+        </Card>
+      )}
+
       {todayEnergy && (
         <TodayEnergyCard
           guidance={todayEnergy}
@@ -415,23 +432,6 @@ export default function DashboardScreen() {
             openJournalPrompt(prompt, 'Weekly Forecast')
           }
         />
-      )}
-
-      {profile ? (
-        <Card>
-          <AppText style={uiStyles.cardTitle}>Your Birth Details</AppText>
-          <AppText>Email: {profile.email ?? '—'}</AppText>
-          <AppText>Date: {profile.birth_date ?? '—'}</AppText>
-          <AppText>Time: {prettyTime}</AppText>
-          <AppText>Location: {profile.birth_location ?? '—'}</AppText>
-          <AppText>Time Zone: {profile.time_zone ?? '—'}</AppText>
-        </Card>
-      ) : (
-        <Card>
-          <AppText style={uiStyles.cardTitle}>Profile</AppText>
-          <AppText>No profile row found yet.</AppText>
-          <MutedText>(You’ll get one after confirming email from Sign Up.)</MutedText>
-        </Card>
       )}
 
       <View style={styles.actionsPanel}>
