@@ -1,7 +1,7 @@
 # Naksha Decomposition Roadmap
 
 Generated: 2026-05-09
-Last updated: 2026-06-20 — deployed account deletion disposable-account QA complete.
+Last updated: 2026-06-29 — Forecast + Guidance Library v1 Slices 1–5 complete.
 Scope: documentation-only roadmap for large-file cleanup before feature expansion.
 
 ## 1. Purpose
@@ -26,7 +26,7 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
 | File | Risk | Current mixed responsibilities | Best extraction candidates | Behavior that must remain unchanged | Main value |
 | --- | --- | --- | --- | --- | --- |
 | `ProfileScreen.tsx` | Medium | Loads profile, chart preferences, subscription, purchases; creates default preference row; renders account, birth details, preferences, billing, purchases, privacy, account deletion confirmation, and sign-out. | `useProfileScreenData`, `lib/chartPreferences.ts`, `ProfileHeader`, `BirthDetailsCard`, `ChartPreferencesCard`, `SubscriptionCard`, `PurchasesCard`, `AccountActionsCard`, reusable `InfoRow`/`ChoiceRow`. | No auth metadata preference writes; default `chart_preferences` row is created/upserted; unsupported options stay disabled/coming soon; account deletion remains server-side through the `delete-account` Edge Function. | Mostly organization, plus lower future risk for preferences, billing, and privacy work. |
-| `DashboardScreen.tsx` | High | Auth user lookup, user-row bootstrap, auth metadata repair, profile completion redirect, chart lookup/build/auto-save, sun/moon summary, Today’s Energy v1, navigation UI. | `lib/profileCompletion.ts`, `lib/dashboardChartSummary.ts`, `lib/dashboardTodayEnergy.ts`, `DashboardSignsCard`, `DashboardTodayEnergyCard`, `DashboardBirthDetailsCard`, `DashboardActions`. | Older-account repair remains; incomplete profiles still route to `CompleteProfile`; self chart opens with `chartMode: 'self'`; charts without coordinates do not save; Today’s Energy remains basic v1 unless intentionally expanded. | Focused tests now guard current behavior; future extraction should be tied to a feature or defect. |
+| `DashboardScreen.tsx` | High | Auth user lookup, user-row bootstrap/repair, profile completion routing, chart lookup/build/auto-save, sign summary, DailyGuidance, WeeklyForecast, and navigation/UI state. | First: shared chart-summary/chart-lookup loader with explicit lookup-error handling. Later, only when feature-attached: `DashboardSignsCard`, guidance-loading hook, `DashboardBirthDetailsCard`, `DashboardActions`. | Older-account repair remains; incomplete profiles still route to `CompleteProfile`; self chart opens with `chartMode: 'self'`; charts without coordinates do not save; daily/weekly builders receive the same UI-boundary instant and weekly receives the normalized time zone. | This is now the main architectural pressure point. Focused tests guard current behavior; avoid a broad one-pass rewrite. |
 | `CompleteProfileScreen.tsx` | Medium | Loads user row, maps DB date/time to picker state, manages form state, validates, geocodes fallback, updates `public.users`, renders header/footer/form. | `useCompleteProfileForm`, `userRowToProfileForm`, `profileFormToUserUpdate`, `resolveBirthLocationForSave`, `CompleteProfileHeader`, `CompleteProfileFooter`. | Writes `public.users` only; manual typed location geocodes before save; OpenCage timezone can update `time_zone`; `navigation.goBack()` remains. | Save/geocode lifecycle tests now guard current behavior and prepare reuse for guest birth-data entry. |
 | `CheckEmailScreen.tsx` | Medium-High | OTP UI, resend, verify, session/user confirmation, signup profile upsert, fallback profile fetch, completion routing. | `lib/profileCompletion.ts`, `lib/signupProfileBootstrap.ts`, `OtpVerificationCard`. | Resend behavior, OTP alerts, route-param profile upsert, and deterministic reset to `Dashboard` or `CompleteProfile` remain. | Reduces auth-flow drift and future profile-rule risk. |
 | `useChartData.ts` | High | Saved-chart hydration, `chart_data` validation handling, auth lookup, canonical chart lookup, render-only charts, self auto-save, guest manual save, save warnings, async cancellation guards, alerts, chart state. | `lib/chartPersistence.ts`, `hydrateChartData`, `findSavedChartByIdentity`, `saveBuiltChart`, later `useChartLoader`/`useChartSaveAction`. | `fromSaved` path stays valid; self charts can auto-save; guest charts do not auto-save; missing-coordinate charts stay view-only; save warnings and cancellation behavior remain. | High future feature value; focused hook tests now guard current behavior. |
@@ -137,12 +137,11 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
 22. **App-root safe-area wrapper**
     - `SafeAreaProvider` wraps the app root so screens and modal sheets can consistently use safe-area insets.
 
-23. **Daily Transits / Today’s Energy v1**
+23. **Daily transit foundation**
     - `client/lib/dailyTransits.ts` added.
     - Uses `computeTransitPlanets` from `astro`.
     - Provides `findDailyTransitAspects`, `findStrongestDailyTransitAspect`, and `buildTodayEnergy`.
-    - Dashboard renders a Today’s Energy card with transit Sun/Moon signs and the strongest fast transit aspect when available.
-    - This is intentionally a basic v1 surface; no forecast detail screen, notifications, caching, premium gating, or user-configurable transit settings are implemented.
+    - This remains the low-level fast-transit/aspect layer consumed by DailyGuidance.
 
 24. **Password reset / forgot-password**
     - Login exposes a Forgot Password entry point.
@@ -162,9 +161,43 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
     - Automated verification passes. The function is deployed to Supabase project `ujupnlkobzhpjewruiac` and passed disposable-account manual QA, including post-delete checks of `auth.users`, `public.users`, `public.chart_preferences`, `public.charts`, and `public.journals`.
     - This confirms the tested end-to-end path without claiming broader production hardening, monitoring, or recovery coverage.
 
+26. **Guidance lexicon primitives**
+    - Added `client/lib/lexicon/guidance/` contracts and deterministic content for transit planets, natal targets, aspect dynamics, signs, houses, reflection prompts, and suggested practices.
+    - Stable IDs/source IDs plus coverage and reference-integrity tests guard the content layer.
+
+27. **Deterministic DailyGuidance builder**
+    - Added `client/lib/guidance/types.ts`, `dailyGuidance.ts`, and barrel exports.
+    - Composes existing transit math with guidance primitives into mood, Watch for, opportunity, transit summary, reflection prompt, suggested practice, and no-aspect fallback.
+    - Explicit evaluation inputs, stable selection, provenance, immutability, and wall-clock independence are tested.
+
+28. **Deterministic WeeklyForecast builder**
+    - Added `client/lib/guidance/weeklyForecast.ts`.
+    - Produces a Monday–Sunday local week from seven local-noon DailyGuidance snapshots with timezone/DST handling.
+    - Deduplicates strongest transit keys and returns bounded weekly themes, prompts, practices, source IDs, and background fallback.
+
+29. **Dashboard TodayEnergyCard UI**
+    - `client/components/guidance/TodayEnergyCard.tsx` renders all structured DailyGuidance sections.
+    - Dashboard tests cover populated and no-aspect fallback rendering.
+
+30. **Dashboard WeeklyForecastCard UI**
+    - `client/components/guidance/WeeklyForecastCard.tsx` renders week range, themes, strongest transits, prompts, practices, and no-aspect fallback.
+    - Dashboard passes the same UI-created instant to daily and weekly builders and passes the normalized profile time zone to WeeklyForecast.
+
 ---
 
 ### REMAINING (re-ranked)
+
+- **Dashboard chart-summary reliability slice**
+   - Handle chart lookup errors explicitly instead of treating them as a missing saved chart.
+   - Extract shared chart-summary/chart-lookup loading only as part of this concrete fix; do not move the whole Dashboard load flow in one pass.
+
+- **Journal prompt handoff**
+   - Let daily/weekly reflection prompts open JournalEditor with prompt metadata and persist `prompt_template`.
+   - Preserve existing journal create/update payload behavior and avoid saving whole forecast objects.
+
+- **Shadow-work surface**
+   - Build a dedicated deterministic prompt-selection/workflow layer and UI from the existing prompt/practice primitives.
+   - Milestones, cycles, and journal-history personalization remain separate product decisions.
 
 - **Privacy/account follow-up slice**
    - Account deletion is deployed and manually verified, but data export, retention policy, external subscription cancellation/refunds, and optional delete-data-without-deleting-account behavior remain open.
@@ -175,9 +208,9 @@ The goal is not to rewrite everything at once. Each slice should preserve runtim
 - **Release readiness slice**
    - Add CI-backed verification, schema/migration validation, and a manual release QA checklist.
 
-- **Guest profile persistence / relationship metadata decision** *(builds on Guest Chart UI v1)*
+- **Synastry / relationship foundation decision** *(builds on Guest Chart UI v1)*
    - Decide whether guest charts remain one-off entries, get UX polish only, or need reusable guest birth profiles/relationship labels.
-   - Do not add a `birth_profiles` table or guest-specific schema until the product workflow is defined.
+   - Define reusable profile identity and relationship metadata before synastry/compatibility/composite work. Do not add schema until the workflow is defined.
 
 - **Later feature slice: Additional chart systems** *(product/math scope)*
    - Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, and house-degree display are not implemented.
@@ -267,7 +300,13 @@ Expo-compatible ESLint flat config and `"lint": "eslint ."` added. Targeted clea
 `SafeAreaProvider` wraps the app root, supporting safe-area-aware screens and modal sheets.
 
 **Daily Transits / Today’s Energy v1** ✅
-`client/lib/dailyTransits.ts` added. It uses `computeTransitPlanets`, `findDailyTransitAspects`, `findStrongestDailyTransitAspect`, and `buildTodayEnergy` to power a basic Dashboard Today’s Energy card. This is intentionally v1/basic.
+`client/lib/dailyTransits.ts` remains the low-level fast-transit foundation. `buildDailyGuidance` now composes it with guidance primitives, and `TodayEnergyCard` renders mood, Watch for, opportunity, transit summary, reflection prompt, practice, and fallback.
+
+**Guidance primitives and deterministic forecast builders** ✅
+`client/lib/lexicon/guidance/` supplies typed deterministic content with stable IDs. `client/lib/guidance/` supplies tested DailyGuidance and timezone-aware Monday–Sunday WeeklyForecast builders.
+
+**Dashboard forecast UI** ✅
+`TodayEnergyCard` and `WeeklyForecastCard` render the deterministic daily and weekly outputs. Weekly UI is a compact Dashboard surface rather than a separate screen.
 
 **Password reset / forgot-password** ✅
 Login now links to `ForgotPasswordScreen`, reset email requests use Supabase Auth, recovery callbacks route through `AuthCallbackScreen`, fragment recovery links are handed off safely, and `ResetPasswordScreen` updates the password. Automated verification passes and the flow has been manually verified.
@@ -276,23 +315,23 @@ Login now links to `ForgotPasswordScreen`, reset email requests use Supabase Aut
 Profile now exposes a destructive Delete account confirmation. `client/lib/accountDeletion.ts` invokes the authenticated `delete-account` Edge Function. `supabase/functions/delete-account/index.ts` verifies the JWT server-side, derives `user.id` from that verified JWT, deletes app-owned rows first, then calls `auth.admin.deleteUser(user.id)` last. Existing cascades remove `public.users` and `chart_preferences`. Automated verification passes; the function is deployed to project `ujupnlkobzhpjewruiac` and disposable-account manual QA passed.
 
 **Final cleanup verification baseline** ✅
-As of 2026-06-20: `npm run typecheck`, `npm test` (19 suites / 106 tests), `npm run lint`, and `git diff --check` pass. Password reset is manually verified. Account deletion is automated verified, deployed to project `ujupnlkobzhpjewruiac`, and manually verified with a disposable account.
+As of 2026-06-29: `npm run typecheck`, `npm test` (22 suites / 129 tests), `npm run lint`, and `git diff --check` pass. Password reset is manually verified. Account deletion is automated verified, deployed to project `ujupnlkobzhpjewruiac`, and manually verified with a disposable account.
 
 ## 6. Next Safe Slice
 
-**Next release-readiness slice: privacy copy and data export planning**
+**Next narrow reliability slice: Dashboard chart lookup error handling**
 
 Cleanup/stabilization is complete enough for feature expansion. Future cleanup should be attached to specific feature work or real defects, not broad open-ended refactoring.
 
-Password reset and account deletion MVP are implemented and manually verified. The best next safe slice is tightening privacy, export, retention, and external billing expectations without broad refactors.
+Daily/weekly guidance is implemented. The next safe code slice is to stop Dashboard from treating a failed saved-chart lookup as a cache miss and to share only the chart-summary lookup/build logic needed to fix that behavior.
 
 - Keep `public.users` as the durable profile/birth source of truth.
 - Keep auth metadata limited to signup/bootstrap and Dashboard repair.
-- Keep service-role keys server-side only; never expose them in the React Native client.
-- Define data export scope and delivery, retention policy, external subscription cancellation/refund responsibilities, and whether delete-data-without-deleting-account is needed.
-- Add or update focused tests only when behavior changes.
+- Preserve canonical chart identity, self auto-save, missing-coordinate no-save, profile repair, and guidance-builder inputs.
+- Surface or intentionally degrade chart lookup errors rather than silently rebuilding.
+- Extract a shared loader only to remove the concrete Dashboard/`useChartData` drift involved in this fix.
 
-Next priorities: privacy copy/data export/retention policy, external subscription cancellation/refund handling, UI/UX revamp, CI/schema validation, and only then guest profile persistence or relationship metadata after a product decision. Do not claim synastry, compatibility, composite charts, reports, premium gating, guest-specific schema, Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, or house-degree display are implemented until their product behavior, math/schema needs, UI, and tests are defined.
+Next priorities: journal prompt handoff, shadow-work prompt builder/surface, synastry/relationship foundation after a product decision, privacy/data export/telemetry, CI/schema validation, and release hardening. Do not claim AI, notifications, saved guidance history, synastry, compatibility, composite charts, reports, premium gating, guest-specific schema, Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, or house-degree display are implemented.
 
 ## 7. Deferred / High-Risk Refactors
 
@@ -300,7 +339,7 @@ Next priorities: privacy copy/data export/retention policy, external subscriptio
 - Moving the entire `DashboardScreen.load` flow into a hook in one pass without a feature or defect reason.
 - Reworking `CheckEmailScreen` OTP/session/upsert flow beyond covered behavior without a product reason.
 - Changing `CompleteProfileScreen` geocode/timezone/save sequencing without updating focused tests.
-- Expanding Today’s Energy beyond v1 without deciding forecast scope, UI, performance, and tests.
+- Expanding deterministic forecasts into retrogrades, lunar phases, applying/separating timing, slow-planet timelines, saved history, or notifications without a separate v2 scope.
 - Adding guest chart schema fields such as `chart_type`, `is_primary`, `relationship_label`, or a `birth_profiles` table before the guest profile-management workflow is defined.
 - Reworking subscriptions, purchases, data export, retention policy, or external billing cancellation/refunds before those features are product-ready.
 - Implementing additional chart systems before math, DB constraints, UI, and tests are ready.
@@ -311,7 +350,8 @@ These areas now have focused coverage or explicit contracts, but they remain hig
 
 - `useChartData` auto-save/manual-save/canonical lookup/save-warning/cancellation behavior.
 - `DashboardScreen` profile repair and self chart auto-save behavior.
-- `DashboardScreen` Today’s Energy rendering and `dailyTransits` helper behavior.
+- `DashboardScreen` chart lookup/build/auto-save plus DailyGuidance/WeeklyForecast wiring and both forecast cards.
+- Guidance primitive IDs/source IDs, deterministic selection, local-week/DST behavior, transit deduplication, and no-aspect fallbacks.
 - `CheckEmailScreen` OTP/session/upsert flow beyond the covered navigation paths.
 - `CompleteProfileScreen` manual geocode, timezone normalization, and `public.users` update lifecycle.
 - `InterpretationModal` circular pager logic.
@@ -350,4 +390,4 @@ Manual verification should match the touched surface:
 - Account deletion slices: confirm destructive cancel does nothing, confirmed deletion calls the deployed Edge Function, the app exits the authenticated account flow, the deleted user cannot log in, and user-owned public rows are removed.
 - CompleteProfile slices: save with selected autocomplete coordinates, save with manual typed location that needs geocoding, save with invalid/missing fields.
 - Interpretation slices: open planet modal, open house modal, swipe first-to-last and last-to-first, test one-page/empty-page behavior where possible.
-- Today’s Energy slices: load Dashboard with valid natal planets, verify transit Sun/Moon signs and strongest-aspect/fallback card states.
+- Guidance slices: load Dashboard with valid natal planets; verify mood, Watch for, opportunity, transit summary, prompt, practice, weekly range/themes/transits/prompts/practices, and both no-aspect fallbacks.

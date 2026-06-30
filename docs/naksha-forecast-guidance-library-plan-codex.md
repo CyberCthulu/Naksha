@@ -1,14 +1,38 @@
 # Naksha Forecast + Guidance Library v1 Plan - Codex
 
 Generated: 2026-06-20
+Last updated: 2026-06-29
 Scope: deterministic forecast, transit-guidance, reflection-prompt, and practice primitives to build before AI chat.
-Status: planning only; no source changes are part of this document.
+Status: core Slices 1–5 implemented; remaining items are explicitly marked below.
+
+## Implementation Status Update
+
+Forecast + Guidance Library v1 core implementation is complete and verified:
+
+- **DONE — Guidance primitives:** `client/lib/lexicon/guidance/` contains transit-planet, natal-target, aspect, sign, house, reflection-prompt, and suggested-practice records with stable IDs/source IDs and integrity tests.
+- **DONE — DailyGuidance:** `client/lib/guidance/dailyGuidance.ts` deterministically composes the existing fast-transit helper with those primitives, including complete no-aspect fallback and stable prompt/practice selection.
+- **DONE — WeeklyForecast:** `client/lib/guidance/weeklyForecast.ts` builds an ISO Monday–Sunday local week from seven local-noon DailyGuidance snapshots, with timezone/DST handling, deduplicated strongest transit highlights, bounded themes/prompts/practices, and fallback.
+- **DONE — Dashboard daily UI:** `TodayEnergyCard.tsx` renders mood, Watch for, opportunity, transit summary, reflection prompt, and suggested practice.
+- **DONE — Dashboard weekly UI:** `WeeklyForecastCard.tsx` renders week range, weekly themes, strongest transits, journal prompts, suggested practices, and no-aspect fallback.
+- **Verification:** typecheck, lint, and `git diff --check` pass; Jest passes **22 suites / 129 tests**.
+
+The implemented weekly v1 is intentionally smaller than some exploratory detail later in this plan: it uses seven local-noon snapshots and the existing fast-transit DailyGuidance model. It does not implement six-hour event sampling, exact perfection times, Jupiter/Saturn weekly expansion, transit-through-house enrichment, or a separate Weekly Forecast screen.
+
+Still deferred:
+
+- shadow prompt selection builder and dedicated shadow-work surface;
+- journal prompt handoff and `prompt_template` wiring from forecast cards;
+- AI chat/context adapter/provider integration;
+- notifications and scheduling;
+- retrogrades, lunar phases, ingress/eclipses, applying/separating status, and exact aspect windows;
+- deeper slow-planet forecast v2;
+- saved guidance/forecast history and persistence.
 
 ## 1. Executive Summary
 
 Naksha already has a strong deterministic natal interpretation library. For the current ten planets, it contains complete planet-in-sign and planet-in-house coverage, complete house-sign coverage, generic house/sign archetypes, and five generic aspect meanings. The weak point is not natal prose. The weak point is the layer between calculated transits and useful guidance.
 
-Today, `buildTodayEnergy` returns transit Sun sign, transit Moon sign, and one lowest-orb fast-transit-to-natal aspect. The Dashboard then displays a generic aspect sentence. It has no transit-planet meaning, natal-target meaning, transit-through-house context, mood/warning/opportunity selection, reflection prompt, practice, or weekly aggregation.
+At planning time, `buildTodayEnergy` returned transit Sun sign, transit Moon sign, and one lowest-orb fast-transit-to-natal aspect, and Dashboard displayed a generic aspect sentence. That baseline is superseded by the implementation status above. Transit-through-house context and multi-event daily synthesis remain unimplemented.
 
 The recommended v1 architecture is a deterministic composition system:
 
@@ -63,7 +87,9 @@ Recommended product boundary:
 
 Natal placement coverage is effectively complete for the current engine. New work should not rewrite or duplicate these files. Forecast work needs a separate guidance vocabulary because `Interpretation { short, long }` is descriptive natal prose, while forecast guidance needs tone, warning, opportunity, prompt, practice, ranking, provenance, and time-window metadata.
 
-## 3. Current Today's Energy Behavior
+## 3. Original Today’s Energy Baseline (Superseded)
+
+This section records the pre-implementation state used to design the library. Current behavior is described in the Implementation Status Update.
 
 `client/lib/dailyTransits.ts` currently:
 
@@ -708,11 +734,11 @@ Avoid snapshotting entire long-form prose. Test completeness, IDs, and represent
 - Dashboard passes structured guidance rather than composing prose inline.
 - Weekly view renders seven days and empty/fallback states.
 - Journal action passes prompt ID/title/text correctly.
-- Existing Dashboard, journal, chart, typecheck, lint, and 19-suite baseline continue to pass.
+- Existing Dashboard, journal, chart, typecheck, and lint coverage continues to pass; current baseline is 22 suites / 129 tests.
 
-## 12. Implementation Slices in Recommended Order
+## 12. Original Implementation Sequence (Status Annotated)
 
-### Slice 1: Content contracts and coverage tests
+### Slice 1: Content contracts and coverage tests — DONE
 
 - Add guidance content/result types.
 - Add transit planet, natal target, aspect dynamic, sign, and house primitives.
@@ -722,7 +748,7 @@ Avoid snapshotting entire long-form prose. Test completeness, IDs, and represent
 
 Why first: content completeness becomes measurable before builders depend on it.
 
-### Slice 2: Transit event enrichment and ranking
+### Slice 2: Transit event enrichment and ranking — PARTIAL
 
 - Preserve existing `dailyTransits.ts` exports.
 - Enrich hits with typed planet keys, signs, optional houses, stable IDs, tone, intensity, score, and source IDs.
@@ -732,44 +758,50 @@ Why first: content completeness becomes measurable before builders depend on it.
 
 Why second: daily and weekly should share one event model and ranking rule.
 
-### Slice 3: Structured DailyGuidance builder
+Implemented DailyGuidance enriches the selected strongest event with tone, intensity, target/transit primitives, and source IDs. A separate multi-event enrichment model with transit houses, normalized significance scoring, and supporting-event role selection remains future v2 work.
 
-- Implement daily composition and no-aspect fallback.
-- Add deterministic prompt/practice selection.
-- Require explicit instant and time zone.
-- Extend daily-transit tests into daily-guidance tests.
-- Do not change persistence.
+### Slice 3: Structured DailyGuidance builder — DONE
+
+- Implemented daily composition and no-aspect fallback.
+- Added deterministic prompt/practice selection.
+- Requires an explicit evaluation instant.
+- Added focused daily-guidance tests.
+- Did not change persistence.
 
 Why third: validate the product object independently of UI.
 
-### Slice 4: Today’s Energy UI expansion and journal handoff
+### Slice 4: Today’s Energy UI expansion and journal handoff — PARTIAL
 
-- Extract `TodayEnergyCard` from Dashboard.
-- Render mood, Watch for, opportunity, summary, reflection prompt, and practice.
-- Add "Reflect in journal" handoff with prompt ID.
-- Forward `prompt_template` through JournalEditor to `upsertJournal`.
-- Update Dashboard and journal-focused tests.
+- Extracted `TodayEnergyCard` from Dashboard.
+- Renders mood, Watch for, opportunity, summary, reflection prompt, and practice.
+- Dashboard rendering/fallback tests are complete.
+- "Reflect in journal" handoff and `prompt_template` forwarding remain deferred.
 
 Why fourth: ship immediate user value without weekly complexity.
 
-### Slice 5: Weekly forecast helper
+`TodayEnergyCard` and Dashboard wiring are complete. Journal handoff and `prompt_template` forwarding remain deferred.
 
-- Add local-week calculation, six-hour sampling, event deduplication, tag aggregation, and limits.
-- Keep it as a pure library first.
-- Add DST/time-zone, dedupe, ranking, and fallback tests.
-- No notifications or saving.
+### Slice 5: Weekly forecast helper — DONE FOR CURRENT V1
+
+- Added local-week calculation from seven local-noon snapshots, event-key deduplication, aggregation, and output limits.
+- Kept it as a pure library.
+- Added DST/time-zone, dedupe, ranking, fallback, provenance, and immutability tests.
+- Added no notifications or saving.
 
 Why fifth: stabilize forecast math/content before adding a screen.
 
-### Slice 6: Weekly forecast UI
+The shipped helper uses seven local-noon snapshots with timezone/DST handling and deduplicates daily primary transit keys. Six-hour sampling, exact event timing, and Jupiter/Saturn headline expansion from the exploratory plan were not implemented.
 
-- Add a focused WeeklyForecast screen and route.
-- Reuse daily guidance, prompts, and practices.
-- Add journal handoff for weekly prompts.
-- Keep Dashboard to a compact weekly entry/summary rather than embedding seven days.
-- Add focused screen tests and manual QA.
+### Slice 6: Weekly forecast UI — DONE AS DASHBOARD CARD
 
-### Slice 7: AI context adapter, still without AI
+- Added a compact `WeeklyForecastCard` to Dashboard instead of a separate screen/route.
+- Reuses weekly themes, transit highlights, prompts, and practices from the builder.
+- Dashboard rendering and fallback tests are complete.
+- Journal handoff for weekly prompts remains deferred.
+
+The shipped UI is a compact `WeeklyForecastCard` on Dashboard rather than a separate route. It renders the builder’s week range, themes, strongest transits, prompts, practices, and fallback. Journal handoff remains deferred.
+
+### Slice 7: AI context adapter, still without AI — DEFERRED
 
 - Build and validate `GuidanceContextV1` from deterministic outputs.
 - Redact unnecessary PII.
