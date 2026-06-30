@@ -175,7 +175,7 @@ export default function DashboardScreen() {
       const birthLon = u.birth_lon
       const hasChartCoordinates = birthLat != null && birthLon != null
 
-      const { data: existing } = hasChartCoordinates
+      const { data: existing, error: chartLookupError } = hasChartCoordinates
         ? await supabase
             .from('charts')
             .select('chart_data')
@@ -186,7 +186,13 @@ export default function DashboardScreen() {
             .eq('birth_lat', birthLat)
             .eq('birth_lon', birthLon)
             .maybeSingle()
-        : { data: null }
+        : { data: null, error: null }
+
+      if (chartLookupError) {
+        throw new Error(
+          'Could not load your saved chart. Please try again.'
+        )
+      }
 
       const existingChart = existing?.chart_data
         ? parseChartData(existing.chart_data)

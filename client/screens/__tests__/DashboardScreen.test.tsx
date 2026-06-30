@@ -593,6 +593,27 @@ describe('DashboardScreen', () => {
     ).toBe(mockedBuildDailyGuidance().mock.calls[0][0].evaluatedAt)
   })
 
+  it('stops with a safe error when saved-chart lookup fails', async () => {
+    mockDashboardQueries({
+      userRow: completeUser,
+      chartRow: null,
+      chartError: new Error('Database unavailable'),
+    })
+
+    const screen = await renderScreen()
+
+    expectText(
+      screen,
+      'Could not load your saved chart. Please try again.'
+    )
+    expectText(screen, 'Retry')
+    expect(mockedGetChartCalculationPreferences()).not.toHaveBeenCalled()
+    expect(mockedBuildChartData()).not.toHaveBeenCalled()
+    expect(mockedSaveChart()).not.toHaveBeenCalled()
+    expect(mockedBuildDailyGuidance()).not.toHaveBeenCalled()
+    expect(mockedBuildWeeklyForecast()).not.toHaveBeenCalled()
+  })
+
   it('renders structured Today’s Energy guidance', async () => {
     const screen = await renderScreen()
 
