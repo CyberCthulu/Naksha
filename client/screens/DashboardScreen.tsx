@@ -462,6 +462,20 @@ export default function DashboardScreen() {
               onPress={() => nav.navigate('JournalList')}
             />
           </View>
+          {todayEnergy ? (
+            <View style={styles.actionCell}>
+              <Button
+                title="Shadow Work"
+                variant="ghost"
+                onPress={() =>
+                  nav.navigate('ShadowWork', {
+                    promptId: todayEnergy.reflectionPrompt.id,
+                    practiceId: todayEnergy.suggestedPractice.id,
+                  })
+                }
+              />
+            </View>
+          ) : null}
           <View style={styles.actionCell}>
             <Button
               title="Edit Details"

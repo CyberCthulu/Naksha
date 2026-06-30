@@ -24,6 +24,7 @@ import MyChartsScreen from './screens/MyCharts'
 import JournalEditorScreen from './screens/JournalEditorScreen'
 import JournalListScreen from './screens/JournalListScreen'
 import ProfileScreen from './screens/ProfileScreen'
+import ShadowWorkScreen from './screens/ShadowWorkScreen'
 import { normalizeAuthCallbackUrlForRouting } from './lib/authCallbackUrl'
 
 export const AuthContext = createContext<{ user: any | null }>({ user: null })
@@ -47,6 +48,7 @@ const linking = {
       JournalEditor: 'journal/edit/:id?',
       JournalList: 'journal/list',
       Profile: 'profile',
+      ShadowWork: 'shadow-work',
     },
   },
   async getInitialURL() {
@@ -195,6 +197,15 @@ export default function App() {
                     options={{
                       headerShown: true,
                       title: 'My Profile',
+                      headerTransparent: true,
+                    }}
+                  />
+                  <Stack.Screen
+                    name="ShadowWork"
+                    component={ShadowWorkScreen}
+                    options={{
+                      headerShown: true,
+                      title: 'Shadow Work',
                       headerTransparent: true,
                     }}
                   />

@@ -566,6 +566,7 @@ describe('DashboardScreen', () => {
       findPressableByText(screen, 'Guest Chart').props.onPress()
       findPressableByText(screen, 'My Charts').props.onPress()
       findPressableByText(screen, 'Journal').props.onPress()
+      findPressableByText(screen, 'Shadow Work').props.onPress()
       findPressableByText(screen, 'Edit Details').props.onPress()
       findPressableByText(screen, 'My Profile').props.onPress()
       findPressableByText(screen, 'Sign Out').props.onPress()
@@ -579,6 +580,10 @@ describe('DashboardScreen', () => {
     expect(mockNavigation.navigate).toHaveBeenCalledWith('CreateGuestChart')
     expect(mockNavigation.navigate).toHaveBeenCalledWith('MyCharts')
     expect(mockNavigation.navigate).toHaveBeenCalledWith('JournalList')
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('ShadowWork', {
+      promptId: 'guidance.prompt.friction-adjustment',
+      practiceId: 'guidance.practice.single-task-reset',
+    })
     expect(mockNavigation.navigate).toHaveBeenCalledWith('CompleteProfile')
     expect(mockNavigation.navigate).toHaveBeenCalledWith('Profile')
     expect(signOut).toHaveBeenCalled()
