@@ -147,6 +147,7 @@ export default function JournalListScreen() {
                   id: item.id,
                   title: item.title ?? '',
                   content: item.content,
+                  promptTemplateId: item.prompt_template,
                 })
               }
               onLongPress={() => confirmDelete(item)}

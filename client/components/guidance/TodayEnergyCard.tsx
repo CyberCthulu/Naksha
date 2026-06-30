@@ -4,7 +4,9 @@ import type {
   DailyGuidance,
   DailyGuidanceSection,
 } from '../../lib/guidance'
+import type { ReflectionPrompt } from '../../lib/lexicon/guidance'
 import { AppText, MutedText } from '../ui/AppText'
+import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { theme } from '../ui/theme'
 import { uiStyles } from '../ui/uiStyles'
@@ -24,8 +26,10 @@ function GuidanceSection({
 
 export function TodayEnergyCard({
   guidance,
+  onJournalPrompt,
 }: {
   guidance: DailyGuidance
+  onJournalPrompt?: (prompt: ReflectionPrompt) => void
 }) {
   return (
     <Card>
@@ -52,6 +56,14 @@ export function TodayEnergyCard({
           <MutedText style={styles.followUp}>
             {guidance.reflectionPrompt.followUp}
           </MutedText>
+        ) : null}
+        {onJournalPrompt ? (
+          <Button
+            title="Journal this"
+            variant="ghost"
+            onPress={() => onJournalPrompt(guidance.reflectionPrompt)}
+            style={styles.journalButton}
+          />
         ) : null}
       </View>
 
@@ -109,5 +121,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     marginTop: 4,
+  },
+  journalButton: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
   },
 })

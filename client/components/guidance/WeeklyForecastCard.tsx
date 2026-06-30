@@ -4,7 +4,9 @@ import type {
   WeeklyForecast,
   WeeklyTransitHighlight,
 } from '../../lib/guidance'
+import type { ReflectionPrompt } from '../../lib/lexicon/guidance'
 import { AppText, MutedText } from '../ui/AppText'
+import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
 import { theme } from '../ui/theme'
 import { uiStyles } from '../ui/uiStyles'
@@ -45,8 +47,10 @@ function formatDate(value: string): string {
 
 export function WeeklyForecastCard({
   forecast,
+  onJournalPrompt,
 }: {
   forecast: WeeklyForecast
+  onJournalPrompt?: (prompt: ReflectionPrompt) => void
 }) {
   return (
     <Card>
@@ -95,6 +99,14 @@ export function WeeklyForecastCard({
           <View key={prompt.id} style={styles.listItem}>
             <AppText style={styles.itemTitle}>{prompt.title}</AppText>
             <MutedText style={styles.body}>{prompt.prompt}</MutedText>
+            {onJournalPrompt ? (
+              <Button
+                title="Journal this"
+                variant="ghost"
+                onPress={() => onJournalPrompt(prompt)}
+                style={styles.journalButton}
+              />
+            ) : null}
           </View>
         ))}
       </View>
@@ -138,5 +150,9 @@ const styles = StyleSheet.create({
   body: {
     fontSize: 13,
     lineHeight: 19,
+  },
+  journalButton: {
+    marginTop: 6,
+    alignSelf: 'flex-start',
   },
 })

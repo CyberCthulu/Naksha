@@ -28,8 +28,15 @@ export default function JournalEditorScreen() {
   }, [nav])
 
   const initialId: number | undefined = route.params?.id
-  const initialTitle: string = route.params?.title ?? ''
-  const initialContent: string = route.params?.content ?? ''
+  const isEditMode = initialId != null
+  const initialTitle: string = isEditMode
+    ? route.params?.title ?? ''
+    : route.params?.initialTitle ?? route.params?.title ?? ''
+  const initialContent: string = isEditMode
+    ? route.params?.content ?? ''
+    : route.params?.initialContent ?? route.params?.content ?? ''
+  const promptTemplateId: string | null =
+    route.params?.promptTemplateId ?? null
 
   const [saving, setSaving] = useState(false)
   const [title, setTitle] = useState(initialTitle)
@@ -50,6 +57,7 @@ export default function JournalEditorScreen() {
         id: initialId,
         title: trimmedTitle || null,
         content: trimmedContent,
+        prompt_template: promptTemplateId,
       })
       nav.goBack()
     } catch (e: any) {
@@ -59,7 +67,7 @@ export default function JournalEditorScreen() {
     }
   }
 
-  const headerTitle = initialId ? 'Edit entry' : 'New entry'
+  const headerTitle = isEditMode ? 'Edit entry' : 'New entry'
 
   return (
     <KeyboardAvoidingView
@@ -98,7 +106,7 @@ export default function JournalEditorScreen() {
           }}
         >
           <Text style={styles.h1}>
-            {initialId ? 'Something to add?' : 'Share your thoughts'}
+            {isEditMode ? 'Something to add?' : 'Share your thoughts'}
           </Text>
 
           {/* Title */}

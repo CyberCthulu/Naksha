@@ -419,12 +419,27 @@ function findPressableByText(
       (node) =>
         typeof node.props.onPress === 'function' &&
         node.findAllByType(Text).some((textNode) =>
-          textValue(textNode.props.children).includes(label)
+          textValue(textNode.props.children) === label
         )
     )[0]
 
   if (!pressable) throw new Error(`Could not find pressable: ${label}`)
   return pressable
+}
+
+function journalPromptHandlers(root: TestRenderer.ReactTestRenderer) {
+  const handlers = root.root
+    .findAll(
+      (node) =>
+        typeof node.props.onPress === 'function' &&
+        node.findAllByType(Text).some(
+          (textNode) =>
+            textValue(textNode.props.children) === 'Journal this'
+        )
+    )
+    .map((node) => node.props.onPress as () => void)
+
+  return [...new Set(handlers)]
 }
 
 describe('DashboardScreen', () => {
@@ -629,6 +644,27 @@ describe('DashboardScreen', () => {
     expectText(screen, 'Use the friction')
     expectText(screen, 'Suggested practice')
     expectText(screen, 'Single-task reset')
+    expectText(screen, 'Journal this')
+  })
+
+  it('opens a prefilled journal entry from Today’s Energy', async () => {
+    const screen = await renderScreen()
+    const [openTodayPrompt] = journalPromptHandlers(screen)
+
+    if (!openTodayPrompt) throw new Error('Missing Today’s Energy journal CTA')
+
+    await act(async () => {
+      openTodayPrompt()
+    })
+
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('JournalEditor', {
+      id: undefined,
+      initialTitle: 'Reflection — Today’s Energy',
+      initialContent:
+        'Prompt:\nWhat recurring friction is asking for an adjustment?\n\nContext:\nToday’s Energy\n\nReflection:\n',
+      promptTemplateId: 'guidance.prompt.friction-adjustment',
+      promptSource: 'Today’s Energy',
+    })
   })
 
   it('renders Today’s Energy fallback when no strongest aspect exists', async () => {
@@ -674,6 +710,29 @@ describe('DashboardScreen', () => {
     expectText(screen, 'Use the friction')
     expectText(screen, 'Suggested practices')
     expectText(screen, 'Single-task reset')
+    expectText(screen, 'Journal this')
+  })
+
+  it('opens a prefilled journal entry from a weekly prompt', async () => {
+    const screen = await renderScreen()
+    const handlers = journalPromptHandlers(screen)
+    const openWeeklyPrompt = handlers[1]
+
+    expect(handlers).toHaveLength(2)
+    if (!openWeeklyPrompt) throw new Error('Missing Weekly Forecast journal CTA')
+
+    await act(async () => {
+      openWeeklyPrompt()
+    })
+
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('JournalEditor', {
+      id: undefined,
+      initialTitle: 'Reflection — Weekly Forecast',
+      initialContent:
+        'Prompt:\nWhat recurring friction is asking for an adjustment?\n\nContext:\nWeekly Forecast\n\nReflection:\n',
+      promptTemplateId: 'guidance.prompt.friction-adjustment',
+      promptSource: 'Weekly Forecast',
+    })
   })
 
   it('renders the weekly no-aspect fallback without transit rows', async () => {
