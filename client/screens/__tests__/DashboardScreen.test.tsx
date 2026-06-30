@@ -410,6 +410,13 @@ function expectText(root: TestRenderer.ReactTestRenderer, expected: string) {
   expect(screenText(root).some((text) => text.includes(expected))).toBe(true)
 }
 
+function expectNoText(
+  root: TestRenderer.ReactTestRenderer,
+  expected: string
+) {
+  expect(screenText(root).some((text) => text.includes(expected))).toBe(false)
+}
+
 function findPressableByText(
   root: TestRenderer.ReactTestRenderer,
   label: string
@@ -427,19 +434,60 @@ function findPressableByText(
   return pressable
 }
 
-function journalPromptHandlers(root: TestRenderer.ReactTestRenderer) {
+function findPressableByAccessibilityLabel(
+  root: TestRenderer.ReactTestRenderer,
+  label: string
+) {
+  const pressable = root.root
+    .findAll(
+      (node) =>
+        typeof node.props.onPress === 'function' &&
+        node.props.accessibilityLabel === label
+    )[0]
+
+  if (!pressable) {
+    throw new Error(`Could not find accessible pressable: ${label}`)
+  }
+  return pressable
+}
+
+function findPressableByTestId(
+  root: TestRenderer.ReactTestRenderer,
+  testID: string
+) {
+  const pressable = root.root
+    .findAll(
+      (node) =>
+        typeof node.props.onPress === 'function' &&
+        node.props.testID === testID
+    )[0]
+
+  if (!pressable) {
+    throw new Error(`Could not find pressable testID: ${testID}`)
+  }
+  return pressable
+}
+
+function pressHandlersByText(
+  root: TestRenderer.ReactTestRenderer,
+  label: string
+) {
   const handlers = root.root
     .findAll(
       (node) =>
         typeof node.props.onPress === 'function' &&
         node.findAllByType(Text).some(
           (textNode) =>
-            textValue(textNode.props.children) === 'Journal this'
+            textValue(textNode.props.children) === label
         )
     )
     .map((node) => node.props.onPress as () => void)
 
   return [...new Set(handlers)]
+}
+
+function journalPromptHandlers(root: TestRenderer.ReactTestRenderer) {
+  return pressHandlersByText(root, 'Journal this')
 }
 
 describe('DashboardScreen', () => {
@@ -496,6 +544,18 @@ describe('DashboardScreen', () => {
     expectText(screen, 'Hello, Ada Lovelace!')
     expectText(screen, 'Your Birth Details')
     expectText(screen, 'Email: ada@example.com')
+  })
+
+  it('places birth details between signs and guidance cards', async () => {
+    const screen = await renderScreen()
+    const visibleText = screenText(screen)
+    const signsIndex = visibleText.indexOf('Your Signs')
+    const birthDetailsIndex = visibleText.indexOf('Your Birth Details')
+    const todayEnergyIndex = visibleText.indexOf('Today’s Energy')
+
+    expect(signsIndex).toBeGreaterThanOrEqual(0)
+    expect(birthDetailsIndex).toBeGreaterThan(signsIndex)
+    expect(todayEnergyIndex).toBeGreaterThan(birthDetailsIndex)
   })
 
   it('routes compact dashboard actions to their current targets', async () => {
@@ -629,26 +689,119 @@ describe('DashboardScreen', () => {
     expect(mockedBuildWeeklyForecast()).not.toHaveBeenCalled()
   })
 
-  it('renders structured Today’s Energy guidance', async () => {
+  it('renders a collapsed Today’s Energy summary by default', async () => {
     const screen = await renderScreen()
 
     expectText(screen, 'Today’s Energy')
     expectText(screen, 'Moon in Virgo | Sun in Taurus')
     expectText(screen, 'Mood')
     expectText(screen, 'A practical mood supports thoughtful adjustment.')
-    expectText(screen, 'Watch for')
-    expectText(screen, 'Opportunity')
     expectText(screen, 'Transit summary')
     expectText(screen, 'Moon squares natal Mars within 0.75°.')
+    expectText(screen, 'Tap to expand')
+    expectNoText(screen, 'Watch for')
+    expectNoText(screen, 'Opportunity')
+    expectNoText(screen, 'Reflection prompt')
+    expectNoText(screen, 'Suggested practice')
+    expectNoText(screen, 'Journal this')
+  })
+
+  it('expands and collapses Today’s Energy details', async () => {
+    const screen = await renderScreen()
+    const showTodayDetails = findPressableByAccessibilityLabel(
+      screen,
+      'Expand Today’s Energy details'
+    )
+    expect(showTodayDetails.props.accessibilityState).toEqual({
+      expanded: false,
+    })
+
+    await act(async () => {
+      showTodayDetails.props.onPress()
+    })
+
+    expectText(screen, 'Watch for')
+    expectText(screen, 'Opportunity')
     expectText(screen, 'Reflection prompt')
     expectText(screen, 'Use the friction')
     expectText(screen, 'Suggested practice')
     expectText(screen, 'Single-task reset')
     expectText(screen, 'Journal this')
+    expectText(screen, 'Tap to collapse')
+
+    const hideTodayDetails = findPressableByAccessibilityLabel(
+      screen,
+      'Collapse Today’s Energy details'
+    )
+    expect(hideTodayDetails.props.accessibilityState).toEqual({
+      expanded: true,
+    })
+
+    await act(async () => {
+      hideTodayDetails.props.onPress()
+    })
+
+    expectText(screen, 'Tap to expand')
+    expectNoText(screen, 'Watch for')
+    expectNoText(screen, 'Reflection prompt')
+    expectNoText(screen, 'Journal this')
+  })
+
+  it('collapses Today’s Energy from the bottom control', async () => {
+    const screen = await renderScreen()
+
+    await act(async () => {
+      findPressableByAccessibilityLabel(
+        screen,
+        'Expand Today’s Energy details'
+      ).props.onPress()
+    })
+
+    const bottomCollapse = findPressableByTestId(
+      screen,
+      'today-energy-bottom-collapse'
+    )
+    expect(bottomCollapse.props.accessibilityRole).toBe('button')
+    expect(bottomCollapse.props.accessibilityState).toEqual({
+      expanded: true,
+    })
+    expect(bottomCollapse.props.accessibilityLabel).toBe(
+      'Collapse Today’s Energy details'
+    )
+    expect(
+      bottomCollapse
+        .findAllByType(Text)
+        .some(
+          (node) =>
+            textValue(node.props.children) === 'Tap to collapse'
+        )
+    ).toBe(true)
+
+    await act(async () => {
+      bottomCollapse.props.onPress()
+    })
+
+    findPressableByAccessibilityLabel(
+      screen,
+      'Expand Today’s Energy details'
+    )
+    expectNoText(screen, 'Watch for')
+    expectNoText(screen, 'Reflection prompt')
+    expectNoText(screen, 'Journal this')
+    expectNoText(screen, 'Tap to collapse')
   })
 
   it('opens a prefilled journal entry from Today’s Energy', async () => {
     const screen = await renderScreen()
+    const showTodayDetails = findPressableByAccessibilityLabel(
+      screen,
+      'Expand Today’s Energy details'
+    )
+
+    await act(async () => {
+      showTodayDetails.props.onPress()
+    })
+
     const [openTodayPrompt] = journalPromptHandlers(screen)
 
     if (!openTodayPrompt) throw new Error('Missing Today’s Energy journal CTA')
@@ -665,6 +818,13 @@ describe('DashboardScreen', () => {
       promptTemplateId: 'guidance.prompt.friction-adjustment',
       promptSource: 'Today’s Energy',
     })
+    expectText(screen, 'Tap to collapse')
+    expect(
+      findPressableByAccessibilityLabel(
+        screen,
+        'Collapse Today’s Energy details'
+      ).props.accessibilityState
+    ).toEqual({ expanded: true })
   })
 
   it('renders Today’s Energy fallback when no strongest aspect exists', async () => {
@@ -687,38 +847,132 @@ describe('DashboardScreen', () => {
 
     expectText(screen, 'Today’s Energy')
     expectText(screen, 'Mood')
-    expectText(screen, 'Watch for')
-    expectText(screen, 'Opportunity')
     expectText(
       screen,
       'No tight personal transit aspect is emphasized right now.'
     )
-    expectText(screen, 'Reflection prompt')
-    expectText(screen, 'Suggested practice')
+    expectText(screen, 'Tap to expand')
+    expectNoText(screen, 'Watch for')
+    expectNoText(screen, 'Reflection prompt')
   })
 
-  it('renders the compact weekly forecast sections', async () => {
+  it('renders a collapsed weekly forecast summary by default', async () => {
     const screen = await renderScreen()
 
     expectText(screen, 'Weekly Forecast')
     expectText(screen, 'May 11, 2026 - May 17, 2026')
-    expectText(screen, 'Weekly themes')
+    expectText(screen, 'Top theme')
     expectText(screen, 'Adjustments to make')
-    expectText(screen, 'Strongest transits')
+    expectText(screen, 'Top transit')
     expectText(screen, 'Moon square natal Mars')
+    expectText(screen, 'Tap to expand')
+    expectNoText(screen, 'Weekly themes')
+    expectNoText(screen, 'Strongest transits')
+    expectNoText(screen, 'Journal prompts')
+    expectNoText(screen, 'Suggested practices')
+    expectNoText(screen, 'Journal this')
+  })
+
+  it('expands and collapses Weekly Forecast details', async () => {
+    const screen = await renderScreen()
+    const showWeeklyDetails = findPressableByAccessibilityLabel(
+      screen,
+      'Expand Weekly Forecast details'
+    )
+    expect(showWeeklyDetails.props.accessibilityState).toEqual({
+      expanded: false,
+    })
+
+    await act(async () => {
+      showWeeklyDetails.props.onPress()
+    })
+
+    expectText(screen, 'Weekly themes')
+    expectText(screen, 'Strongest transits')
     expectText(screen, 'Journal prompts')
     expectText(screen, 'Use the friction')
     expectText(screen, 'Suggested practices')
     expectText(screen, 'Single-task reset')
     expectText(screen, 'Journal this')
+    expectText(screen, 'Tap to collapse')
+
+    const hideWeeklyDetails = findPressableByAccessibilityLabel(
+      screen,
+      'Collapse Weekly Forecast details'
+    )
+    expect(hideWeeklyDetails.props.accessibilityState).toEqual({
+      expanded: true,
+    })
+
+    await act(async () => {
+      hideWeeklyDetails.props.onPress()
+    })
+
+    expectText(screen, 'Top theme')
+    expectText(screen, 'Tap to expand')
+    expectNoText(screen, 'Journal prompts')
+    expectNoText(screen, 'Journal this')
+  })
+
+  it('collapses Weekly Forecast from the bottom control', async () => {
+    const screen = await renderScreen()
+
+    await act(async () => {
+      findPressableByAccessibilityLabel(
+        screen,
+        'Expand Weekly Forecast details'
+      ).props.onPress()
+    })
+
+    const bottomCollapse = findPressableByTestId(
+      screen,
+      'weekly-forecast-bottom-collapse'
+    )
+    expect(bottomCollapse.props.accessibilityRole).toBe('button')
+    expect(bottomCollapse.props.accessibilityState).toEqual({
+      expanded: true,
+    })
+    expect(bottomCollapse.props.accessibilityLabel).toBe(
+      'Collapse Weekly Forecast details'
+    )
+    expect(
+      bottomCollapse
+        .findAllByType(Text)
+        .some(
+          (node) =>
+            textValue(node.props.children) === 'Tap to collapse'
+        )
+    ).toBe(true)
+
+    await act(async () => {
+      bottomCollapse.props.onPress()
+    })
+
+    findPressableByAccessibilityLabel(
+      screen,
+      'Expand Weekly Forecast details'
+    )
+    expectText(screen, 'Top theme')
+    expectNoText(screen, 'Journal prompts')
+    expectNoText(screen, 'Journal this')
+    expectNoText(screen, 'Tap to collapse')
   })
 
   it('opens a prefilled journal entry from a weekly prompt', async () => {
     const screen = await renderScreen()
-    const handlers = journalPromptHandlers(screen)
-    const openWeeklyPrompt = handlers[1]
+    const showWeeklyDetails = findPressableByAccessibilityLabel(
+      screen,
+      'Expand Weekly Forecast details'
+    )
 
-    expect(handlers).toHaveLength(2)
+    await act(async () => {
+      showWeeklyDetails.props.onPress()
+    })
+
+    const handlers = journalPromptHandlers(screen)
+    const openWeeklyPrompt = handlers[0]
+
+    expect(handlers).toHaveLength(1)
     if (!openWeeklyPrompt) throw new Error('Missing Weekly Forecast journal CTA')
 
     await act(async () => {
@@ -733,6 +987,14 @@ describe('DashboardScreen', () => {
       promptTemplateId: 'guidance.prompt.friction-adjustment',
       promptSource: 'Weekly Forecast',
     })
+    expectText(screen, 'Tap to collapse')
+    expectNoText(screen, 'Top theme')
+    expect(
+      findPressableByAccessibilityLabel(
+        screen,
+        'Collapse Weekly Forecast details'
+      ).props.accessibilityState
+    ).toEqual({ expanded: true })
   })
 
   it('renders the weekly no-aspect fallback without transit rows', async () => {
@@ -762,8 +1024,9 @@ describe('DashboardScreen', () => {
       'guided more by the changing Sun and Moon background tone'
     )
     expectText(screen, 'No tight personal transit highlights this week.')
-    expectText(screen, 'Journal prompts')
-    expectText(screen, 'Suggested practices')
+    expectText(screen, 'Tap to expand')
+    expectNoText(screen, 'Journal prompts')
+    expectNoText(screen, 'Suggested practices')
   })
 
   it('falls back to built chart data when saved chart_data is invalid', async () => {

@@ -1,4 +1,5 @@
-import { StyleSheet, View } from 'react-native'
+import { useState } from 'react'
+import { Pressable, StyleSheet, View } from 'react-native'
 
 import type {
   WeeklyForecast,
@@ -45,6 +46,24 @@ function formatDate(value: string): string {
   return `${monthName} ${day}, ${year}`
 }
 
+function TransitHighlight({
+  transit,
+}: {
+  transit: WeeklyTransitHighlight
+}) {
+  return (
+    <View style={styles.listItem}>
+      <AppText style={styles.itemTitle}>
+        {transit.transitPlanet} {ASPECT_LABELS[transit.aspect]} natal{' '}
+        {transit.natalPlanet}
+      </AppText>
+      <MutedText style={styles.body}>
+        {formatDate(transit.date)} | {transit.orb.toFixed(1)}° orb
+      </MutedText>
+    </View>
+  )
+}
+
 export function WeeklyForecastCard({
   forecast,
   onJournalPrompt,
@@ -52,79 +71,158 @@ export function WeeklyForecastCard({
   forecast: WeeklyForecast
   onJournalPrompt?: (prompt: ReflectionPrompt) => void
 }) {
+  const [expanded, setExpanded] = useState(false)
+  const topTheme = forecast.weeklyThemes[0]
+  const topTransit = forecast.strongestTransits[0]
+
   return (
     <Card>
-      <AppText style={uiStyles.cardTitle}>Weekly Forecast</AppText>
-      <MutedText style={styles.dateRange}>
-        {formatDate(forecast.startDate)} - {formatDate(forecast.endDate)}
-      </MutedText>
+      <Pressable
+        accessibilityLabel={`${expanded ? 'Collapse' : 'Expand'} Weekly Forecast details`}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        onPress={() => setExpanded((current) => !current)}
+        style={({ pressed }) => [
+          styles.toggleSurface,
+          pressed && styles.togglePressed,
+        ]}
+      >
+        <AppText style={uiStyles.cardTitle}>Weekly Forecast</AppText>
+        <MutedText style={styles.dateRange}>
+          {formatDate(forecast.startDate)} - {formatDate(forecast.endDate)}
+        </MutedText>
 
-      <View style={styles.section}>
-        <AppText style={styles.sectionTitle}>Weekly themes</AppText>
-        {forecast.weeklyThemes.map((theme) => (
-          <View key={`${theme.tone}:${theme.title}`} style={styles.listItem}>
-            <AppText style={styles.itemTitle}>{theme.title}</AppText>
-            <MutedText style={styles.body}>{theme.body}</MutedText>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.section}>
-        <AppText style={styles.sectionTitle}>Strongest transits</AppText>
-        {forecast.strongestTransits.length > 0 ? (
-          forecast.strongestTransits.map((transit) => (
-            <View
-              key={`${transit.transitPlanet}:${transit.aspect}:${transit.natalPlanet}`}
-              style={styles.listItem}
-            >
-              <AppText style={styles.itemTitle}>
-                {transit.transitPlanet} {ASPECT_LABELS[transit.aspect]} natal{' '}
-                {transit.natalPlanet}
-              </AppText>
-              <MutedText style={styles.body}>
-                {formatDate(transit.date)} | {transit.orb.toFixed(1)}° orb
-              </MutedText>
+        {!expanded ? (
+          <>
+            <View style={styles.section}>
+              <AppText style={styles.sectionTitle}>Top theme</AppText>
+              {topTheme ? (
+                <View style={styles.listItem}>
+                  <AppText style={styles.itemTitle}>
+                    {topTheme.title}
+                  </AppText>
+                  <MutedText numberOfLines={2} style={styles.body}>
+                    {topTheme.body}
+                  </MutedText>
+                </View>
+              ) : (
+                <MutedText style={styles.body}>
+                  Weekly theme unavailable.
+                </MutedText>
+              )}
             </View>
-          ))
-        ) : (
-          <MutedText style={styles.body}>
-            No tight personal transit highlights this week.
-          </MutedText>
-        )}
-      </View>
 
-      <View style={styles.section}>
-        <AppText style={styles.sectionTitle}>Journal prompts</AppText>
-        {forecast.journalPrompts.map((prompt) => (
-          <View key={prompt.id} style={styles.listItem}>
-            <AppText style={styles.itemTitle}>{prompt.title}</AppText>
-            <MutedText style={styles.body}>{prompt.prompt}</MutedText>
-            {onJournalPrompt ? (
-              <Button
-                title="Journal this"
-                variant="ghost"
-                onPress={() => onJournalPrompt(prompt)}
-                style={styles.journalButton}
-              />
-            ) : null}
-          </View>
-        ))}
-      </View>
+            <View style={styles.section}>
+              <AppText style={styles.sectionTitle}>Top transit</AppText>
+              {topTransit ? (
+                <TransitHighlight transit={topTransit} />
+              ) : (
+                <MutedText style={styles.body}>
+                  No tight personal transit highlights this week.
+                </MutedText>
+              )}
+            </View>
+          </>
+        ) : null}
 
-      <View style={styles.section}>
-        <AppText style={styles.sectionTitle}>Suggested practices</AppText>
-        {forecast.suggestions.map((practice) => (
-          <View key={practice.id} style={styles.listItem}>
-            <AppText style={styles.itemTitle}>{practice.title}</AppText>
-            <MutedText style={styles.body}>{practice.summary}</MutedText>
+        <MutedText style={styles.toggleHint}>
+          {expanded ? 'Tap to collapse' : 'Tap to expand'}
+        </MutedText>
+      </Pressable>
+
+      {expanded ? (
+        <>
+          <View style={styles.section}>
+            <AppText style={styles.sectionTitle}>Weekly themes</AppText>
+            {forecast.weeklyThemes.map((theme) => (
+              <View
+                key={`${theme.tone}:${theme.title}`}
+                style={styles.listItem}
+              >
+                <AppText style={styles.itemTitle}>{theme.title}</AppText>
+                <MutedText style={styles.body}>{theme.body}</MutedText>
+              </View>
+            ))}
           </View>
-        ))}
-      </View>
+
+          <View style={styles.section}>
+            <AppText style={styles.sectionTitle}>Strongest transits</AppText>
+            {forecast.strongestTransits.length > 0 ? (
+              forecast.strongestTransits.map((transit) => (
+                <TransitHighlight
+                  key={`${transit.transitPlanet}:${transit.aspect}:${transit.natalPlanet}`}
+                  transit={transit}
+                />
+              ))
+            ) : (
+              <MutedText style={styles.body}>
+                No tight personal transit highlights this week.
+              </MutedText>
+            )}
+          </View>
+
+          <View style={styles.section}>
+            <AppText style={styles.sectionTitle}>Journal prompts</AppText>
+            {forecast.journalPrompts.map((prompt) => (
+              <View key={prompt.id} style={styles.listItem}>
+                <AppText style={styles.itemTitle}>{prompt.title}</AppText>
+                <MutedText style={styles.body}>{prompt.prompt}</MutedText>
+                {onJournalPrompt ? (
+                  <Button
+                    title="Journal this"
+                    variant="ghost"
+                    onPress={() => onJournalPrompt(prompt)}
+                    style={styles.journalButton}
+                  />
+                ) : null}
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.section}>
+            <AppText style={styles.sectionTitle}>
+              Suggested practices
+            </AppText>
+            {forecast.suggestions.map((practice) => (
+              <View key={practice.id} style={styles.listItem}>
+                <AppText style={styles.itemTitle}>{practice.title}</AppText>
+                <MutedText style={styles.body}>{practice.summary}</MutedText>
+              </View>
+            ))}
+          </View>
+
+          <Pressable
+            accessibilityLabel="Collapse Weekly Forecast details"
+            accessibilityRole="button"
+            accessibilityState={{ expanded: true }}
+            onPress={() => setExpanded(false)}
+            style={({ pressed }) => [
+              styles.bottomToggle,
+              pressed && styles.togglePressed,
+            ]}
+            testID="weekly-forecast-bottom-collapse"
+          >
+            <MutedText style={styles.bottomToggleText}>
+              Tap to collapse
+            </MutedText>
+          </Pressable>
+        </>
+      ) : null}
     </Card>
   )
 }
 
 const styles = StyleSheet.create({
+  toggleSurface: {
+    borderRadius: 4,
+  },
+  togglePressed: {
+    opacity: 0.75,
+  },
+  toggleHint: {
+    fontSize: 12,
+    marginTop: 10,
+  },
   dateRange: {
     fontSize: 12,
   },
@@ -154,5 +252,19 @@ const styles = StyleSheet.create({
   journalButton: {
     marginTop: 6,
     alignSelf: 'flex-start',
+  },
+  bottomToggle: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.colors.border,
+    justifyContent: 'center',
+    marginTop: 12,
+    minHeight: 48,
+    paddingTop: 12,
+    paddingBottom: 8,
+    width: '100%',
+  },
+  bottomToggleText: {
+    fontSize: 12,
+    lineHeight: 18,
   },
 })
