@@ -566,7 +566,6 @@ describe('DashboardScreen', () => {
       findPressableByText(screen, 'Guest Chart').props.onPress()
       findPressableByText(screen, 'My Charts').props.onPress()
       findPressableByText(screen, 'Journal').props.onPress()
-      findPressableByText(screen, 'Shadow Work').props.onPress()
       findPressableByText(screen, 'Edit Details').props.onPress()
       findPressableByText(screen, 'My Profile').props.onPress()
       findPressableByText(screen, 'Sign Out').props.onPress()
@@ -580,13 +579,10 @@ describe('DashboardScreen', () => {
     expect(mockNavigation.navigate).toHaveBeenCalledWith('CreateGuestChart')
     expect(mockNavigation.navigate).toHaveBeenCalledWith('MyCharts')
     expect(mockNavigation.navigate).toHaveBeenCalledWith('JournalList')
-    expect(mockNavigation.navigate).toHaveBeenCalledWith('ShadowWork', {
-      promptId: 'guidance.prompt.friction-adjustment',
-      practiceId: 'guidance.practice.single-task-reset',
-    })
     expect(mockNavigation.navigate).toHaveBeenCalledWith('CompleteProfile')
     expect(mockNavigation.navigate).toHaveBeenCalledWith('Profile')
     expect(signOut).toHaveBeenCalled()
+    expectNoText(screen, 'Shadow Work')
   })
 
   it('redirects incomplete profiles to CompleteProfile', async () => {
@@ -832,6 +828,43 @@ describe('DashboardScreen', () => {
     ).toEqual({ expanded: true })
   })
 
+  it('opens a contextual shadow reflection from Today’s Energy', async () => {
+    const screen = await renderScreen()
+
+    await act(async () => {
+      findPressableByAccessibilityLabel(
+        screen,
+        'Expand Today’s Energy details'
+      ).props.onPress()
+    })
+
+    expectText(screen, 'Shadow reflection')
+    expectText(screen, 'Use this as reflection, not a diagnosis.')
+    expectText(screen, 'Journal shadow reflection')
+
+    const [openShadowReflection] = pressHandlersByText(
+      screen,
+      'Journal shadow reflection'
+    )
+    if (!openShadowReflection) {
+      throw new Error('Missing Today’s Energy shadow reflection CTA')
+    }
+
+    await act(async () => {
+      openShadowReflection()
+    })
+
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('JournalEditor', {
+      id: undefined,
+      initialTitle: 'Shadow Reflection — Today’s Energy',
+      initialContent:
+        'Prompt:\nWhat recurring friction is asking for an adjustment?\n\nPractice:\nReduce noise by completing one bounded task.\n1. Choose one task.\n2. Work only on that task.\n\nReflection:\n',
+      promptTemplateId: 'guidance.prompt.friction-adjustment',
+      promptSource: 'Shadow Work — Today’s Energy',
+    })
+    expectText(screen, 'Tap to collapse')
+  })
+
   it('renders Today’s Energy fallback when no strongest aspect exists', async () => {
     mockedBuildDailyGuidance().mockReturnValue(
       makeDailyGuidance({
@@ -1000,6 +1033,43 @@ describe('DashboardScreen', () => {
         'Collapse Weekly Forecast details'
       ).props.accessibilityState
     ).toEqual({ expanded: true })
+  })
+
+  it('opens a contextual weekly shadow reflection', async () => {
+    const screen = await renderScreen()
+
+    await act(async () => {
+      findPressableByAccessibilityLabel(
+        screen,
+        'Expand Weekly Forecast details'
+      ).props.onPress()
+    })
+
+    expectText(screen, 'Shadow reflection for the week')
+    expectText(screen, 'Use this as reflection, not a diagnosis.')
+    expectText(screen, 'Journal shadow reflection')
+
+    const [openShadowReflection] = pressHandlersByText(
+      screen,
+      'Journal shadow reflection'
+    )
+    if (!openShadowReflection) {
+      throw new Error('Missing Weekly Forecast shadow reflection CTA')
+    }
+
+    await act(async () => {
+      openShadowReflection()
+    })
+
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('JournalEditor', {
+      id: undefined,
+      initialTitle: 'Shadow Reflection — Weekly Forecast',
+      initialContent:
+        'Prompt:\nWhat recurring friction is asking for an adjustment?\n\nPractice:\nReduce noise by completing one bounded task.\n1. Choose one task.\n2. Work only on that task.\n\nReflection:\n',
+      promptTemplateId: 'guidance.prompt.friction-adjustment',
+      promptSource: 'Shadow Work — Weekly Forecast',
+    })
+    expectText(screen, 'Tap to collapse')
   })
 
   it('renders the weekly no-aspect fallback without transit rows', async () => {

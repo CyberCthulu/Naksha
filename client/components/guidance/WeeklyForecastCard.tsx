@@ -5,7 +5,10 @@ import type {
   WeeklyForecast,
   WeeklyTransitHighlight,
 } from '../../lib/guidance'
-import type { ReflectionPrompt } from '../../lib/lexicon/guidance'
+import type {
+  ReflectionPrompt,
+  SuggestedPractice,
+} from '../../lib/lexicon/guidance'
 import { AppText, MutedText } from '../ui/AppText'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
@@ -67,13 +70,20 @@ function TransitHighlight({
 export function WeeklyForecastCard({
   forecast,
   onJournalPrompt,
+  onShadowReflection,
 }: {
   forecast: WeeklyForecast
   onJournalPrompt?: (prompt: ReflectionPrompt) => void
+  onShadowReflection?: (
+    prompt: ReflectionPrompt,
+    practice: SuggestedPractice
+  ) => void
 }) {
   const [expanded, setExpanded] = useState(false)
   const topTheme = forecast.weeklyThemes[0]
   const topTransit = forecast.strongestTransits[0]
+  const shadowPrompt = forecast.journalPrompts[0]
+  const shadowPractice = forecast.suggestions[0]
 
   return (
     <Card>
@@ -191,6 +201,32 @@ export function WeeklyForecastCard({
             ))}
           </View>
 
+          {shadowPrompt && shadowPractice ? (
+            <View style={styles.section}>
+              <AppText style={styles.sectionTitle}>
+                Shadow reflection for the week
+              </AppText>
+              <MutedText style={styles.body}>
+                Use this as reflection, not a diagnosis. Pause if it
+                feels overwhelming.
+              </MutedText>
+              <MutedText style={styles.shadowContext}>
+                Explore {shadowPrompt.title}, then ground with{' '}
+                {shadowPractice.title}.
+              </MutedText>
+              {onShadowReflection ? (
+                <Button
+                  title="Journal shadow reflection"
+                  variant="ghost"
+                  onPress={() =>
+                    onShadowReflection(shadowPrompt, shadowPractice)
+                  }
+                  style={styles.journalButton}
+                />
+              ) : null}
+            </View>
+          ) : null}
+
           <Pressable
             accessibilityLabel="Collapse Weekly Forecast details"
             accessibilityRole="button"
@@ -248,6 +284,11 @@ const styles = StyleSheet.create({
   body: {
     fontSize: 13,
     lineHeight: 19,
+  },
+  shadowContext: {
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 6,
   },
   journalButton: {
     marginTop: 6,

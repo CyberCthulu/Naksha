@@ -5,7 +5,10 @@ import type {
   DailyGuidance,
   DailyGuidanceSection,
 } from '../../lib/guidance'
-import type { ReflectionPrompt } from '../../lib/lexicon/guidance'
+import type {
+  ReflectionPrompt,
+  SuggestedPractice,
+} from '../../lib/lexicon/guidance'
 import { AppText, MutedText } from '../ui/AppText'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
@@ -35,9 +38,14 @@ function GuidanceSection({
 export function TodayEnergyCard({
   guidance,
   onJournalPrompt,
+  onShadowReflection,
 }: {
   guidance: DailyGuidance
   onJournalPrompt?: (prompt: ReflectionPrompt) => void
+  onShadowReflection?: (
+    prompt: ReflectionPrompt,
+    practice: SuggestedPractice
+  ) => void
 }) {
   const [expanded, setExpanded] = useState(false)
 
@@ -132,6 +140,31 @@ export function TodayEnergyCard({
             ))}
           </View>
 
+          <View style={styles.section}>
+            <AppText style={styles.sectionTitle}>Shadow reflection</AppText>
+            <MutedText style={styles.sectionBody}>
+              Use this as reflection, not a diagnosis. Pause if it feels
+              overwhelming.
+            </MutedText>
+            <MutedText style={styles.shadowContext}>
+              Go deeper with {guidance.reflectionPrompt.title}, then
+              ground with {guidance.suggestedPractice.title}.
+            </MutedText>
+            {onShadowReflection ? (
+              <Button
+                title="Journal shadow reflection"
+                variant="ghost"
+                onPress={() =>
+                  onShadowReflection(
+                    guidance.reflectionPrompt,
+                    guidance.suggestedPractice
+                  )
+                }
+                style={styles.journalButton}
+              />
+            ) : null}
+          </View>
+
           <Pressable
             accessibilityLabel="Collapse Today’s Energy details"
             accessibilityRole="button"
@@ -196,6 +229,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     marginTop: 4,
+  },
+  shadowContext: {
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 6,
   },
   journalButton: {
     marginTop: 8,

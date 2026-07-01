@@ -39,7 +39,10 @@ import { Button } from '../components/ui/Button'
 import { theme } from '../components/ui/theme'
 import { TodayEnergyCard } from '../components/guidance/TodayEnergyCard'
 import { WeeklyForecastCard } from '../components/guidance/WeeklyForecastCard'
-import type { ReflectionPrompt } from '../lib/lexicon/guidance'
+import type {
+  ReflectionPrompt,
+  SuggestedPractice,
+} from '../lib/lexicon/guidance'
 
 const ZODIAC = [
   'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
@@ -69,6 +72,30 @@ function journalPrefill(prompt: ReflectionPrompt, source: string) {
   }
 }
 
+function shadowJournalPrefill(
+  prompt: ReflectionPrompt,
+  practice: SuggestedPractice,
+  source: string
+) {
+  return {
+    id: undefined,
+    initialTitle: `Shadow Reflection — ${source}`,
+    initialContent: [
+      'Prompt:',
+      prompt.prompt,
+      '',
+      'Practice:',
+      practice.summary,
+      ...practice.steps.map((step, index) => `${index + 1}. ${step}`),
+      '',
+      'Reflection:',
+      '',
+    ].join('\n'),
+    promptTemplateId: prompt.id,
+    promptSource: `Shadow Work — ${source}`,
+  }
+}
+
 export default function DashboardScreen() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<UserRow | null>(null)
@@ -85,6 +112,20 @@ export default function DashboardScreen() {
   const openJournalPrompt = useCallback(
     (prompt: ReflectionPrompt, source: string) => {
       nav.navigate('JournalEditor', journalPrefill(prompt, source))
+    },
+    [nav]
+  )
+
+  const openShadowReflection = useCallback(
+    (
+      prompt: ReflectionPrompt,
+      practice: SuggestedPractice,
+      source: string
+    ) => {
+      nav.navigate(
+        'JournalEditor',
+        shadowJournalPrefill(prompt, practice, source)
+      )
     },
     [nav]
   )
@@ -422,6 +463,13 @@ export default function DashboardScreen() {
           onJournalPrompt={(prompt) =>
             openJournalPrompt(prompt, 'Today’s Energy')
           }
+          onShadowReflection={(prompt, practice) =>
+            openShadowReflection(
+              prompt,
+              practice,
+              'Today’s Energy'
+            )
+          }
         />
       )}
 
@@ -430,6 +478,13 @@ export default function DashboardScreen() {
           forecast={weeklyForecast}
           onJournalPrompt={(prompt) =>
             openJournalPrompt(prompt, 'Weekly Forecast')
+          }
+          onShadowReflection={(prompt, practice) =>
+            openShadowReflection(
+              prompt,
+              practice,
+              'Weekly Forecast'
+            )
           }
         />
       )}
@@ -462,20 +517,6 @@ export default function DashboardScreen() {
               onPress={() => nav.navigate('JournalList')}
             />
           </View>
-          {todayEnergy ? (
-            <View style={styles.actionCell}>
-              <Button
-                title="Shadow Work"
-                variant="ghost"
-                onPress={() =>
-                  nav.navigate('ShadowWork', {
-                    promptId: todayEnergy.reflectionPrompt.id,
-                    practiceId: todayEnergy.suggestedPractice.id,
-                  })
-                }
-              />
-            </View>
-          ) : null}
           <View style={styles.actionCell}>
             <Button
               title="Edit Details"
