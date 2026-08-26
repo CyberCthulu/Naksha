@@ -69,12 +69,10 @@ function TransitHighlight({
 
 export function WeeklyForecastCard({
   forecast,
-  onJournalPrompt,
-  onShadowReflection,
+  onJournalReflection,
 }: {
   forecast: WeeklyForecast
-  onJournalPrompt?: (prompt: ReflectionPrompt) => void
-  onShadowReflection?: (
+  onJournalReflection?: (
     prompt: ReflectionPrompt,
     practice: SuggestedPractice
   ) => void
@@ -82,8 +80,8 @@ export function WeeklyForecastCard({
   const [expanded, setExpanded] = useState(false)
   const topTheme = forecast.weeklyThemes[0]
   const topTransit = forecast.strongestTransits[0]
-  const shadowPrompt = forecast.journalPrompts[0]
-  const shadowPractice = forecast.suggestions[0]
+  const reflectionPrompt = forecast.journalPrompts[0]
+  const reflectionPractice = forecast.suggestions[0]
 
   return (
     <Card>
@@ -171,55 +169,49 @@ export function WeeklyForecastCard({
             )}
           </View>
 
-          <View style={styles.section}>
-            <AppText style={styles.sectionTitle}>Journal prompts</AppText>
-            {forecast.journalPrompts.map((prompt) => (
-              <View key={prompt.id} style={styles.listItem}>
-                <AppText style={styles.itemTitle}>{prompt.title}</AppText>
-                <MutedText style={styles.body}>{prompt.prompt}</MutedText>
-                {onJournalPrompt ? (
-                  <Button
-                    title="Journal this"
-                    variant="ghost"
-                    onPress={() => onJournalPrompt(prompt)}
-                    style={styles.journalButton}
-                  />
-                ) : null}
-              </View>
-            ))}
-          </View>
-
-          <View style={styles.section}>
-            <AppText style={styles.sectionTitle}>
-              Suggested practices
-            </AppText>
-            {forecast.suggestions.map((practice) => (
-              <View key={practice.id} style={styles.listItem}>
-                <AppText style={styles.itemTitle}>{practice.title}</AppText>
-                <MutedText style={styles.body}>{practice.summary}</MutedText>
-              </View>
-            ))}
-          </View>
-
-          {shadowPrompt && shadowPractice ? (
+          {reflectionPrompt && reflectionPractice ? (
             <View style={styles.section}>
-              <AppText style={styles.sectionTitle}>
-                Shadow reflection for the week
+              <AppText style={styles.sectionTitle}>Weekly reflection</AppText>
+              <AppText style={styles.itemTitle}>
+                {reflectionPrompt.title}
               </AppText>
               <MutedText style={styles.body}>
-                Use this as reflection, not a diagnosis. Pause if it
-                feels overwhelming.
+                {reflectionPrompt.prompt}
               </MutedText>
-              <MutedText style={styles.shadowContext}>
-                Explore {shadowPrompt.title}, then ground with{' '}
-                {shadowPractice.title}.
+              {reflectionPrompt.followUp ? (
+                <MutedText style={styles.followUp}>
+                  {reflectionPrompt.followUp}
+                </MutedText>
+              ) : null}
+              <MutedText style={styles.deeperFraming}>
+                Deeper layer: notice what repeated across the week and
+                what may be easy to avoid. Use this as reflection, not a
+                diagnosis. Pause if it feels overwhelming.
               </MutedText>
-              {onShadowReflection ? (
+              <AppText style={styles.practiceTitle}>Grounding practice</AppText>
+              <AppText style={styles.itemTitle}>
+                {reflectionPractice.title}
+              </AppText>
+              <MutedText style={styles.body}>
+                {reflectionPractice.summary}
+              </MutedText>
+              {reflectionPractice.steps.map((step, index) => (
+                <MutedText
+                  key={`${reflectionPractice.id}:${index}`}
+                  style={styles.practiceStep}
+                >
+                  {index + 1}. {step}
+                </MutedText>
+              ))}
+              {onJournalReflection ? (
                 <Button
-                  title="Journal shadow reflection"
+                  title="Journal weekly reflection"
                   variant="ghost"
                   onPress={() =>
-                    onShadowReflection(shadowPrompt, shadowPractice)
+                    onJournalReflection(
+                      reflectionPrompt,
+                      reflectionPractice
+                    )
                   }
                   style={styles.journalButton}
                 />
@@ -285,10 +277,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
   },
-  shadowContext: {
+  followUp: {
     fontSize: 13,
     lineHeight: 19,
     marginTop: 6,
+  },
+  deeperFraming: {
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 8,
+  },
+  practiceTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 2,
+    marginTop: 10,
+  },
+  practiceStep: {
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 4,
   },
   journalButton: {
     marginTop: 6,

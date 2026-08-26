@@ -53,33 +53,14 @@ const ZODIAC_GLY = ['♈︎', '♉︎', '♊︎', '♋︎', '♌︎', '♍︎', 
 
 const signOf = (lon: number) => Math.floor((((lon % 360) + 360) % 360) / 30)
 
-function journalPrefill(prompt: ReflectionPrompt, source: string) {
-  return {
-    id: undefined,
-    initialTitle: `Reflection — ${source}`,
-    initialContent: [
-      'Prompt:',
-      prompt.prompt,
-      '',
-      'Context:',
-      source,
-      '',
-      'Reflection:',
-      '',
-    ].join('\n'),
-    promptTemplateId: prompt.id,
-    promptSource: source,
-  }
-}
-
-function shadowJournalPrefill(
+function reflectionJournalPrefill(
   prompt: ReflectionPrompt,
   practice: SuggestedPractice,
   source: string
 ) {
   return {
     id: undefined,
-    initialTitle: `Shadow Reflection — ${source}`,
+    initialTitle: `Reflection — ${source}`,
     initialContent: [
       'Prompt:',
       prompt.prompt,
@@ -92,7 +73,7 @@ function shadowJournalPrefill(
       '',
     ].join('\n'),
     promptTemplateId: prompt.id,
-    promptSource: `Shadow Work — ${source}`,
+    promptSource: source,
   }
 }
 
@@ -109,14 +90,7 @@ export default function DashboardScreen() {
   const nav = useNavigation<any>()
   const insets = useSafeAreaInsets()
 
-  const openJournalPrompt = useCallback(
-    (prompt: ReflectionPrompt, source: string) => {
-      nav.navigate('JournalEditor', journalPrefill(prompt, source))
-    },
-    [nav]
-  )
-
-  const openShadowReflection = useCallback(
+  const openJournalReflection = useCallback(
     (
       prompt: ReflectionPrompt,
       practice: SuggestedPractice,
@@ -124,7 +98,7 @@ export default function DashboardScreen() {
     ) => {
       nav.navigate(
         'JournalEditor',
-        shadowJournalPrefill(prompt, practice, source)
+        reflectionJournalPrefill(prompt, practice, source)
       )
     },
     [nav]
@@ -460,11 +434,8 @@ export default function DashboardScreen() {
       {todayEnergy && (
         <TodayEnergyCard
           guidance={todayEnergy}
-          onJournalPrompt={(prompt) =>
-            openJournalPrompt(prompt, 'Today’s Energy')
-          }
-          onShadowReflection={(prompt, practice) =>
-            openShadowReflection(
+          onJournalReflection={(prompt, practice) =>
+            openJournalReflection(
               prompt,
               practice,
               'Today’s Energy'
@@ -476,11 +447,8 @@ export default function DashboardScreen() {
       {weeklyForecast && (
         <WeeklyForecastCard
           forecast={weeklyForecast}
-          onJournalPrompt={(prompt) =>
-            openJournalPrompt(prompt, 'Weekly Forecast')
-          }
-          onShadowReflection={(prompt, practice) =>
-            openShadowReflection(
+          onJournalReflection={(prompt, practice) =>
+            openJournalReflection(
               prompt,
               practice,
               'Weekly Forecast'

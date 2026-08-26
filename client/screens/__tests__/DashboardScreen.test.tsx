@@ -486,10 +486,6 @@ function pressHandlersByText(
   return [...new Set(handlers)]
 }
 
-function journalPromptHandlers(root: TestRenderer.ReactTestRenderer) {
-  return pressHandlersByText(root, 'Journal this')
-}
-
 describe('DashboardScreen', () => {
   beforeEach(() => {
     ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
@@ -702,9 +698,8 @@ describe('DashboardScreen', () => {
     expectText(screen, 'Tap to expand')
     expectNoText(screen, 'Watch for')
     expectNoText(screen, 'Opportunity')
-    expectNoText(screen, 'Reflection prompt')
-    expectNoText(screen, 'Suggested practice')
-    expectNoText(screen, 'Journal this')
+    expectNoText(screen, 'Reflection')
+    expectNoText(screen, 'Journal this reflection')
   })
 
   it('expands and collapses Today’s Energy details', async () => {
@@ -723,11 +718,18 @@ describe('DashboardScreen', () => {
 
     expectText(screen, 'Watch for')
     expectText(screen, 'Opportunity')
-    expectText(screen, 'Reflection prompt')
+    expectText(screen, 'Reflection')
     expectText(screen, 'Use the friction')
-    expectText(screen, 'Suggested practice')
+    expectText(screen, 'Deeper layer')
+    expectText(screen, 'Use this as reflection, not a diagnosis.')
+    expectText(screen, 'Grounding practice')
     expectText(screen, 'Single-task reset')
-    expectText(screen, 'Journal this')
+    expectText(screen, 'Journal this reflection')
+    expect(pressHandlersByText(screen, 'Journal this reflection')).toHaveLength(1)
+    expect(pressHandlersByText(screen, 'Journal this')).toHaveLength(0)
+    expect(pressHandlersByText(screen, 'Journal shadow reflection')).toHaveLength(0)
+    expectNoText(screen, 'Shadow reflection')
+    expectNoText(screen, 'Journal shadow reflection')
     expectText(screen, 'Tap to collapse')
 
     const hideTodayDetails = findPressableByAccessibilityLabel(
@@ -744,8 +746,8 @@ describe('DashboardScreen', () => {
 
     expectText(screen, 'Tap to expand')
     expectNoText(screen, 'Watch for')
-    expectNoText(screen, 'Reflection prompt')
-    expectNoText(screen, 'Journal this')
+    expectNoText(screen, 'Reflection')
+    expectNoText(screen, 'Journal this reflection')
   })
 
   it('collapses Today’s Energy from the bottom control', async () => {
@@ -787,12 +789,12 @@ describe('DashboardScreen', () => {
       'Expand Today’s Energy details'
     )
     expectNoText(screen, 'Watch for')
-    expectNoText(screen, 'Reflection prompt')
-    expectNoText(screen, 'Journal this')
+    expectNoText(screen, 'Reflection')
+    expectNoText(screen, 'Journal this reflection')
     expectNoText(screen, 'Tap to collapse')
   })
 
-  it('opens a prefilled journal entry from Today’s Energy', async () => {
+  it('opens a prefilled journal entry from Today’s Energy reflection', async () => {
     const screen = await renderScreen()
     const showTodayDetails = findPressableByAccessibilityLabel(
       screen,
@@ -803,8 +805,10 @@ describe('DashboardScreen', () => {
       showTodayDetails.props.onPress()
     })
 
-    const [openTodayPrompt] = journalPromptHandlers(screen)
+    const handlers = pressHandlersByText(screen, 'Journal this reflection')
+    const openTodayPrompt = handlers[0]
 
+    expect(handlers).toHaveLength(1)
     if (!openTodayPrompt) throw new Error('Missing Today’s Energy journal CTA')
 
     await act(async () => {
@@ -815,7 +819,7 @@ describe('DashboardScreen', () => {
       id: undefined,
       initialTitle: 'Reflection — Today’s Energy',
       initialContent:
-        'Prompt:\nWhat recurring friction is asking for an adjustment?\n\nContext:\nToday’s Energy\n\nReflection:\n',
+        'Prompt:\nWhat recurring friction is asking for an adjustment?\n\nPractice:\nReduce noise by completing one bounded task.\n1. Choose one task.\n2. Work only on that task.\n\nReflection:\n',
       promptTemplateId: 'guidance.prompt.friction-adjustment',
       promptSource: 'Today’s Energy',
     })
@@ -828,7 +832,7 @@ describe('DashboardScreen', () => {
     ).toEqual({ expanded: true })
   })
 
-  it('opens a contextual shadow reflection from Today’s Energy', async () => {
+  it('does not render a separate Today’s Energy shadow action', async () => {
     const screen = await renderScreen()
 
     await act(async () => {
@@ -838,31 +842,14 @@ describe('DashboardScreen', () => {
       ).props.onPress()
     })
 
-    expectText(screen, 'Shadow reflection')
+    expectText(screen, 'Reflection')
     expectText(screen, 'Use this as reflection, not a diagnosis.')
-    expectText(screen, 'Journal shadow reflection')
-
-    const [openShadowReflection] = pressHandlersByText(
-      screen,
-      'Journal shadow reflection'
-    )
-    if (!openShadowReflection) {
-      throw new Error('Missing Today’s Energy shadow reflection CTA')
-    }
-
-    await act(async () => {
-      openShadowReflection()
-    })
-
-    expect(mockNavigation.navigate).toHaveBeenCalledWith('JournalEditor', {
-      id: undefined,
-      initialTitle: 'Shadow Reflection — Today’s Energy',
-      initialContent:
-        'Prompt:\nWhat recurring friction is asking for an adjustment?\n\nPractice:\nReduce noise by completing one bounded task.\n1. Choose one task.\n2. Work only on that task.\n\nReflection:\n',
-      promptTemplateId: 'guidance.prompt.friction-adjustment',
-      promptSource: 'Shadow Work — Today’s Energy',
-    })
-    expectText(screen, 'Tap to collapse')
+    expectText(screen, 'Journal this reflection')
+    expectNoText(screen, 'Shadow reflection')
+    expectNoText(screen, 'Journal shadow reflection')
+    expect(pressHandlersByText(screen, 'Journal this')).toHaveLength(0)
+    expect(pressHandlersByText(screen, 'Journal shadow reflection')).toHaveLength(0)
+    expect(pressHandlersByText(screen, 'Journal this reflection')).toHaveLength(1)
   })
 
   it('renders Today’s Energy fallback when no strongest aspect exists', async () => {
@@ -891,7 +878,7 @@ describe('DashboardScreen', () => {
     )
     expectText(screen, 'Tap to expand')
     expectNoText(screen, 'Watch for')
-    expectNoText(screen, 'Reflection prompt')
+    expectNoText(screen, 'Reflection')
   })
 
   it('renders a collapsed weekly forecast summary by default', async () => {
@@ -906,9 +893,8 @@ describe('DashboardScreen', () => {
     expectText(screen, 'Tap to expand')
     expectNoText(screen, 'Weekly themes')
     expectNoText(screen, 'Strongest transits')
-    expectNoText(screen, 'Journal prompts')
-    expectNoText(screen, 'Suggested practices')
-    expectNoText(screen, 'Journal this')
+    expectNoText(screen, 'Weekly reflection')
+    expectNoText(screen, 'Journal weekly reflection')
   })
 
   it('expands and collapses Weekly Forecast details', async () => {
@@ -927,11 +913,18 @@ describe('DashboardScreen', () => {
 
     expectText(screen, 'Weekly themes')
     expectText(screen, 'Strongest transits')
-    expectText(screen, 'Journal prompts')
+    expectText(screen, 'Weekly reflection')
     expectText(screen, 'Use the friction')
-    expectText(screen, 'Suggested practices')
+    expectText(screen, 'Deeper layer')
+    expectText(screen, 'Use this as reflection, not a diagnosis.')
+    expectText(screen, 'Grounding practice')
     expectText(screen, 'Single-task reset')
-    expectText(screen, 'Journal this')
+    expectText(screen, 'Journal weekly reflection')
+    expect(pressHandlersByText(screen, 'Journal weekly reflection')).toHaveLength(1)
+    expect(pressHandlersByText(screen, 'Journal this')).toHaveLength(0)
+    expect(pressHandlersByText(screen, 'Journal shadow reflection')).toHaveLength(0)
+    expectNoText(screen, 'Shadow reflection for the week')
+    expectNoText(screen, 'Journal shadow reflection')
     expectText(screen, 'Tap to collapse')
 
     const hideWeeklyDetails = findPressableByAccessibilityLabel(
@@ -948,8 +941,8 @@ describe('DashboardScreen', () => {
 
     expectText(screen, 'Top theme')
     expectText(screen, 'Tap to expand')
-    expectNoText(screen, 'Journal prompts')
-    expectNoText(screen, 'Journal this')
+    expectNoText(screen, 'Weekly reflection')
+    expectNoText(screen, 'Journal weekly reflection')
   })
 
   it('collapses Weekly Forecast from the bottom control', async () => {
@@ -991,12 +984,12 @@ describe('DashboardScreen', () => {
       'Expand Weekly Forecast details'
     )
     expectText(screen, 'Top theme')
-    expectNoText(screen, 'Journal prompts')
-    expectNoText(screen, 'Journal this')
+    expectNoText(screen, 'Weekly reflection')
+    expectNoText(screen, 'Journal weekly reflection')
     expectNoText(screen, 'Tap to collapse')
   })
 
-  it('opens a prefilled journal entry from a weekly prompt', async () => {
+  it('opens a prefilled journal entry from Weekly Forecast reflection', async () => {
     const screen = await renderScreen()
     const showWeeklyDetails = findPressableByAccessibilityLabel(
       screen,
@@ -1007,7 +1000,7 @@ describe('DashboardScreen', () => {
       showWeeklyDetails.props.onPress()
     })
 
-    const handlers = journalPromptHandlers(screen)
+    const handlers = pressHandlersByText(screen, 'Journal weekly reflection')
     const openWeeklyPrompt = handlers[0]
 
     expect(handlers).toHaveLength(1)
@@ -1021,7 +1014,7 @@ describe('DashboardScreen', () => {
       id: undefined,
       initialTitle: 'Reflection — Weekly Forecast',
       initialContent:
-        'Prompt:\nWhat recurring friction is asking for an adjustment?\n\nContext:\nWeekly Forecast\n\nReflection:\n',
+        'Prompt:\nWhat recurring friction is asking for an adjustment?\n\nPractice:\nReduce noise by completing one bounded task.\n1. Choose one task.\n2. Work only on that task.\n\nReflection:\n',
       promptTemplateId: 'guidance.prompt.friction-adjustment',
       promptSource: 'Weekly Forecast',
     })
@@ -1035,7 +1028,7 @@ describe('DashboardScreen', () => {
     ).toEqual({ expanded: true })
   })
 
-  it('opens a contextual weekly shadow reflection', async () => {
+  it('does not render a separate weekly shadow action', async () => {
     const screen = await renderScreen()
 
     await act(async () => {
@@ -1045,31 +1038,14 @@ describe('DashboardScreen', () => {
       ).props.onPress()
     })
 
-    expectText(screen, 'Shadow reflection for the week')
+    expectText(screen, 'Weekly reflection')
     expectText(screen, 'Use this as reflection, not a diagnosis.')
-    expectText(screen, 'Journal shadow reflection')
-
-    const [openShadowReflection] = pressHandlersByText(
-      screen,
-      'Journal shadow reflection'
-    )
-    if (!openShadowReflection) {
-      throw new Error('Missing Weekly Forecast shadow reflection CTA')
-    }
-
-    await act(async () => {
-      openShadowReflection()
-    })
-
-    expect(mockNavigation.navigate).toHaveBeenCalledWith('JournalEditor', {
-      id: undefined,
-      initialTitle: 'Shadow Reflection — Weekly Forecast',
-      initialContent:
-        'Prompt:\nWhat recurring friction is asking for an adjustment?\n\nPractice:\nReduce noise by completing one bounded task.\n1. Choose one task.\n2. Work only on that task.\n\nReflection:\n',
-      promptTemplateId: 'guidance.prompt.friction-adjustment',
-      promptSource: 'Shadow Work — Weekly Forecast',
-    })
-    expectText(screen, 'Tap to collapse')
+    expectText(screen, 'Journal weekly reflection')
+    expectNoText(screen, 'Shadow reflection for the week')
+    expectNoText(screen, 'Journal shadow reflection')
+    expect(pressHandlersByText(screen, 'Journal this')).toHaveLength(0)
+    expect(pressHandlersByText(screen, 'Journal shadow reflection')).toHaveLength(0)
+    expect(pressHandlersByText(screen, 'Journal weekly reflection')).toHaveLength(1)
   })
 
   it('renders the weekly no-aspect fallback without transit rows', async () => {
@@ -1100,8 +1076,7 @@ describe('DashboardScreen', () => {
     )
     expectText(screen, 'No tight personal transit highlights this week.')
     expectText(screen, 'Tap to expand')
-    expectNoText(screen, 'Journal prompts')
-    expectNoText(screen, 'Suggested practices')
+    expectNoText(screen, 'Weekly reflection')
   })
 
   it('falls back to built chart data when saved chart_data is invalid', async () => {

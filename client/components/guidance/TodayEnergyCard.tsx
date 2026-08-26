@@ -37,12 +37,10 @@ function GuidanceSection({
 
 export function TodayEnergyCard({
   guidance,
-  onJournalPrompt,
-  onShadowReflection,
+  onJournalReflection,
 }: {
   guidance: DailyGuidance
-  onJournalPrompt?: (prompt: ReflectionPrompt) => void
-  onShadowReflection?: (
+  onJournalReflection?: (
     prompt: ReflectionPrompt,
     practice: SuggestedPractice
   ) => void
@@ -100,7 +98,7 @@ export function TodayEnergyCard({
           <GuidanceSection section={guidance.transitSummary} />
 
           <View style={styles.section}>
-            <AppText style={styles.sectionTitle}>Reflection prompt</AppText>
+            <AppText style={styles.sectionTitle}>Reflection</AppText>
             <AppText style={styles.itemTitle}>
               {guidance.reflectionPrompt.title}
             </AppText>
@@ -112,18 +110,12 @@ export function TodayEnergyCard({
                 {guidance.reflectionPrompt.followUp}
               </MutedText>
             ) : null}
-            {onJournalPrompt ? (
-              <Button
-                title="Journal this"
-                variant="ghost"
-                onPress={() => onJournalPrompt(guidance.reflectionPrompt)}
-                style={styles.journalButton}
-              />
-            ) : null}
-          </View>
-
-          <View style={styles.section}>
-            <AppText style={styles.sectionTitle}>Suggested practice</AppText>
+            <MutedText style={styles.deeperFraming}>
+              Deeper layer: notice what feels uncomfortable, repetitive,
+              or easy to avoid. Use this as reflection, not a diagnosis.
+              Pause if it feels overwhelming.
+            </MutedText>
+            <AppText style={styles.practiceTitle}>Grounding practice</AppText>
             <AppText style={styles.itemTitle}>
               {guidance.suggestedPractice.title}
             </AppText>
@@ -138,24 +130,12 @@ export function TodayEnergyCard({
                 {index + 1}. {step}
               </MutedText>
             ))}
-          </View>
-
-          <View style={styles.section}>
-            <AppText style={styles.sectionTitle}>Shadow reflection</AppText>
-            <MutedText style={styles.sectionBody}>
-              Use this as reflection, not a diagnosis. Pause if it feels
-              overwhelming.
-            </MutedText>
-            <MutedText style={styles.shadowContext}>
-              Go deeper with {guidance.reflectionPrompt.title}, then
-              ground with {guidance.suggestedPractice.title}.
-            </MutedText>
-            {onShadowReflection ? (
+            {onJournalReflection ? (
               <Button
-                title="Journal shadow reflection"
+                title="Journal this reflection"
                 variant="ghost"
                 onPress={() =>
-                  onShadowReflection(
+                  onJournalReflection(
                     guidance.reflectionPrompt,
                     guidance.suggestedPractice
                   )
@@ -225,15 +205,21 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     marginTop: 6,
   },
+  deeperFraming: {
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 8,
+  },
+  practiceTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 4,
+    marginTop: 10,
+  },
   practiceStep: {
     fontSize: 13,
     lineHeight: 19,
     marginTop: 4,
-  },
-  shadowContext: {
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: 6,
   },
   journalButton: {
     marginTop: 8,
