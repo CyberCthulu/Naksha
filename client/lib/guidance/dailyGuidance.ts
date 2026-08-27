@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon'
 import {
   buildTodayEnergy,
   type DailyTransitAspect,
@@ -148,11 +149,34 @@ function chartSeed(input: BuildDailyGuidanceInput): string {
     .join('|')
 }
 
+function guidanceDate(
+  evaluatedAt: Date,
+  evaluatedAtIso: string,
+  timeZone?: string
+): string {
+  if (!timeZone) return evaluatedAtIso.slice(0, 10)
+
+  const localEvaluation = DateTime.fromJSDate(evaluatedAt, {
+    zone: timeZone,
+  })
+  const localDate = localEvaluation.toISODate()
+
+  if (!localEvaluation.isValid || !localDate) {
+    throw new Error('Invalid daily guidance time zone')
+  }
+
+  return localDate
+}
+
 export function buildDailyGuidance(
   input: BuildDailyGuidanceInput
 ): DailyGuidance {
   const evaluatedAt = input.evaluatedAt.toISOString()
-  const date = evaluatedAt.slice(0, 10)
+  const date = guidanceDate(
+    input.evaluatedAt,
+    evaluatedAt,
+    input.timeZone
+  )
   const todayEnergy = buildTodayEnergy(
     input.natalPlanets,
     input.evaluatedAt,

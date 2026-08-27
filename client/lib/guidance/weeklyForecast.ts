@@ -238,6 +238,7 @@ export function buildWeeklyForecast(
       const guidance = buildDailyGuidance({
         natalPlanets: input.natalPlanets,
         evaluatedAt: localNoon.toJSDate(),
+        timeZone: input.timeZone,
         orbMode: input.orbMode,
       })
 

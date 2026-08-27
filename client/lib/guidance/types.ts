@@ -11,6 +11,7 @@ import type {
 export type BuildDailyGuidanceInput = {
   natalPlanets: PlanetPos[]
   evaluatedAt: Date
+  timeZone?: string
   orbMode?: AspectOrbMode
 }
 

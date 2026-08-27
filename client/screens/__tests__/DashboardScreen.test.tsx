@@ -654,6 +654,7 @@ describe('DashboardScreen', () => {
     expect(mockedBuildDailyGuidance()).toHaveBeenCalledWith({
       natalPlanets: savedChart.planets,
       evaluatedAt: expect.any(Date),
+      timeZone: completeUser.time_zone,
     })
     expect(mockedBuildWeeklyForecast()).toHaveBeenCalledWith({
       natalPlanets: savedChart.planets,

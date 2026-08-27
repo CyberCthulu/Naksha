@@ -15,6 +15,7 @@ import {
 import { buildDailyGuidance, type DailyGuidance } from '../index'
 
 const FIXED_DATE = new Date('2026-05-17T12:00:00.000Z')
+const DATE_BOUNDARY_INSTANT = new Date('2026-05-18T01:30:00.000Z')
 
 function planet(name: string, lon: number): PlanetPos {
   return {
@@ -73,9 +74,42 @@ describe('buildDailyGuidance', () => {
     const input = {
       natalPlanets: chartForMoonAspect('Mars', 90),
       evaluatedAt: FIXED_DATE,
+      timeZone: 'America/Los_Angeles',
     }
 
     expect(buildDailyGuidance(input)).toEqual(buildDailyGuidance(input))
+  })
+
+  it('uses the provided time zone for the local date and selection seed', () => {
+    const losAngelesInput = {
+      natalPlanets: [] as PlanetPos[],
+      evaluatedAt: DATE_BOUNDARY_INSTANT,
+      timeZone: 'America/Los_Angeles',
+    }
+    const tokyoInput = {
+      ...losAngelesInput,
+      timeZone: 'Asia/Tokyo',
+    }
+    const losAngeles = buildDailyGuidance(losAngelesInput)
+    const tokyo = buildDailyGuidance(tokyoInput)
+    const utcFallback = buildDailyGuidance({
+      natalPlanets: [],
+      evaluatedAt: DATE_BOUNDARY_INSTANT,
+    })
+
+    expect(losAngeles.date).toBe('2026-05-17')
+    expect(tokyo.date).toBe('2026-05-18')
+    expect(losAngeles.evaluatedAt).toBe(DATE_BOUNDARY_INSTANT.toISOString())
+    expect(tokyo.evaluatedAt).toBe(DATE_BOUNDARY_INSTANT.toISOString())
+    expect([
+      losAngeles.reflectionPrompt.id,
+      losAngeles.suggestedPractice.id,
+    ]).not.toEqual([
+      tokyo.reflectionPrompt.id,
+      tokyo.suggestedPractice.id,
+    ])
+    expect(utcFallback).toEqual(tokyo)
+    expect(buildDailyGuidance(losAngelesInput)).toEqual(losAngeles)
   })
 
   it('builds a complete guidance object around the strongest aspect', () => {
@@ -103,6 +137,7 @@ describe('buildDailyGuidance', () => {
     const guidance = buildDailyGuidance({
       natalPlanets: chartWithoutTransitAspects(),
       evaluatedAt: FIXED_DATE,
+      timeZone: 'America/Los_Angeles',
     })
 
     expectCompleteGuidance(guidance)

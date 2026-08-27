@@ -257,6 +257,7 @@ export default function DashboardScreen() {
           buildDailyGuidance({
             natalPlanets: planets,
             evaluatedAt,
+            timeZone: tz,
           })
         )
         setWeeklyForecast(
@@ -316,6 +317,7 @@ export default function DashboardScreen() {
         buildDailyGuidance({
           natalPlanets: payload.planets,
           evaluatedAt,
+          timeZone: tz,
         })
       )
       setWeeklyForecast(
