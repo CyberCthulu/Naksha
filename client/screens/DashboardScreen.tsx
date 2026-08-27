@@ -61,19 +61,12 @@ function reflectionJournalPrefill(
   return {
     id: undefined,
     initialTitle: `Reflection — ${source}`,
-    initialContent: [
-      'Prompt:',
-      prompt.prompt,
-      '',
-      'Practice:',
-      practice.summary,
-      ...practice.steps.map((step, index) => `${index + 1}. ${step}`),
-      '',
-      'Reflection:',
-      '',
-    ].join('\n'),
+    initialContent: '',
     promptTemplateId: prompt.id,
     promptSource: source,
+    promptText: prompt.prompt,
+    practiceSummary: practice.summary,
+    practiceSteps: [...practice.steps],
   }
 }
 

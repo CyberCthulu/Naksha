@@ -819,10 +819,12 @@ describe('DashboardScreen', () => {
     expect(mockNavigation.navigate).toHaveBeenCalledWith('JournalEditor', {
       id: undefined,
       initialTitle: 'Reflection — Today’s Energy',
-      initialContent:
-        'Prompt:\nWhat recurring friction is asking for an adjustment?\n\nPractice:\nReduce noise by completing one bounded task.\n1. Choose one task.\n2. Work only on that task.\n\nReflection:\n',
+      initialContent: '',
       promptTemplateId: 'guidance.prompt.friction-adjustment',
       promptSource: 'Today’s Energy',
+      promptText: 'What recurring friction is asking for an adjustment?',
+      practiceSummary: 'Reduce noise by completing one bounded task.',
+      practiceSteps: ['Choose one task.', 'Work only on that task.'],
     })
     expectText(screen, 'Tap to collapse')
     expect(
@@ -1014,10 +1016,12 @@ describe('DashboardScreen', () => {
     expect(mockNavigation.navigate).toHaveBeenCalledWith('JournalEditor', {
       id: undefined,
       initialTitle: 'Reflection — Weekly Forecast',
-      initialContent:
-        'Prompt:\nWhat recurring friction is asking for an adjustment?\n\nPractice:\nReduce noise by completing one bounded task.\n1. Choose one task.\n2. Work only on that task.\n\nReflection:\n',
+      initialContent: '',
       promptTemplateId: 'guidance.prompt.friction-adjustment',
       promptSource: 'Weekly Forecast',
+      promptText: 'What recurring friction is asking for an adjustment?',
+      practiceSummary: 'Reduce noise by completing one bounded task.',
+      practiceSteps: ['Choose one task.', 'Work only on that task.'],
     })
     expectText(screen, 'Tap to collapse')
     expectNoText(screen, 'Top theme')

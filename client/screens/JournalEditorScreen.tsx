@@ -16,7 +16,47 @@ import { useRoute, useNavigation } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { upsertJournal } from '../lib/journals'
+import { AppText, MutedText } from '../components/ui/AppText'
+import { Card } from '../components/ui/Card'
 import { theme } from '../components/ui/theme'
+import { uiStyles } from '../components/ui/uiStyles'
+
+type GuidanceContext = {
+  source: string | null
+  promptText: string | null
+  practiceSummary: string | null
+  practiceSteps: string[]
+}
+
+function optionalString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value : null
+}
+
+function createGuidanceContext(
+  params: Record<string, unknown> | undefined,
+  isEditMode: boolean
+): GuidanceContext | null {
+  if (isEditMode) return null
+
+  const context = {
+    source: optionalString(params?.promptSource),
+    promptText: optionalString(params?.promptText),
+    practiceSummary: optionalString(params?.practiceSummary),
+    practiceSteps: Array.isArray(params?.practiceSteps)
+      ? params.practiceSteps.filter(
+          (step): step is string =>
+            typeof step === 'string' && step.trim().length > 0
+        )
+      : [],
+  }
+
+  return context.source ||
+    context.promptText ||
+    context.practiceSummary ||
+    context.practiceSteps.length > 0
+    ? context
+    : null
+}
 
 export default function JournalEditorScreen() {
   const nav = useNavigation<any>()
@@ -41,6 +81,9 @@ export default function JournalEditorScreen() {
   const [saving, setSaving] = useState(false)
   const [title, setTitle] = useState(initialTitle)
   const [content, setContent] = useState(initialContent)
+  const [guidanceContext] = useState<GuidanceContext | null>(() =>
+    createGuidanceContext(route.params, isEditMode)
+  )
 
   const onSave = async () => {
     const trimmedContent = content.trim()
@@ -106,8 +149,51 @@ export default function JournalEditorScreen() {
           }}
         >
           <Text style={styles.h1}>
-            {isEditMode ? 'Something to add?' : 'Share your thoughts'}
+            {isEditMode
+              ? 'Something to add?'
+              : guidanceContext
+              ? 'Reflect in your own words'
+              : 'Share your thoughts'}
           </Text>
+
+          {guidanceContext ? (
+            <Card>
+              {guidanceContext.source ? (
+                <MutedText style={styles.contextSource}>
+                  {guidanceContext.source}
+                </MutedText>
+              ) : null}
+              {guidanceContext.promptText ? (
+                <View>
+                  <AppText style={uiStyles.cardTitle}>Prompt</AppText>
+                  <MutedText style={styles.contextBody}>
+                    {guidanceContext.promptText}
+                  </MutedText>
+                </View>
+              ) : null}
+              {guidanceContext.practiceSummary ||
+              guidanceContext.practiceSteps.length > 0 ? (
+                <View style={styles.contextPractice}>
+                  <AppText style={uiStyles.cardTitle}>
+                    Grounding practice
+                  </AppText>
+                  {guidanceContext.practiceSummary ? (
+                    <MutedText style={styles.contextBody}>
+                      {guidanceContext.practiceSummary}
+                    </MutedText>
+                  ) : null}
+                  {guidanceContext.practiceSteps.map((step, index) => (
+                    <MutedText
+                      key={`${index}:${step}`}
+                      style={styles.contextStep}
+                    >
+                      {index + 1}. {step}
+                    </MutedText>
+                  ))}
+                </View>
+              ) : null}
+            </Card>
+          ) : null}
 
           {/* Title */}
           <View style={styles.fieldWrap}>
@@ -124,10 +210,16 @@ export default function JournalEditorScreen() {
 
           {/* Content */}
           <View style={styles.fieldWrap}>
-            <Text style={styles.label}>Entry</Text>
+            <Text style={styles.label}>
+              {guidanceContext ? 'Your reflection' : 'Entry'}
+            </Text>
             <TextInput
               style={[styles.input, styles.textarea]}
-              placeholder="Write your thoughts…"
+              placeholder={
+                guidanceContext
+                  ? 'Write your reflection…'
+                  : 'Write your thoughts…'
+              }
               placeholderTextColor={theme.colors.muted}
               multiline
               value={content}
@@ -196,6 +288,27 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     marginBottom: 4,
     textAlign: 'left',
+  },
+
+  contextSource: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  contextBody: {
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  contextPractice: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.colors.border,
+    marginTop: 10,
+    paddingTop: 10,
+  },
+  contextStep: {
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 4,
   },
 
   fieldWrap: {
