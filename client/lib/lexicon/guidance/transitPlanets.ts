@@ -18,7 +18,7 @@ export const TRANSIT_PLANET_GUIDANCE: Record<
     constructive:
       'Identify the immediate need, then choose a response you can still support after the mood shifts.',
     watchFor:
-      'A temporary feeling may make familiar defenses seem more necessary than they are.',
+      'A temporary feeling may make habitual defenses seem more necessary than they are.',
   },
   Sun: {
     id: 'guidance.transit.sun',
@@ -68,7 +68,7 @@ export const TRANSIT_PLANET_GUIDANCE: Record<
     tags: ['action', 'boundaries', 'confidence', 'focus', 'power'],
     focus: 'initiative, effort, assertion, desire, and conflict',
     constructive:
-      'Use available effort for one direct, proportionate move that respects real limits.',
+      'Direct available effort toward one proportionate move that respects real limits.',
     watchFor:
       'Urgency may narrow the options until force looks simpler than timing or cooperation.',
   },

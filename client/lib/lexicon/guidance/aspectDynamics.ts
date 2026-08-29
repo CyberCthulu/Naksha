@@ -31,7 +31,7 @@ export const ASPECT_DYNAMIC_GUIDANCE: Record<
     warningModifier:
       'Watch for assigning one side entirely to someone else or swinging between opposite positions.',
     opportunityModifier:
-      'Use the contrast to define a boundary, exchange perspectives, or create a workable balance.',
+      'Let the contrast show what boundary, perspective, or workable balance the situation calls for.',
   },
   trine: {
     id: 'guidance.aspect.trine',
@@ -59,7 +59,7 @@ export const ASPECT_DYNAMIC_GUIDANCE: Record<
     warningModifier:
       'Watch for repeating the same forceful response when the underlying conflict requires a different method.',
     opportunityModifier:
-      'Use the friction to identify the blocked function and make one practical change in approach.',
+      'Let the friction reveal the blocked function, then make one practical change in approach.',
   },
   sextile: {
     id: 'guidance.aspect.sextile',

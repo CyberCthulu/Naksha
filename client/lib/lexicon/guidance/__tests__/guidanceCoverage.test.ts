@@ -109,6 +109,11 @@ const expectNonEmpty = (value: string) => {
   expect(value.trim()).not.toBe('')
 }
 
+const includesString = (
+  values: readonly string[],
+  expected: string
+): boolean => values.includes(expected)
+
 describe('guidance primitive coverage', () => {
   it('covers all required planets, aspects, signs, and houses', () => {
     expect(Object.keys(TRANSIT_PLANET_GUIDANCE)).toEqual(
@@ -175,6 +180,63 @@ describe('guidance primitive coverage', () => {
   it('preserves canonical opposition and square tones', () => {
     expect(ASPECT_DYNAMIC_GUIDANCE.opp.tone).toBe('integrative')
     expect(ASPECT_DYNAMIC_GUIDANCE.square.tone).toBe('challenging')
+    expect(ASPECT_DYNAMIC_GUIDANCE.opp.opportunityModifier).not.toMatch(
+      /^Use\b/
+    )
+    expect(ASPECT_DYNAMIC_GUIDANCE.square.opportunityModifier).not.toMatch(
+      /^Use\b/
+    )
+    expect(TRANSIT_PLANET_GUIDANCE.Mars.constructive).not.toMatch(
+      /^Use\b/
+    )
+  })
+
+  it('provides directly relevant Uranus and Pluto practices', () => {
+    const uranusPractices = SUGGESTED_PRACTICES.filter((practice) =>
+      includesString(practice.sourceIds, 'guidance.target.uranus')
+    )
+    const plutoPractices = SUGGESTED_PRACTICES.filter((practice) =>
+      includesString(practice.sourceIds, 'guidance.target.pluto')
+    )
+
+    expect(uranusPractices).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'guidance.practice.one-variable-experiment',
+          practiceCategory: 'creativity',
+        }),
+      ])
+    )
+    expect(
+      uranusPractices.some(
+        (practice) =>
+          includesString(practice.tags, 'change') &&
+          includesString(practice.tags, 'freedom')
+      )
+    ).toBe(true)
+    expect(
+      uranusPractices
+        .find(
+          (practice) =>
+            practice.id ===
+            'guidance.practice.one-variable-experiment'
+        )
+        ?.steps.join(' ')
+    ).not.toMatch(/\b(write|journal)\b/i)
+    expect(plutoPractices).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'guidance.practice.release-one-control',
+        }),
+      ])
+    )
+    expect(
+      plutoPractices.some(
+        (practice) =>
+          includesString(practice.tags, 'power') &&
+          includesString(practice.tags, 'transformation')
+      )
+    ).toBe(true)
   })
 
   it('keeps required prose fields non-empty', () => {

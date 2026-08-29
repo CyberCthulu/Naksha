@@ -166,6 +166,63 @@ describe('buildDailyGuidance', () => {
     )
   })
 
+  it('uses one planet-specific constructive fragment for a same-planet conjunction', () => {
+    const guidance = buildDailyGuidance({
+      natalPlanets: chartForMoonAspect('Moon', 0),
+      evaluatedAt: FIXED_DATE,
+    })
+
+    expect(guidance.primaryTransit).toEqual(
+      expect.objectContaining({
+        transitPlanet: 'Moon',
+        natalPlanet: 'Moon',
+        aspect: 'conj',
+      })
+    )
+    expect(guidance.opportunity.body).toContain(
+      ASPECT_DYNAMIC_GUIDANCE.conj.opportunityModifier
+    )
+    expect(guidance.opportunity.body).toContain(
+      TRANSIT_PLANET_GUIDANCE.Moon.constructive
+    )
+    expect(guidance.opportunity.body).not.toContain(
+      NATAL_TARGET_GUIDANCE.Moon.constructive
+    )
+    expect(guidance.opportunity.sourceIds).toEqual([
+      ASPECT_DYNAMIC_GUIDANCE.conj.id,
+      TRANSIT_PLANET_GUIDANCE.Moon.id,
+    ])
+  })
+
+  it('keeps both planet-specific constructive fragments for a different-planet conjunction', () => {
+    const guidance = buildDailyGuidance({
+      natalPlanets: chartForMoonAspect('Mars', 0),
+      evaluatedAt: FIXED_DATE,
+    })
+
+    expect(guidance.primaryTransit).toEqual(
+      expect.objectContaining({
+        transitPlanet: 'Moon',
+        natalPlanet: 'Mars',
+        aspect: 'conj',
+      })
+    )
+    expect(guidance.opportunity.body).toContain(
+      ASPECT_DYNAMIC_GUIDANCE.conj.opportunityModifier
+    )
+    expect(guidance.opportunity.body).toContain(
+      TRANSIT_PLANET_GUIDANCE.Moon.constructive
+    )
+    expect(guidance.opportunity.body).toContain(
+      NATAL_TARGET_GUIDANCE.Mars.constructive
+    )
+    expect(guidance.opportunity.sourceIds).toEqual([
+      ASPECT_DYNAMIC_GUIDANCE.conj.id,
+      TRANSIT_PLANET_GUIDANCE.Moon.id,
+      NATAL_TARGET_GUIDANCE.Mars.id,
+    ])
+  })
+
   it('uses canonical aspect tones for square and opposition guidance', () => {
     const square = buildDailyGuidance({
       natalPlanets: chartForMoonAspect('Mars', 90),

@@ -357,6 +357,38 @@ export const SUGGESTED_PRACTICES = [
     durationMinutes: 5,
     sourceIds: ['guidance.transit.venus', 'guidance.target.sun'],
   },
+  {
+    id: 'guidance.practice.one-variable-experiment',
+    category: 'practice',
+    practiceCategory: 'creativity',
+    tone: 'intensifying',
+    intensity: 'low',
+    tags: ['change', 'freedom', 'creativity', 'routines'],
+    title: 'One-variable experiment',
+    summary: 'Change one part of a familiar process and test the alternative once.',
+    steps: [
+      'Choose a low-stakes routine or task and change its order, location, tool, or route.',
+      'Try the alternative once and keep only what makes the process more useful.',
+    ],
+    durationMinutes: 10,
+    sourceIds: ['guidance.target.uranus'],
+  },
+  {
+    id: 'guidance.practice.release-one-control',
+    category: 'practice',
+    practiceCategory: 'focus',
+    tone: 'intensifying',
+    intensity: 'low',
+    tags: ['power', 'transformation', 'boundaries', 'awareness'],
+    title: 'Release one point of control',
+    summary: 'Loosen your grip on one low-stakes detail that does not require managing.',
+    steps: [
+      'Choose one outcome you are overmanaging and define the part that is actually yours.',
+      'Delegate, defer, or leave one nonessential detail alone for the rest of the day.',
+    ],
+    durationMinutes: 5,
+    sourceIds: ['guidance.target.pluto'],
+  },
 ] as const satisfies readonly SuggestedPractice[]
 
 export function getSuggestedPractice(id: string): SuggestedPractice | null {

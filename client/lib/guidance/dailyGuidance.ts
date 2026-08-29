@@ -203,11 +203,24 @@ export function buildDailyGuidance(
         [moonSign?.id ?? moonTransit.id]
       )
 
+  const samePlanetConjunction =
+    primary?.result.aspect === 'conj' &&
+    primary.result.transitPlanet === primary.result.natalPlanet
   const opportunity = primary
     ? section(
         'Opportunity',
-        `${primary.dynamic.opportunityModifier} ${primary.transit.constructive} ${primary.target.constructive}`,
-        [primary.dynamic.id, primary.transit.id, primary.target.id]
+        [
+          primary.dynamic.opportunityModifier,
+          primary.transit.constructive,
+          ...(samePlanetConjunction
+            ? []
+            : [primary.target.constructive]),
+        ].join(' '),
+        [
+          primary.dynamic.id,
+          primary.transit.id,
+          ...(samePlanetConjunction ? [] : [primary.target.id]),
+        ]
       )
     : section(
         'Opportunity',
