@@ -224,6 +224,15 @@ function makeWeeklyForecast(
   overrides: Partial<WeeklyForecast> = {}
 ): WeeklyForecast {
   const daily = makeDailyGuidance()
+  const rhythmTitles = [
+    'Moon square natal Mars',
+    'Mercury sextile natal Sun',
+    'Venus trine natal Moon',
+    'Mars square natal Mercury',
+    'Sun conjunct natal Venus',
+    'Moon trine natal Jupiter',
+    'Mercury conjunct natal Saturn',
+  ]
 
   return {
     schemaVersion: 1,
@@ -232,23 +241,23 @@ function makeWeeklyForecast(
     endDate: '2026-05-17',
     timeZone: completeUser.time_zone!,
     evaluatedAt: daily.evaluatedAt,
-    dailyThemes: [
-      {
-        date: '2026-05-11',
-        evaluatedAt: daily.evaluatedAt,
-        tone: daily.tone,
-        title: 'Moon square natal Mars',
-        summary: daily.transitSummary.body,
-        primaryTransit: daily.primaryTransit,
-        reflectionPrompt: daily.reflectionPrompt,
-        suggestedPractice: daily.suggestedPractice,
-        sourceIds: daily.sourceIds,
-      },
-    ],
+    dailyThemes: rhythmTitles.map((title, index) => ({
+      date: `2026-05-${String(11 + index).padStart(2, '0')}`,
+      evaluatedAt: daily.evaluatedAt,
+      tone: daily.tone,
+      title,
+      summary: daily.transitSummary.body,
+      primaryTransit: daily.primaryTransit,
+      reflectionPrompt: daily.reflectionPrompt,
+      suggestedPractice: daily.suggestedPractice,
+      sourceIds: daily.sourceIds,
+    })),
     strongestTransits: [
       {
         ...daily.primaryTransit!,
         date: '2026-05-11',
+        activeDays: 1,
+        significanceScore: 38,
       },
     ],
     weeklyThemes: [
@@ -261,6 +270,8 @@ function makeWeeklyForecast(
     ],
     suggestions: [daily.suggestedPractice],
     journalPrompts: [daily.reflectionPrompt],
+    representativePrompt: daily.reflectionPrompt,
+    representativePractice: daily.suggestedPractice,
     sourceIds: daily.sourceIds,
     ...overrides,
   }
@@ -902,6 +913,16 @@ describe('DashboardScreen', () => {
 
   it('expands and collapses Weekly Forecast details', async () => {
     const screen = await renderScreen()
+    const rhythmDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    const rhythmThemes = [
+      'Moon square natal Mars',
+      'Mercury sextile natal Sun',
+      'Venus trine natal Moon',
+      'Mars square natal Mercury',
+      'Sun conjunct natal Venus',
+      'Moon trine natal Jupiter',
+      'Mercury conjunct natal Saturn',
+    ]
     const showWeeklyDetails = findPressableByAccessibilityLabel(
       screen,
       'Expand Weekly Forecast details'
@@ -915,6 +936,9 @@ describe('DashboardScreen', () => {
     })
 
     expectText(screen, 'Weekly themes')
+    expectText(screen, 'Daily rhythm')
+    rhythmDays.forEach((day) => expectText(screen, day))
+    rhythmThemes.forEach((theme) => expectText(screen, theme))
     expectText(screen, 'Strongest transits')
     expectText(screen, 'Weekly reflection')
     expectText(screen, 'Use the friction')

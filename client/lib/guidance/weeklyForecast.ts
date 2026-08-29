@@ -1,8 +1,14 @@
 import { DateTime } from 'luxon'
-import type {
-  GuidanceTone,
-  ReflectionPrompt,
-  SuggestedPractice,
+import {
+  ASPECT_DYNAMIC_GUIDANCE,
+  NATAL_TARGET_GUIDANCE,
+  REFLECTION_PROMPTS,
+  SUGGESTED_PRACTICES,
+  TRANSIT_PLANET_GUIDANCE,
+  type GuidanceContentRecord,
+  type GuidanceTag,
+  type ReflectionPrompt,
+  type SuggestedPractice,
 } from '../lexicon/guidance'
 import { buildDailyGuidance } from './dailyGuidance'
 import type {
@@ -13,25 +19,15 @@ import type {
   WeeklyTheme,
   WeeklyTransitHighlight,
 } from './types'
+import {
+  buildWeeklyTransitHighlights,
+  type WeeklyTransitSnapshot,
+} from './weeklyTransitEvents'
 
 const DAYS_PER_WEEK = 7
-const MAX_STRONGEST_TRANSITS = 5
 const MAX_WEEKLY_THEMES = 3
 const MAX_PROMPTS = 3
 const MAX_PRACTICES = 3
-
-const TONE_PRIORITY: GuidanceTone[] = [
-  'challenging',
-  'intensifying',
-  'supportive',
-  'integrative',
-]
-
-const INTENSITY_WEIGHT = {
-  high: 3,
-  medium: 2,
-  low: 1,
-} as const
 
 const ASPECT_TITLES = {
   conj: 'conjunct',
@@ -41,26 +37,11 @@ const ASPECT_TITLES = {
   sextile: 'sextile',
 } as const
 
-const TONE_COPY: Record<
-  GuidanceTone,
-  { title: string; body: string }
-> = {
-  supportive: {
-    title: 'Openings to develop',
-    body: 'Supportive openings recur this week. Notice what is flowing, then participate with a clear and proportionate step.',
-  },
-  challenging: {
-    title: 'Adjustments to make',
-    body: 'Some days emphasize friction or competing needs. Treat that pressure as information and choose practical adjustments over force.',
-  },
-  intensifying: {
-    title: 'Focused energy',
-    body: 'Certain themes may feel concentrated this week. Give them deliberate attention without allowing one concern to take over the whole picture.',
-  },
-  integrative: {
-    title: 'Balance and integration',
-    body: 'The week favors reflection, balance, and steady integration. Make room for more than one valid need before deciding what comes next.',
-  },
+type SelectableGuidance = Pick<
+  GuidanceContentRecord,
+  'id' | 'tags' | 'tone'
+> & {
+  sourceIds: readonly string[]
 }
 
 function unique(values: readonly string[]): string[] {
@@ -97,9 +78,7 @@ function buildDayTheme(
     ? `${primary.transitPlanet} ${
         ASPECT_TITLES[primary.aspect]
       } natal ${primary.natalPlanet}`
-    : `${
-        guidance.transitMoonSign ?? 'Daily'
-      } Moon background`
+    : `${guidance.transitMoonSign ?? 'Daily'} Moon background`
 
   return {
     date: localDate,
@@ -124,42 +103,30 @@ function transitKey(transit: WeeklyTransitHighlight): string {
   ].join(':')
 }
 
-function strongestTransits(
-  dailyThemes: readonly WeeklyDayTheme[]
-): WeeklyTransitHighlight[] {
-  const byTransit = new Map<string, WeeklyTransitHighlight>()
+function themeForTransit(
+  transit: WeeklyTransitHighlight
+): WeeklyTheme {
+  const transitGuidance =
+    TRANSIT_PLANET_GUIDANCE[transit.transitPlanet]
+  const targetGuidance = NATAL_TARGET_GUIDANCE[transit.natalPlanet]
+  const dynamic = ASPECT_DYNAMIC_GUIDANCE[transit.aspect]
+  const persistence =
+    transit.activeDays > 1
+      ? `This pattern remains within a focused orb across ${transit.activeDays} daily snapshots.`
+      : 'This pattern is concentrated around one daily snapshot.'
 
-  dailyThemes.forEach((day) => {
-    if (!day.primaryTransit) return
-
-    const candidate = {
-      ...day.primaryTransit,
-      sourceIds: [...day.primaryTransit.sourceIds],
-      date: day.date,
-    }
-    const key = transitKey(candidate)
-    const existing = byTransit.get(key)
-
-    if (
-      !existing ||
-      candidate.orb < existing.orb ||
-      (candidate.orb === existing.orb &&
-        candidate.date < existing.date)
-    ) {
-      byTransit.set(key, candidate)
-    }
-  })
-
-  return [...byTransit.values()]
-    .sort(
-      (a, b) =>
-        INTENSITY_WEIGHT[b.intensity] -
-          INTENSITY_WEIGHT[a.intensity] ||
-        a.orb - b.orb ||
-        transitKey(a).localeCompare(transitKey(b)) ||
-        a.date.localeCompare(b.date)
-    )
-    .slice(0, MAX_STRONGEST_TRANSITS)
+  return {
+    title: `${transit.transitPlanet} ${
+      ASPECT_TITLES[transit.aspect]
+    } natal ${transit.natalPlanet}`,
+    body: `${persistence} ${dynamic.summary} It connects ${transitGuidance.focus} with ${targetGuidance.activation}.`,
+    tone: transit.tone,
+    sourceIds: unique([
+      transitGuidance.id,
+      targetGuidance.id,
+      dynamic.id,
+    ]),
+  }
 }
 
 function aggregateWeeklyThemes(
@@ -179,28 +146,76 @@ function aggregateWeeklyThemes(
     ]
   }
 
-  const toneCounts = new Map<GuidanceTone, number>()
-  dailyThemes.forEach((day) => {
-    toneCounts.set(day.tone, (toneCounts.get(day.tone) ?? 0) + 1)
+  return transits.slice(0, MAX_WEEKLY_THEMES).map(themeForTransit)
+}
+
+function stableHash(value: string): number {
+  let hash = 2166136261
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+
+  return hash >>> 0
+}
+
+function patternRecords(transit: WeeklyTransitHighlight) {
+  return [
+    TRANSIT_PLANET_GUIDANCE[transit.transitPlanet],
+    NATAL_TARGET_GUIDANCE[transit.natalPlanet],
+    ASPECT_DYNAMIC_GUIDANCE[transit.aspect],
+  ]
+}
+
+function selectForWeeklyPattern<T extends SelectableGuidance>(
+  records: readonly T[],
+  transit: WeeklyTransitHighlight,
+  seed: string
+): T {
+  const pattern = patternRecords(transit)
+  const sourceIds = pattern.map((record) => record.id)
+  const tags = unique(
+    pattern.flatMap((record) => [...record.tags])
+  ) as GuidanceTag[]
+  const ranked = records.map((record) => {
+    const sourceMatches = record.sourceIds.filter((sourceId) =>
+      sourceIds.includes(sourceId)
+    ).length
+    const tagMatches = record.tags.filter((tag) =>
+      tags.includes(tag)
+    ).length
+
+    return {
+      record,
+      score:
+        sourceMatches * 100 +
+        tagMatches * 10 +
+        (record.tone === transit.tone ? 1 : 0),
+    }
+  })
+  const highestScore = Math.max(...ranked.map(({ score }) => score))
+  const candidates = ranked
+    .filter(({ score }) => score === highestScore)
+    .map(({ record }) => record)
+    .sort((a, b) => a.id.localeCompare(b.id))
+
+  return candidates[stableHash(seed) % candidates.length]
+}
+
+function mostFrequentById<T extends { id: string }>(
+  values: readonly T[]
+): T {
+  const counts = new Map<string, number>()
+  values.forEach((value) => {
+    counts.set(value.id, (counts.get(value.id) ?? 0) + 1)
   })
 
-  return [...toneCounts.entries()]
-    .sort(
-      ([toneA, countA], [toneB, countB]) =>
-        countB - countA ||
-        TONE_PRIORITY.indexOf(toneA) -
-          TONE_PRIORITY.indexOf(toneB)
-    )
-    .slice(0, MAX_WEEKLY_THEMES)
-    .map(([tone]) => ({
-      ...TONE_COPY[tone],
-      tone,
-      sourceIds: unique(
-        dailyThemes
-          .filter((day) => day.tone === tone)
-          .flatMap((day) => day.sourceIds)
-      ),
-    }))
+  return [...values].sort(
+    (a, b) =>
+      (counts.get(b.id) ?? 0) - (counts.get(a.id) ?? 0) ||
+      a.id.localeCompare(b.id)
+  )[0]
 }
 
 function distinctById<T extends { id: string }>(
@@ -220,12 +235,18 @@ function distinctById<T extends { id: string }>(
   return result
 }
 
+function chartSeed(input: BuildWeeklyForecastInput): string {
+  return input.natalPlanets
+    .map((planet) => `${planet.name}:${planet.lon.toFixed(6)}`)
+    .join('|')
+}
+
 export function buildWeeklyForecast(
   input: BuildWeeklyForecastInput
 ): WeeklyForecast {
   const localEvaluation = validateInput(input)
   const weekStart = localEvaluation.startOf('week').startOf('day')
-  const dailyThemes = Array.from(
+  const snapshots = Array.from(
     { length: DAYS_PER_WEEK },
     (_, index) => {
       const localNoon = weekStart.plus({ days: index }).set({
@@ -234,28 +255,68 @@ export function buildWeeklyForecast(
         second: 0,
         millisecond: 0,
       })
-      const localDate = requireIsoDate(localNoon.toISODate())
-      const guidance = buildDailyGuidance({
-        natalPlanets: input.natalPlanets,
-        evaluatedAt: localNoon.toJSDate(),
-        timeZone: input.timeZone,
-        orbMode: input.orbMode,
-      })
 
-      return buildDayTheme(guidance, localDate)
+      return {
+        date: requireIsoDate(localNoon.toISODate()),
+        evaluatedAt: localNoon.toJSDate(),
+      } satisfies WeeklyTransitSnapshot
     }
   )
-  const strongest = strongestTransits(dailyThemes)
+  const dailyThemes = snapshots.map((snapshot) => {
+    const guidance = buildDailyGuidance({
+      natalPlanets: input.natalPlanets,
+      evaluatedAt: snapshot.evaluatedAt,
+      timeZone: input.timeZone,
+      orbMode: input.orbMode,
+    })
+
+    return buildDayTheme(guidance, snapshot.date)
+  })
+  const strongest = buildWeeklyTransitHighlights({
+    natalPlanets: input.natalPlanets,
+    snapshots,
+    orbMode: input.orbMode,
+  })
   const weeklyThemes = aggregateWeeklyThemes(
     dailyThemes,
     strongest
   )
-  const journalPrompts: ReflectionPrompt[] = distinctById(
-    dailyThemes.map((day) => day.reflectionPrompt),
+  const topTransit = strongest[0]
+  const selectionSeed = [
+    requireIsoDate(weekStart.toISODate()),
+    topTransit ? transitKey(topTransit) : 'background-rhythm',
+    chartSeed(input),
+  ].join('|')
+  const representativePrompt: ReflectionPrompt = topTransit
+    ? selectForWeeklyPattern(
+        REFLECTION_PROMPTS,
+        topTransit,
+        `${selectionSeed}|prompt`
+      )
+    : mostFrequentById(
+        dailyThemes.map((day) => day.reflectionPrompt)
+      )
+  const representativePractice: SuggestedPractice = topTransit
+    ? selectForWeeklyPattern(
+        SUGGESTED_PRACTICES,
+        topTransit,
+        `${selectionSeed}|practice`
+      )
+    : mostFrequentById(
+        dailyThemes.map((day) => day.suggestedPractice)
+      )
+  const journalPrompts = distinctById(
+    [
+      representativePrompt,
+      ...dailyThemes.map((day) => day.reflectionPrompt),
+    ],
     MAX_PROMPTS
   )
-  const suggestions: SuggestedPractice[] = distinctById(
-    dailyThemes.map((day) => day.suggestedPractice),
+  const suggestions = distinctById(
+    [
+      representativePractice,
+      ...dailyThemes.map((day) => day.suggestedPractice),
+    ],
     MAX_PRACTICES
   )
   const sourceIds = unique([
@@ -270,6 +331,10 @@ export function buildWeeklyForecast(
       practice.id,
       ...practice.sourceIds,
     ]),
+    representativePrompt.id,
+    ...representativePrompt.sourceIds,
+    representativePractice.id,
+    ...representativePractice.sourceIds,
   ])
 
   return {
@@ -286,6 +351,8 @@ export function buildWeeklyForecast(
     weeklyThemes,
     suggestions,
     journalPrompts,
+    representativePrompt,
+    representativePractice,
     sourceIds,
   }
 }

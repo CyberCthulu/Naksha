@@ -2,6 +2,7 @@ import type { AspectOrbMode, PlanetPos } from '../astro'
 import type { DailyTransitPlanetName } from '../dailyTransits'
 import type { AspectType, PlanetKey, ZodiacName } from '../lexicon'
 import type {
+  GuidanceTransitPlanet,
   GuidanceIntensity,
   GuidanceTone,
   ReflectionPrompt,
@@ -68,8 +69,17 @@ export type WeeklyDayTheme = {
   sourceIds: string[]
 }
 
-export type WeeklyTransitHighlight = DailyGuidanceTransit & {
+export type WeeklyTransitHighlight = {
+  transitPlanet: GuidanceTransitPlanet
+  natalPlanet: PlanetKey
+  aspect: AspectType
+  orb: number
+  tone: GuidanceTone
+  intensity: GuidanceIntensity
+  sourceIds: string[]
   date: string
+  activeDays: number
+  significanceScore: number
 }
 
 export type WeeklyTheme = DailyGuidanceSection & {
@@ -88,5 +98,7 @@ export type WeeklyForecast = {
   weeklyThemes: WeeklyTheme[]
   suggestions: SuggestedPractice[]
   journalPrompts: ReflectionPrompt[]
+  representativePrompt: ReflectionPrompt
+  representativePractice: SuggestedPractice
   sourceIds: string[]
 }

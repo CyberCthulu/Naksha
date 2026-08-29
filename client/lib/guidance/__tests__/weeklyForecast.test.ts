@@ -1,4 +1,4 @@
-import type { PlanetPos } from '../../astro'
+import { computeTransitPlanets, type PlanetPos } from '../../astro'
 import {
   ASPECT_DYNAMIC_GUIDANCE,
   HOUSE_GUIDANCE,
@@ -37,6 +37,43 @@ function input(
     timeZone: TIME_ZONE,
     ...overrides,
   }
+}
+
+function transitLongitude(name: string, evaluatedAt: Date): number {
+  const planet = computeTransitPlanets(evaluatedAt).find(
+    (candidate) => candidate.name === name
+  )
+
+  if (!planet) throw new Error(`Missing transit planet ${name}`)
+  return planet.lon
+}
+
+function weeklyRelevantNatalPlanets({
+  includeMoonEvent = false,
+}: {
+  includeMoonEvent?: boolean
+} = {}): PlanetPos[] {
+  const midweekNoon = new Date('2026-05-13T19:00:00.000Z')
+  const mondayNoon = new Date('2026-05-11T19:00:00.000Z')
+
+  return [
+    {
+      name: 'Sun',
+      lon: transitLongitude('Jupiter', midweekNoon),
+    },
+    {
+      name: 'Moon',
+      lon: transitLongitude('Saturn', midweekNoon),
+    },
+    ...(includeMoonEvent
+      ? [
+          {
+            name: 'Mars',
+            lon: transitLongitude('Moon', mondayNoon),
+          },
+        ]
+      : []),
+  ]
 }
 
 describe('buildWeeklyForecast', () => {
@@ -108,44 +145,138 @@ describe('buildWeeklyForecast', () => {
     expect(new Set(practiceIds).size).toBe(practiceIds.length)
   })
 
-  it('deduplicates repeated primary transit keys and retains their lowest orb', () => {
+  it('includes eligible Jupiter and Saturn events in weekly highlights', () => {
     const forecast = buildWeeklyForecast(
       input({
-        natalPlanets: [{ name: 'Sun', lon: 54 }],
+        natalPlanets: weeklyRelevantNatalPlanets(),
       })
     )
-    const dailyPrimary = forecast.dailyThemes
-      .map((day) =>
-        day.primaryTransit
-          ? { ...day.primaryTransit, date: day.date }
-          : null
-      )
-      .filter((transit) => transit != null)
-    const dailyKeys = dailyPrimary.map(
+
+    expect(forecast.strongestTransits).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          transitPlanet: 'Jupiter',
+          aspect: 'conj',
+          natalPlanet: 'Sun',
+        }),
+        expect.objectContaining({
+          transitPlanet: 'Saturn',
+          aspect: 'conj',
+          natalPlanet: 'Moon',
+        }),
+      ])
+    )
+  })
+
+  it('ranks weekly-relevant events ahead of the Moon and caps Moon highlights', () => {
+    const forecast = buildWeeklyForecast(
+      input({
+        natalPlanets: weeklyRelevantNatalPlanets({
+          includeMoonEvent: true,
+        }),
+      })
+    )
+    const slowPlanetIndex = forecast.strongestTransits.findIndex(
       (transit) =>
-        `${transit.transitPlanet}:${transit.aspect}:${transit.natalPlanet}`
+        transit.transitPlanet === 'Jupiter' ||
+        transit.transitPlanet === 'Saturn'
+    )
+    const moonIndexes = forecast.strongestTransits.flatMap(
+      (transit, index) =>
+        transit.transitPlanet === 'Moon' ? [index] : []
+    )
+
+    expect(slowPlanetIndex).toBe(0)
+    expect(moonIndexes.length).toBeLessThanOrEqual(1)
+    if (moonIndexes.length > 0) {
+      expect(slowPlanetIndex).toBeLessThan(moonIndexes[0])
+    }
+  })
+
+  it('deduplicates persistent slow events and keeps their minimum-orb snapshot', () => {
+    const forecast = buildWeeklyForecast(
+      input({ natalPlanets: weeklyRelevantNatalPlanets() })
     )
     const highlightKeys = forecast.strongestTransits.map(
       (transit) =>
         `${transit.transitPlanet}:${transit.aspect}:${transit.natalPlanet}`
     )
+    const jupiterEvent = forecast.strongestTransits.find(
+      (transit) =>
+        transit.transitPlanet === 'Jupiter' &&
+        transit.aspect === 'conj' &&
+        transit.natalPlanet === 'Sun'
+    )
 
-    expect(new Set(dailyKeys).size).toBeLessThan(dailyKeys.length)
     expect(new Set(highlightKeys).size).toBe(highlightKeys.length)
     expect(forecast.strongestTransits.length).toBeLessThanOrEqual(5)
+    expect(jupiterEvent).toEqual(
+      expect.objectContaining({
+        date: '2026-05-13',
+        orb: 0,
+      })
+    )
+    expect(jupiterEvent?.activeDays).toBeGreaterThan(1)
+    expect(
+      forecast.strongestTransits.filter(
+        (transit) => transit.transitPlanet === 'Jupiter'
+      ).length
+    ).toBeLessThanOrEqual(2)
+  })
 
-    forecast.strongestTransits.forEach((highlight) => {
-      const key = `${highlight.transitPlanet}:${highlight.aspect}:${highlight.natalPlanet}`
-      const matchingOrbs = dailyPrimary
-        .filter(
-          (transit) =>
-            `${transit.transitPlanet}:${transit.aspect}:${transit.natalPlanet}` ===
-            key
-        )
-        .map((transit) => transit.orb)
-
-      expect(highlight.orb).toBe(Math.min(...matchingOrbs))
+  it('sorts highlights deterministically by weekly significance', () => {
+    const forecastInput = input({
+      natalPlanets: weeklyRelevantNatalPlanets({
+        includeMoonEvent: true,
+      }),
     })
+    const first = buildWeeklyForecast(forecastInput)
+    const second = buildWeeklyForecast(forecastInput)
+    const scores = first.strongestTransits.map(
+      (transit) => transit.significanceScore
+    )
+
+    expect(first.strongestTransits).toEqual(second.strongestTransits)
+    expect(scores).toEqual([...scores].sort((a, b) => b - a))
+  })
+
+  it('derives weekly themes and reflection from the strongest weekly pattern', () => {
+    const forecastInput = input({
+      natalPlanets: weeklyRelevantNatalPlanets(),
+    })
+    const first = buildWeeklyForecast(forecastInput)
+    const second = buildWeeklyForecast(forecastInput)
+    const topTransit = first.strongestTransits[0]
+    const topTheme = first.weeklyThemes[0]
+
+    expect(topTheme.title).toBe(
+      `${topTransit.transitPlanet} conjunct natal ${topTransit.natalPlanet}`
+    )
+    expect(topTheme.body).toContain(
+      `${topTransit.activeDays} daily snapshots`
+    )
+    expect(topTheme.sourceIds).toEqual(
+      expect.arrayContaining(topTransit.sourceIds)
+    )
+    expect(topTheme.title).not.toBe('Openings to develop')
+    expect(topTheme.title).not.toBe('Adjustments to make')
+    expect(first.representativePrompt).toEqual(
+      second.representativePrompt
+    )
+    expect(first.representativePractice).toEqual(
+      second.representativePractice
+    )
+    expect(first.journalPrompts[0]).toEqual(
+      first.representativePrompt
+    )
+    expect(first.suggestions[0]).toEqual(
+      first.representativePractice
+    )
+    expect(
+      first.representativePrompt.sourceIds.some((sourceId) =>
+        topTransit.sourceIds.includes(sourceId)
+      )
+    ).toBe(true)
   })
 
   it('returns a usable background forecast when no personal aspects exist', () => {
@@ -169,6 +300,12 @@ describe('buildWeeklyForecast', () => {
     )
     expect(forecast.journalPrompts.length).toBeGreaterThan(0)
     expect(forecast.suggestions.length).toBeGreaterThan(0)
+    expect(forecast.representativePrompt.id).toBe(
+      forecast.journalPrompts[0].id
+    )
+    expect(forecast.representativePractice.id).toBe(
+      forecast.suggestions[0].id
+    )
   })
 
   it('does not depend on wall-clock time or mutate its input', () => {

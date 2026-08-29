@@ -49,6 +49,15 @@ function formatDate(value: string): string {
   return `${monthName} ${day}, ${year}`
 }
 
+function formatWeekday(value: string): string {
+  const [year, month, day] = value.split('-').map(Number)
+
+  if (!year || !month || !day) return value
+  return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][
+    new Date(Date.UTC(year, month - 1, day)).getUTCDay()
+  ]
+}
+
 function TransitHighlight({
   transit,
 }: {
@@ -61,7 +70,9 @@ function TransitHighlight({
         {transit.natalPlanet}
       </AppText>
       <MutedText style={styles.body}>
-        {formatDate(transit.date)} | {transit.orb.toFixed(1)}° orb
+        {formatDate(transit.date)} | {transit.orb.toFixed(1)}° orb |{' '}
+        {transit.activeDays}{' '}
+        {transit.activeDays === 1 ? 'snapshot' : 'snapshots'}
       </MutedText>
     </View>
   )
@@ -80,8 +91,8 @@ export function WeeklyForecastCard({
   const [expanded, setExpanded] = useState(false)
   const topTheme = forecast.weeklyThemes[0]
   const topTransit = forecast.strongestTransits[0]
-  const reflectionPrompt = forecast.journalPrompts[0]
-  const reflectionPractice = forecast.suggestions[0]
+  const reflectionPrompt = forecast.representativePrompt
+  const reflectionPractice = forecast.representativePractice
 
   return (
     <Card>
@@ -149,6 +160,20 @@ export function WeeklyForecastCard({
               >
                 <AppText style={styles.itemTitle}>{theme.title}</AppText>
                 <MutedText style={styles.body}>{theme.body}</MutedText>
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.section}>
+            <AppText style={styles.sectionTitle}>Daily rhythm</AppText>
+            {forecast.dailyThemes.map((day) => (
+              <View key={day.date} style={styles.rhythmRow}>
+                <AppText style={styles.rhythmDay}>
+                  {formatWeekday(day.date)}
+                </AppText>
+                <MutedText numberOfLines={1} style={styles.rhythmTheme}>
+                  {day.title}
+                </MutedText>
               </View>
             ))}
           </View>
@@ -274,6 +299,21 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   body: {
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  rhythmRow: {
+    flexDirection: 'row',
+    marginTop: 7,
+    minHeight: 19,
+  },
+  rhythmDay: {
+    fontSize: 13,
+    fontWeight: '600',
+    width: 38,
+  },
+  rhythmTheme: {
+    flex: 1,
     fontSize: 13,
     lineHeight: 19,
   },
