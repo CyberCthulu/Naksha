@@ -9,11 +9,11 @@ export const NATAL_TARGET_GUIDANCE: Record<PlanetKey, NatalTargetGuidance> = {
     tone: 'integrative',
     intensity: 'high',
     tags: ['identity', 'confidence', 'focus', 'creativity'],
-    activation: 'identity, confidence, visibility, and sense of direction',
+    activation: 'purpose, self-definition, visibility, and conscious direction',
     constructive:
-      'Act from a clear sense of purpose without requiring immediate recognition.',
+      'Choose the direction because it fits who you intend to be, not because it guarantees recognition.',
     watchFor:
-      'A need to prove yourself may make the moment feel more personal than necessary.',
+      'Feedback may feel like a judgment of the whole self instead of information about one choice.',
   },
   Moon: {
     id: 'guidance.target.moon',
@@ -22,11 +22,11 @@ export const NATAL_TARGET_GUIDANCE: Record<PlanetKey, NatalTargetGuidance> = {
     tone: 'integrative',
     intensity: 'high',
     tags: ['emotions', 'security', 'home', 'rest', 'awareness'],
-    activation: 'feelings, security, habits, belonging, and familiar responses',
+    activation: 'emotional memory, belonging, regulation, and familiar responses',
     constructive:
-      'Name the underlying need and choose a response that supports emotional steadiness.',
+      'Support the present need without assuming an old protective habit is still required.',
     watchFor:
-      'Old habits may feel safer than a response that better fits the present.',
+      'Familiarity may be mistaken for safety even when the current situation asks for something different.',
   },
   Mercury: {
     id: 'guidance.target.mercury',
@@ -35,11 +35,11 @@ export const NATAL_TARGET_GUIDANCE: Record<PlanetKey, NatalTargetGuidance> = {
     tone: 'integrative',
     intensity: 'medium',
     tags: ['communication', 'decisions', 'learning', 'focus'],
-    activation: 'thoughts, communication style, decisions, and interpretation',
+    activation: 'mental framing, language, learning, and decision-making',
     constructive:
-      'Separate what you know from what you assume before communicating or deciding.',
+      'Revise the interpretation when new information appears, then communicate the updated view clearly.',
     watchFor:
-      'Overthinking or reacting to incomplete information may obscure the useful point.',
+      'A clever explanation may become more persuasive than the evidence supporting it.',
   },
   Venus: {
     id: 'guidance.target.venus',
@@ -48,11 +48,11 @@ export const NATAL_TARGET_GUIDANCE: Record<PlanetKey, NatalTargetGuidance> = {
     tone: 'integrative',
     intensity: 'medium',
     tags: ['relationships', 'values', 'resources', 'self-worth', 'gratitude'],
-    activation: 'relationships, values, pleasure, self-worth, and resources',
+    activation: 'standards of worth, attraction, reciprocity, receiving, and material preferences',
     constructive:
-      'Choose what reflects mutual respect and the values you want to live by.',
+      'Let choices show what you value while leaving room for mutual preference and consent.',
     watchFor:
-      'Approval, comfort, or comparison may temporarily blur what matters to you.',
+      'Comparison or fear of disappointing someone may distort what feels fair or worthwhile.',
   },
   Mars: {
     id: 'guidance.target.mars',
@@ -61,11 +61,11 @@ export const NATAL_TARGET_GUIDANCE: Record<PlanetKey, NatalTargetGuidance> = {
     tone: 'intensifying',
     intensity: 'high',
     tags: ['action', 'boundaries', 'confidence', 'power', 'focus'],
-    activation: 'drive, courage, anger, desire, and personal boundaries',
+    activation: 'assertion, anger, desire, stamina, and defensive responses',
     constructive:
-      'Use direct energy for a clear action rather than letting it scatter into conflict.',
+      'State the aim or limit directly, then spend effort on the part you can actually influence.',
     watchFor:
-      'Defensiveness or urgency may make cooperation feel harder than it is.',
+      'A challenge may be treated as a contest, even when coordination would serve the aim better.',
   },
   Jupiter: {
     id: 'guidance.target.jupiter',
@@ -74,11 +74,11 @@ export const NATAL_TARGET_GUIDANCE: Record<PlanetKey, NatalTargetGuidance> = {
     tone: 'supportive',
     intensity: 'medium',
     tags: ['growth', 'beliefs', 'learning', 'perspective'],
-    activation: 'growth, belief, opportunity, meaning, and confidence',
+    activation: 'beliefs, judgment, trust, risk appetite, and the search for meaning',
     constructive:
-      'Let curiosity widen your options while keeping promises proportionate.',
+      'Use a wider perspective to test what is possible without confusing possibility with certainty.',
     watchFor:
-      'Optimism may skip over useful limits, details, or another point of view.',
+      'A strong belief may dismiss contrary evidence or make a promise larger than your capacity.',
   },
   Saturn: {
     id: 'guidance.target.saturn',
@@ -87,11 +87,11 @@ export const NATAL_TARGET_GUIDANCE: Record<PlanetKey, NatalTargetGuidance> = {
     tone: 'challenging',
     intensity: 'high',
     tags: ['responsibility', 'structure', 'boundaries', 'work'],
-    activation: 'responsibility, limits, discipline, patience, and mastery',
+    activation: 'duty, authority, time, standards, and earned competence',
     constructive:
-      'Turn pressure into a realistic structure with one clear next step.',
+      'Distinguish the real obligation from inherited pressure, then build a standard you can maintain.',
     watchFor:
-      'Fear of falling short may become avoidance, rigidity, or excessive self-judgment.',
+      'Fear of falling short may turn preparation into delay or standards into punishment.',
   },
   Uranus: {
     id: 'guidance.target.uranus',
@@ -100,11 +100,11 @@ export const NATAL_TARGET_GUIDANCE: Record<PlanetKey, NatalTargetGuidance> = {
     tone: 'intensifying',
     intensity: 'high',
     tags: ['change', 'awareness', 'freedom', 'perspective'],
-    activation: 'freedom, disruption, originality, and readiness for change',
+    activation: 'autonomy, experimentation, disruption, and your relationship to change',
     constructive:
-      'Experiment with one flexible change instead of overturning everything at once.',
+      'Test one unconventional option while preserving what still serves a useful purpose.',
     watchFor:
-      'Restlessness may treat every limit as a problem rather than useful information.',
+      'Restlessness may reject continuity simply because novelty feels more alive.',
   },
   Neptune: {
     id: 'guidance.target.neptune',
@@ -113,11 +113,11 @@ export const NATAL_TARGET_GUIDANCE: Record<PlanetKey, NatalTargetGuidance> = {
     tone: 'integrative',
     intensity: 'medium',
     tags: ['imagination', 'compassion', 'creativity', 'grounding'],
-    activation: 'imagination, compassion, ideals, sensitivity, and ambiguity',
+    activation: 'imagination, empathy, ideals, ambiguity, and perceptual boundaries',
     constructive:
-      'Give inspiration a simple form and verify assumptions before acting on them.',
+      'Give the impression or ideal a concrete form that can be observed, discussed, or revised.',
     watchFor:
-      'Hope, projection, or porous boundaries may make the situation harder to read.',
+      'Hope or projection may supply missing details and make a preference feel like a fact.',
   },
   Pluto: {
     id: 'guidance.target.pluto',
@@ -126,11 +126,11 @@ export const NATAL_TARGET_GUIDANCE: Record<PlanetKey, NatalTargetGuidance> = {
     tone: 'intensifying',
     intensity: 'high',
     tags: ['power', 'transformation', 'boundaries', 'awareness'],
-    activation: 'power, control, depth, release, and transformation',
+    activation: 'control, trust, compulsion, disclosure, and release',
     constructive:
-      'Focus on the choice you can make now instead of forcing complete control.',
+      'Name what cannot be controlled, then use your influence deliberately and proportionately.',
     watchFor:
-      'Intensity may encourage all-or-nothing thinking or a struggle over control.',
+      'Pressure may turn privacy into secrecy or influence into a contest for total control.',
   },
 }
 

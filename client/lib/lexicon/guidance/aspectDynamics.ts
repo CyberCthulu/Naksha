@@ -13,11 +13,11 @@ export const ASPECT_DYNAMIC_GUIDANCE: Record<
     intensity: 'high',
     tags: ['focus', 'integration', 'awareness'],
     actionMode: 'blend',
-    summary: 'Two themes are amplified and ask to be handled together.',
+    summary: 'Two functions converge, increasing concentration without deciding how that concentration will be used.',
     warningModifier:
-      'Watch for one theme crowding out the other or becoming more urgent than needed.',
+      'Watch for overidentifying with the combined theme or letting it crowd out the wider context.',
     opportunityModifier:
-      'Use the added concentration to make one aligned choice with clear intention.',
+      'Coordinate the two functions deliberately and give the added concentration a specific purpose.',
   },
   opp: {
     id: 'guidance.aspect.opp',
@@ -27,11 +27,11 @@ export const ASPECT_DYNAMIC_GUIDANCE: Record<
     intensity: 'high',
     tags: ['relationships', 'boundaries', 'perspective', 'integration'],
     actionMode: 'balance',
-    summary: 'A polarity is visible and benefits from balance rather than either extreme.',
+    summary: 'Contrast makes competing needs visible and asks for negotiation between them.',
     warningModifier:
-      'Watch for projecting one side of the tension onto another person or situation.',
+      'Watch for assigning one side entirely to someone else or swinging between opposite positions.',
     opportunityModifier:
-      'Hold both needs in view and look for a response that respects the full picture.',
+      'Use the contrast to define a boundary, exchange perspectives, or create a workable balance.',
   },
   trine: {
     id: 'guidance.aspect.trine',
@@ -41,11 +41,11 @@ export const ASPECT_DYNAMIC_GUIDANCE: Record<
     intensity: 'medium',
     tags: ['growth', 'confidence', 'creativity', 'integration'],
     actionMode: 'flow',
-    summary: 'Energy moves with relative ease and can support natural strengths.',
+    summary: 'Low resistance lets two functions cooperate, making an existing capacity easier to use.',
     warningModifier:
-      'Watch for assuming ease will create progress without your participation.',
+      'Watch for relying on familiarity or talent without directing it toward a meaningful result.',
     opportunityModifier:
-      'Use what is already flowing to take a constructive step or reinforce a skill.',
+      'Apply the available ease to reinforce a skill, relationship, or useful piece of work.',
   },
   square: {
     id: 'guidance.aspect.square',
@@ -55,11 +55,11 @@ export const ASPECT_DYNAMIC_GUIDANCE: Record<
     intensity: 'high',
     tags: ['action', 'change', 'boundaries', 'growth'],
     actionMode: 'adjust',
-    summary: 'Friction highlights where an adjustment or new skill may be useful.',
+    summary: 'Two demands interfere with each other, creating pressure for an adjustment or new skill.',
     warningModifier:
-      'Watch for forcing movement before the real source of tension is understood.',
+      'Watch for repeating the same forceful response when the underlying conflict requires a different method.',
     opportunityModifier:
-      'Turn discomfort into one practical adjustment rather than treating it as failure.',
+      'Use the friction to identify the blocked function and make one practical change in approach.',
   },
   sextile: {
     id: 'guidance.aspect.sextile',
@@ -69,11 +69,11 @@ export const ASPECT_DYNAMIC_GUIDANCE: Record<
     intensity: 'low',
     tags: ['growth', 'learning', 'communication', 'awareness'],
     actionMode: 'engage',
-    summary: 'A useful opening is available and responds to modest effort.',
+    summary: 'Two functions can assist each other, but the opening becomes useful through participation.',
     warningModifier:
-      'Watch for overlooking a quiet option because it does not demand attention.',
+      'Watch for overlooking the option because it arrives as an invitation rather than pressure.',
     opportunityModifier:
-      'Engage the opening with a small, timely action and let momentum build.',
+      'Make a modest, timely move that connects the available resources and tests the possibility.',
   },
 }
 

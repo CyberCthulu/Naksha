@@ -14,11 +14,11 @@ export const TRANSIT_PLANET_GUIDANCE: Record<
     tone: 'intensifying',
     intensity: 'medium',
     tags: ['emotions', 'awareness', 'security', 'rest', 'grounding'],
-    focus: 'emotional weather, instinctive responses, and immediate needs',
+    focus: 'immediate feelings, instinctive reactions, comfort, and belonging',
     constructive:
-      'Notice what your feelings are asking for before deciding how to respond.',
+      'Identify the immediate need, then choose a response you can still support after the mood shifts.',
     watchFor:
-      'A passing mood may feel more permanent or urgent than it really is.',
+      'A temporary feeling may make familiar defenses seem more necessary than they are.',
   },
   Sun: {
     id: 'guidance.transit.sun',
@@ -27,11 +27,11 @@ export const TRANSIT_PLANET_GUIDANCE: Record<
     tone: 'supportive',
     intensity: 'medium',
     tags: ['identity', 'confidence', 'focus', 'creativity', 'awareness'],
-    focus: 'attention, vitality, visibility, and conscious direction',
+    focus: 'purpose, vitality, visibility, and conscious priorities',
     constructive:
-      'Choose one meaningful priority and give it clear, steady attention.',
+      'Put steady attention behind the priority that best expresses your intended direction.',
     watchFor:
-      'The desire to be certain or recognized may crowd out useful feedback.',
+      'Visibility may turn into performance or defensiveness when recognition becomes the measure.',
   },
   Mercury: {
     id: 'guidance.transit.mercury',
@@ -40,11 +40,11 @@ export const TRANSIT_PLANET_GUIDANCE: Record<
     tone: 'integrative',
     intensity: 'medium',
     tags: ['communication', 'decisions', 'learning', 'focus', 'awareness'],
-    focus: 'thinking, communication, choices, and information exchange',
+    focus: 'interpretation, language, decisions, and information exchange',
     constructive:
-      'Clarify the question, check the details, and say what you mean simply.',
+      'Separate facts from assumptions, clarify the question, and say the essential point simply.',
     watchFor:
-      'Fast conclusions or scattered attention may make a simple issue feel noisy.',
+      'Speed, repetition, or too many inputs may create certainty without enough understanding.',
   },
   Venus: {
     id: 'guidance.transit.venus',
@@ -53,11 +53,11 @@ export const TRANSIT_PLANET_GUIDANCE: Record<
     tone: 'supportive',
     intensity: 'medium',
     tags: ['relationships', 'values', 'resources', 'gratitude', 'creativity'],
-    focus: 'relationships, values, pleasure, receptivity, and shared ease',
+    focus: 'values, attraction, reciprocity, enjoyment, and receptivity',
     constructive:
-      'Make room for what feels reciprocal, nourishing, and aligned with your values.',
+      'Notice what feels mutual and worthwhile, then let preference become an honest choice.',
     watchFor:
-      'Keeping the peace or seeking comfort may delay an honest choice.',
+      'Politeness, approval, or immediate comfort may replace a needed preference or limit.',
   },
   Mars: {
     id: 'guidance.transit.mars',
@@ -66,11 +66,11 @@ export const TRANSIT_PLANET_GUIDANCE: Record<
     tone: 'intensifying',
     intensity: 'high',
     tags: ['action', 'boundaries', 'confidence', 'focus', 'power'],
-    focus: 'drive, assertion, courage, boundaries, and direct action',
+    focus: 'initiative, effort, assertion, desire, and conflict',
     constructive:
-      'Channel urgency into one deliberate action that respects your limits and others.',
+      'Use available effort for one direct, proportionate move that respects real limits.',
     watchFor:
-      'Impatience may turn a useful boundary or disagreement into unnecessary friction.',
+      'Urgency may narrow the options until force looks simpler than timing or cooperation.',
   },
   Jupiter: {
     id: 'guidance.transit.jupiter',
@@ -79,11 +79,11 @@ export const TRANSIT_PLANET_GUIDANCE: Record<
     tone: 'supportive',
     intensity: 'medium',
     tags: ['growth', 'learning', 'perspective', 'confidence', 'values'],
-    focus: 'growth, belief, opportunity, perspective, and meaningful expansion',
+    focus: 'perspective, confidence, opportunity, appetite, and wider possibilities',
     constructive:
-      'Explore the larger possibility while staying honest about time and resources.',
+      'Test the larger possibility against your capacity, evidence, and actual priorities.',
     watchFor:
-      'Enthusiasm may become overcommitment when practical limits are ignored.',
+      'Confidence or appetite may outrun the details that make an opportunity sustainable.',
   },
   Saturn: {
     id: 'guidance.transit.saturn',
@@ -92,11 +92,11 @@ export const TRANSIT_PLANET_GUIDANCE: Record<
     tone: 'challenging',
     intensity: 'high',
     tags: ['responsibility', 'structure', 'boundaries', 'work', 'integration'],
-    focus: 'responsibility, limits, structure, patience, and durable progress',
+    focus: 'limits, responsibility, standards, time, and durability',
     constructive:
-      'Choose the next sustainable step and let consistency carry more weight than speed.',
+      'Define the responsibility, the boundary, and the repeatable step that can hold over time.',
     watchFor:
-      'Pressure may become self-criticism or rigidity instead of useful structure.',
+      'Constraint may be treated as a verdict, leading to rigidity, delay, or carrying too much alone.',
   },
 }
 

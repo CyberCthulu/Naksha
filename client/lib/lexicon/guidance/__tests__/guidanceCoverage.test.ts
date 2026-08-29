@@ -53,6 +53,44 @@ const REQUIRED_HOUSES: HouseNumber[] = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
 ]
 
+const PRE_D4_PROMPT_IDS = [
+  'guidance.prompt.emotional-need',
+  'guidance.prompt.intentional-presence',
+  'guidance.prompt.clear-message',
+  'guidance.prompt.values-alignment',
+  'guidance.prompt.directed-action',
+  'guidance.prompt.grounded-growth',
+  'guidance.prompt.sustainable-structure',
+  'guidance.prompt.balance-polarity',
+  'guidance.prompt.friction-adjustment',
+  'guidance.prompt.use-the-ease',
+  'guidance.prompt.quiet-opening',
+  'guidance.prompt.intensity-choice',
+  'guidance.prompt.resource-stewardship',
+  'guidance.prompt.inner-foundation',
+  'guidance.prompt.create-without-performance',
+  'guidance.prompt.shared-future',
+  'guidance.prompt.gentle-release',
+  'guidance.prompt.flexible-change',
+  'guidance.prompt.ground-the-vision',
+  'guidance.prompt.power-and-choice',
+]
+
+const PRE_D4_PRACTICE_IDS = [
+  'guidance.practice.sensory-grounding',
+  'guidance.practice.pause-before-responding',
+  'guidance.practice.single-task-reset',
+  'guidance.practice.short-walk',
+  'guidance.practice.values-check',
+  'guidance.practice.boundary-review',
+  'guidance.practice.gratitude-list',
+  'guidance.practice.creative-free-write',
+  'guidance.practice.tidy-one-area',
+  'guidance.practice.reciprocity-check-in',
+  'guidance.practice.rest-window',
+  'guidance.practice.decision-notes',
+]
+
 const primitives: GuidancePrimitive[] = [
   ...Object.values(TRANSIT_PLANET_GUIDANCE),
   ...Object.values(NATAL_TARGET_GUIDANCE),
@@ -110,6 +148,33 @@ describe('guidance primitive coverage', () => {
 
     ids.forEach(expectNonEmpty)
     expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('expands prompts and practices without removing pre-D4 stable IDs', () => {
+    const promptIds = REFLECTION_PROMPTS.map((prompt) => prompt.id)
+    const practiceIds = SUGGESTED_PRACTICES.map(
+      (practice) => practice.id
+    )
+
+    expect(REFLECTION_PROMPTS.length).toBeGreaterThanOrEqual(30)
+    expect(REFLECTION_PROMPTS.length).toBeLessThanOrEqual(36)
+    expect(SUGGESTED_PRACTICES.length).toBeGreaterThanOrEqual(18)
+    expect(SUGGESTED_PRACTICES.length).toBeLessThanOrEqual(24)
+    expect(promptIds).toEqual(expect.arrayContaining(PRE_D4_PROMPT_IDS))
+    expect(practiceIds).toEqual(
+      expect.arrayContaining(PRE_D4_PRACTICE_IDS)
+    )
+    expect(new Set(REFLECTION_PROMPTS.map((prompt) => prompt.prompt)).size).toBe(
+      REFLECTION_PROMPTS.length
+    )
+    expect(
+      new Set(SUGGESTED_PRACTICES.map((practice) => practice.title)).size
+    ).toBe(SUGGESTED_PRACTICES.length)
+  })
+
+  it('preserves canonical opposition and square tones', () => {
+    expect(ASPECT_DYNAMIC_GUIDANCE.opp.tone).toBe('integrative')
+    expect(ASPECT_DYNAMIC_GUIDANCE.square.tone).toBe('challenging')
   })
 
   it('keeps required prose fields non-empty', () => {
