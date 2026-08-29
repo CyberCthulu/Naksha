@@ -1168,6 +1168,11 @@ describe('DashboardScreen', () => {
     expectText(screen, 'Mon')
     expectText(screen, forecast.dailyThemes[0].title)
     expectText(screen, forecast.dailyThemes[0].summary)
+    const houseContext = screen.root.find(
+      (node) =>
+        node.props.testID === 'weekly-rhythm-house-2026-05-11'
+    )
+    expect(houseContext.props.numberOfLines).toBe(2)
   })
 
   it('labels multi-day weekly transit persistence as sampled days', async () => {

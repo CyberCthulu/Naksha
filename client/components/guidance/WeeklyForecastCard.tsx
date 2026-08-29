@@ -192,8 +192,9 @@ export function WeeklyForecastCard({
                   </MutedText>
                   {day.transitHouse ? (
                     <MutedText
-                      numberOfLines={1}
+                      numberOfLines={2}
                       style={styles.rhythmHouse}
+                      testID={`weekly-rhythm-house-${day.date}`}
                     >
                       House {day.transitHouse.house} ·{' '}
                       {day.transitHouse.guidance.focus}
