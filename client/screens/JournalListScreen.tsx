@@ -5,7 +5,6 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
   StyleSheet,
 } from 'react-native'
@@ -15,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { listJournals, deleteJournal, JournalRow } from '../lib/journals'
 import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
+import { LoadingState } from '../components/ui/LoadingState'
 
 function makeDisplayTitle(row: JournalRow) {
   if (row.title && row.title.trim()) return row.title.trim()
@@ -77,12 +77,7 @@ export default function JournalListScreen() {
   }
 
   if (loading) {
-    return (
-      <View style={uiStyles.center}>
-        <ActivityIndicator />
-        <Text style={[uiStyles.text, { marginTop: 8 }]}>Loading journals…</Text>
-      </View>
-    )
+    return <LoadingState label="Loading journals" />
   }
 
   if (error) {

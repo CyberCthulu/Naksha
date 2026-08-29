@@ -23,6 +23,7 @@ import ProfileFields from '../components/auth/ProfileFields'
 // Shared UI theme
 import { theme } from '../components/ui/theme'
 import { uiStyles } from '../components/ui/uiStyles'
+import { LoadingState } from '../components/ui/LoadingState'
 
 export default function CompleteProfileScreen() {
   const navigation = useNavigation<any>()
@@ -191,10 +192,7 @@ export default function CompleteProfileScreen() {
   if (loading) {
     return (
       <AuthContainer>
-        <View style={uiStyles.center}>
-          <ActivityIndicator />
-          <Text style={[uiStyles.text, { marginTop: 8 }]}>Loading…</Text>
-        </View>
+        <LoadingState />
       </AuthContainer>
     )
   }

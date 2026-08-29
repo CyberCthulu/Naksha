@@ -5,7 +5,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
   TouchableOpacity,
   Alert,
 } from 'react-native'
@@ -25,6 +24,7 @@ import SubscriptionCard from '../components/profile/SubscriptionCard'
 import PurchasesCard from '../components/profile/PurchasesCard'
 import ChartPreferencesCard from '../components/profile/ChartPreferencesCard'
 import AccountActionsCard from '../components/profile/AccountActionsCard'
+import { LoadingState } from '../components/ui/LoadingState'
 
 // Chart preference types – stored in public.chart_preferences
 type HouseSystem = 'whole_sign' | 'placidus' | 'equal'
@@ -269,12 +269,7 @@ export default function ProfileScreen() {
   }
 
   if (loading) {
-    return (
-      <View style={uiStyles.center}>
-        <ActivityIndicator />
-        <Text style={[uiStyles.text, { marginTop: 8 }]}> Loading… </Text>
-      </View>
-    )
+    return <LoadingState />
   }
 
   if (error) {

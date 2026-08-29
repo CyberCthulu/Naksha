@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo } from 'react'
 import {
-  ActivityIndicator,
   Button,
   ScrollView,
   Text,
@@ -25,6 +24,7 @@ import useChartData from '../../hooks/useChartData'
 import useChartInterpretation from '../../hooks/useChartInterpretation'
 import { theme } from '../ui/theme'
 import { uiStyles } from '../ui/uiStyles'
+import { LoadingState } from '../ui/LoadingState'
 import AspectsList from './AspectsList'
 import ChartCompass from './ChartCompass'
 import ChartHeader from './ChartHeader'
@@ -148,12 +148,7 @@ export default function ChartScreenContent({
   }, [planets])
 
   if (loading) {
-    return (
-      <View style={uiStyles.center}>
-        <ActivityIndicator size="large" />
-        <Text style={[uiStyles.text, { marginTop: 8 }]}>Loading chart…</Text>
-      </View>
-    )
+    return <LoadingState label="Loading chart" size="large" />
   }
 
   return (

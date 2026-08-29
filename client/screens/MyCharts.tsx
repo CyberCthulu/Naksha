@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import {
   View,
   Text,
-  ActivityIndicator,
   FlatList,
   TouchableOpacity,
   Alert,
@@ -19,6 +18,7 @@ import { parseChartData } from '../lib/chartDataValidation'
 
 import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
+import { LoadingState } from '../components/ui/LoadingState'
 
 export default function MyChartsScreen() {
   const nav = useNavigation<any>()
@@ -114,12 +114,7 @@ export default function MyChartsScreen() {
   }
 
   if (loading) {
-    return (
-      <View style={uiStyles.center}>
-        <ActivityIndicator size="large" />
-        <Text style={[uiStyles.text, { marginTop: 8 }]}>Loading charts…</Text>
-      </View>
-    )
+    return <LoadingState label="Loading charts" size="large" />
   }
 
   if (error) {

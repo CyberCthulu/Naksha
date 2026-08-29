@@ -2,7 +2,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import {
   View,
-  ActivityIndicator,
   InteractionManager,
   ScrollView,
   StyleSheet,
@@ -33,6 +32,7 @@ import {
 
 import { uiStyles } from '../components/ui/uiStyles'
 import { AppText, MutedText, TitleText } from '../components/ui/AppText'
+import { LoadingState } from '../components/ui/LoadingState'
 import { formatShortTimeFromHHMM } from '../lib/time'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -365,14 +365,7 @@ export default function DashboardScreen() {
     ? formatShortTimeFromHHMM(profile.birth_time)
     : '—'
   if (loading) {
-    return (
-      <View style={uiStyles.center}>
-        <ActivityIndicator />
-        <AppText style={[uiStyles.text, { marginTop: 8, textAlign: 'center' }]}>
-          Loading…
-        </AppText>
-      </View>
-    )
+    return <LoadingState />
   }
 
   if (error) {

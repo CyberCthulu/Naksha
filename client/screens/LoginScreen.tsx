@@ -48,7 +48,7 @@ export default function LoginScreen({ navigation }: any) {
       )}
 
       <Button
-        title={submitting ? 'Logging In…' : 'Login'}
+        title={submitting ? 'Logging in...' : 'Login'}
         variant="ghost"
         onPress={handleLogin}
         disabled={submitting}
