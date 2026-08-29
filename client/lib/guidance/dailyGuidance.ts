@@ -22,6 +22,7 @@ import type {
   DailyGuidanceSection,
   DailyGuidanceTransit,
 } from './types'
+import { resolveTransitHouseContext } from './transitHouse'
 
 type SelectableGuidance = Pick<
   GuidanceContentRecord,
@@ -173,6 +174,12 @@ export function buildDailyGuidance(
     ? SIGN_GUIDANCE[todayEnergy.transitSunSign]
     : null
   const primary = buildPrimaryTransit(todayEnergy.strongestAspect)
+  const transitHouse = primary
+    ? resolveTransitHouseContext(
+        primary.aspect.transit.lon,
+        input.natalHouses
+      )
+    : null
   const moonTransit = TRANSIT_PLANET_GUIDANCE.Moon
   const sunTransit = TRANSIT_PLANET_GUIDANCE.Sun
 
@@ -291,6 +298,7 @@ export function buildDailyGuidance(
     ...warning.sourceIds,
     ...opportunity.sourceIds,
     ...transitSummary.sourceIds,
+    ...(transitHouse ? [transitHouse.guidance.id] : []),
     reflectionPrompt.id,
     ...reflectionPrompt.sourceIds,
     suggestedPractice.id,
@@ -305,6 +313,7 @@ export function buildDailyGuidance(
     transitSunSign: todayEnergy.transitSunSign,
     transitMoonSign: todayEnergy.transitMoonSign,
     primaryTransit: primary?.result ?? null,
+    transitHouse,
     tone: primary?.result.tone ?? moonSign?.tone ?? 'integrative',
     mood,
     warning,

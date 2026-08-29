@@ -1,19 +1,31 @@
-import type { AspectOrbMode, PlanetPos } from '../astro'
+import type { AspectOrbMode, HouseCusp, PlanetPos } from '../astro'
 import type { DailyTransitPlanetName } from '../dailyTransits'
-import type { AspectType, PlanetKey, ZodiacName } from '../lexicon'
+import type {
+  AspectType,
+  HouseNumber,
+  PlanetKey,
+  ZodiacName,
+} from '../lexicon'
 import type {
   GuidanceTransitPlanet,
   GuidanceIntensity,
   GuidanceTone,
+  HouseGuidance,
   ReflectionPrompt,
   SuggestedPractice,
 } from '../lexicon/guidance'
 
 export type BuildDailyGuidanceInput = {
   natalPlanets: PlanetPos[]
+  natalHouses?: readonly HouseCusp[] | null
   evaluatedAt: Date
   timeZone?: string
   orbMode?: AspectOrbMode
+}
+
+export type TransitHouseContext = {
+  house: HouseNumber
+  guidance: HouseGuidance
 }
 
 export type DailyGuidanceSection = {
@@ -40,6 +52,7 @@ export type DailyGuidance = {
   transitSunSign: ZodiacName | null
   transitMoonSign: ZodiacName | null
   primaryTransit: DailyGuidanceTransit | null
+  transitHouse: TransitHouseContext | null
   tone: GuidanceTone
   mood: DailyGuidanceSection
   warning: DailyGuidanceSection
@@ -52,6 +65,7 @@ export type DailyGuidance = {
 
 export type BuildWeeklyForecastInput = {
   natalPlanets: PlanetPos[]
+  natalHouses?: readonly HouseCusp[] | null
   evaluatedAt: Date
   timeZone: string
   orbMode?: AspectOrbMode
@@ -64,6 +78,7 @@ export type WeeklyDayTheme = {
   title: string
   summary: string
   primaryTransit: DailyGuidanceTransit | null
+  transitHouse: TransitHouseContext | null
   reflectionPrompt: ReflectionPrompt
   suggestedPractice: SuggestedPractice
   sourceIds: string[]

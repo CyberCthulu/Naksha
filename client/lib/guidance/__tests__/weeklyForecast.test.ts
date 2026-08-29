@@ -1,4 +1,8 @@
-import { computeTransitPlanets, type PlanetPos } from '../../astro'
+import {
+  computeTransitPlanets,
+  type HouseCusp,
+  type PlanetPos,
+} from '../../astro'
 import {
   ASPECT_DYNAMIC_GUIDANCE,
   HOUSE_GUIDANCE,
@@ -11,6 +15,7 @@ import {
 import {
   buildWeeklyForecast,
   type BuildWeeklyForecastInput,
+  resolveTransitHouseContext,
 } from '../index'
 
 const EVALUATED_AT = new Date('2026-05-14T18:00:00.000Z')
@@ -27,6 +32,13 @@ const NATAL_PLANETS: PlanetPos[] = [
   { name: 'Neptune', lon: 244 },
   { name: 'Pluto', lon: 305 },
 ]
+
+function wholeSignHouses(firstCusp: number): HouseCusp[] {
+  return Array.from({ length: 12 }, (_, index) => ({
+    house: index + 1,
+    lon: (firstCusp + index * 30) % 360,
+  }))
+}
 
 function input(
   overrides: Partial<BuildWeeklyForecastInput> = {}
@@ -123,6 +135,70 @@ describe('buildWeeklyForecast', () => {
     )
     expect(forecast.dailyThemes[6].evaluatedAt).toBe(
       '2026-03-08T19:00:00.000Z'
+    )
+  })
+
+  it('resolves each daily theme house from that local-noon transit state', () => {
+    const mondayNoon = new Date('2026-05-11T19:00:00.000Z')
+    const sundayNoon = new Date('2026-05-17T19:00:00.000Z')
+    const natalHouses = wholeSignHouses(0)
+    const natalPlanets = [
+      {
+        name: 'Uranus',
+        lon: transitLongitude('Moon', mondayNoon),
+      },
+      {
+        name: 'Neptune',
+        lon: transitLongitude('Moon', sundayNoon),
+      },
+    ]
+    const forecast = buildWeeklyForecast(
+      input({
+        natalPlanets,
+        natalHouses,
+      })
+    )
+    const forecastWithoutHouses = buildWeeklyForecast(
+      input({ natalPlanets })
+    )
+    const monday = forecast.dailyThemes[0]
+    const sunday = forecast.dailyThemes[6]
+
+    expect(forecast.dailyThemes).toHaveLength(7)
+    expect(monday.primaryTransit).toEqual(
+      expect.objectContaining({
+        transitPlanet: 'Moon',
+        natalPlanet: 'Uranus',
+        aspect: 'conj',
+      })
+    )
+    expect(sunday.primaryTransit).toEqual(
+      expect.objectContaining({
+        transitPlanet: 'Moon',
+        natalPlanet: 'Neptune',
+        aspect: 'conj',
+      })
+    )
+    expect(monday.transitHouse).toEqual(
+      resolveTransitHouseContext(
+        transitLongitude('Moon', new Date(monday.evaluatedAt)),
+        natalHouses
+      )
+    )
+    expect(sunday.transitHouse).toEqual(
+      resolveTransitHouseContext(
+        transitLongitude('Moon', new Date(sunday.evaluatedAt)),
+        natalHouses
+      )
+    )
+    expect(monday.transitHouse?.house).not.toBe(
+      sunday.transitHouse?.house
+    )
+    expect(forecast.representativePrompt.id).toBe(
+      forecastWithoutHouses.representativePrompt.id
+    )
+    expect(forecast.representativePractice.id).toBe(
+      forecastWithoutHouses.representativePractice.id
     )
   })
 
@@ -289,6 +365,7 @@ describe('buildWeeklyForecast', () => {
       forecast.dailyThemes.every(
         (day) =>
           day.primaryTransit == null &&
+          day.transitHouse == null &&
           day.title.trim() !== '' &&
           day.summary.trim() !== ''
       )

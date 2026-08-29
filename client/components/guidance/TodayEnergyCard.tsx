@@ -97,6 +97,18 @@ export function TodayEnergyCard({
           <GuidanceSection section={guidance.opportunity} />
           <GuidanceSection section={guidance.transitSummary} />
 
+          {guidance.transitHouse ? (
+            <View style={styles.section}>
+              <AppText style={styles.sectionTitle}>Life area</AppText>
+              <AppText style={styles.itemTitle}>
+                House {guidance.transitHouse.house}
+              </AppText>
+              <MutedText style={styles.sectionBody}>
+                {guidance.transitHouse.guidance.focus}
+              </MutedText>
+            </View>
+          ) : null}
+
           <View style={styles.section}>
             <AppText style={styles.sectionTitle}>Reflection</AppText>
             <AppText style={styles.itemTitle}>

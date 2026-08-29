@@ -89,6 +89,7 @@ function buildDayTheme(
       ? guidance.transitSummary.body
       : guidance.mood.body,
     primaryTransit: primary,
+    transitHouse: guidance.transitHouse,
     reflectionPrompt: guidance.reflectionPrompt,
     suggestedPractice: guidance.suggestedPractice,
     sourceIds: [...guidance.sourceIds],
@@ -265,6 +266,7 @@ export function buildWeeklyForecast(
   const dailyThemes = snapshots.map((snapshot) => {
     const guidance = buildDailyGuidance({
       natalPlanets: input.natalPlanets,
+      natalHouses: input.natalHouses,
       evaluatedAt: snapshot.evaluatedAt,
       timeZone: input.timeZone,
       orbMode: input.orbMode,

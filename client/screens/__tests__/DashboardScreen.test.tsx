@@ -22,6 +22,7 @@ import {
   type UserProfileFields,
   type UserRow,
 } from '../../lib/domainTypes'
+import { HOUSE_GUIDANCE } from '../../lib/lexicon/guidance'
 
 const mockNavigation = {
   navigate: jest.fn(),
@@ -164,6 +165,7 @@ function makeDailyGuidance(
         'guidance.aspect.square',
       ],
     },
+    transitHouse: null,
     tone: 'challenging',
     mood: {
       title: 'Mood',
@@ -251,6 +253,7 @@ function makeWeeklyForecast(
       title,
       summary: rhythmSummaries[index],
       primaryTransit: daily.primaryTransit,
+      transitHouse: daily.transitHouse,
       reflectionPrompt: daily.reflectionPrompt,
       suggestedPractice: daily.suggestedPractice,
       sourceIds: daily.sourceIds,
@@ -667,11 +670,13 @@ describe('DashboardScreen', () => {
     expect(mockedSaveChart()).not.toHaveBeenCalled()
     expect(mockedBuildDailyGuidance()).toHaveBeenCalledWith({
       natalPlanets: savedChart.planets,
+      natalHouses: savedChart.houses,
       evaluatedAt: expect.any(Date),
       timeZone: completeUser.time_zone,
     })
     expect(mockedBuildWeeklyForecast()).toHaveBeenCalledWith({
       natalPlanets: savedChart.planets,
+      natalHouses: savedChart.houses,
       evaluatedAt: expect.any(Date),
       timeZone: completeUser.time_zone,
     })
@@ -740,6 +745,7 @@ describe('DashboardScreen', () => {
     expectText(screen, 'Grounding practice')
     expectText(screen, 'Single-task reset')
     expectText(screen, 'Journal this reflection')
+    expectNoText(screen, 'Life area')
     expect(pressHandlersByText(screen, 'Journal this reflection')).toHaveLength(1)
     expect(pressHandlersByText(screen, 'Journal this')).toHaveLength(0)
     expect(pressHandlersByText(screen, 'Journal shadow reflection')).toHaveLength(0)
@@ -763,6 +769,32 @@ describe('DashboardScreen', () => {
     expectNoText(screen, 'Watch for')
     expectNoText(screen, 'Reflection')
     expectNoText(screen, 'Journal this reflection')
+  })
+
+  it('renders the primary transit life area only in expanded Today’s Energy', async () => {
+    mockedBuildDailyGuidance().mockReturnValue(
+      makeDailyGuidance({
+        transitHouse: {
+          house: 10,
+          guidance: HOUSE_GUIDANCE[10],
+        },
+      })
+    )
+    const screen = await renderScreen()
+
+    expectNoText(screen, 'Life area')
+    expectNoText(screen, 'House 10')
+
+    await act(async () => {
+      findPressableByAccessibilityLabel(
+        screen,
+        'Expand Today’s Energy details'
+      ).props.onPress()
+    })
+
+    expectText(screen, 'Life area')
+    expectText(screen, 'House 10')
+    expectText(screen, HOUSE_GUIDANCE[10].focus)
   })
 
   it('collapses Today’s Energy from the bottom control', async () => {
@@ -1108,6 +1140,36 @@ describe('DashboardScreen', () => {
     ).toEqual({ expanded: true })
   })
 
+  it('renders concise day-specific house context in Weekly Daily rhythm', async () => {
+    const forecast = makeWeeklyForecast()
+    mockedBuildWeeklyForecast().mockReturnValue(
+      makeWeeklyForecast({
+        dailyThemes: forecast.dailyThemes.map((day, index) => ({
+          ...day,
+          transitHouse:
+            index === 0
+              ? { house: 10, guidance: HOUSE_GUIDANCE[10] }
+              : null,
+        })),
+      })
+    )
+    const screen = await renderScreen()
+
+    expectNoText(screen, 'House 10')
+
+    await act(async () => {
+      findPressableByAccessibilityLabel(
+        screen,
+        'Expand Weekly Forecast details'
+      ).props.onPress()
+    })
+
+    expectText(screen, `House 10 · ${HOUSE_GUIDANCE[10].focus}`)
+    expectText(screen, 'Mon')
+    expectText(screen, forecast.dailyThemes[0].title)
+    expectText(screen, forecast.dailyThemes[0].summary)
+  })
+
   it('labels multi-day weekly transit persistence as sampled days', async () => {
     const daily = makeDailyGuidance()
     mockedBuildWeeklyForecast().mockReturnValue(
@@ -1216,6 +1278,18 @@ describe('DashboardScreen', () => {
       'user-1'
     )
     expect(mockedSaveChart()).toHaveBeenCalledTimes(1)
+    expect(mockedBuildDailyGuidance()).toHaveBeenCalledWith({
+      natalPlanets: fallbackChart.planets,
+      natalHouses: fallbackChart.houses,
+      evaluatedAt: expect.any(Date),
+      timeZone: completeUser.time_zone,
+    })
+    expect(mockedBuildWeeklyForecast()).toHaveBeenCalledWith({
+      natalPlanets: fallbackChart.planets,
+      natalHouses: fallbackChart.houses,
+      evaluatedAt: expect.any(Date),
+      timeZone: completeUser.time_zone,
+    })
     expectText(screen, 'Gemini')
     expectText(screen, 'Libra')
   })
@@ -1283,6 +1357,18 @@ describe('DashboardScreen', () => {
       'user-1'
     )
     expect(mockedSaveChart()).not.toHaveBeenCalled()
+    expect(mockedBuildDailyGuidance()).toHaveBeenCalledWith({
+      natalPlanets: builtChart.planets,
+      natalHouses: null,
+      evaluatedAt: expect.any(Date),
+      timeZone: completeUser.time_zone,
+    })
+    expect(mockedBuildWeeklyForecast()).toHaveBeenCalledWith({
+      natalPlanets: builtChart.planets,
+      natalHouses: null,
+      evaluatedAt: expect.any(Date),
+      timeZone: completeUser.time_zone,
+    })
     expectText(screen, 'Pisces')
     expectText(screen, 'Aries')
   })

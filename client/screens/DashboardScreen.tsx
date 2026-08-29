@@ -249,6 +249,7 @@ export default function DashboardScreen() {
         setTodayEnergy(
           buildDailyGuidance({
             natalPlanets: planets,
+            natalHouses: existingChart.houses,
             evaluatedAt,
             timeZone: tz,
           })
@@ -256,6 +257,7 @@ export default function DashboardScreen() {
         setWeeklyForecast(
           buildWeeklyForecast({
             natalPlanets: planets,
+            natalHouses: existingChart.houses,
             evaluatedAt,
             timeZone: tz,
           })
@@ -309,6 +311,7 @@ export default function DashboardScreen() {
       setTodayEnergy(
         buildDailyGuidance({
           natalPlanets: payload.planets,
+          natalHouses: payload.houses,
           evaluatedAt,
           timeZone: tz,
         })
@@ -316,6 +319,7 @@ export default function DashboardScreen() {
       setWeeklyForecast(
         buildWeeklyForecast({
           natalPlanets: payload.planets,
+          natalHouses: payload.houses,
           evaluatedAt,
           timeZone: tz,
         })

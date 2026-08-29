@@ -190,6 +190,15 @@ export function WeeklyForecastCard({
                   >
                     {day.summary}
                   </MutedText>
+                  {day.transitHouse ? (
+                    <MutedText
+                      numberOfLines={1}
+                      style={styles.rhythmHouse}
+                    >
+                      House {day.transitHouse.house} ·{' '}
+                      {day.transitHouse.guidance.focus}
+                    </MutedText>
+                  ) : null}
                 </View>
               </View>
             ))}
@@ -345,6 +354,11 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   rhythmSummary: {
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 1,
+  },
+  rhythmHouse: {
     fontSize: 12,
     lineHeight: 16,
     marginTop: 1,

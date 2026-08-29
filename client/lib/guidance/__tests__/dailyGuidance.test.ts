@@ -1,5 +1,7 @@
 import {
+  assignPlanetsToWholeSignHouses,
   computeTransitPlanets,
+  type HouseCusp,
   type PlanetPos,
 } from '../../astro'
 import { findDailyTransitAspects } from '../../dailyTransits'
@@ -40,6 +42,13 @@ function chartForMoonAspect(
   return [planet(natalPlanet, transitLongitude('Moon') + angle)]
 }
 
+function wholeSignHouses(firstCusp: number): HouseCusp[] {
+  return Array.from({ length: 12 }, (_, index) => ({
+    house: index + 1,
+    lon: (firstCusp + index * 30) % 360,
+  }))
+}
+
 function chartWithoutTransitAspects(): PlanetPos[] {
   const transits = computeTransitPlanets(FIXED_DATE)
 
@@ -73,6 +82,7 @@ describe('buildDailyGuidance', () => {
   it('returns deterministic output for a fixed chart and evaluation date', () => {
     const input = {
       natalPlanets: chartForMoonAspect('Mars', 90),
+      natalHouses: wholeSignHouses(0),
       evaluatedAt: FIXED_DATE,
       timeZone: 'America/Los_Angeles',
     }
@@ -133,6 +143,63 @@ describe('buildDailyGuidance', () => {
     )
   })
 
+  it('uses the moving transit longitude rather than the natal target house', () => {
+    const moonLongitude = transitLongitude('Moon')
+    const moonSign = Math.floor(moonLongitude / 30)
+    const firstHouseSign = (moonSign - 9 + 12) % 12
+    const natalHouses = wholeSignHouses(firstHouseSign * 30)
+    const natalPlanets = chartForMoonAspect('Mars', 90)
+    const natalTargetHouse = assignPlanetsToWholeSignHouses(
+      natalPlanets,
+      natalHouses
+    )[0].house
+    const guidance = buildDailyGuidance({
+      natalPlanets,
+      natalHouses,
+      evaluatedAt: FIXED_DATE,
+    })
+    const guidanceWithoutHouses = buildDailyGuidance({
+      natalPlanets,
+      evaluatedAt: FIXED_DATE,
+    })
+
+    expect(natalTargetHouse).not.toBe(10)
+    expect(guidance.primaryTransit).toEqual(
+      expect.objectContaining({
+        transitPlanet: 'Moon',
+        natalPlanet: 'Mars',
+        aspect: 'square',
+      })
+    )
+    expect(guidance.transitHouse).toEqual({
+      house: 10,
+      guidance: HOUSE_GUIDANCE[10],
+    })
+    expect(guidance.sourceIds).toContain(HOUSE_GUIDANCE[10].id)
+    expect(guidance.reflectionPrompt.id).toBe(
+      guidanceWithoutHouses.reflectionPrompt.id
+    )
+    expect(guidance.suggestedPractice.id).toBe(
+      guidanceWithoutHouses.suggestedPractice.id
+    )
+  })
+
+  it('omits house context safely when natal cusps are missing or incomplete', () => {
+    const baseInput = {
+      natalPlanets: chartForMoonAspect('Mars', 90),
+      evaluatedAt: FIXED_DATE,
+    }
+    const missing = buildDailyGuidance(baseInput)
+    const incomplete = buildDailyGuidance({
+      ...baseInput,
+      natalHouses: [{ house: 1, lon: 0 }],
+    })
+
+    expect(missing.transitHouse).toBeNull()
+    expect(incomplete.transitHouse).toBeNull()
+    expect(incomplete).toEqual(missing)
+  })
+
   it('returns complete Moon and Sun guidance when no aspect qualifies', () => {
     const guidance = buildDailyGuidance({
       natalPlanets: chartWithoutTransitAspects(),
@@ -142,6 +209,7 @@ describe('buildDailyGuidance', () => {
 
     expectCompleteGuidance(guidance)
     expect(guidance.primaryTransit).toBeNull()
+    expect(guidance.transitHouse).toBeNull()
     expect(guidance.transitSummary.body).toContain(
       'No tight personal transit aspect is emphasized'
     )
