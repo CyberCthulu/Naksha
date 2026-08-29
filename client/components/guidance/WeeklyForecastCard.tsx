@@ -70,10 +70,13 @@ function TransitHighlight({
         {transit.natalPlanet}
       </AppText>
       <MutedText style={styles.body}>
-        {formatDate(transit.date)} | {transit.orb.toFixed(1)}° orb |{' '}
-        {transit.activeDays}{' '}
-        {transit.activeDays === 1 ? 'snapshot' : 'snapshots'}
+        {formatDate(transit.date)} | {transit.orb.toFixed(1)}° orb
       </MutedText>
+      {transit.activeDays > 1 ? (
+        <MutedText style={styles.persistence}>
+          Active on {transit.activeDays} of 7 sampled days
+        </MutedText>
+      ) : null}
     </View>
   )
 }
@@ -114,7 +117,7 @@ export function WeeklyForecastCard({
         {!expanded ? (
           <>
             <View style={styles.section}>
-              <AppText style={styles.sectionTitle}>Top theme</AppText>
+              <AppText style={styles.sectionTitle}>Weekly pattern</AppText>
               {topTheme ? (
                 <View style={styles.listItem}>
                   <AppText style={styles.itemTitle}>
@@ -132,7 +135,9 @@ export function WeeklyForecastCard({
             </View>
 
             <View style={styles.section}>
-              <AppText style={styles.sectionTitle}>Top transit</AppText>
+              <AppText style={styles.sectionTitle}>
+                Strongest transit
+              </AppText>
               {topTransit ? (
                 <TransitHighlight transit={topTransit} />
               ) : (
@@ -152,7 +157,7 @@ export function WeeklyForecastCard({
       {expanded ? (
         <>
           <View style={styles.section}>
-            <AppText style={styles.sectionTitle}>Weekly themes</AppText>
+            <AppText style={styles.sectionTitle}>Weekly pattern</AppText>
             {forecast.weeklyThemes.map((theme) => (
               <View
                 key={`${theme.tone}:${theme.title}`}
@@ -167,19 +172,33 @@ export function WeeklyForecastCard({
           <View style={styles.section}>
             <AppText style={styles.sectionTitle}>Daily rhythm</AppText>
             {forecast.dailyThemes.map((day) => (
-              <View key={day.date} style={styles.rhythmRow}>
+              <View
+                key={day.date}
+                style={styles.rhythmRow}
+                testID={`weekly-rhythm-${day.date}`}
+              >
                 <AppText style={styles.rhythmDay}>
                   {formatWeekday(day.date)}
                 </AppText>
-                <MutedText numberOfLines={1} style={styles.rhythmTheme}>
-                  {day.title}
-                </MutedText>
+                <View style={styles.rhythmContent}>
+                  <AppText numberOfLines={1} style={styles.rhythmTheme}>
+                    {day.title}
+                  </AppText>
+                  <MutedText
+                    numberOfLines={1}
+                    style={styles.rhythmSummary}
+                  >
+                    {day.summary}
+                  </MutedText>
+                </View>
               </View>
             ))}
           </View>
 
           <View style={styles.section}>
-            <AppText style={styles.sectionTitle}>Strongest transits</AppText>
+            <AppText style={styles.sectionTitle}>
+              Underlying transits
+            </AppText>
             {forecast.strongestTransits.length > 0 ? (
               forecast.strongestTransits.map((transit) => (
                 <TransitHighlight
@@ -302,20 +321,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
   },
+  persistence: {
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 2,
+  },
   rhythmRow: {
     flexDirection: 'row',
-    marginTop: 7,
-    minHeight: 19,
+    marginTop: 9,
+    minHeight: 36,
   },
   rhythmDay: {
     fontSize: 13,
     fontWeight: '600',
     width: 38,
   },
-  rhythmTheme: {
+  rhythmContent: {
     flex: 1,
+  },
+  rhythmTheme: {
     fontSize: 13,
+    fontWeight: '600',
     lineHeight: 19,
+  },
+  rhythmSummary: {
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 1,
   },
   followUp: {
     fontSize: 13,

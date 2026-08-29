@@ -112,8 +112,8 @@ function themeForTransit(
   const dynamic = ASPECT_DYNAMIC_GUIDANCE[transit.aspect]
   const persistence =
     transit.activeDays > 1
-      ? `This pattern remains within a focused orb across ${transit.activeDays} daily snapshots.`
-      : 'This pattern is concentrated around one daily snapshot.'
+      ? `This pattern appears in ${transit.activeDays} of 7 sampled days.`
+      : 'This pattern is most focused in one sampled day.'
 
   return {
     title: `${transit.transitPlanet} ${
@@ -137,7 +137,7 @@ function aggregateWeeklyThemes(
     return [
       {
         title: 'Background rhythm',
-        body: 'No tight personal transit aspect is emphasized in the seven daily snapshots. This week is guided more by the changing Sun and Moon background tone than by concentrated personal transit pressure.',
+        body: 'No tight personal transit aspect is emphasized across the seven sampled days. This week is guided more by the changing Sun and Moon background tone than by concentrated personal transit pressure.',
         tone: 'integrative',
         sourceIds: unique(
           dailyThemes.flatMap((day) => day.sourceIds)

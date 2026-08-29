@@ -253,7 +253,7 @@ describe('buildWeeklyForecast', () => {
       `${topTransit.transitPlanet} conjunct natal ${topTransit.natalPlanet}`
     )
     expect(topTheme.body).toContain(
-      `${topTransit.activeDays} daily snapshots`
+      `${topTransit.activeDays} of 7 sampled days`
     )
     expect(topTheme.sourceIds).toEqual(
       expect.arrayContaining(topTransit.sourceIds)

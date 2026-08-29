@@ -166,7 +166,7 @@ describe('buildDailyGuidance', () => {
     )
   })
 
-  it('uses challenging aspect guidance for square and opposition warnings', () => {
+  it('uses canonical aspect tones for square and opposition guidance', () => {
     const square = buildDailyGuidance({
       natalPlanets: chartForMoonAspect('Mars', 90),
       evaluatedAt: FIXED_DATE,
@@ -181,7 +181,10 @@ describe('buildDailyGuidance', () => {
       ASPECT_DYNAMIC_GUIDANCE.square.warningModifier
     )
     expect(opposition.primaryTransit?.aspect).toBe('opp')
-    expect(opposition.tone).toBe('challenging')
+    expect(opposition.primaryTransit?.tone).toBe(
+      ASPECT_DYNAMIC_GUIDANCE.opp.tone
+    )
+    expect(opposition.tone).toBe('integrative')
     expect(opposition.warning.body).toContain(
       ASPECT_DYNAMIC_GUIDANCE.opp.warningModifier
     )

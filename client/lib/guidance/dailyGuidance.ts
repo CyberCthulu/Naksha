@@ -13,7 +13,6 @@ import {
   TRANSIT_PLANET_GUIDANCE,
   type GuidanceContentRecord,
   type GuidanceTag,
-  type GuidanceTone,
   type ReflectionPrompt,
   type SuggestedPractice,
 } from '../lexicon/guidance'
@@ -53,21 +52,6 @@ function unique(values: readonly string[]): string[] {
 
 function isPlanetKey(name: string): name is PlanetKey {
   return Object.prototype.hasOwnProperty.call(NATAL_TARGET_GUIDANCE, name)
-}
-
-function toneForAspect(
-  aspect: DailyTransitAspect['type']
-): GuidanceTone {
-  switch (aspect) {
-    case 'trine':
-    case 'sextile':
-      return 'supportive'
-    case 'square':
-    case 'opp':
-      return 'challenging'
-    case 'conj':
-      return 'intensifying'
-  }
 }
 
 function stableHash(value: string): number {
@@ -124,7 +108,7 @@ function buildPrimaryTransit(
       natalPlanet: aspect.natal.name,
       aspect: aspect.type,
       orb: aspect.orb,
-      tone: toneForAspect(aspect.type),
+      tone: dynamic.tone,
       intensity: dynamic.intensity,
       sourceIds,
     },

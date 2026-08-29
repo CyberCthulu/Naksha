@@ -233,6 +233,9 @@ function makeWeeklyForecast(
     'Moon trine natal Jupiter',
     'Mercury conjunct natal Saturn',
   ]
+  const rhythmSummaries = rhythmTitles.map(
+    (_, index) => `Day ${index + 1} rhythm summary.`
+  )
 
   return {
     schemaVersion: 1,
@@ -246,7 +249,7 @@ function makeWeeklyForecast(
       evaluatedAt: daily.evaluatedAt,
       tone: daily.tone,
       title,
-      summary: daily.transitSummary.body,
+      summary: rhythmSummaries[index],
       primaryTransit: daily.primaryTransit,
       reflectionPrompt: daily.reflectionPrompt,
       suggestedPractice: daily.suggestedPractice,
@@ -900,13 +903,13 @@ describe('DashboardScreen', () => {
 
     expectText(screen, 'Weekly Forecast')
     expectText(screen, 'May 11, 2026 - May 17, 2026')
-    expectText(screen, 'Top theme')
+    expectText(screen, 'Weekly pattern')
     expectText(screen, 'Adjustments to make')
-    expectText(screen, 'Top transit')
+    expectText(screen, 'Strongest transit')
     expectText(screen, 'Moon square natal Mars')
     expectText(screen, 'Tap to expand')
-    expectNoText(screen, 'Weekly themes')
-    expectNoText(screen, 'Strongest transits')
+    expectNoText(screen, 'Daily rhythm')
+    expectNoText(screen, 'Underlying transits')
     expectNoText(screen, 'Weekly reflection')
     expectNoText(screen, 'Journal weekly reflection')
   })
@@ -923,6 +926,9 @@ describe('DashboardScreen', () => {
       'Moon trine natal Jupiter',
       'Mercury conjunct natal Saturn',
     ]
+    const rhythmSummaries = rhythmThemes.map(
+      (_, index) => `Day ${index + 1} rhythm summary.`
+    )
     const showWeeklyDetails = findPressableByAccessibilityLabel(
       screen,
       'Expand Weekly Forecast details'
@@ -935,11 +941,30 @@ describe('DashboardScreen', () => {
       showWeeklyDetails.props.onPress()
     })
 
-    expectText(screen, 'Weekly themes')
+    expectText(screen, 'Weekly pattern')
     expectText(screen, 'Daily rhythm')
     rhythmDays.forEach((day) => expectText(screen, day))
     rhythmThemes.forEach((theme) => expectText(screen, theme))
-    expectText(screen, 'Strongest transits')
+    rhythmSummaries.forEach((summary) => expectText(screen, summary))
+    const rhythmRowIds = new Set(
+      screen.root
+        .findAll(
+          (node) =>
+            typeof node.props.testID === 'string' &&
+            node.props.testID.startsWith('weekly-rhythm-')
+        )
+        .map((node) => node.props.testID)
+    )
+    expect([...rhythmRowIds]).toEqual([
+      'weekly-rhythm-2026-05-11',
+      'weekly-rhythm-2026-05-12',
+      'weekly-rhythm-2026-05-13',
+      'weekly-rhythm-2026-05-14',
+      'weekly-rhythm-2026-05-15',
+      'weekly-rhythm-2026-05-16',
+      'weekly-rhythm-2026-05-17',
+    ])
+    expectText(screen, 'Underlying transits')
     expectText(screen, 'Weekly reflection')
     expectText(screen, 'Use the friction')
     expectText(screen, 'Deeper layer')
@@ -966,7 +991,7 @@ describe('DashboardScreen', () => {
       hideWeeklyDetails.props.onPress()
     })
 
-    expectText(screen, 'Top theme')
+    expectText(screen, 'Weekly pattern')
     expectText(screen, 'Tap to expand')
     expectNoText(screen, 'Weekly reflection')
     expectNoText(screen, 'Journal weekly reflection')
@@ -1010,13 +1035,34 @@ describe('DashboardScreen', () => {
       screen,
       'Expand Weekly Forecast details'
     )
-    expectText(screen, 'Top theme')
+    expectText(screen, 'Weekly pattern')
     expectNoText(screen, 'Weekly reflection')
     expectNoText(screen, 'Journal weekly reflection')
     expectNoText(screen, 'Tap to collapse')
   })
 
-  it('opens a prefilled journal entry from Weekly Forecast reflection', async () => {
+  it('uses representative fields for the Weekly Forecast journal handoff', async () => {
+    const representative = makeDailyGuidance()
+    const aggregatePrompt = {
+      ...representative.reflectionPrompt,
+      id: 'guidance.prompt.aggregate-only',
+      title: 'Aggregated daily prompt',
+      prompt: 'Which daily detail stands out?',
+    }
+    const aggregatePractice = {
+      ...representative.suggestedPractice,
+      id: 'guidance.practice.aggregate-only',
+      title: 'Aggregated daily practice',
+      summary: 'Use the first daily practice instead.',
+    }
+    mockedBuildWeeklyForecast().mockReturnValue(
+      makeWeeklyForecast({
+        journalPrompts: [aggregatePrompt],
+        suggestions: [aggregatePractice],
+        representativePrompt: representative.reflectionPrompt,
+        representativePractice: representative.suggestedPractice,
+      })
+    )
     const screen = await renderScreen()
     const showWeeklyDetails = findPressableByAccessibilityLabel(
       screen,
@@ -1032,6 +1078,11 @@ describe('DashboardScreen', () => {
 
     expect(handlers).toHaveLength(1)
     if (!openWeeklyPrompt) throw new Error('Missing Weekly Forecast journal CTA')
+
+    expectText(screen, representative.reflectionPrompt.title)
+    expectText(screen, representative.suggestedPractice.title)
+    expectNoText(screen, aggregatePrompt.title)
+    expectNoText(screen, aggregatePractice.title)
 
     await act(async () => {
       openWeeklyPrompt()
@@ -1055,6 +1106,33 @@ describe('DashboardScreen', () => {
         'Collapse Weekly Forecast details'
       ).props.accessibilityState
     ).toEqual({ expanded: true })
+  })
+
+  it('labels multi-day weekly transit persistence as sampled days', async () => {
+    const daily = makeDailyGuidance()
+    mockedBuildWeeklyForecast().mockReturnValue(
+      makeWeeklyForecast({
+        strongestTransits: [
+          {
+            ...daily.primaryTransit!,
+            date: '2026-05-11',
+            activeDays: 6,
+            significanceScore: 62,
+          },
+        ],
+      })
+    )
+    const screen = await renderScreen()
+
+    await act(async () => {
+      findPressableByAccessibilityLabel(
+        screen,
+        'Expand Weekly Forecast details'
+      ).props.onPress()
+    })
+
+    expectText(screen, 'Active on 6 of 7 sampled days')
+    expectNoText(screen, '6 snapshots')
   })
 
   it('does not render a separate weekly shadow action', async () => {
