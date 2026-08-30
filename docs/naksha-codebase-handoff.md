@@ -1,13 +1,13 @@
 # Naksha Codebase Handoff
 
-Generated: 2026-05-07  
-Last updated: 2026-06-29 — Forecast + Guidance Library v1 Slices 1–5 complete.
-Scope: source-of-truth repository handoff. This update is documentation-only.
-Last recorded verification: `cd client && npm run typecheck`, `cd client && npm test` (22 suites / 129 tests), `cd client && npm run lint`, and `git diff --check` pass. Password reset / forgot-password is implemented, automated verified, and manually verified. Account deletion MVP is implemented and automated verified; the `delete-account` Edge Function is deployed to Supabase project `ujupnlkobzhpjewruiac` and has passed disposable-account manual QA.
+Generated: 2026-05-07
+Last updated: 2026-08-29 — V1 Architecture Pass D0–D6.3 complete. Navigation typing hardened, ChartData versioning implemented, transit-house semantics integrated, guidance content expanded, and deterministic daily/weekly composition finalized.
+Scope: canonical source-of-truth repository handoff and current engineering status. `docs/Feature-List.md` owns product scope; dated audits and implementation plans are historical evidence.
+Last recorded verification: `cd client && npm run typecheck`, `cd client && npm test` (25 suites / 183 tests), `cd client && npm run lint`, and `git diff --check` pass. Full D0–D6.3 depth pass complete with all invariants preserved.
 
 ## 1. Executive Summary
 
-Naksha is a mobile-first astrology app built with Expo, React Native, TypeScript, and Supabase. The current product centers on authenticated users entering birth details, generating a natal chart, viewing planetary positions/houses/aspects, reading local lexicon-based interpretations, saving charts, and writing journal entries.
+Naksha is a functioning deterministic Western/Tropical astrology application with authenticated users, natal charts, daily and weekly transit guidance, transit-house personalization, guided reflection through journaling, and local lexicon-based interpretation. The application is built with Expo, React Native, TypeScript, and Supabase. The current product enables users to enter birth details, generate natal charts, view planetary positions/houses/aspects, read personalized daily and weekly guidance, receive deterministic reflection prompts and practices, save charts, and write journal entries tied to guidance.
 
 What already works:
 
@@ -23,10 +23,15 @@ What already works:
 - Explicit chart route mode groundwork: self charts can auto-save when coordinates exist; guest charts are manual-save only.
 - Guest chart creation v1: `CreateGuestChartScreen` collects another person's name, birth date, birth time, location, time zone, and selected coordinates when available, then navigates to `Chart` with `chartMode: 'guest'`.
 - Dashboard has a "Create Someone Else's Chart" entry point.
-- A deterministic guidance lexicon now lives under `client/lib/lexicon/guidance/`, covering transit planets, natal targets, aspect dynamics, signs, houses, reflection prompts, and suggested practices with stable IDs/source IDs.
-- `buildDailyGuidance` composes the existing daily-transit helpers with those primitives. Dashboard `TodayEnergyCard` renders mood, Watch for, opportunity, transit summary, reflection prompt, suggested practice, and a complete no-aspect fallback.
-- `buildWeeklyForecast` builds a deterministic Monday–Sunday local week from seven local-noon DailyGuidance snapshots with timezone/DST handling, deduplicated strongest transit highlights, weekly themes, journal prompts, suggested practices, and a no-aspect fallback. Dashboard renders the compact result through `WeeklyForecastCard`.
+- A deterministic guidance lexicon now lives under `client/lib/lexicon/guidance/`, with stable IDs/source IDs and integrity tests: 7 transit-planet records, 10 natal-target records, 5 aspect dynamics, 12 sign records, 12 house records, 34 reflection prompts (was 20), and 24 practices (was 12). D4/D4.1 refined the authored building blocks without changing selection architecture.
+- `buildDailyGuidance` composes daily-transit helpers with guidance primitives. Dashboard `TodayEnergyCard` renders mood, warning, opportunity, transit summary, reflection prompt, suggested practice, and a complete no-aspect fallback. D2 improved the reflection flow by moving guidance context to a fixed read-only area in `JournalEditor`.
+- `buildWeeklyForecast` builds a deterministic Monday–Sunday local week from seven local-noon DailyGuidance snapshots with timezone/DST handling, deduplicated strongest transit highlights, weekly themes, journal prompts, suggested practices, and a no-aspect fallback. D3 added Weekly Rhythm showing seven days with weekday, title, and summary. Dashboard renders the full result through `WeeklyForecastCard`. D5 integrated transit-house personalization: each daily snapshot resolves the transiting planet's house through natal Whole Sign structure.
 - Chart calculation now reads stored chart preferences through `getChartCalculationPreferences`, passes `ChartCalculationPreferences` into `buildChartData`, and passes `orb_mode` into `findAspects`, while preserving the current Whole Sign, Tropical, medium-orb output exactly.
+- D1 fixed DailyGuidance selection dates: prompt/practice seeds use the supplied time zone's local calendar date while transit math still uses the actual evaluation instant. WeeklyForecast passes the same time zone into its seven DailyGuidance snapshots.
+- D5 implemented transit-house resolution: `resolveTransitHouseContext` derives the moving planet's house from its current longitude and the natal Whole Sign cusps. TodayEnergyCard conditionally renders an expanded `Life area`; WeeklyForecastCard renders day-specific `House N · focus` context in Daily Rhythm. Aggregated weekly highlights remain house-neutral.
+- D6.1 introduced `hydrateChartData`, a shared in-memory chart compatibility helper used by both `useChartData` and `DashboardScreen`. Legacy unversioned saved charts are hydrated without automatic persistence; valid saved charts gain house context when coordinates are available. Saved and fresh branches converge before guidance construction, and an invalid non-empty stored time zone routes to `CompleteProfile` for correction rather than silently clearing guidance or falling back to UTC.
+- D6.2 completed active V1 navigation typing: `RootStackParamList` defines all 14 registered routes with proper parameter contracts. `JournalEditor` and `Chart` payloads are shared types, and unsafe `useNavigation<any>` / `useRoute<any>` annotations were removed from the active stack without redesigning runtime navigation.
+- D6.3 implemented explicit ChartData versioning: new charts emit `schema_version: 1` and `calculation_version: 1`. Unversioned legacy charts remain supported. Validation cleanly distinguishes valid/legacy-v1, valid/current, unsupported future, and malformed version metadata. Unsupported future charts are never interpreted, rebuilt, or overwritten.
 - Source-controlled Supabase migrations now exist under `supabase/migrations/`, including chart identity, profile coordinate trigger, purchase policy, and journal delete behavior fixes.
 - Location autocomplete can populate coordinates and update the selected time zone from OpenCage timezone annotations.
 - `public.users` is now the durable source of truth for profile/birth data after signup/bootstrap.
@@ -42,7 +47,7 @@ What already works:
 - Journal create-mode payloads omit `id` when no id exists, while update-mode payloads preserve `id`.
 - InterpretationCard long text clipping has been fixed by paragraph/sentence splitting; focused coverage verifies final words are not dropped.
 - InterpretationModal circular swipe/infinite pager behavior has been restored and manually verified; current per-page scroll-position preservation is intentional and is not a bug or release blocker.
-- Jest is configured with 22 suites and 129 tests. Coverage now includes guidance primitive integrity, deterministic DailyGuidance, deterministic WeeklyForecast with local-week/DST/deduplication behavior, Dashboard TodayEnergyCard/WeeklyForecastCard rendering and fallbacks, plus the existing auth, account deletion, chart, profile, guest-chart, interpretation, journal, and transit coverage.
+- Jest is configured with 25 suites and 183 tests. Coverage includes guidance primitive integrity, deterministic DailyGuidance with timezone-aware local-date selection, deterministic WeeklyForecast with local-week/DST/deduplication/transit-house behavior, transit-house resolution, Dashboard TodayEnergyCard/WeeklyForecastCard rendering and fallbacks, chart versioning (legacy/current/unsupported/malformed), chart hydration, and the existing auth, account deletion, chart, profile, guest-chart, interpretation, journal, and transit coverage. TypeScript typecheck is the compile-time enforcement for active navigation contracts.
 - ESLint is configured through Expo's flat config; `npm run lint` passes cleanly after the targeted warning cleanup.
 - Supabase generated types live in `client/lib/database.types.ts`; the Supabase client is typed with `Database`, and shared DB row aliases in `domainTypes.ts` derive from the generated schema.
 - `CompleteProfileScreen` top spacing was tightened by removing duplicate safe-area padding from its in-screen header.
@@ -50,6 +55,7 @@ What already works:
 
 What is incomplete or unstable:
 
+- **UI/UX Redesign and Android Polish**: The application is feature-complete for V1 but requires visual redesign and Android production hardening before release. Design system, typography, and component refinement are in progress.
 - `server/` is empty, and several service files are placeholders: `conversations.ts`, `notifications.ts`, `reports.ts`, `subscriptions.ts`, `usage.ts`.
 - `ChatScreen.tsx` and `SubscriptionScreen.tsx` are empty stub files and are not registered in `App.tsx` navigation or linking config.
 - Additional chart systems remain disabled/coming soon. The calculation path accepts the current supported preference defaults only: Whole Sign, Tropical, and medium orbs.
@@ -57,12 +63,12 @@ What is incomplete or unstable:
 - Synastry, compatibility, composite charts, reports, and premium gating are not implemented yet.
 - AI chat and saved AI conversation/readings flows are not implemented.
 - Push notifications and notification preferences are not implemented.
-- Dedicated shadow-work routing, prompt selection workflow, milestones, and journal prompt handoff are not implemented; deterministic prompt/practice primitives do exist.
+- Dedicated shadow-work routing and dedicated workflow are not implemented; deterministic prompt/practice primitives and reflection handoff do exist through the journal flow.
 - Account deletion is deployed and manually verified with a disposable account, but data export, retention policy, external subscription cancellation/refunds, and delete-data-without-deleting-account flows are not complete.
 - Charts without birth coordinates are intentionally view-only: they can render planet data, but are not persisted because canonical saved-chart identity requires coordinates.
 - `auth.user_metadata` still carries signup/bootstrap profile data for `handle_new_user` and older-account repair, but profile edits no longer mirror back to auth metadata.
 - Schema/migration validation is not automated or CI-backed yet.
-- Deterministic daily and weekly guidance are implemented; saved guidance history, telemetry, production observability, and release readiness remain open.
+- Deterministic daily and weekly guidance with transit-house personalization are implemented; telemetry, production observability, CI/CD hardening, and Android release readiness remain open.
 
 ## 2. Tech Stack
 
@@ -109,7 +115,10 @@ Important files:
 - `client/lib/accountDeletion.ts`: authenticated client helper that invokes the `delete-account` Edge Function with the current bearer token.
 - `client/lib/domainTypes.ts`: shared frontend domain types, chart calculation preference defaults/parsing, plus DB row aliases derived from generated Supabase types.
 - `client/lib/profileCompletion.ts`: `isProfileComplete`, `needsProfileCompletion`, `profileFromAuthMetadata`, `ProfileCompletionData` type; shared by `DashboardScreen` and `CheckEmailScreen`.
-- `client/lib/chartDataValidation.ts`: runtime parser for persisted `ChartData` JSON; returns `null` for malformed or schema-drifted rows.
+- `client/lib/chartDataValidation.ts`: runtime compatibility validator for persisted `ChartData`; distinguishes valid legacy/current data, unsupported explicit future versions, and malformed data/version metadata. `parseChartData` remains a nullable convenience wrapper.
+- `client/lib/chartDataVersions.ts`: canonical current persisted ChartData schema and calculation version constants.
+- `client/lib/chartHydration.ts`: pure shared in-memory reconstruction of missing Whole Sign houses and planet-house placements when valid birth coordinates permit it.
+- `client/navigation/types.ts`: canonical `RootStackParamList` and active route parameter contracts.
 - `client/lib/geocode.ts`: `geocodePlace` — OpenCage geocoding helper used by `CompleteProfileScreen`.
 - `client/lib/journals.ts`: journal list/upsert/delete helpers; create-mode upserts omit `id` when no id exists.
 - `client/screens/DashboardScreen.tsx`: profile load/repair, completion routing, chart lookup/build/auto-save, sign summary, DailyGuidance and WeeklyForecast wiring, and main navigation. It is the main architectural pressure point; future extraction should remain feature-attached.
@@ -300,6 +309,8 @@ Expected `chart_data` shape:
 
 ```ts
 {
+  schema_version?: number        // 1 (optional; unversioned = legacy V1)
+  calculation_version?: number   // 1 (optional; unversioned = legacy V1)
   meta: {
     name: string
     birth_date: string
@@ -316,6 +327,26 @@ Expected `chart_data` shape:
   planet_houses: { name: string; house: number }[] | null
 }
 ```
+
+**ChartData versioning (D6.3)**:
+- `CURRENT_CHART_SCHEMA_VERSION = 1` and `CURRENT_CHART_CALCULATION_VERSION = 1` live in `client/lib/chartDataVersions.ts`.
+- New charts are explicitly marked with persisted `schema_version: 1` and `calculation_version: 1`.
+- Unversioned legacy charts (both fields absent) remain valid and fully supported.
+- Partial version metadata or invalid version values (e.g., strings, zero, negative) are treated as malformed.
+- Future schema/calculation versions (e.g., 2/1 or 1/2) are recognized as unsupported and are never interpreted, rebuilt, or automatically saved.
+- Validation distinguishes between unsupported future versions (update required) and malformed version metadata (local data corruption).
+- Hydration preserves explicit version fields and leaves unversioned legacy data unversioned in memory; it is compatibility reconstruction, not migration.
+- Version metadata is not part of canonical saved-chart identity, and D6.3 required no database migration or bulk row rewrite.
+- Interpretation/guidance content is intentionally not versioned in ChartData because it is computed at runtime rather than frozen in persisted chart calculation data.
+- No calculation-preferences object was added to persisted ChartData. The separate calculation version marks the current V1 Tropical/Whole Sign/medium-orb calculation semantics without designing unsupported systems.
+
+| Persisted state | Runtime behavior |
+| --- | --- |
+| Fresh chart | `buildChartData` emits both current version fields; normal save behavior persists them naturally. |
+| Explicit current saved chart | Validated, optionally hydrated in memory, then rendered/used for guidance normally. |
+| Valid unversioned legacy V1 | Accepted as legacy, optionally hydrated in memory, and not auto-saved merely to add versions. A missing-coordinate legacy chart remains house-free/view-only. |
+| Unsupported future schema or calculation version | Surfaces the update-required unsupported-chart state; it is not interpreted, rebuilt, or overwritten by the old client. |
+| Malformed saved data/version metadata | Rejected as invalid and follows the existing safe malformed-data fallback/rebuild path when valid canonical birth inputs permit it. |
 
 Expected `journals` fields:
 
@@ -396,7 +427,7 @@ Where calculations happen:
 - Main calculation entry point: `client/lib/charts.ts`.
 - Low-level astronomy and house math: `client/lib/astro.ts`.
 - Dashboard fetches chart preferences before invoking `buildChartData` to generate sun/moon summary data when it needs to compute a chart.
-- Dashboard creates one UI-boundary evaluation instant, then calls `buildDailyGuidance` and `buildWeeklyForecast` with validated natal planets. The weekly call also receives the normalized profile time zone.
+- Dashboard resolves either a validated/hydrated saved chart or a fresh chart, then converges both branches into one chart-to-guidance path. It creates one UI-boundary evaluation instant and passes equivalent natal planets, natal houses, time zone, orb mode, and evaluation context to the builders.
 - `useChartData` fetches chart preferences before invoking `buildChartData` for chart screen rendering and manual-save rebuilds.
 - Saved chart hydration still uses persisted, validated `chart_data` and does not recompute solely to apply preferences.
 
@@ -407,15 +438,29 @@ Daily and weekly guidance behavior:
 - `findStrongestDailyTransitAspect` chooses the lowest-orb allowed transit-to-natal aspect, with deterministic tie-breaking.
 - `buildTodayEnergy` remains the low-level compatibility helper returning transit Sun/Moon signs and an optional strongest fast transit aspect.
 - `buildDailyGuidance` composes transit, natal-target, aspect, and sign primitives into mood, Watch for, opportunity, transit summary, reflection prompt, and suggested practice. The same explicit inputs produce the same output.
-- `buildWeeklyForecast` resolves the ISO Monday–Sunday week in the supplied time zone and evaluates seven local-noon DailyGuidance snapshots, including DST-aware UTC instants.
-- Weekly output includes seven day themes, up to five deduplicated strongest transit highlights, up to three themes/prompts/practices, and a complete background-tone fallback when no personal aspects qualify.
+- The interpretation model is explicit: transit planet = what is acting; aspect = how it operates; natal target = what part of the person is activated; transit-through-natal-house = where in life it is operating.
+- Transit house is resolved from the current moving planet longitude against the natal Whole Sign cusp structure. It is never substituted with the natal target planet's natal house. Missing/invalid house data omits Life area context without inventing a house or dropping the rest of guidance.
+- `buildWeeklyForecast` resolves the Monday–Sunday week in the supplied time zone and evaluates seven local-noon DailyGuidance snapshots, including DST-aware UTC instants.
+- The weekly event model evaluates Moon, Sun, Mercury, Venus, Mars, Jupiter, and Saturn. It ranks deduplicated events by planet relevance, aspect relevance, sampled orb closeness, and sampled persistence; it returns up to five highlights, caps Moon at one, caps other moving planets at two, and derives up to three weekly patterns.
+- Daily Rhythm preserves all seven day themes and their day-specific transit-house context. Representative prompt/practice selection follows the highest-ranked weekly pattern; background weeks use deterministic frequency-based selection.
+- Jupiter and Saturn are weekly-only moving transit candidates. Today’s Energy remains limited to Moon, Sun, Mercury, Venus, and Mars.
 - Dashboard presents these outputs through `TodayEnergyCard` and `WeeklyForecastCard`.
 - Forecast v1 remains local and ephemeral: no AI, notification scheduling, persistence/history, caching, premium gating, applying/separating solver, retrograde/lunar-phase events, or configurable forecast settings are implemented.
+
+Guided reflection and journal behavior:
+
+- TodayEnergyCard and WeeklyForecastCard each expose one coherent reflection action built from their selected prompt and grounding practice.
+- Dashboard navigates with serializable `JournalEditor` params: optional edit fields (`id`, `title`, `content`) plus optional create context (`initialTitle`, `initialContent`, `promptTemplateId`, `promptSource`, `promptText`, `practiceSummary`, `practiceSteps`).
+- In guided create mode, JournalEditor renders source, prompt, practice summary, and steps in a fixed read-only card above the response field. The editable content starts as response content rather than prompt/practice boilerplate.
+- Saving persists only the user's editable response in `journals.content` and preserves the selected stable prompt ID in `journals.prompt_template`.
+- In edit mode, saved entry title/content win and route guidance context is not rendered, so existing entries are not overwritten by prefill params.
+- Unguided journal create/edit/list/delete behavior remains available.
 
 Where chart data is stored:
 
 - Supabase `charts.chart_data` stores the computed JSON.
-- Persisted chart JSON is parsed through `parseChartData` before it is trusted by `useChartData`, `MyCharts`, or Dashboard summary logic.
+- Persisted chart JSON is checked through `validateChartData` / `parseChartData` before it is trusted. Valid unversioned legacy V1 and explicit current data can be hydrated; unsupported future versions surface an update-required state and are not interpreted, rebuilt, or overwritten.
+- `hydrateChartData` is shared by `useChartData` and Dashboard. It reconstructs missing Whole Sign houses and planet-house placements in memory only when valid birth/location inputs allow it; loading or hydrating legacy data does not automatically persist a rewritten row.
 - `saveChart` requires `birth_lat` and `birth_lon`, then upserts a row with top-level birth fields plus the full JSON payload.
 - The upsert conflict target is `user_id,birth_date,birth_time,time_zone,birth_lat,birth_lon`, matching the canonical database identity.
 - `useChartData` and `DashboardScreen` look up saved charts by the same coordinate-inclusive identity when coordinates are available.
@@ -493,7 +538,7 @@ Screens that feel usable:
 - `CreateGuestChartScreen.tsx`: creates a one-off guest chart from another person's birth details and selected coordinates when available.
 - `ChartScreen.tsx`: usable chart view with SVG wheel, lists, legend, clipped-text-safe interpretation modal with circular swipe/infinite paging, and explicit save states for self, guest, saved, and view-only charts.
 - `MyCharts.tsx`: saved chart list with open/delete.
-- `JournalListScreen.tsx` and `JournalEditorScreen.tsx`: basic journal create/edit/delete flow.
+- `JournalListScreen.tsx` and `JournalEditorScreen.tsx`: journal create/edit/delete plus fixed-context guided reflection create mode.
 - `ProfileScreen.tsx`: readable account/profile/preferences/subscription/purchases/privacy surface; unsupported chart preference choices are disabled/coming soon.
 
 Screens that need polish:
@@ -507,7 +552,7 @@ Screens that need polish:
 Component size/coupling concerns:
 
 - `ProfileScreen.tsx`: Presentational card extraction is done; all Supabase calls, preference save handlers, and account/privacy action callbacks remain in the screen.
-- `DashboardScreen.tsx`: roughly 465 lines, mixes profile repair, profile routing, chart lookup/generation/auto-save, sign summary, daily guidance, weekly guidance, and dashboard UI. The next narrow cleanup candidate is shared chart-summary/chart-lookup loading with explicit chart lookup error handling.
+- `DashboardScreen.tsx`: remains a large orchestration surface mixing profile repair/routing, chart lookup/generation/auto-save policy, sign summary, daily/weekly guidance, and Dashboard UI. D6.1 removed duplicate hydration and chart-to-guidance wiring; further extraction should be attached to redesign work or a concrete defect.
 - `CompleteProfileScreen.tsx`: 323 lines, mixes data load/save, geocoding fallback, and UI.
 - `CheckEmailScreen.tsx`: 350 lines, mixes OTP flow and custom UI.
 - `useChartData.ts`: 422 lines, owns loading, lookup, hydration, computation, auto-save, manual save, chart-data validation handling, save warnings, and async cancellation guards.
@@ -535,7 +580,7 @@ State duplication:
 - Daily and weekly guidance are computed in `DashboardScreen` from validated natal planets and pure guidance builders; keep forecast output separate from natal chart persistence.
 - Self chart auto-save can happen from more than one surface, though the canonical identity keeps the saved row deduplicated.
 - Planet summary logic is duplicated in `PlanetPositionsList.tsx` and `chartInterpretation.ts`.
-- Core profile/chart route shapes now have shared types in `client/lib/domainTypes.ts`, but navigation params overall are still not strongly typed.
+- Active navigation routes and their params are defined by `RootStackParamList`; chart/profile domain payloads remain shared through `client/lib/domainTypes.ts`.
 
 Ownership/design gaps:
 
@@ -547,8 +592,7 @@ Ownership/design gaps:
 
 Fragile flows:
 
-- Route params are required at runtime but not enforced with a typed navigator.
-- Chart screen is deep-linkable without guaranteed params.
+- The typed navigator catches active route-name and payload mismatches at compile time, while screen-level runtime guards remain necessary for malformed or incomplete deep links.
 - Dashboard throttles/reentrancy with refs, which works but is hard to reason about.
 - Location selection, manual geocode fallback, and timezone inference now work together, but this flow still depends on several screens/components sharing state through props.
 
@@ -567,63 +611,54 @@ Naming and consistency issues:
 
 Testing baseline:
 
-- `npm test` runs 22 suites (129 tests), including guidance primitive coverage, DailyGuidance, WeeklyForecast, password reset, account deletion, profile completion, chart data validation, journals, charts, daily transits, `useChartData`, auth callback, CheckEmail, Dashboard, CreateGuestChart, CompleteProfile, Profile, InterpretationCard, and InterpretationModal coverage.
-- Dashboard profile repair/chart summary, TodayEnergyCard and WeeklyForecastCard populated/fallback rendering, password reset, account deletion confirmation/helper behavior, CompleteProfile save/geocode lifecycle, InterpretationCard clipping, and InterpretationModal pager behavior are covered.
+- `npm test` runs 25 suites (183 tests), including guidance primitive coverage, timezone-aware deterministic DailyGuidance, deterministic WeeklyForecast with DST/deduplication/transit-house behavior, transit-house resolution, chart versioning (legacy/current/unsupported/malformed), chart hydration, password reset, account deletion, profile completion, chart data validation, journals, charts, daily transits, `useChartData`, auth callback, CheckEmail, Dashboard, CreateGuestChart, CompleteProfile, Profile, InterpretationCard, and InterpretationModal coverage.
+- Dashboard profile repair/chart summary, TodayEnergyCard and WeeklyForecastCard populated/fallback rendering with transit-house context, password reset, account deletion confirmation/helper behavior, CompleteProfile save/geocode lifecycle, InterpretationCard clipping, InterpretationModal pager behavior, unsupported/malformed chart handling, and hydration version semantics are covered.
 - No schema tests or automated Supabase migration validation commands are configured.
 
-## 11. Recommended Next 5 Tasks
+## 11. Immediate Next Phase: UI/UX Redesign and Android Production Hardening
 
-Note: cleanup/stabilization is complete enough for feature expansion. Runtime chart validation, chart preference plumbing for current defaults, save-warning visibility, AuthCallback hardening, journal payload coverage, async cancellation guards, Jest coverage, ESLint, generated Supabase types, deterministic DailyGuidance/WeeklyForecast, both Dashboard forecast cards, and their focused tests are complete.
+Note: D0–D6.3 architecture pass is complete. All core guidance, journaling, navigation, versioning, and hydration work is finished. The application is feature-complete for V1 but requires visual redesign and Android production hardening before release.
 
-1. Documentation and feature-list refresh.
-   - Correct stale product claims now that deterministic daily/weekly guidance is implemented while AI, notifications, and dedicated shadow-work workflows are not.
+**Immediate priorities (Android-first)**:
 
-2. Dashboard chart lookup reliability.
-   - Handle chart lookup errors explicitly and extract only the shared summary/lookup logic needed to reduce drift with `useChartData`.
+1. **UI/UX Redesign** (controlled visual migration)
+   - Visual direction: premium/celestial/editorial
+   - Android-first, with iOS intentionally later
+   - Core product loops must remain architecturally intact
+   - See `docs/ui-redesign/` for detailed migration plan
 
-3. Journal prompt handoff.
-   - Open JournalEditor from daily/weekly prompts and persist stable prompt IDs without storing whole forecast objects.
+2. **Android Release Readiness**
+   - Production build configuration and app signing
+   - Release-candidate QA and device testing
+   - Play Store requirements and submission
+   - Production observability decision and implementation appropriate to the release scope
 
-4. Deterministic shadow-work surface.
-   - Build a focused workflow from the existing safe prompt/practice primitives; defer cycles, milestones, and AI.
+3. **Privacy and Compliance**
+   - Privacy policy and data handling documentation
+   - Support/help content
+   - Target-market privacy/store review
 
-5. Synastry / relationship foundation.
-   - Define reusable guest-profile identity and relationship metadata before schema or compatibility calculations.
+**Post-V1 opportunities** (not blockers):
 
-6. Privacy and release hardening.
-   - Define export/retention/support policy, telemetry/crash reporting, CI/schema validation, production identity/signing, and release-build QA.
+- Synastry and relationship foundations
+- AI chat and conversation storage
+- Push notifications
+- Analytics
+- Multi-system astrology (Vedic, Chinese)
+- Outer planets as moving transit candidates, retrogrades, lunar phases, and exact transit windows
 
-## 12. Best Next Vertical Slice
+## 12. Next Vertical Program
 
-Recommended slice: Dashboard chart lookup error handling.
+The next program is a controlled Android-first visual and release migration, not another V1 feature slice. Follow `docs/ui-redesign/redesign-plan.md` and preserve the current tested behavior while progressing through:
 
-Password reset, account deletion, and deterministic daily/weekly guidance are implemented. The next narrow code slice should stop Dashboard from treating a failed saved-chart lookup like a missing chart while preserving chart identity, auto-save, profile repair, and guidance behavior.
+1. Capture the current Android UI baseline and audit every active V1 screen/state.
+2. Approve design tokens, typography, and shared primitives before broad screen changes.
+3. Validate the visual direction on one flagship screen, then propagate it screen by screen.
+4. Finalize Android production identity/configuration and signing.
+5. Produce a signed release candidate and run end-to-end device QA across auth, profile, charts, guidance, journaling, account deletion, legacy chart hydration, and unsupported-version handling.
+6. Complete privacy, retention, support, store metadata, and Google Play testing/submission requirements.
 
-Goal:
-
-- Capture the saved-chart lookup error instead of discarding it.
-- Decide whether Dashboard should show an error or intentionally degrade to a locally computed summary.
-- Share only the chart-summary/chart-lookup helper needed to keep Dashboard and `useChartData` aligned.
-- Preserve current profile repair, missing-coordinate, canonical identity, and forecast-card behavior.
-
-Files likely involved:
-
-- `DashboardScreen.tsx`, a narrow chart-summary/lookup helper if useful, and focused Dashboard/helper tests.
-- No migration, forecast-builder, chart-math, auth, or profile-ownership change should be needed.
-
-Expected behavior:
-
-- A real chart lookup failure is not silently treated as a cache miss.
-- Valid saved charts still hydrate; malformed data still follows the tested recompute path.
-- Missing-coordinate profiles still skip lookup/save.
-- DailyGuidance and WeeklyForecast continue receiving the same validated natal planets, shared evaluation instant, and normalized weekly time zone.
-
-Verification steps:
-
-- Run `cd client && npm run typecheck`.
-- Run `cd client && npm test`.
-- Run `cd client && npm run lint`.
-- Run `git diff --check`.
+Keep iOS and post-V1 features outside this sequence. Dashboard remains orchestration-heavy; further decomposition should be attached to a real redesign or release defect rather than pursued as an open-ended rewrite.
 
 ## 13. Agent Instructions Going Forward
 

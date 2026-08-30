@@ -1,5 +1,7 @@
 # Claude's Architectural Review — Naksha Codebase
 
+> **Historical review snapshot.** This review records architecture findings from before the D0-D6.3 depth/hardening pass. Retain it for rationale, not current status or sequencing. The canonical current handoff is `docs/naksha-codebase-handoff.md`; the current recorded baseline is 25 suites / 183 tests as of 2026-08-29.
+
 Last updated: 2026-06-28 (Naksha Forecast + Guidance Library v1 — Slices 1-5 implemented, reviewed, and approved)
 Reviewer: Claude (Sonnet 4.6)
 Scope: source code + all migrations through `20260508021500_chart_preferences.sql`

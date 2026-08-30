@@ -1,11 +1,13 @@
 # Naksha V1 Product Gap Audit - Codex
 
+> **Historical product audit snapshot.** This audit was last substantively evaluated on 2026-06-29, before the D0-D6.3 depth and architecture pass. Its classifications and recommendations are retained as decision history and should not be used as current implementation status. See `docs/naksha-codebase-handoff.md` for the canonical engineering state, `docs/Feature-List.md` for current product scope, and `docs/naksha-decomposition-roadmap.md` for the Android release sequence. The current recorded baseline is 25 suites / 183 tests.
+
 Generated: 2026-06-20
 Last updated: 2026-06-29 — deterministic DailyGuidance and WeeklyForecast supersede stale forecast findings.
 Scope: `docs/Feature-List.md` claims compared with the current repository.
 Method: read-only inspection of app routes, screens, components, hooks, domain helpers, tests, Supabase migrations/functions, package manifests, release configuration, and current handoff documents.
 
-Current confirmed baseline: typecheck, lint, `git diff --check`, and **22 Jest suites / 129 tests** pass.
+Audit-time confirmed baseline: typecheck, lint, `git diff --check`, and **22 Jest suites / 129 tests** passed.
 
 This is a product and repository readiness audit, not legal advice or an independent review of current App Store or Play Store policy.
 

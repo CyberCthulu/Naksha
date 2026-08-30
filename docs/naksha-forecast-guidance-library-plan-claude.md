@@ -1,5 +1,7 @@
 # Naksha Forecast + Guidance Library v1 — Plan (Claude)
 
+> **Historical implementation plan.** This document captures the original forecast/guidance proposal and its early implementation updates. Current code has since completed D0-D6.3, including journal fixed-context handoff, weekly Jupiter/Saturn events, transit-house context, content expansion, shared hydration, typed navigation, and ChartData versioning. Use `docs/naksha-codebase-handoff.md` and `docs/Feature-List.md` for current behavior. The current recorded baseline is 25 suites / 183 tests.
+
 Generated: 2026-06-20
 Author: Claude (Opus) — read-only planning. No code changed.
 Scope: design a deterministic, Naksha-owned forecast + guidance content layer that strengthens daily/weekly guidance and shadow-work primitives **before** AI integration, so AI later synthesizes from Naksha primitives instead of inventing generic astrology.

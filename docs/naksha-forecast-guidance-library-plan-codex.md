@@ -3,7 +3,9 @@
 Generated: 2026-06-20
 Last updated: 2026-06-29
 Scope: deterministic forecast, transit-guidance, reflection-prompt, and practice primitives to build before AI chat.
-Status: core Slices 1–5 implemented; remaining items are explicitly marked below.
+Status: **historical implementation plan, superseded for current-state reporting.**
+
+Current-state note (2026-08-29): forecast/guidance work continued through D0-D6.3. Current code includes consolidated reflection CTAs, local-date DailyGuidance, fixed-context JournalEditor handoff, weekly Jupiter/Saturn event ranking and Daily Rhythm, a 34-prompt/24-practice corpus, transit-through-natal-house context, shared chart hydration, typed navigation, and explicit ChartData versioning. The current recorded baseline is 25 suites / 183 tests. Use `docs/naksha-codebase-handoff.md` for canonical engineering status and `docs/Feature-List.md` for product scope. The detailed proposal below is retained for design rationale; statements about deferred work describe its earlier planning state.
 
 ## Implementation Status Update
 
@@ -14,7 +16,7 @@ Forecast + Guidance Library v1 core implementation is complete and verified:
 - **DONE — WeeklyForecast:** `client/lib/guidance/weeklyForecast.ts` builds an ISO Monday–Sunday local week from seven local-noon DailyGuidance snapshots, with timezone/DST handling, deduplicated strongest transit highlights, bounded themes/prompts/practices, and fallback.
 - **DONE — Dashboard daily UI:** `TodayEnergyCard.tsx` renders mood, Watch for, opportunity, transit summary, reflection prompt, and suggested practice.
 - **DONE — Dashboard weekly UI:** `WeeklyForecastCard.tsx` renders week range, weekly themes, strongest transits, journal prompts, suggested practices, and no-aspect fallback.
-- **Verification:** typecheck, lint, and `git diff --check` pass; Jest passes **22 suites / 129 tests**.
+- **Verification at this plan's last implementation checkpoint:** typecheck, lint, and `git diff --check` passed; Jest passed **22 suites / 129 tests**. Current verification is recorded in the canonical handoff.
 
 The implemented weekly v1 is intentionally smaller than some exploratory detail later in this plan: it uses seven local-noon snapshots and the existing fast-transit DailyGuidance model. It does not implement six-hour event sampling, exact perfection times, Jupiter/Saturn weekly expansion, transit-through-house enrichment, or a separate Weekly Forecast screen.
 

@@ -1,46 +1,60 @@
 # Naksha Feature List
 
-Personalized astrology, deterministic forecasts, journaling, and future AI-guided spiritual insight.
+Personalized astrology, deterministic forecasts, journaling, and guided reflection. Naksha is a functioning V1 application with comprehensive natal charts, daily and weekly transit guidance with transit-house personalization, and journaling.
 
-This document separates implemented V1 functionality from planned roadmap features. It should not be read as a list of completed features unless an item is marked **DONE**. Last reviewed for accuracy: 2026-06-28 (Naksha Forecast + Guidance Library v1 status confirmed).
+This document separates implemented V1 functionality from planned roadmap features. It should not be read as a list of completed features unless an item is marked **DONE**. Last reviewed for accuracy: 2026-08-29 (V1 Architecture Pass D0–D6.3 complete, feature freeze for UI/UX redesign and Android production hardening).
 
 ## Status Overview
 
 A quick index of every section below, grouped into four buckets. Each section still carries its own detailed status — this is a map, not a replacement for the detail.
 
-**Current V1 Implemented**
+**Current V1 Implemented** (Architecture Pass D0–D6.3 Complete)
 
-* Account & Profile
-* Natal Chart Engine (Tropical / Whole Sign)
-* Chart UI & Interpretation (core)
-* Journaling (basic)
-* Guidance Primitives
-* Daily Guidance / Today's Energy
-* Weekly Forecast
+* Account & Profile (email/password, OTP verification, password reset, account deletion, profile completion)
+* Natal Chart Engine (Tropical / Western / Whole Sign houses)
+* Chart Calculation Preferences (Tropical/Whole Sign/medium orbs; only current defaults supported)
+* Saved Charts & Guest Chart Creation
+* Chart Wheel, Positions, Houses, Aspects UI & Interpretation
+* Journaling with Guided Reflection (reflection prompts, suggested practices, journal entries)
+* Deterministic Guidance Primitives (transit planets, natal targets, aspects, signs, houses)
+* Daily Guidance / Today's Energy (timezone-aware, deterministic, with transit-house personalization)
+* Weekly Forecast (Monday–Sunday local weeks, seven snapshots, DST-aware, with transit-house context)
+* Typed Navigation and Chart Versioning (backward-compatible schema with legacy support)
+* Comprehensive Test Suite (25 suites, 183 tests covering all core flows)
+
+**Current Phase: UI/UX Redesign & Android Production Hardening**
+
+* Visual Design System (premium/celestial direction, Android-first)
+* Screen Refinement and Component Polish
+* Android Release Configuration and Production Build
+* Privacy Policy and Support Documentation
+* Post-Redesign: iOS and Post-V1 Features
 
 **Partial / Foundation**
 
-* Chart Preferences (only Tropical/Whole Sign/medium supported)
-* Saved Charts & Guest Charts (one-off guest charts only)
-* Shadow Work & Self-Development (prompt/practice primitives exist; no dedicated workflow)
-* Data Privacy & Account Controls (deletion done; export/retention open)
-* Testing (active and improving, not exhaustive)
+* Saved Charts & Guest Chart Persistence (one-off guest charts only; reusable guest profile library not implemented)
+* Shadow Work & Self-Development (prompt/practice primitives exist; dedicated workflow not implemented)
+* Data Privacy & Account Controls (deletion done; data export/retention policy open)
+* Chart Data Import/Export (not implemented)
 
-**Planned Roadmap**
+**Planned Roadmap (Post-V1)**
 
 * AI Features — Ask-Astrologer Chat
 * Saved AI Conversations / Readings
 * Relationship / Synastry
-* Notifications
+* Notifications and Forecast Alerts
 * Analytics / Usage Events
 * Admin / Support Tools
-* CI / Release Readiness
+* Additional Astrology Systems (Vedic, Chinese)
+* Advanced House Systems (Placidus, Equal House, etc.)
+* Advanced Forecasting and Transit Calendar
 
 **Post-MVP / Long-term Platform**
 
-* Reports, Monetization & Subscriptions
-* Calendar & Advanced Forecasting
-* Multi-System Astrology (Vedic, Chinese, and other systems)
+* Reports and Report Generation
+* Monetization & Subscriptions
+* Multi-User Accounts and Relationship Profiles
+* Advanced Forecasting and Milestones
 
 ## Current V1 Scope — Tropical / Western System
 
@@ -54,6 +68,7 @@ Status: **DONE**
 * Password reset / forgot-password flow
 * Profile completion and editing
 * Birth date, birth time, birth location, time zone, latitude, and longitude storage
+* Invalid non-empty stored time zones route to profile correction rather than silently falling back to UTC
 * Account deletion through deployed Supabase Edge Function
 * Destructive confirmation before account deletion
 
@@ -82,7 +97,7 @@ Not yet done:
 Status: **DONE for current Tropical/Whole Sign V1**
 
 * Generate natal chart from user birth data
-* Compute planetary positions
+* Compute ten planetary positions: Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto
 * Compute major aspects
 * Compute Whole Sign houses when coordinates are available
 * Assign planets to houses
@@ -155,10 +170,14 @@ Implemented:
 * Delete journal entries
 * List journal entries
 * Optional chart association support in schema
+* Guidance-to-journal handoff from Today’s Energy and Weekly Forecast
+* Fixed read-only source, prompt, and practice context in guided create mode
+* Editable response-only content for guided entries
+* Stable `prompt_template` persistence for selected guidance prompts
+* Existing saved journal content takes precedence in edit mode
 
 Not yet done:
 
-* Journal handoff from DailyGuidance / WeeklyForecast prompts
 * Prompt archive
 * Tags/favorites/search
 * Shadow-work milestones
@@ -172,13 +191,14 @@ Status: **DONE**
 
 Implemented deterministic guidance primitives for:
 
-* Transit planet guidance domains
-* Natal target planet activation domains
-* Aspect dynamics
-* Sign guidance
-* House guidance
-* Reflection prompts
-* Suggested practices
+* 7 transit-planet guidance records: Moon, Sun, Mercury, Venus, Mars, Jupiter, Saturn
+* 10 natal-target activation records: Sun through Pluto
+* 5 aspect-dynamic records: conjunction, opposition, square, trine, sextile
+* Canonical aspect tones, including opposition as integrative and square as challenging
+* 12 sign guidance records
+* 12 house guidance records
+* 34 reflection prompts
+* 24 suggested practices
 * Stable IDs and source IDs
 * Coverage and integrity tests
 
@@ -190,51 +210,57 @@ Purpose:
 
 ### Daily Guidance / Today’s Energy
 
-Status: **DONE**
+Status: **DONE for deterministic V1**
 
 Implemented:
 
-* Deterministic DailyGuidance builder
-* Mood section
-* Watch-for section
-* Opportunity section
-* Transit summary
-* Reflection prompt
-* Suggested practice
-* No-aspect fallback
-* Dashboard Today’s Energy UI powered by DailyGuidance
+* Timezone-aware deterministic DailyGuidance builder (uses local date semantics for consistent seed-based selection)
+* Mood section (strongest aspect or no-aspect fallback)
+* Warning section (with updated prose for opposition aspects)
+* Opportunity section (with same-planet conjunction handling)
+* Transit summary (brief narrative)
+* Reflection prompt (deterministically selected from 34 prompts)
+* Suggested practice (deterministically selected from 24 practices)
+* No-aspect fallback (complete daily guidance without active transits)
+* Transit-house personalization (resolves transiting planet’s house through natal Whole Sign cusps)
+* Expanded `Life area` context showing the current transiting planet’s natal Whole Sign house and canonical house focus when available
+* Dashboard Today’s Energy UI with compact and expanded states
+* One coherent reflection/practice CTA into the fixed-context JournalEditor flow
 
 Current limitations:
 
-* Focused on current supported transit logic
 * No AI-generated expansion yet
-* No journal handoff yet
+* No saved guidance history yet
 * No notifications yet
 
 ### Weekly Forecast
 
-Status: **DONE**
+Status: **DONE for deterministic Dashboard V1**
 
 Implemented:
 
-* Deterministic WeeklyForecast builder
-* Monday–Sunday local week
-* Local-noon daily snapshots
-* Time-zone and DST handling
-* Seven daily themes
-* Weekly themes
-* Strongest transit highlights
-* Journal prompts
-* Suggested practices
-* No-aspect fallback
-* Dashboard Weekly Forecast UI
+* Deterministic WeeklyForecast builder (timezone-aware, DST-handling)
+* Monday–Sunday local week (using ISO 8601 week logic in provided timezone)
+* Seven local-noon daily snapshots in the supplied time zone
+* Seven-day Daily Rhythm with weekday, primary theme, concise summary, and optional day-specific `House N · focus`
+* Weekly event candidates: Moon, Sun, Mercury, Venus, Mars, Jupiter, and Saturn
+* Deterministic event ranking using planet relevance, aspect relevance, sampled orb closeness, and sampled `activeDays`
+* Up to five deduplicated strongest transit highlights, with no more than one Moon highlight and no more than two highlights per other moving planet
+* Up to three weekly patterns derived from the strongest ranked events
+* Representative prompt and practice selected from the highest-ranked weekly pattern; background weeks use deterministic frequency-based selection
+* Day-specific transit-house personalization from each local-noon DailyGuidance snapshot
+* Aggregated weekly transit highlights remain house-neutral to avoid implying one house across a multi-day event
+* No-aspect fallback (complete weekly forecast when no personal aspects found)
+* Collapsible Dashboard Weekly Forecast card with sampled persistence labels and one weekly reflection CTA
+* Jupiter and Saturn are weekly-only moving transit candidates and do not affect Today’s Energy
 
 Current limitations:
 
-* No dedicated weekly forecast screen yet unless added later
-* No notifications
+* No dedicated weekly forecast screen (Dashboard integration only)
+* No notifications or scheduled alerts
 * No saved weekly forecast history
 * No AI-generated longform weekly synthesis
+* No multi-week or monthly forecasting yet
 
 ## AI Features
 
@@ -291,7 +317,9 @@ Status: **PARTIAL FOUNDATION / NOT FULLY IMPLEMENTED**
 Implemented foundation:
 
 * Reflection prompts and suggested practices exist in the deterministic guidance layer.
-* Daily and weekly guidance can surface prompts/practices.
+* Daily and weekly guidance surface one coherent prompt/practice reflection section.
+* Reflection handoff opens JournalEditor with fixed source, prompt, and practice context.
+* Safety framing presents this as reflection, not diagnosis or therapy.
 
 Not yet done:
 
@@ -301,7 +329,6 @@ Not yet done:
 * Milestone tracking
 * Completion tracking
 * AI-generated shadow-work expansion
-* Journal prompt handoff
 
 ## Relationship / Synastry Roadmap
 
@@ -483,15 +510,15 @@ Not yet done:
 
 ### Testing
 
-Status: **ACTIVE / IMPROVING**
+Status: **ACTIVE**
 
-Current verified direction:
+Current verified baseline:
 
-* Typecheck
-* Jest tests
-* Lint
-* `git diff --check`
-* Focused regression tests for auth, chart, journal, account deletion, guidance primitives, daily guidance, weekly forecast, and Dashboard guidance rendering
+* Typecheck passes
+* Jest passes: 25 suites / 183 tests
+* Lint passes
+* `git diff --check` passes
+* Focused regression coverage includes auth, chart persistence and hydration, ChartData compatibility, typed navigation flows, journals, account deletion, guidance primitives, daily guidance, weekly forecast, transit-house resolution, and Dashboard rendering/error behavior
 
 ### CI / Release Readiness
 
@@ -533,7 +560,9 @@ Planned:
 
 Naksha V1 is currently best described as:
 
-**A Western/Tropical astrology app with authenticated profiles, natal chart generation, local interpretations, saved/guest charts, journaling, deterministic daily guidance, and deterministic weekly forecasts.**
+**A functioning Western/Tropical astrology application with authenticated profiles, natal chart generation, local interpretations, saved and guest charts, deterministic daily and weekly transit guidance, transit-house personalization, guided reflection, and journaling.**
+
+The D0–D6.3 V1 depth and architecture pass is complete. The application is entering final UI/UX redesign and Android production hardening; it is not yet production-ready or released.
 
 Naksha is not yet:
 
@@ -545,3 +574,15 @@ Naksha is not yet:
 * a subscription/report product
 
 Those are roadmap tracks.
+
+## Immediate Android Release Path
+
+The remaining V1 work is release work, not another major feature program:
+
+1. Controlled UI/UX redesign while preserving the tested product loops
+2. Android production identity, configuration, and signing
+3. Signed release build and release-candidate QA on representative devices
+4. Privacy, retention, support, and store-listing requirements
+5. Google Play testing tracks and submission
+
+iOS is intentionally later. Synastry, AI chat, notifications, additional astrology systems, outer planets as moving transit candidates, retrogrades, and lunar phases are post-V1 possibilities rather than Android V1 blockers.

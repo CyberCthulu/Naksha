@@ -1,393 +1,184 @@
-# Naksha Decomposition Roadmap
+# Naksha Architecture and Release Roadmap
 
-Generated: 2026-05-09
-Last updated: 2026-06-29 — Forecast + Guidance Library v1 Slices 1–5 complete.
-Scope: documentation-only roadmap for large-file cleanup before feature expansion.
+Last updated: 2026-08-29
+Status: D0-D6.3 V1 depth and architecture pass complete; Android UI/UX redesign and release hardening are next.
+Canonical engineering status: `docs/naksha-codebase-handoff.md`
+Canonical product scope: `docs/Feature-List.md`
 
 ## 1. Purpose
 
-Naksha has several screens, hooks, and components that mix data loading, persistence, navigation, UI layout, and domain logic. This roadmap identifies safe, independently committable decomposition slices so the codebase can become easier to extend without a broad refactor.
-
-The goal is not to rewrite everything at once. Each slice should preserve runtime behavior, keep chart/auth/profile contracts intact, and be small enough to verify manually.
-
-## 2. Files Reviewed
-
-- `client/screens/ProfileScreen.tsx`
-- `client/screens/DashboardScreen.tsx`
-- `client/screens/CompleteProfileScreen.tsx`
-- `client/screens/CheckEmailScreen.tsx`
-- `client/hooks/useChartData.ts`
-- `client/screens/ChartScreen.tsx`
-- `client/components/charts/InterpretationModal.tsx`
-- `client/components/charts/InterpretationCard.tsx`
-
-## 3. Per-File Analysis
-
-| File | Risk | Current mixed responsibilities | Best extraction candidates | Behavior that must remain unchanged | Main value |
-| --- | --- | --- | --- | --- | --- |
-| `ProfileScreen.tsx` | Medium | Loads profile, chart preferences, subscription, purchases; creates default preference row; renders account, birth details, preferences, billing, purchases, privacy, account deletion confirmation, and sign-out. | `useProfileScreenData`, `lib/chartPreferences.ts`, `ProfileHeader`, `BirthDetailsCard`, `ChartPreferencesCard`, `SubscriptionCard`, `PurchasesCard`, `AccountActionsCard`, reusable `InfoRow`/`ChoiceRow`. | No auth metadata preference writes; default `chart_preferences` row is created/upserted; unsupported options stay disabled/coming soon; account deletion remains server-side through the `delete-account` Edge Function. | Mostly organization, plus lower future risk for preferences, billing, and privacy work. |
-| `DashboardScreen.tsx` | High | Auth user lookup, user-row bootstrap/repair, profile completion routing, chart lookup/build/auto-save, sign summary, DailyGuidance, WeeklyForecast, and navigation/UI state. | First: shared chart-summary/chart-lookup loader with explicit lookup-error handling. Later, only when feature-attached: `DashboardSignsCard`, guidance-loading hook, `DashboardBirthDetailsCard`, `DashboardActions`. | Older-account repair remains; incomplete profiles still route to `CompleteProfile`; self chart opens with `chartMode: 'self'`; charts without coordinates do not save; daily/weekly builders receive the same UI-boundary instant and weekly receives the normalized time zone. | This is now the main architectural pressure point. Focused tests guard current behavior; avoid a broad one-pass rewrite. |
-| `CompleteProfileScreen.tsx` | Medium | Loads user row, maps DB date/time to picker state, manages form state, validates, geocodes fallback, updates `public.users`, renders header/footer/form. | `useCompleteProfileForm`, `userRowToProfileForm`, `profileFormToUserUpdate`, `resolveBirthLocationForSave`, `CompleteProfileHeader`, `CompleteProfileFooter`. | Writes `public.users` only; manual typed location geocodes before save; OpenCage timezone can update `time_zone`; `navigation.goBack()` remains. | Save/geocode lifecycle tests now guard current behavior and prepare reuse for guest birth-data entry. |
-| `CheckEmailScreen.tsx` | Medium-High | OTP UI, resend, verify, session/user confirmation, signup profile upsert, fallback profile fetch, completion routing. | `lib/profileCompletion.ts`, `lib/signupProfileBootstrap.ts`, `OtpVerificationCard`. | Resend behavior, OTP alerts, route-param profile upsert, and deterministic reset to `Dashboard` or `CompleteProfile` remain. | Reduces auth-flow drift and future profile-rule risk. |
-| `useChartData.ts` | High | Saved-chart hydration, `chart_data` validation handling, auth lookup, canonical chart lookup, render-only charts, self auto-save, guest manual save, save warnings, async cancellation guards, alerts, chart state. | `lib/chartPersistence.ts`, `hydrateChartData`, `findSavedChartByIdentity`, `saveBuiltChart`, later `useChartLoader`/`useChartSaveAction`. | `fromSaved` path stays valid; self charts can auto-save; guest charts do not auto-save; missing-coordinate charts stay view-only; save warnings and cancellation behavior remain. | High future feature value; focused hook tests now guard current behavior. |
-| `ChartScreen.tsx` | Medium | Route guard, timezone validation, chart hook wiring, focus side effect, save button state, chart layout, page building, modal wiring. | `ChartScreenContent`, `ChartSaveControl`, `ChartViewOnlyNotice`, `useChartInterpretationPages`, `ChartBody`. | Invalid route empty state, saved chart flow, save button labels, initial Sun focus, guest manual-save behavior, and interpretation modal behavior remain. | Reduces crash/hook-order risk and now supports the guest chart entry flow. |
-| `InterpretationModal.tsx` | Medium | Modal shell, duplicate interpretation types, circular pager index math, previous/next controls, close/backdrop, page rendering. | Import shared `interpretationTypes`, `useCircularPager`, `InterpretationModalHeader`, `InterpretationPager`. | Circular swipe, first/last wrap, disabled arrows for one page, and close/reopen reset remain. | Pager tests now guard current behavior; extraction is optional and should be feature-attached. |
-| `InterpretationCard.tsx` | Low-Medium | Interpretation block filtering and paragraph/sentence text splitting for clipping-safe text rendering. | Shared text splitting helper only if another component needs identical behavior. | Long interpretation text must not clip final words; paragraph spacing should remain readable. | Current behavior is small and tested; avoid refactor unless text rendering changes. |
-
-## 4. Ranked Roadmap
-
-### ✅ DONE
-
-1. **ProfileScreen presentational split (Slice 1A)**
-   - Extracted display cards: `ProfileHeader`, `BirthDetailsCard`, `SubscriptionCard`, `PurchasesCard`, `DataPrivacyCard`, `InfoRow`.
-   - Supabase calls and preference save handlers remain in `ProfileScreen`.
-
-2. **ProfileScreen interactive card extraction (Slice 1B)**
-   - Extracted `ChartPreferencesCard`, `ChoiceRow`, `AccountActionsCard` (composing `DataPrivacyCard` + sign-out).
-   - `onUpdatePrefs` callback passed as prop; no Supabase logic moved to components.
-
-3. **Shared profile completion helpers**
-   - `client/lib/profileCompletion.ts`: `isProfileComplete`, `needsProfileCompletion`, `profileFromAuthMetadata`, `ProfileCompletionData`.
-   - Used by both `DashboardScreen` and `CheckEmailScreen`.
-
-4. **ChartScreen shell/content split**
-   - `ChartScreen.tsx`: route guard + timezone validation only.
-   - `ChartScreenContent.tsx`: all hooks (`useChartData`, `useChartInterpretation`, `useSpace`) and rendering.
-   - Passed props: `profile`, `chartMode`, `fromSaved`, `saved`, `tz`.
-
-5. **Runtime `chart_data` validation**
-   - Added `client/lib/chartDataValidation.ts` with `parseChartData`.
-   - Persisted chart reads in `useChartData`, `MyCharts`, and `DashboardScreen` validate JSON before use.
-
-6. **Test runner setup**
-   - Added Jest/Expo config and `npm test`.
-   - Initial pure-helper tests cover `profileCompletion`, `chartDataValidation`, and journal upsert payload behavior.
-
-7. **Auto-save failure visibility**
-   - `useChartData` exposes `saveWarning`.
-   - `ChartScreenContent` shows an inline warning when self chart auto-save fails, while the chart remains visible.
-
-8. **AuthCallback handling hardening**
-   - URL processing now deduplicates real callback URLs without permanently blocking later URL events when no initial URL exists.
-   - Raw URL/token logs and step-by-step success logs were removed; real failures use warnings and user-visible alerts.
-
-9. **Journal create-mode payload fix**
-   - `upsertJournal` omits `id` when creating a new journal entry and preserves it for updates.
-   - Tests cover create/update payload behavior and `chart_id` preservation.
-
-10. **useChartData async cancellation guard**
-    - Added mounted/current-operation guards for async chart load and save work.
-    - Stale loads and post-unmount saves no longer update React state or show stale alerts.
-
-11. **CompleteProfile top spacing polish**
-    - Removed duplicate safe-area padding from the in-screen header.
-    - Shared `AuthContainer` remains responsible for safe-area top padding.
-
-12. **Chart generation and persistence helper tests**
-    - `lib/__tests__/charts.test.ts` added.
-    - Covers `buildChartData` shape with and without coordinates, `saveChart` coordinate guard, canonical upsert payload/onConflict, and Supabase error propagation.
-
-13. **Auth/profile navigation screen tests**
-    - `screens/__tests__/CheckEmailScreen.test.tsx` and `screens/__tests__/AuthCallbackScreen.test.tsx` added.
-    - Covers missing email/code validation, resend success/failure, OTP complete/incomplete profile resets, AuthCallback token/code/fragment paths, delayed URL handling, and auth error alert plus finish routing.
-
-14. **DashboardScreen behavior tests**
-    - `screens/__tests__/DashboardScreen.test.tsx` added.
-    - Covers complete/incomplete profile behavior, auth metadata repair, saved chart summary hydration, invalid saved `chart_data` fallback, self chart auto-save, and missing-coordinate no-save behavior.
-
-15. **CompleteProfileScreen save/geocode lifecycle tests**
-    - `screens/__tests__/CompleteProfileScreen.test.tsx` added.
-    - Covers load/prefill, validation, selected-coordinate save, manual geocode fallback, geocode failure, timezone handling, and `public.users` update payload.
-
-16. **InterpretationModal pager tests**
-    - `components/charts/__tests__/InterpretationModal.test.tsx` added.
-    - Covers closed state, one-page behavior, prev/next controls, circular boundaries, close, and close/reopen reset behavior.
-
-17. **ESLint setup and warning cleanup**
-    - Added Expo-compatible ESLint flat config and `"lint": "eslint ."`.
-    - Cleaned warnings narrowly; `npm run lint` passes cleanly.
-
-18. **Supabase generated types**
-    - `client/lib/database.types.ts` generated from Supabase.
-    - `client/lib/supabase.ts` uses `createClient<Database>()`.
-    - Shared DB row aliases in `domainTypes.ts` derive from generated `Tables`.
-
-19. **Chart preferences calculation plumbing**
-    - `getChartCalculationPreferences` reads `public.chart_preferences` with default fallback.
-    - `buildChartData` accepts `ChartCalculationPreferences`.
-    - `findAspects` receives `orb_mode`.
-    - `useChartData` and `DashboardScreen` pass preferences into computed chart builds.
-    - Output intentionally remains Whole Sign, Tropical, and medium orbs only.
-
-20. **Guest Chart Creation UI v1**
-    - `CreateGuestChartScreen` added.
-    - `CreateGuestChart` route registered.
-    - Dashboard entry added: "Create Someone Else's Chart".
-    - Guest form collects name, birth date, birth time, location, time zone, and selected coordinates when available.
-    - Submit navigates to `Chart` with `chartMode: 'guest'`.
-    - Typed-location guest charts may pass null coordinates and rely on existing View Only behavior.
-    - No schema, migration, `birth_profiles` table, synastry, compatibility, composite chart, report, or premium gating added.
-
-21. **Interpretation clipping and circular pager restoration**
-    - `InterpretationCard` splits long prose by paragraph and sentence so final words do not clip.
-    - `InterpretationModal` restores circular swipe/infinite pager behavior with sentinel pages.
-    - Manual verification confirms clipping appears fully fixed and swipe/infinite modal works.
-    - Current per-page scroll-position preservation is intentional and is not a release blocker.
-
-22. **App-root safe-area wrapper**
-    - `SafeAreaProvider` wraps the app root so screens and modal sheets can consistently use safe-area insets.
-
-23. **Daily transit foundation**
-    - `client/lib/dailyTransits.ts` added.
-    - Uses `computeTransitPlanets` from `astro`.
-    - Provides `findDailyTransitAspects`, `findStrongestDailyTransitAspect`, and `buildTodayEnergy`.
-    - This remains the low-level fast-transit/aspect layer consumed by DailyGuidance.
-
-24. **Password reset / forgot-password**
-    - Login exposes a Forgot Password entry point.
-    - `ForgotPasswordScreen` requests a Supabase reset email and uses neutral success copy.
-    - `AuthCallbackScreen` routes recovery callbacks to `ResetPasswordScreen`.
-    - Auth callback URL handoff handles fragment recovery links without logging sensitive callback URLs or tokens.
-    - `ResetPasswordScreen` validates and updates the password.
-    - Automated verification passes and the flow has been manually verified.
-
-25. **Account deletion MVP**
-    - Profile exposes a Delete account action with destructive confirmation.
-    - `client/lib/accountDeletion.ts` invokes the authenticated `delete-account` Edge Function.
-    - `supabase/functions/delete-account/index.ts` verifies the JWT server-side and derives `user.id` from the verified JWT, not request body input.
-    - The Edge Function deletes app-owned rows first, then calls `auth.admin.deleteUser(user.id)` last.
-    - Existing cascades remove `public.users` and `chart_preferences`.
-    - `deno.json` and `deno.lock` live with the function for Deno/editor dependency resolution.
-    - Automated verification passes. The function is deployed to Supabase project `ujupnlkobzhpjewruiac` and passed disposable-account manual QA, including post-delete checks of `auth.users`, `public.users`, `public.chart_preferences`, `public.charts`, and `public.journals`.
-    - This confirms the tested end-to-end path without claiming broader production hardening, monitoring, or recovery coverage.
-
-26. **Guidance lexicon primitives**
-    - Added `client/lib/lexicon/guidance/` contracts and deterministic content for transit planets, natal targets, aspect dynamics, signs, houses, reflection prompts, and suggested practices.
-    - Stable IDs/source IDs plus coverage and reference-integrity tests guard the content layer.
-
-27. **Deterministic DailyGuidance builder**
-    - Added `client/lib/guidance/types.ts`, `dailyGuidance.ts`, and barrel exports.
-    - Composes existing transit math with guidance primitives into mood, Watch for, opportunity, transit summary, reflection prompt, suggested practice, and no-aspect fallback.
-    - Explicit evaluation inputs, stable selection, provenance, immutability, and wall-clock independence are tested.
+This document records the completed architecture work and the remaining sequence to an Android V1 release. It replaces the earlier decomposition queue that scheduled Dashboard lookup hardening, journal handoff, guidance depth, navigation typing, and chart-data compatibility; those slices have shipped.
 
-28. **Deterministic WeeklyForecast builder**
-    - Added `client/lib/guidance/weeklyForecast.ts`.
-    - Produces a Monday–Sunday local week from seven local-noon DailyGuidance snapshots with timezone/DST handling.
-    - Deduplicates strongest transit keys and returns bounded weekly themes, prompts, practices, source IDs, and background fallback.
+The governing rule remains conservative: decompose a large surface only when a concrete product or release task benefits from it. Naksha does not need a broad rewrite before Android release.
 
-29. **Dashboard TodayEnergyCard UI**
-    - `client/components/guidance/TodayEnergyCard.tsx` renders all structured DailyGuidance sections.
-    - Dashboard tests cover populated and no-aspect fallback rendering.
+## 2. Current Architecture
 
-30. **Dashboard WeeklyForecastCard UI**
-    - `client/components/guidance/WeeklyForecastCard.tsx` renders week range, themes, strongest transits, prompts, practices, and no-aspect fallback.
-    - Dashboard passes the same UI-created instant to daily and weekly builders and passes the normalized profile time zone to WeeklyForecast.
+Naksha is an Expo/React Native/TypeScript application backed by Supabase. The active V1 consists of:
 
----
+- Supabase email/password auth, OTP/callback verification, password recovery, persistent sessions, profile completion, and server-side account deletion.
+- Tropical/Western natal chart calculation using ten planets, five major aspects, and Whole Sign houses when coordinates exist.
+- Saved self charts, one-off guest charts, a chart wheel, placement/house/aspect lists, and local interpretation content.
+- Pure deterministic DailyGuidance and WeeklyForecast builders backed by stable authored lexicon records.
+- Transit-through-natal-house context calculated from the current moving planet longitude and natal Whole Sign cusps.
+- Guided reflection handoff into JournalEditor plus journal create/edit/list/delete behavior.
+- Shared saved-chart hydration, typed active navigation, and explicit persisted ChartData compatibility/version semantics.
 
-### REMAINING (re-ranked)
+The current automated baseline is 25 Jest suites / 183 tests, with typecheck, lint, and `git diff --check` passing.
 
-- **Dashboard chart-summary reliability slice**
-   - Handle chart lookup errors explicitly instead of treating them as a missing saved chart.
-   - Extract shared chart-summary/chart-lookup loading only as part of this concrete fix; do not move the whole Dashboard load flow in one pass.
+## 3. Completed Stabilization Foundation
 
-- **Journal prompt handoff**
-   - Let daily/weekly reflection prompts open JournalEditor with prompt metadata and persist `prompt_template`.
-   - Preserve existing journal create/update payload behavior and avoid saving whole forecast objects.
+Before the D0-D6.3 depth pass, targeted slices established the base that current features depend on:
 
-- **Shadow-work surface**
-   - Build a dedicated deterministic prompt-selection/workflow layer and UI from the existing prompt/practice primitives.
-   - Milestones, cycles, and journal-history personalization remain separate product decisions.
+- Profile presentational components and shared profile-completion helpers.
+- ChartScreen route shell / ChartScreenContent split.
+- Runtime saved-chart validation and malformed-data fallback.
+- Canonical coordinate-inclusive chart identity and missing-coordinate view-only behavior.
+- `useChartData` branch coverage, auto-save warning visibility, and stale-async guards.
+- Password reset, auth callback hardening, and deployed account deletion.
+- Generated Supabase types and source-controlled migrations.
+- Guest chart creation with manual-save-only guest behavior.
+- Interpretation clipping/pager fixes and app-root safe-area support.
+- Chart preference plumbing for the only supported V1 settings: Tropical, Whole Sign, medium orbs.
 
-- **Privacy/account follow-up slice**
-   - Account deletion is deployed and manually verified, but data export, retention policy, external subscription cancellation/refunds, and optional delete-data-without-deleting-account behavior remain open.
+These are completed contracts, not roadmap items.
 
-- **UI/UX revamp slice**
-   - Give Dashboard, chart interpretation, guest chart entry, saved charts, and profile a cohesive pre-release interaction/visual pass.
+## 4. Completed D0-D6.3 Pass
 
-- **Release readiness slice**
-   - Add CI-backed verification, schema/migration validation, and a manual release QA checklist.
+| Slice | Result | Architectural contract |
+| --- | --- | --- |
+| D0 | Reflection CTA consolidation | Each guidance card presents one coherent prompt/practice reflection action. |
+| D1 | Daily local-date correction | Prompt/practice rotation follows the user's local calendar date while transit math uses the actual instant. |
+| D2 | Fixed-context JournalEditor | Guidance context is read-only; only the user's response is saved as journal content; edit-mode saved content wins. |
+| D3 | Weekly interpretation/rhythm polish | Daily Rhythm, sampled persistence labels, representative reflection, canonical aspect tones, and existing weekly event mechanics are presented coherently. |
+| D4/D4.1 | Guidance content depth | The authored corpus expanded to 34 prompts and 24 practices, with stable pre-existing IDs and refined planet/target/aspect/sign prose. |
+| D5/D5.1 | Transit-house context | Daily Life area and day-specific weekly house context use the moving planet's current longitude against natal Whole Sign houses; missing houses omit context safely. |
+| D6.1 | Shared hydration/guidance path | `hydrateChartData` is shared by Dashboard and `useChartData`; saved/fresh charts converge before guidance; invalid stored time zones route to correction. |
+| D6.2 | Active navigation typing | `RootStackParamList` types all 14 registered routes and active JournalEditor/Chart payloads without changing runtime navigation. |
+| D6.3 | ChartData compatibility contract | New chart JSON carries `schema_version: 1` and `calculation_version: 1`; valid unversioned legacy data remains supported; future versions are not silently consumed. |
 
-- **Synastry / relationship foundation decision** *(builds on Guest Chart UI v1)*
-   - Decide whether guest charts remain one-off entries, get UX polish only, or need reusable guest birth profiles/relationship labels.
-   - Define reusable profile identity and relationship metadata before synastry/compatibility/composite work. Do not add schema until the workflow is defined.
+## 5. Current Pressure Points
 
-- **Later feature slice: Additional chart systems** *(product/math scope)*
-   - Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, and house-degree display are not implemented.
-   - Add math, DB constraints, UI states, and tests together when each system is product-ready.
+### Dashboard
 
-- **Product decision slice: Chat, subscription, and service stubs** *(feature clarity)*
-   - Decide whether to implement or intentionally park zero-line `ChatScreen`, `SubscriptionScreen`, and placeholder service modules: `conversations`, `reports`, `notifications`, `subscriptions`, and `usage`.
-   - The empty screens remain unregistered in `App.tsx`.
+`DashboardScreen.tsx` still owns session/profile orchestration, metadata repair, profile-completion routing, saved-vs-fresh chart resolution, auto-save policy, guidance construction, navigation callbacks, loading/error state, and rendering. D6.1 removed duplicated hydration and guidance wiring, but Dashboard was not fully decomposed.
 
-- **Tooling slice: CI-backed schema/migration validation** *(release safety)*
-   - Automate or document a reliable `supabase db reset`/`db diff` workflow.
-   - Client tests, lint, generated types, and typecheck are in place; migration validation is still manual.
+During redesign, extract only presentation that clearly improves the active screen change. Do not move the complete async load flow into a new service or state machine merely to reduce line count.
 
-- **Feature-attached cleanup slices** *(ongoing, not standalone)*
-   - Extract Dashboard, CompleteProfile, Profile, CheckEmail, `useChartData`, or `InterpretationModal` internals only when touching that surface for a concrete feature or defect.
-   - Avoid broad open-ended refactors now that stabilization coverage is in place.
+### Release Configuration
 
-## 5. Completed Slices (Summary)
+Production application identity, Android signing, signed release-build proof, store metadata, privacy/support artifacts, and release-candidate QA are not complete. These are launch blockers even though the V1 product loop is implemented.
 
-**Slice 1A — ProfileScreen presentational extraction** ✅
-Extracted `ProfileHeader`, `BirthDetailsCard`, `SubscriptionCard`, `PurchasesCard`, `DataPrivacyCard`, `InfoRow`. Supabase calls, `onUpdatePrefs`, `onSignOut`, and navigation handlers remained in `ProfileScreen`.
+### Operational Safety
 
-**Slice 1B — ProfileScreen interactive card extraction** ✅
-Extracted `ChartPreferencesCard`, `ChoiceRow`, `AccountActionsCard`. `onUpdatePrefs` passed as prop. No Supabase logic moved to components. `ProfileScreen` remains a large screen because account/privacy data loading and action wiring still live there.
+Local typecheck/test/lint coverage is strong, but CI, automated Supabase reset/diff validation, and production crash/error visibility remain open. Choose the smallest release-appropriate implementation rather than building a large internal platform.
 
-**Shared profileCompletion helpers** ✅
-`client/lib/profileCompletion.ts` created with `isProfileComplete`, `needsProfileCompletion`, `profileFromAuthMetadata`, and `ProfileCompletionData`. Both `DashboardScreen` and `CheckEmailScreen` import from there. Dashboard repair behavior and CheckEmail navigation behavior unchanged.
+### Content and Feature Boundaries
 
-**ChartScreen shell/content split** ✅
-`ChartScreen.tsx` retains only route guard (missing birth fields) and timezone validation. `ChartScreenContent.tsx` owns all hooks and rendering after both guards pass. `profile`, `chartMode`, `fromSaved`, `saved`, and `tz` passed as props.
+The current deterministic guidance system is coherent and should be stabilized through on-device UX review. It does not include AI, saved forecast history, notifications, retrogrades, lunar phases, applying/separating timing, or outer planets as moving transit candidates. Those are post-V1 decisions.
 
-**Runtime `chart_data` validation** ✅
-`client/lib/chartDataValidation.ts` created with `parseChartData`. `useChartData`, `MyCharts`, and `DashboardScreen` now validate persisted chart JSON before use and degrade safely on malformed rows.
+## 6. Immediate Android V1 Roadmap
 
-**Test runner setup** ✅
-`client/jest.config.js` and `"test": "jest"` added. Initial tests cover `profileCompletion`, `chartDataValidation`, and journal upsert payload behavior.
+### 1. Controlled UI/UX Redesign
 
-**Auto-save failure visibility** ✅
-`useChartData` now returns `saveWarning`; `ChartScreenContent` shows an inline warning when self chart auto-save fails. Manual save success clears the warning.
+Type: product polish
+Goal: establish and propagate an approved premium/celestial/editorial Android visual direction without changing tested behavior.
+Primary document: `docs/ui-redesign/redesign-plan.md`
 
-**AuthCallback handling hardening** ✅
-Auth callback URL processing no longer treats a null initial URL as permanently handled. Real URLs are deduplicated, noisy/sensitive logs were removed, and auth errors produce warnings plus user-visible alerts before normal finish routing.
+Preserve:
 
-**Journal create-mode payload fix** ✅
-`upsertJournal` omits `id` for create-mode upserts and preserves `id` for update-mode upserts. Tests verify create/update payload construction and `chart_id` behavior.
+- auth/profile completion and invalid-timezone correction;
+- chart save/open/delete and self/guest save rules;
+- DailyGuidance/WeeklyForecast semantics and collapse behavior;
+- fixed-context journal handoff and edit precedence;
+- account deletion contract;
+- legacy/current/unsupported chart compatibility behavior.
 
-**`useChartData` branch coverage** ✅
-`hooks/__tests__/useChartData.test.tsx` added (7 tests). Covers: valid `fromSaved` load skips auth/recompute; invalid saved data falls back to recompute; missing-coordinate view-only blocks DB lookup and save; self charts auto-save; guest charts do not auto-save; auto-save failure sets `saveWarning` and leaves `isSaved: false`; manual save clears warning and sets `isSaved: true`.
+### 2. Android Production Configuration
 
-**useChartData async cancellation guard** ✅
-Mounted/current-operation guards prevent stale async load/save work from updating state or showing stale alerts after unmount or after a newer load supersedes an older one.
+Type: release hardening
+Goal: finalize product identity, Android package/application configuration, production environment handling, and repeatable release signing.
 
-**CompleteProfile top spacing polish** ✅
-Removed duplicate top safe-area padding from the screen header. Safe-area behavior remains owned by `AuthContainer`.
+Avoid mixing feature work into native/release configuration. Generated Android files should change only when the release task explicitly requires them.
 
-**Chart generation and persistence helper tests** ✅
-`lib/__tests__/charts.test.ts` added. Covers `buildChartData` shape with and without coordinates, `saveChart` coordinate guard, canonical upsert payload/onConflict, and Supabase error propagation.
+### 3. Signed Release Candidate and QA
 
-**Auth/profile navigation screen tests** ✅
-`screens/__tests__/CheckEmailScreen.test.tsx` and `screens/__tests__/AuthCallbackScreen.test.tsx` added. Covers CheckEmail missing email/code validation, resend success/failure, OTP complete profile to `Dashboard`, OTP incomplete profile to `CompleteProfile`, AuthCallback token hash to `verifyOtp`, auth code to `exchangeCodeForSession`, fragment tokens to `setSession`, delayed URL after null initial URL, and auth error alert plus finish routing.
+Type: release hardening
+Goal: prove the production build on representative Android devices and exercise the complete V1 loop.
 
-**DashboardScreen behavior tests** ✅
-`screens/__tests__/DashboardScreen.test.tsx` added. Covers complete/incomplete profile behavior, auth metadata repair, saved chart summary hydration, invalid saved `chart_data` fallback, self chart auto-save, and missing-coordinate no-save behavior.
+Minimum release-candidate coverage:
 
-**CompleteProfileScreen save/geocode lifecycle tests** ✅
-`screens/__tests__/CompleteProfileScreen.test.tsx` added. Covers load/prefill, validation, selected-coordinate save, manual geocode fallback, geocode failure, timezone handling, and `public.users` update payload.
-
-**InterpretationModal pager tests** ✅
-`components/charts/__tests__/InterpretationModal.test.tsx` added. Covers closed state, one-page behavior, prev/next controls, circular boundaries, close, and close/reopen reset behavior.
-
-**ESLint setup and warning cleanup** ✅
-Expo-compatible ESLint flat config and `"lint": "eslint ."` added. Targeted cleanup brought `npm run lint` to zero warnings/errors.
-
-**Supabase generated types** ✅
-`client/lib/database.types.ts` generated from Supabase. `client/lib/supabase.ts` now uses `createClient<Database>()`, and DB row aliases in `domainTypes.ts` derive from generated `Tables`.
-
-**Chart preferences calculation plumbing** ✅
-`getChartCalculationPreferences` reads `public.chart_preferences` and falls back to defaults when the row is missing or unreadable. `buildChartData` accepts `ChartCalculationPreferences`, `findAspects` receives `orb_mode`, and `useChartData` plus `DashboardScreen` pass preferences into computed chart builds. Current output remains intentionally unchanged: Whole Sign, Tropical, and medium orbs only.
-
-**Guest Chart Creation UI v1** ✅
-`CreateGuestChartScreen` added, `CreateGuestChart` route registered, and Dashboard now exposes "Create Someone Else's Chart". The form collects name, birth date, birth time, location, time zone, and selected coordinates when available. Submit navigates to `Chart` with `chartMode: 'guest'`. Typed-location guest charts may pass null coordinates and rely on existing View Only behavior. No schema, migrations, `birth_profiles` table, synastry, compatibility, composite chart, report, or premium gating added.
-
-**Interpretation clipping and circular pager restore** ✅
-`InterpretationCard` now splits long interpretation prose into paragraph/sentence nodes to avoid clipping final words. `InterpretationModal` circular swipe/infinite pager behavior is restored and manually verified. Per-page scroll position is preserved by current design and is not considered a bug or release blocker.
-
-**App-root SafeAreaProvider** ✅
-`SafeAreaProvider` wraps the app root, supporting safe-area-aware screens and modal sheets.
-
-**Daily Transits / Today’s Energy v1** ✅
-`client/lib/dailyTransits.ts` remains the low-level fast-transit foundation. `buildDailyGuidance` now composes it with guidance primitives, and `TodayEnergyCard` renders mood, Watch for, opportunity, transit summary, reflection prompt, practice, and fallback.
-
-**Guidance primitives and deterministic forecast builders** ✅
-`client/lib/lexicon/guidance/` supplies typed deterministic content with stable IDs. `client/lib/guidance/` supplies tested DailyGuidance and timezone-aware Monday–Sunday WeeklyForecast builders.
-
-**Dashboard forecast UI** ✅
-`TodayEnergyCard` and `WeeklyForecastCard` render the deterministic daily and weekly outputs. Weekly UI is a compact Dashboard surface rather than a separate screen.
-
-**Password reset / forgot-password** ✅
-Login now links to `ForgotPasswordScreen`, reset email requests use Supabase Auth, recovery callbacks route through `AuthCallbackScreen`, fragment recovery links are handed off safely, and `ResetPasswordScreen` updates the password. Automated verification passes and the flow has been manually verified.
-
-**Account deletion MVP** ✅
-Profile now exposes a destructive Delete account confirmation. `client/lib/accountDeletion.ts` invokes the authenticated `delete-account` Edge Function. `supabase/functions/delete-account/index.ts` verifies the JWT server-side, derives `user.id` from that verified JWT, deletes app-owned rows first, then calls `auth.admin.deleteUser(user.id)` last. Existing cascades remove `public.users` and `chart_preferences`. Automated verification passes; the function is deployed to project `ujupnlkobzhpjewruiac` and disposable-account manual QA passed.
-
-**Final cleanup verification baseline** ✅
-As of 2026-06-29: `npm run typecheck`, `npm test` (22 suites / 129 tests), `npm run lint`, and `git diff --check` pass. Password reset is manually verified. Account deletion is automated verified, deployed to project `ujupnlkobzhpjewruiac`, and manually verified with a disposable account.
-
-## 6. Next Safe Slice
-
-**Next narrow reliability slice: Dashboard chart lookup error handling**
-
-Cleanup/stabilization is complete enough for feature expansion. Future cleanup should be attached to specific feature work or real defects, not broad open-ended refactoring.
-
-Daily/weekly guidance is implemented. The next safe code slice is to stop Dashboard from treating a failed saved-chart lookup as a cache miss and to share only the chart-summary lookup/build logic needed to fix that behavior.
-
-- Keep `public.users` as the durable profile/birth source of truth.
-- Keep auth metadata limited to signup/bootstrap and Dashboard repair.
-- Preserve canonical chart identity, self auto-save, missing-coordinate no-save, profile repair, and guidance-builder inputs.
-- Surface or intentionally degrade chart lookup errors rather than silently rebuilding.
-- Extract a shared loader only to remove the concrete Dashboard/`useChartData` drift involved in this fix.
-
-Next priorities: journal prompt handoff, shadow-work prompt builder/surface, synastry/relationship foundation after a product decision, privacy/data export/telemetry, CI/schema validation, and release hardening. Do not claim AI, notifications, saved guidance history, synastry, compatibility, composite charts, reports, premium gating, guest-specific schema, Placidus, Equal House, Sidereal, Vedic, tight/loose orbs, or house-degree display are implemented.
-
-## 7. Deferred / High-Risk Refactors
-
-- Full `useChartData` rewrite or state-machine conversion.
-- Moving the entire `DashboardScreen.load` flow into a hook in one pass without a feature or defect reason.
-- Reworking `CheckEmailScreen` OTP/session/upsert flow beyond covered behavior without a product reason.
-- Changing `CompleteProfileScreen` geocode/timezone/save sequencing without updating focused tests.
-- Expanding deterministic forecasts into retrogrades, lunar phases, applying/separating timing, slow-planet timelines, saved history, or notifications without a separate v2 scope.
-- Adding guest chart schema fields such as `chart_type`, `is_primary`, `relationship_label`, or a `birth_profiles` table before the guest profile-management workflow is defined.
-- Reworking subscriptions, purchases, data export, retention policy, or external billing cancellation/refunds before those features are product-ready.
-- Implementing additional chart systems before math, DB constraints, UI, and tests are ready.
-
-## 8. Guardrails For Future Work
-
-These areas now have focused coverage or explicit contracts, but they remain high-regression surfaces. Update targeted tests when changing them:
-
-- `useChartData` auto-save/manual-save/canonical lookup/save-warning/cancellation behavior.
-- `DashboardScreen` profile repair and self chart auto-save behavior.
-- `DashboardScreen` chart lookup/build/auto-save plus DailyGuidance/WeeklyForecast wiring and both forecast cards.
-- Guidance primitive IDs/source IDs, deterministic selection, local-week/DST behavior, transit deduplication, and no-aspect fallbacks.
-- `CheckEmailScreen` OTP/session/upsert flow beyond the covered navigation paths.
-- `CompleteProfileScreen` manual geocode, timezone normalization, and `public.users` update lifecycle.
-- `InterpretationModal` circular pager logic.
-- Additional chart preference modes once preferences expand beyond supported defaults.
-- Guest chart persistence/profile management if the product moves beyond one-off guest chart entry.
-- Canonical chart identity and save behavior:
-  - self charts with coordinates may auto-save;
-  - guest charts do not auto-save;
-  - guest charts can be manually saved when coordinates exist;
-  - missing-coordinate charts remain view-only.
-- `AuthCallbackScreen` deep-link behavior beyond the covered token/code/fragment/delayed URL paths.
-- Password reset callback handoff and `ResetPasswordScreen` update behavior.
-- Account deletion helper/Profile confirmation/Edge Function contract; keep JWT-derived user id and service-role deletion server-side.
-- Journal UI flows beyond the pure `upsertJournal` payload tests.
-- Supabase schema/migration validation, which is still manual rather than CI-backed.
+- signup, OTP/callback verification, login, session restore, password recovery;
+- profile completion/edit, geocoding, and invalid-timezone correction;
+- self chart, guest chart, saved chart open/delete, missing-coordinate view-only behavior;
+- chart wheel, positions, houses, aspects, and interpretation modal;
+- collapsed/expanded daily and weekly guidance, house context, reflection handoff;
+- journal create/edit/list/delete;
+- legacy chart hydration, malformed-chart fallback, unsupported-future-version refusal;
+- sign-out and account deletion.
+
+### 4. Privacy, Support, and Store Package
+
+Type: release hardening
+Goal: document actual data handling and provide an operational support path before public submission.
+
+Resolve:
+
+- privacy policy and store data-use disclosures;
+- retention/deletion semantics and the current availability of export;
+- support contact/process and required public URLs;
+- store listing copy, screenshots, and release notes.
+
+### 5. Google Play Testing and Submission
+
+Type: release delivery
+Goal: distribute the signed candidate through the appropriate Play testing track, address review/device findings, and submit the approved Android V1.
+
+iOS is intentionally later.
+
+## 7. Post-V1 Feature Tracks
+
+These are not blockers for the scoped Android V1:
+
+- reusable guest profiles, relationship metadata, synastry, and composite charts;
+- AI chat, AI readings, or provider integration;
+- push notifications and notification preferences;
+- reports, subscriptions, purchases, or premium gating;
+- dedicated shadow-work cycles, milestones, streaks, or history;
+- Vedic, Chinese, Sidereal, Placidus, Equal House, or other calculation systems;
+- Uranus/Neptune/Pluto as moving forecast candidates;
+- retrogrades, lunar phases, exact transit windows, and applying/separating status;
+- saved forecast history, multi-week/monthly forecasts, and transit calendar;
+- analytics/admin tooling beyond whatever production release safety requires.
+
+Before synastry, define reusable birth-profile identity and relationship metadata. Before AI, define the privacy, safety, server-side provider, cost, and retention contracts.
+
+## 8. Architecture Guardrails
+
+- Keep `public.users` as durable profile/birth data; auth metadata is bootstrap/repair input only.
+- Keep canonical chart identity unchanged: user plus birth date/time/time zone/coordinates.
+- Preserve self auto-save, guest manual-save, and missing-coordinate view-only semantics.
+- Use `hydrateChartData` for in-memory compatibility; do not auto-save a legacy chart merely because it was hydrated.
+- Treat unversioned structurally valid ChartData as legacy V1, explicit current versions as supported, and future/malformed versions as non-current.
+- Keep schema and calculation versions separate; do not add interpretation-content versions to ChartData.
+- Keep current Whole Sign house math as the single house-assignment source.
+- Transit house always comes from the moving planet's current longitude, never the natal target planet's house.
+- Keep guidance builders pure, deterministic, and driven by explicit date/time-zone inputs.
+- Keep active routes governed by `RootStackParamList`; preserve component callback boundaries rather than passing navigation objects downward.
+- Create incremental migrations for future schema changes; never edit the pulled remote-schema baseline.
 
 ## 9. Verification Baseline
 
-Run after every implementation slice:
+For application slices:
 
 ```bash
-cd client && npm run typecheck
-cd client && npm test
-cd client && npm run lint
+cd client
+npm run typecheck
+npm test
+npm run lint
+cd ..
 git diff --check
 ```
 
-Manual verification should match the touched surface:
+Current recorded result: 25 suites / 183 tests pass, with typecheck, lint, and diff-check passing.
 
-- Profile slices: load Profile, edit birth details, return to Profile, confirm preferences still show default supported values and disabled coming-soon options.
-- Dashboard slices: load with a complete profile, load with an incomplete profile, confirm Dashboard routes to `CompleteProfile` only when required fields are missing.
-- Chart slices: open self chart from Dashboard, open saved chart from My Charts, open chart without coordinates and confirm `View Only`.
-- Guest chart slices: confirm guest charts do not auto-save before tapping save, and missing-coordinate guest charts do not persist.
-- CheckEmail slices: verify OTP success, resend, missing email/code alerts, profile-complete route to Dashboard, incomplete route to CompleteProfile.
-- Password reset slices: request reset email, open recovery callback, update password, confirm existing signup/login/OTP behavior still works.
-- Account deletion slices: confirm destructive cancel does nothing, confirmed deletion calls the deployed Edge Function, the app exits the authenticated account flow, the deleted user cannot log in, and user-owned public rows are removed.
-- CompleteProfile slices: save with selected autocomplete coordinates, save with manual typed location that needs geocoding, save with invalid/missing fields.
-- Interpretation slices: open planet modal, open house modal, swipe first-to-last and last-to-first, test one-page/empty-page behavior where possible.
-- Guidance slices: load Dashboard with valid natal planets; verify mood, Watch for, opportunity, transit summary, prompt, practice, weekly range/themes/transits/prompts/practices, and both no-aspect fallbacks.
+For documentation-only work, verify `git status --short`, `git diff --stat`, `git diff`, and `git diff --check`, and confirm no application/source files changed.

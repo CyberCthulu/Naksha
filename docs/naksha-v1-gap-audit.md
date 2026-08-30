@@ -1,5 +1,7 @@
 # Naksha V1 Launch Gap Audit
 
+> **Historical audit snapshot.** This document preserves the repository assessment made on 2026-06-20 and its 2026-06-28 forecast update. It is not the current implementation status. Use `docs/naksha-codebase-handoff.md` for the canonical engineering state and `docs/Feature-List.md` for current product scope. As of 2026-08-29, D0-D6.3 is complete and the recorded current baseline is 25 suites / 183 tests.
+
 Generated: 2026-06-20
 Author: Claude (Opus) — read-only product gap audit
 Scope: `docs/Feature-List.md` (claimed product) vs. actual codebase reality.
