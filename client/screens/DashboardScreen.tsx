@@ -20,7 +20,10 @@ import {
   type ChartData,
 } from '../lib/charts'
 import { hydrateChartData } from '../lib/chartHydration'
-import { parseChartData } from '../lib/chartDataValidation'
+import {
+  UNSUPPORTED_CHART_DATA_MESSAGE,
+  validateChartData,
+} from '../lib/chartDataValidation'
 import {
   buildDailyGuidance,
   buildWeeklyForecast,
@@ -257,9 +260,18 @@ export default function DashboardScreen() {
         )
       }
 
-      const existingChart = existing?.chart_data
-        ? parseChartData(existing.chart_data)
+      const existingValidation = existing?.chart_data
+        ? validateChartData(existing.chart_data)
         : null
+
+      if (existingValidation?.status === 'unsupported') {
+        throw new Error(UNSUPPORTED_CHART_DATA_MESSAGE)
+      }
+
+      const existingChart =
+        existingValidation?.status === 'valid'
+          ? existingValidation.data
+          : null
 
       let chartData = existingChart
 

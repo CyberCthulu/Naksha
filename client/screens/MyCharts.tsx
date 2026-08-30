@@ -15,7 +15,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import supabase from '../lib/supabase'
 import { type ChartRow, listCharts, deleteChart } from '../lib/charts'
-import { parseChartData } from '../lib/chartDataValidation'
+import {
+  UNSUPPORTED_CHART_DATA_MESSAGE,
+  validateChartData,
+} from '../lib/chartDataValidation'
 
 import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
@@ -63,8 +66,14 @@ export default function MyChartsScreen() {
 
   const openChart = useCallback(
     (row: ChartRow) => {
-      const data = parseChartData(row.chart_data)
-      if (!data) {
+      const validation = validateChartData(row.chart_data)
+
+      if (validation.status === 'unsupported') {
+        Alert.alert('Chart update required', UNSUPPORTED_CHART_DATA_MESSAGE)
+        return
+      }
+
+      if (validation.status === 'invalid') {
         Alert.alert(
           'Chart unavailable',
           'This saved chart data could not be read. Recreate the chart to open it again.'
@@ -72,6 +81,7 @@ export default function MyChartsScreen() {
         return
       }
 
+      const data = validation.data
       const meta = data.meta
 
       nav.navigate('Chart', {
@@ -160,14 +170,20 @@ export default function MyChartsScreen() {
           keyExtractor={(r) => String(r.id)}
           ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           renderItem={({ item }) => {
-            const data = parseChartData(item.chart_data)
+            const validation = validateChartData(item.chart_data)
+            const data =
+              validation.status === 'valid' ? validation.data : null
             const meta = data?.meta
+            const unavailableSummary =
+              validation.status === 'unsupported'
+                ? 'Update Naksha to view this chart'
+                : 'Chart data unavailable'
 
             const base = meta
               ? [meta.birth_date, meta.birth_time, meta.time_zone]
                   .filter(Boolean)
                   .join(' · ')
-              : 'Chart data unavailable'
+              : unavailableSummary
 
             const coords =
               meta?.birth_lat != null && meta.birth_lon != null

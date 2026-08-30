@@ -14,6 +14,10 @@ import {
 import { birthToUTC } from './time'
 import { normalizeZone } from './timezones'
 import {
+  CURRENT_CHART_CALCULATION_VERSION,
+  CURRENT_CHART_SCHEMA_VERSION,
+} from './chartDataVersions'
+import {
   DEFAULT_CHART_CALCULATION_PREFERENCES,
   parseChartCalculationPreferences,
   resolveChartCalculationPreferences,
@@ -33,6 +37,8 @@ export type ChartMeta = {
 }
 
 export type ChartData = {
+  schema_version?: number
+  calculation_version?: number
   meta: ChartMeta
   planets: PlanetPos[]
   aspects: Aspect[]
@@ -115,6 +121,8 @@ export function buildChartData(
   houses != null ? assignPlanetsToWholeSignHouses(planets, houses) : null
 
   return {
+    schema_version: CURRENT_CHART_SCHEMA_VERSION,
+    calculation_version: CURRENT_CHART_CALCULATION_VERSION,
     meta: {
       name: input.name,
       birth_date: input.birth_date,

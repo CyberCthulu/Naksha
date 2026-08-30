@@ -7,6 +7,10 @@ import {
   type SaveChartInput,
 } from '../charts'
 import { DEFAULT_CHART_CALCULATION_PREFERENCES } from '../domainTypes'
+import {
+  CURRENT_CHART_CALCULATION_VERSION,
+  CURRENT_CHART_SCHEMA_VERSION,
+} from '../chartDataVersions'
 
 jest.mock('../supabase', () => ({
   __esModule: true,
@@ -135,6 +139,22 @@ describe('buildChartData', () => {
       })
     )
     expect(Array.isArray(chart.aspects)).toBe(true)
+  })
+
+  it('marks newly built charts with current schema and calculation versions', () => {
+    const chart = buildChartData({
+      name: 'Test Natal Chart',
+      birth_date: '1990-01-01',
+      birth_time: '12:34:00',
+      time_zone: 'America/Los_Angeles',
+      birth_lat: 37.7749,
+      birth_lon: -122.4194,
+    })
+
+    expect(chart.schema_version).toBe(CURRENT_CHART_SCHEMA_VERSION)
+    expect(chart.calculation_version).toBe(
+      CURRENT_CHART_CALCULATION_VERSION
+    )
   })
 
   it('returns houses and planet_houses when coordinates are present', () => {

@@ -23,6 +23,11 @@ import {
   type UserRow,
 } from '../../lib/domainTypes'
 import { HOUSE_GUIDANCE } from '../../lib/lexicon/guidance'
+import {
+  CURRENT_CHART_CALCULATION_VERSION,
+  CURRENT_CHART_SCHEMA_VERSION,
+} from '../../lib/chartDataVersions'
+import { UNSUPPORTED_CHART_DATA_MESSAGE } from '../../lib/chartDataValidation'
 
 const mockNavigation = {
   navigate: jest.fn(),
@@ -805,6 +810,28 @@ describe('DashboardScreen', () => {
       'Could not load your saved chart. Please try again.'
     )
     expectText(screen, 'Retry')
+    expect(mockedGetChartCalculationPreferences()).not.toHaveBeenCalled()
+    expect(mockedBuildChartData()).not.toHaveBeenCalled()
+    expect(mockedSaveChart()).not.toHaveBeenCalled()
+    expect(mockedBuildDailyGuidance()).not.toHaveBeenCalled()
+    expect(mockedBuildWeeklyForecast()).not.toHaveBeenCalled()
+  })
+
+  it('does not interpret, rebuild, or overwrite unsupported saved chart data', async () => {
+    mockDashboardQueries({
+      userRow: completeUser,
+      chartRow: {
+        chart_data: {
+          ...makeChartData(),
+          schema_version: CURRENT_CHART_SCHEMA_VERSION,
+          calculation_version: CURRENT_CHART_CALCULATION_VERSION + 1,
+        },
+      },
+    })
+
+    const screen = await renderScreen()
+
+    expectText(screen, UNSUPPORTED_CHART_DATA_MESSAGE)
     expect(mockedGetChartCalculationPreferences()).not.toHaveBeenCalled()
     expect(mockedBuildChartData()).not.toHaveBeenCalled()
     expect(mockedSaveChart()).not.toHaveBeenCalled()

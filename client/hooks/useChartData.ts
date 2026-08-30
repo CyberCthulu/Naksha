@@ -16,7 +16,10 @@ import {
   saveChart,
   type ChartData,
 } from '../lib/charts'
-import { parseChartData } from '../lib/chartDataValidation'
+import {
+  UNSUPPORTED_CHART_DATA_MESSAGE,
+  validateChartData,
+} from '../lib/chartDataValidation'
 import type { ChartMode, ChartProfile } from '../lib/domainTypes'
 
 type UseChartDataArgs = {
@@ -46,7 +49,13 @@ export default function useChartData({
   saved,
   tz,
 }: UseChartDataArgs): UseChartDataResult {
-  const initialSaved = fromSaved ? parseChartData(saved) : null
+  const initialSavedValidation = fromSaved
+    ? validateChartData(saved)
+    : null
+  const initialSaved =
+    initialSavedValidation?.status === 'valid'
+      ? initialSavedValidation.data
+      : null
   const mountedRef = useRef(true)
   const loadIdRef = useRef(0)
   const saveIdRef = useRef(0)
@@ -116,7 +125,16 @@ export default function useChartData({
     setSaveWarning(null)
 
     try {
-      const parsedSaved = fromSaved ? parseChartData(saved) : null
+      const savedValidation = fromSaved
+        ? validateChartData(saved)
+        : null
+
+      if (savedValidation?.status === 'unsupported') {
+        throw new Error(UNSUPPORTED_CHART_DATA_MESSAGE)
+      }
+
+      const parsedSaved =
+        savedValidation?.status === 'valid' ? savedValidation.data : null
 
       if (!isCurrentLoad()) return
 
@@ -190,7 +208,18 @@ export default function useChartData({
 
       if (error) throw error
 
-      const cd = existing ? parseChartData(existing.chart_data) : null
+      const existingValidation = existing
+        ? validateChartData(existing.chart_data)
+        : null
+
+      if (existingValidation?.status === 'unsupported') {
+        throw new Error(UNSUPPORTED_CHART_DATA_MESSAGE)
+      }
+
+      const cd =
+        existingValidation?.status === 'valid'
+          ? existingValidation.data
+          : null
       if (cd) {
         const hydrated = hydrateSavedChart(cd)
 

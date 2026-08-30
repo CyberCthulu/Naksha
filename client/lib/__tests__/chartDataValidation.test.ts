@@ -1,4 +1,11 @@
-import { parseChartData } from '../chartDataValidation'
+import {
+  parseChartData,
+  validateChartData,
+} from '../chartDataValidation'
+import {
+  CURRENT_CHART_CALCULATION_VERSION,
+  CURRENT_CHART_SCHEMA_VERSION,
+} from '../chartDataVersions'
 
 const validChartData = {
   meta: {
@@ -18,8 +25,89 @@ const validChartData = {
 }
 
 describe('parseChartData', () => {
-  it('parses valid chart data', () => {
+  it('accepts unversioned valid chart data as legacy V1', () => {
+    expect(validateChartData(validChartData)).toEqual({
+      status: 'valid',
+      compatibility: 'legacy-v1',
+      data: validChartData,
+    })
     expect(parseChartData(validChartData)).toEqual(validChartData)
+  })
+
+  it('accepts explicit current schema and calculation versions', () => {
+    const currentChartData = {
+      ...validChartData,
+      schema_version: CURRENT_CHART_SCHEMA_VERSION,
+      calculation_version: CURRENT_CHART_CALCULATION_VERSION,
+    }
+
+    expect(validateChartData(currentChartData)).toEqual({
+      status: 'valid',
+      compatibility: 'current',
+      data: currentChartData,
+    })
+    expect(parseChartData(currentChartData)).toEqual(currentChartData)
+  })
+
+  it('detects an unsupported future schema version before shape parsing', () => {
+    const futureChartData = {
+      schema_version: CURRENT_CHART_SCHEMA_VERSION + 1,
+      calculation_version: CURRENT_CHART_CALCULATION_VERSION,
+    }
+    const result = validateChartData(futureChartData)
+
+    expect(result).toEqual({
+      status: 'unsupported',
+      field: 'schema_version',
+      schemaVersion: CURRENT_CHART_SCHEMA_VERSION + 1,
+      calculationVersion: CURRENT_CHART_CALCULATION_VERSION,
+    })
+    expect(parseChartData(futureChartData)).toBeNull()
+  })
+
+  it('detects an unsupported future calculation version', () => {
+    const futureChartData = {
+      ...validChartData,
+      schema_version: CURRENT_CHART_SCHEMA_VERSION,
+      calculation_version: CURRENT_CHART_CALCULATION_VERSION + 1,
+    }
+
+    expect(validateChartData(futureChartData)).toEqual({
+      status: 'unsupported',
+      field: 'calculation_version',
+      schemaVersion: CURRENT_CHART_SCHEMA_VERSION,
+      calculationVersion: CURRENT_CHART_CALCULATION_VERSION + 1,
+    })
+    expect(parseChartData(futureChartData)).toBeNull()
+  })
+
+  it.each([
+    ['string schema version', '1', CURRENT_CHART_CALCULATION_VERSION],
+    ['zero schema version', 0, CURRENT_CHART_CALCULATION_VERSION],
+    ['negative calculation version', CURRENT_CHART_SCHEMA_VERSION, -1],
+    ['NaN calculation version', CURRENT_CHART_SCHEMA_VERSION, Number.NaN],
+    [
+      'infinite calculation version',
+      CURRENT_CHART_SCHEMA_VERSION,
+      Number.POSITIVE_INFINITY,
+    ],
+  ])('rejects malformed version metadata: %s', (_, schema, calculation) => {
+    expect(
+      validateChartData({
+        ...validChartData,
+        schema_version: schema,
+        calculation_version: calculation,
+      })
+    ).toEqual({ status: 'invalid', reason: 'malformed-version' })
+  })
+
+  it('rejects partial explicit version metadata', () => {
+    expect(
+      validateChartData({
+        ...validChartData,
+        schema_version: CURRENT_CHART_SCHEMA_VERSION,
+      })
+    ).toEqual({ status: 'invalid', reason: 'malformed-version' })
   })
 
   it('accepts null coordinate and house fields', () => {

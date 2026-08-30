@@ -75,7 +75,7 @@ export default function ChartScreenContent({
     profile,
     chartMode,
     fromSaved,
-    saved: parsedSaved ?? undefined,
+    saved,
     tz,
   })
 

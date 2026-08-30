@@ -4,6 +4,10 @@ import {
 } from '../astro'
 import { hydrateChartData } from '../chartHydration'
 import type { ChartData } from '../charts'
+import {
+  CURRENT_CHART_CALCULATION_VERSION,
+  CURRENT_CHART_SCHEMA_VERSION,
+} from '../chartDataVersions'
 import { birthToUTC } from '../time'
 
 const CONTEXT = {
@@ -79,6 +83,24 @@ describe('hydrateChartData', () => {
     expect(hydrated.houses).toEqual(expectedHouses)
     expect(hydrated.planet_houses).toEqual(
       assignPlanetsToWholeSignHouses(chartData.planets, expectedHouses)
+    )
+    expect(hydrated).not.toHaveProperty('schema_version')
+    expect(hydrated).not.toHaveProperty('calculation_version')
+  })
+
+  it('preserves explicit version metadata while hydrating houses', () => {
+    const chartData = makeChartData({
+      schema_version: CURRENT_CHART_SCHEMA_VERSION,
+      calculation_version: CURRENT_CHART_CALCULATION_VERSION,
+      houses: null,
+      planet_houses: null,
+    })
+
+    const hydrated = hydrateChartData({ chartData, ...CONTEXT })
+
+    expect(hydrated.schema_version).toBe(CURRENT_CHART_SCHEMA_VERSION)
+    expect(hydrated.calculation_version).toBe(
+      CURRENT_CHART_CALCULATION_VERSION
     )
   })
 

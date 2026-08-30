@@ -14,6 +14,11 @@ import {
   DEFAULT_CHART_CALCULATION_PREFERENCES,
   type ChartProfile,
 } from '../../lib/domainTypes'
+import {
+  CURRENT_CHART_CALCULATION_VERSION,
+  CURRENT_CHART_SCHEMA_VERSION,
+} from '../../lib/chartDataVersions'
+import { UNSUPPORTED_CHART_DATA_MESSAGE } from '../../lib/chartDataValidation'
 
 jest.mock('../../lib/supabase', () => ({
   __esModule: true,
@@ -173,7 +178,7 @@ describe('useChartData', () => {
     jest.restoreAllMocks()
   })
 
-  it('loads valid fromSaved chart data without auth or recompute', async () => {
+  it('loads unversioned legacy fromSaved data without auth, rewrite, or recompute', async () => {
     const saved = makeChartData({
       planets: [{ name: 'Moon', lon: 120 }],
     })
@@ -196,6 +201,8 @@ describe('useChartData', () => {
     expect(mockedBuildChartData()).not.toHaveBeenCalled()
     expect(mockedGetChartCalculationPreferences()).not.toHaveBeenCalled()
     expect(mockedSaveChart()).not.toHaveBeenCalled()
+    expect(saved.schema_version).toBeUndefined()
+    expect(saved.calculation_version).toBeUndefined()
   })
 
   it('hydrates missing legacy houses through the shared chart path', async () => {
@@ -243,6 +250,31 @@ describe('useChartData', () => {
     expect(Alert.alert).not.toHaveBeenCalledWith(
       'Error loading chart',
       expect.any(String)
+    )
+  })
+
+  it('does not recompute or overwrite an unsupported saved chart', async () => {
+    mockChartLookup({
+      id: 1,
+      chart_data: {
+        ...makeChartData(),
+        schema_version: CURRENT_CHART_SCHEMA_VERSION + 1,
+        calculation_version: CURRENT_CHART_CALCULATION_VERSION,
+      },
+    })
+
+    const result = await renderUseChartData({
+      profile: validProfile,
+      chartMode: 'self',
+      tz: 'Europe/London',
+    })
+
+    expect(result.loading).toBe(false)
+    expect(mockedBuildChartData()).not.toHaveBeenCalled()
+    expect(mockedSaveChart()).not.toHaveBeenCalled()
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Error loading chart',
+      UNSUPPORTED_CHART_DATA_MESSAGE
     )
   })
 
