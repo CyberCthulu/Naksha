@@ -16,7 +16,9 @@ import {
   saveChart,
   buildChartData,
   getChartCalculationPreferences,
+  type ChartData,
 } from '../lib/charts'
+import { hydrateChartData } from '../lib/chartHydration'
 import { parseChartData } from '../lib/chartDataValidation'
 import {
   buildDailyGuidance,
@@ -52,6 +54,13 @@ const ZODIAC = [
 const ZODIAC_GLY = ['♈︎', '♉︎', '♊︎', '♋︎', '♌︎', '♍︎', '♎︎', '♏︎', '♐︎', '♑︎', '♒︎', '♓︎']
 
 const signOf = (lon: number) => Math.floor((((lon % 360) + 360) % 360) / 30)
+
+type GuidanceBuildContext = {
+  natalPlanets: ChartData['planets']
+  natalHouses: ChartData['houses']
+  timeZone: string
+  evaluatedAt: Date
+}
 
 function reflectionJournalPrefill(
   prompt: ReflectionPrompt,
@@ -198,7 +207,21 @@ export default function DashboardScreen() {
       }
 
       const tz = normalizeZone(u.time_zone!)
-      if (!(tz && u.birth_date && u.birth_time)) {
+      if (!tz) {
+        setSunSign(null)
+        setMoonSign(null)
+        setTodayEnergy(null)
+        setWeeklyForecast(null)
+
+        if (!didNavigateRef.current) {
+          didNavigateRef.current = true
+          nav.navigate('CompleteProfile')
+        }
+
+        return
+      }
+
+      if (!(u.birth_date && u.birth_time)) {
         setSunSign(null)
         setMoonSign(null)
         setTodayEnergy(null)
@@ -233,73 +256,52 @@ export default function DashboardScreen() {
         ? parseChartData(existing.chart_data)
         : null
 
-      if (existingChart) {
-        const planets = existingChart.planets
+      let chartData = existingChart
 
-        const sun = planets.find((p) => p.name === 'Sun')
-        const moon = planets.find((p) => p.name === 'Moon')
-
-        setSunSign(
-          sun ? `${ZODIAC_GLY[signOf(sun.lon)]} ${ZODIAC[signOf(sun.lon)]}` : null
-        )
-        setMoonSign(
-          moon ? `${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}` : null
-        )
-        const evaluatedAt = new Date()
-        setTodayEnergy(
-          buildDailyGuidance({
-            natalPlanets: planets,
-            natalHouses: existingChart.houses,
-            evaluatedAt,
-            timeZone: tz,
-          })
-        )
-        setWeeklyForecast(
-          buildWeeklyForecast({
-            natalPlanets: planets,
-            natalHouses: existingChart.houses,
-            evaluatedAt,
-            timeZone: tz,
-          })
+      if (!chartData) {
+        const calculationPreferences = await getChartCalculationPreferences(
+          user.id
         )
 
-        return
-      }
+        chartData = buildChartData(
+          {
+            name: `${u.first_name ?? 'My'} Natal Chart`,
+            birth_date: u.birth_date,
+            birth_time: u.birth_time,
+            time_zone: tz,
+            birth_lat: u.birth_lat ?? null,
+            birth_lon: u.birth_lon ?? null,
+          },
+          calculationPreferences
+        )
 
-      const calculationPreferences = await getChartCalculationPreferences(
-        user.id
-      )
-
-      const payload = buildChartData(
-        {
-          name: `${u.first_name ?? 'My'} Natal Chart`,
-          birth_date: u.birth_date,
-          birth_time: u.birth_time,
-          time_zone: tz,
-          birth_lat: u.birth_lat ?? null,
-          birth_lon: u.birth_lon ?? null,
-        },
-        calculationPreferences
-      )
-
-      if (hasChartCoordinates) {
-        try {
-          await saveChart(user.id, {
-            name: payload.meta.name,
-            birth_date: payload.meta.birth_date,
-            birth_time: payload.meta.birth_time,
-            time_zone: payload.meta.time_zone,
-            birth_lat: payload.meta.birth_lat,
-            birth_lon: payload.meta.birth_lon,
-            chart_data: payload,
-          })
-        } catch (e) {
-          console.warn('Auto-save failed:', e)
+        if (hasChartCoordinates) {
+          try {
+            await saveChart(user.id, {
+              name: chartData.meta.name,
+              birth_date: chartData.meta.birth_date,
+              birth_time: chartData.meta.birth_time,
+              time_zone: chartData.meta.time_zone,
+              birth_lat: chartData.meta.birth_lat,
+              birth_lon: chartData.meta.birth_lon,
+              chart_data: chartData,
+            })
+          } catch (e) {
+            console.warn('Auto-save failed:', e)
+          }
         }
       }
 
-      const sun = payload.planets.find((p) => p.name === 'Sun')
-      const moon = payload.planets.find((p) => p.name === 'Moon')
+      const hydratedChart = hydrateChartData({
+        chartData,
+        birthDate: u.birth_date,
+        birthTime: u.birth_time,
+        timeZone: tz,
+        birthLat,
+        birthLon,
+      })
+      const sun = hydratedChart.planets.find((p) => p.name === 'Sun')
+      const moon = hydratedChart.planets.find((p) => p.name === 'Moon')
 
       setSunSign(
         sun ? `${ZODIAC_GLY[signOf(sun.lon)]} ${ZODIAC[signOf(sun.lon)]}` : null
@@ -307,23 +309,15 @@ export default function DashboardScreen() {
       setMoonSign(
         moon ? `${ZODIAC_GLY[signOf(moon.lon)]} ${ZODIAC[signOf(moon.lon)]}` : null
       )
-      const evaluatedAt = new Date()
-      setTodayEnergy(
-        buildDailyGuidance({
-          natalPlanets: payload.planets,
-          natalHouses: payload.houses,
-          evaluatedAt,
-          timeZone: tz,
-        })
-      )
-      setWeeklyForecast(
-        buildWeeklyForecast({
-          natalPlanets: payload.planets,
-          natalHouses: payload.houses,
-          evaluatedAt,
-          timeZone: tz,
-        })
-      )
+      const guidanceContext: GuidanceBuildContext = {
+        natalPlanets: hydratedChart.planets,
+        natalHouses: hydratedChart.houses,
+        evaluatedAt: new Date(),
+        timeZone: tz,
+      }
+
+      setTodayEnergy(buildDailyGuidance(guidanceContext))
+      setWeeklyForecast(buildWeeklyForecast(guidanceContext))
     } catch (e: any) {
       if (!unmounted.current) {
         setError(e?.message ?? 'Failed to load dashboard.')

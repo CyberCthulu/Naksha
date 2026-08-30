@@ -3,14 +3,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Alert } from 'react-native'
 
 import {
-  computeWholeSignHouses,
-  assignPlanetsToWholeSignHouses,
   type PlanetPos,
   type Aspect,
   type HouseCusp,
   type PlanetHousePlacement,
 } from '../lib/astro'
-import { birthToUTC } from '../lib/time'
+import { hydrateChartData } from '../lib/chartHydration'
 import supabase from '../lib/supabase'
 import {
   buildChartData,
@@ -96,31 +94,15 @@ export default function useChartData({
   )
 
   const hydrateSavedChart = useCallback(
-    (
-      basePlanets: PlanetPos[],
-      baseAspects: Aspect[],
-      baseHouses: HouseCusp[] | null,
-      basePlanetHouses: PlanetHousePlacement[] | null
-    ) => {
-      let localHouses = baseHouses
-      if (!localHouses && birthLat != null && birthLon != null) {
-        const { jsDate } = birthToUTC(birthDate, birthTime, tz)
-        localHouses = computeWholeSignHouses(jsDate, birthLat, birthLon)
-      }
-
-      const localPlanetHouses =
-        basePlanetHouses ??
-        (localHouses
-          ? assignPlanetsToWholeSignHouses(basePlanets, localHouses)
-          : null)
-
-      return {
-        houses: localHouses,
-        planetHouses: localPlanetHouses,
-        planets: basePlanets,
-        aspects: baseAspects,
-      }
-    },
+    (chartData: ChartData) =>
+      hydrateChartData({
+        chartData,
+        birthDate,
+        birthTime,
+        timeZone: tz,
+        birthLat,
+        birthLon,
+      }),
     [birthDate, birthTime, tz, birthLat, birthLon]
   )
 
@@ -139,18 +121,13 @@ export default function useChartData({
       if (!isCurrentLoad()) return
 
       if (parsedSaved) {
-        const hydrated = hydrateSavedChart(
-          parsedSaved.planets,
-          parsedSaved.aspects,
-          parsedSaved.houses,
-          parsedSaved.planet_houses
-        )
+        const hydrated = hydrateSavedChart(parsedSaved)
 
         applyChartState(
           hydrated.planets,
           hydrated.aspects,
           hydrated.houses,
-          hydrated.planetHouses,
+          hydrated.planet_houses,
           true
         )
         return
@@ -215,18 +192,13 @@ export default function useChartData({
 
       const cd = existing ? parseChartData(existing.chart_data) : null
       if (cd) {
-        const hydrated = hydrateSavedChart(
-          cd.planets,
-          cd.aspects,
-          cd.houses,
-          cd.planet_houses
-        )
+        const hydrated = hydrateSavedChart(cd)
 
         applyChartState(
           hydrated.planets,
           hydrated.aspects,
           hydrated.houses,
-          hydrated.planetHouses,
+          hydrated.planet_houses,
           true
         )
         return

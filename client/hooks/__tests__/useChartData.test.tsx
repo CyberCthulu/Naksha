@@ -198,6 +198,27 @@ describe('useChartData', () => {
     expect(mockedSaveChart()).not.toHaveBeenCalled()
   })
 
+  it('hydrates missing legacy houses through the shared chart path', async () => {
+    const saved = makeChartData({
+      houses: null,
+      planet_houses: null,
+    })
+
+    const result = await renderUseChartData({
+      profile: validProfile,
+      fromSaved: true,
+      saved,
+      tz: 'Europe/London',
+    })
+
+    expect(result.houses).toHaveLength(12)
+    expect(result.planetHouses).toHaveLength(saved.planets.length)
+    expect(saved.houses).toBeNull()
+    expect(saved.planet_houses).toBeNull()
+    expect(mockedBuildChartData()).not.toHaveBeenCalled()
+    expect(mockedSaveChart()).not.toHaveBeenCalled()
+  })
+
   it('recomputes safely when fromSaved chart data is invalid', async () => {
     const recomputed = makeChartData({
       planets: [{ name: 'Mars', lon: 44 }],

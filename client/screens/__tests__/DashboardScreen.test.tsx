@@ -618,6 +618,25 @@ describe('DashboardScreen', () => {
     expect(mockedSupabase().from).not.toHaveBeenCalledWith('charts')
   })
 
+  it('routes an invalid stored timezone to profile correction without using UTC', async () => {
+    const invalidZoneUser = {
+      ...completeUser,
+      time_zone: 'Mars/Olympus',
+    }
+    const query = mockDashboardQueries({
+      userRow: invalidZoneUser,
+      chartRow: null,
+    })
+
+    await renderScreen()
+
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('CompleteProfile')
+    expect(query.chartsMaybeSingle).not.toHaveBeenCalled()
+    expect(mockedBuildChartData()).not.toHaveBeenCalled()
+    expect(mockedBuildDailyGuidance()).not.toHaveBeenCalled()
+    expect(mockedBuildWeeklyForecast()).not.toHaveBeenCalled()
+  })
+
   it('repairs an incomplete users row from auth metadata before rendering', async () => {
     const incompleteUser = {
       ...completeUser,
@@ -683,6 +702,93 @@ describe('DashboardScreen', () => {
     expect(
       mockedBuildWeeklyForecast().mock.calls[0][0].evaluatedAt
     ).toBe(mockedBuildDailyGuidance().mock.calls[0][0].evaluatedAt)
+  })
+
+  it('hydrates legacy saved houses before the shared guidance path', async () => {
+    const legacyChart = {
+      ...makeChartData({ sunLon: 15, moonLon: 45 }),
+      houses: null,
+      planet_houses: null,
+    }
+    mockedBuildDailyGuidance().mockImplementation((input) =>
+      makeDailyGuidance({
+        transitHouse:
+          input.natalHouses?.length === 12
+            ? { house: 10, guidance: HOUSE_GUIDANCE[10] }
+            : null,
+      })
+    )
+    mockDashboardQueries({
+      userRow: completeUser,
+      chartRow: { chart_data: legacyChart },
+    })
+
+    const screen = await renderScreen()
+    const dailyInput = mockedBuildDailyGuidance().mock.calls[0][0]
+    const weeklyInput = mockedBuildWeeklyForecast().mock.calls[0][0]
+
+    expect(dailyInput.natalPlanets).toBe(legacyChart.planets)
+    expect(dailyInput.natalHouses).toHaveLength(12)
+    expect(weeklyInput.natalHouses).toBe(dailyInput.natalHouses)
+    expect(weeklyInput.evaluatedAt).toBe(dailyInput.evaluatedAt)
+    expect(mockedBuildChartData()).not.toHaveBeenCalled()
+    expect(mockedSaveChart()).not.toHaveBeenCalled()
+
+    await act(async () => {
+      findPressableByAccessibilityLabel(
+        screen,
+        'Expand Today’s Energy details'
+      ).props.onPress()
+    })
+    expectText(screen, 'Life area')
+    expectText(screen, 'House 10')
+  })
+
+  it('passes equivalent normalized chart inputs for saved and fresh sources', async () => {
+    const equivalentChart = makeChartData({ sunLon: 15, moonLon: 45 })
+    mockDashboardQueries({
+      userRow: completeUser,
+      chartRow: { chart_data: equivalentChart },
+    })
+
+    await renderScreen()
+    const savedDailyInput = mockedBuildDailyGuidance().mock.calls[0][0]
+    const savedWeeklyInput = mockedBuildWeeklyForecast().mock.calls[0][0]
+
+    await act(async () => {
+      renderer?.unmount()
+    })
+    renderer = null
+    mockedSupabase().auth.getUser.mockReset()
+    mockedSupabase().from.mockReset()
+    mockedBuildChartData().mockClear()
+    mockedGetChartCalculationPreferences().mockClear()
+    mockedSaveChart().mockClear()
+    mockedBuildDailyGuidance().mockClear()
+    mockedBuildWeeklyForecast().mockClear()
+    mockSignedInUser()
+    mockDashboardQueries({
+      userRow: completeUser,
+      chartRow: null,
+    })
+    mockedBuildChartData().mockReturnValue(equivalentChart)
+
+    await renderScreen()
+    const freshDailyInput = mockedBuildDailyGuidance().mock.calls[0][0]
+    const freshWeeklyInput = mockedBuildWeeklyForecast().mock.calls[0][0]
+
+    expect(freshDailyInput).toMatchObject({
+      natalPlanets: savedDailyInput.natalPlanets,
+      natalHouses: savedDailyInput.natalHouses,
+      timeZone: savedDailyInput.timeZone,
+    })
+    expect(freshWeeklyInput).toMatchObject({
+      natalPlanets: savedWeeklyInput.natalPlanets,
+      natalHouses: savedWeeklyInput.natalHouses,
+      timeZone: savedWeeklyInput.timeZone,
+    })
+    expect(savedWeeklyInput.evaluatedAt).toBe(savedDailyInput.evaluatedAt)
+    expect(freshWeeklyInput.evaluatedAt).toBe(freshDailyInput.evaluatedAt)
   })
 
   it('stops with a safe error when saved-chart lookup fails', async () => {
