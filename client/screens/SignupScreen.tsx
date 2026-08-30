@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import { View, Alert } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { signUpWithEmail } from '../lib/auth'
 import { normalizeZone, getDeviceTimeZoneNormalized } from '../lib/timezones'
 import { formatDateForDb, formatTimeForDb } from '../lib/time'
@@ -14,9 +15,11 @@ import ProfileFields from '../components/auth/ProfileFields'
 import { uiStyles } from '../components/ui/uiStyles'
 import { AppText } from '../components/ui/AppText'
 import { Button } from '../components/ui/Button'
+import type { RootStackParamList } from '../navigation/types'
 
 export default function SignupScreen() {
-  const navigation = useNavigation<any>()
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList, 'Signup'>>()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

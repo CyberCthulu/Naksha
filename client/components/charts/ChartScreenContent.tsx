@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useSpace } from '../space/SpaceProvider'
@@ -33,6 +34,7 @@ import HousesList from './HousesList'
 import InterpretationModal from './InterpretationModal'
 import PlanetPositionsList from './PlanetPositionsList'
 import type { InterpretationPage } from './interpretationTypes'
+import type { RootStackParamList } from '../../navigation/types'
 
 type Props = {
   profile: ChartProfile
@@ -49,7 +51,8 @@ export default function ChartScreenContent({
   saved,
   tz,
 }: Props) {
-  const navigation = useNavigation<any>()
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList, 'Chart'>>()
   const insets = useSafeAreaInsets()
   const { width } = useWindowDimensions()
   const { focusedPlanet, focusPlanet, clearFocus } = useSpace()

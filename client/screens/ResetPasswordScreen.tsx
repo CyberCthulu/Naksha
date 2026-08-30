@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View } from 'react-native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import AuthContainer from '../components/auth/AuthContainer'
 import FormField from '../components/ui/FormField'
@@ -8,10 +9,20 @@ import { AppText } from '../components/ui/AppText'
 import { Button } from '../components/ui/Button'
 import { uiStyles } from '../components/ui/uiStyles'
 import supabase from '../lib/supabase'
+import type { RootStackParamList } from '../navigation/types'
 
 export const MIN_RESET_PASSWORD_LENGTH = 6
 
-export default function ResetPasswordScreen({ navigation }: any) {
+type ResetPasswordScreenProps = {
+  navigation: Pick<
+    NativeStackNavigationProp<RootStackParamList, 'ResetPassword'>,
+    'reset'
+  >
+}
+
+export default function ResetPasswordScreen({
+  navigation,
+}: ResetPasswordScreenProps) {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [message, setMessage] = useState('')

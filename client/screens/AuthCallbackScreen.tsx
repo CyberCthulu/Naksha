@@ -2,13 +2,27 @@
 import { useEffect, useRef } from 'react'
 import { View, Text, ActivityIndicator, StyleSheet, Alert } from 'react-native'
 import * as ExpoLinking from 'expo-linking'
+import type { RouteProp } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import supabase from '../lib/supabase'
 import { consumePendingAuthCallbackUrl } from '../lib/authCallbackUrl'
+import type { RootStackParamList } from '../navigation/types'
 
 type VerifyType = 'email' | 'recovery' | 'invite' | 'email_change'
 type FinishRoute = 'ResetPassword'
 
-export default function AuthCallbackScreen({ navigation, route }: any) {
+type AuthCallbackScreenProps = {
+  navigation: Pick<
+    NativeStackNavigationProp<RootStackParamList, 'AuthCallback'>,
+    'reset'
+  >
+  route?: RouteProp<RootStackParamList, 'AuthCallback'>
+}
+
+export default function AuthCallbackScreen({
+  navigation,
+  route,
+}: AuthCallbackScreenProps) {
   const processingUrl = useRef<string | null>(null)
   const handledUrl = useRef<string | null>(null)
 

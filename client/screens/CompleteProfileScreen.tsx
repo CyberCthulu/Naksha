@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import supabase from '../lib/supabase'
 import { normalizeZone, getDeviceTimeZoneNormalized } from '../lib/timezones'
@@ -24,9 +25,13 @@ import ProfileFields from '../components/auth/ProfileFields'
 import { theme } from '../components/ui/theme'
 import { uiStyles } from '../components/ui/uiStyles'
 import { LoadingState } from '../components/ui/LoadingState'
+import type { RootStackParamList } from '../navigation/types'
 
 export default function CompleteProfileScreen() {
-  const navigation = useNavigation<any>()
+  const navigation =
+    useNavigation<
+      NativeStackNavigationProp<RootStackParamList, 'CompleteProfile'>
+    >()
 
   useLayoutEffect(() => {
     navigation.setOptions?.({ headerShown: false })

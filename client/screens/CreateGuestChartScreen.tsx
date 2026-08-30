@@ -1,6 +1,7 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react'
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import AuthContainer from '../components/auth/AuthContainer'
 import DateField from '../components/auth/DateField'
@@ -15,10 +16,14 @@ import { theme } from '../components/ui/theme'
 import { uiStyles } from '../components/ui/uiStyles'
 import { formatDateForDb, formatTimeForDb } from '../lib/time'
 import { getDeviceTimeZoneNormalized, normalizeZone } from '../lib/timezones'
-import type { ChartProfile, ChartRouteParams } from '../lib/domainTypes'
+import type { ChartProfile } from '../lib/domainTypes'
+import type { RootStackParamList } from '../navigation/types'
 
 export default function CreateGuestChartScreen() {
-  const navigation = useNavigation<any>()
+  const navigation =
+    useNavigation<
+      NativeStackNavigationProp<RootStackParamList, 'CreateGuestChart'>
+    >()
 
   useLayoutEffect(() => {
     navigation.setOptions?.({ headerShown: false })
@@ -64,7 +69,7 @@ export default function CreateGuestChartScreen() {
       birth_lon: birthLon,
     }
 
-    const params: ChartRouteParams = {
+    const params: RootStackParamList['Chart'] = {
       profile,
       chartMode: 'guest',
     }

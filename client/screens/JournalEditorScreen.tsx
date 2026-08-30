@@ -12,7 +12,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native'
-import { useRoute, useNavigation } from '@react-navigation/native'
+import {
+  useRoute,
+  useNavigation,
+  type RouteProp,
+} from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { upsertJournal } from '../lib/journals'
@@ -20,6 +25,10 @@ import { AppText, MutedText } from '../components/ui/AppText'
 import { Card } from '../components/ui/Card'
 import { theme } from '../components/ui/theme'
 import { uiStyles } from '../components/ui/uiStyles'
+import type {
+  JournalEditorParams,
+  RootStackParamList,
+} from '../navigation/types'
 
 type GuidanceContext = {
   source: string | null
@@ -33,7 +42,7 @@ function optionalString(value: unknown): string | null {
 }
 
 function createGuidanceContext(
-  params: Record<string, unknown> | undefined,
+  params: JournalEditorParams | undefined,
   isEditMode: boolean
 ): GuidanceContext | null {
   if (isEditMode) return null
@@ -59,8 +68,11 @@ function createGuidanceContext(
 }
 
 export default function JournalEditorScreen() {
-  const nav = useNavigation<any>()
-  const route = useRoute<any>()
+  const nav =
+    useNavigation<
+      NativeStackNavigationProp<RootStackParamList, 'JournalEditor'>
+    >()
+  const route = useRoute<RouteProp<RootStackParamList, 'JournalEditor'>>()
   const insets = useSafeAreaInsets()
 
   useLayoutEffect(() => {

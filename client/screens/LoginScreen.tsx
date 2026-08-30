@@ -1,6 +1,7 @@
 // screens/LoginScreen.tsx
 import { useState } from 'react'
 import { View } from 'react-native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { signInWithEmail } from '../lib/auth'
 
 import AuthContainer from '../components/auth/AuthContainer'
@@ -10,8 +11,16 @@ import PasswordField from '../components/auth/PasswordField'
 import { uiStyles } from '../components/ui/uiStyles'
 import { AppText } from '../components/ui/AppText'
 import { Button } from '../components/ui/Button'
+import type { RootStackParamList } from '../navigation/types'
 
-export default function LoginScreen({ navigation }: any) {
+type LoginScreenProps = {
+  navigation: Pick<
+    NativeStackNavigationProp<RootStackParamList, 'Login'>,
+    'navigate'
+  >
+}
+
+export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')

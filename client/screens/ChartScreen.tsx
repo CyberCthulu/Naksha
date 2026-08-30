@@ -1,27 +1,24 @@
 //screens/ChartScreen.tsx
 import React, { useLayoutEffect } from 'react'
 import { View, Text, Button } from 'react-native'
-import { useNavigation, type ParamListBase } from '@react-navigation/native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 
-import type { ChartData } from '../lib/charts'
 import { normalizeZone } from '../lib/timezones'
-import type { ChartRouteParams } from '../lib/domainTypes'
 import ChartScreenContent from '../components/charts/ChartScreenContent'
+import type { RootStackParamList } from '../navigation/types'
 
 // shared UI
 import { uiStyles } from '../components/ui/uiStyles'
 
-type ChartScreenProps = NativeStackScreenProps<ParamListBase, 'Chart'>
+type ChartScreenProps = NativeStackScreenProps<RootStackParamList, 'Chart'>
 
-export default function ChartScreen({ route }: ChartScreenProps) {
-  const navigation = useNavigation<any>()
+export default function ChartScreen({ navigation, route }: ChartScreenProps) {
 
   useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false })
   }, [navigation])
 
-  const params = route.params as ChartRouteParams<ChartData> | null | undefined
+  const params: RootStackParamList['Chart'] | null | undefined = route.params
   const profile = params?.profile
   const chartMode = params?.chartMode === 'guest' ? 'guest' : 'self'
   const fromSaved = params?.fromSaved

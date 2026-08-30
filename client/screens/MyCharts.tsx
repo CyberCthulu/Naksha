@@ -10,6 +10,7 @@ import {
   GestureResponderEvent,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import supabase from '../lib/supabase'
@@ -19,9 +20,11 @@ import { parseChartData } from '../lib/chartDataValidation'
 import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
 import { LoadingState } from '../components/ui/LoadingState'
+import type { RootStackParamList } from '../navigation/types'
 
 export default function MyChartsScreen() {
-  const nav = useNavigation<any>()
+  const nav =
+    useNavigation<NativeStackNavigationProp<RootStackParamList, 'MyCharts'>>()
   const insets = useSafeAreaInsets()
 
   useLayoutEffect(() => {

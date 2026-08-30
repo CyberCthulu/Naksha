@@ -7,6 +7,7 @@ import {
   StyleSheet,
 } from 'react-native'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import supabase from '../lib/supabase'
@@ -45,6 +46,7 @@ import type {
   ReflectionPrompt,
   SuggestedPractice,
 } from '../lib/lexicon/guidance'
+import type { RootStackParamList } from '../navigation/types'
 
 const ZODIAC = [
   'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
@@ -89,7 +91,10 @@ export default function DashboardScreen() {
   const [weeklyForecast, setWeeklyForecast] =
     useState<WeeklyForecast | null>(null)
 
-  const nav = useNavigation<any>()
+  const nav =
+    useNavigation<
+      NativeStackNavigationProp<RootStackParamList, 'Dashboard'>
+    >()
   const insets = useSafeAreaInsets()
 
   const openJournalReflection = useCallback(
@@ -446,7 +451,10 @@ export default function DashboardScreen() {
       <View style={styles.actionsPanel}>
         <Button
           title="View Birth Chart"
-          onPress={() => nav.navigate('Chart', { profile, chartMode: 'self' })}
+          onPress={() => {
+            if (!profile || needsProfileCompletion(profile)) return
+            nav.navigate('Chart', { profile, chartMode: 'self' })
+          }}
           disabled={!profile || needsProfileCompletion(profile)}
         />
         <View style={styles.actionGrid}>

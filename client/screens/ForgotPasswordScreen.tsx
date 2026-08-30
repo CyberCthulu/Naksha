@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View } from 'react-native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import AuthContainer from '../components/auth/AuthContainer'
 import EmailField from '../components/auth/EmailField'
@@ -7,11 +8,21 @@ import { AppText } from '../components/ui/AppText'
 import { Button } from '../components/ui/Button'
 import { uiStyles } from '../components/ui/uiStyles'
 import { requestPasswordResetEmail } from '../lib/auth'
+import type { RootStackParamList } from '../navigation/types'
 
 const RESET_SENT_MESSAGE =
   'If an account exists for that email, we sent password reset instructions.'
 
-export default function ForgotPasswordScreen({ navigation }: any) {
+type ForgotPasswordScreenProps = {
+  navigation: Pick<
+    NativeStackNavigationProp<RootStackParamList, 'ForgotPassword'>,
+    'replace'
+  >
+}
+
+export default function ForgotPasswordScreen({
+  navigation,
+}: ForgotPasswordScreenProps) {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')

@@ -8,36 +8,39 @@ import {
   ActivityIndicator,
   TextInput,
 } from 'react-native'
-import { useRoute, useNavigation } from '@react-navigation/native'
+import {
+  useRoute,
+  useNavigation,
+  type RouteProp,
+} from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import supabase from '../lib/supabase'
 import { resendSignupEmail, verifySignupOtp } from '../lib/auth'
-import type { UserProfileFields } from '../lib/domainTypes'
 import {
   isProfileComplete,
   type ProfileCompletionData,
 } from '../lib/profileCompletion'
+import type { RootStackParamList } from '../navigation/types'
 
 import AuthContainer from '../components/auth/AuthContainer'
 import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
 
-type RouteParams = Partial<{
-  email: string
-  profile: UserProfileFields
-}>
-
 const PROFILE_SELECT =
   'first_name,last_name,birth_date,birth_time,birth_location,time_zone'
 
 export default function CheckEmailScreen() {
-  const navigation = useNavigation<any>()
-  const route = useRoute<any>()
+  const navigation =
+    useNavigation<
+      NativeStackNavigationProp<RootStackParamList, 'CheckEmail'>
+    >()
+  const route = useRoute<RouteProp<RootStackParamList, 'CheckEmail'>>()
 
   useLayoutEffect(() => {
     navigation.setOptions?.({ headerShown: false })
   }, [navigation])
 
-  const params = (route.params ?? {}) as RouteParams
+  const params = route.params ?? {}
   const email = params.email ?? ''
 
   const [code, setCode] = useState('')

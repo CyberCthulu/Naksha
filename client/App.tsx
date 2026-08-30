@@ -1,7 +1,11 @@
 // App.tsx
 import React, { useEffect, useState, createContext } from 'react'
 import { View, ActivityIndicator } from 'react-native'
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native'
+import {
+  NavigationContainer,
+  DefaultTheme,
+  type LinkingOptions,
+} from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import * as Linking from 'expo-linking'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
@@ -25,11 +29,12 @@ import JournalEditorScreen from './screens/JournalEditorScreen'
 import JournalListScreen from './screens/JournalListScreen'
 import ProfileScreen from './screens/ProfileScreen'
 import { normalizeAuthCallbackUrlForRouting } from './lib/authCallbackUrl'
+import type { RootStackParamList } from './navigation/types'
 
 export const AuthContext = createContext<{ user: any | null }>({ user: null })
-const Stack = createNativeStackNavigator()
+const Stack = createNativeStackNavigator<RootStackParamList>()
 
-const linking = {
+const linking: LinkingOptions<RootStackParamList> = {
   prefixes: [Linking.createURL('/'), 'naksha://'],
   config: {
     screens: {

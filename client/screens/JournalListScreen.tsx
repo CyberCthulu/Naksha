@@ -9,12 +9,14 @@ import {
   StyleSheet,
 } from 'react-native'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { listJournals, deleteJournal, JournalRow } from '../lib/journals'
 import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
 import { LoadingState } from '../components/ui/LoadingState'
+import type { RootStackParamList } from '../navigation/types'
 
 function makeDisplayTitle(row: JournalRow) {
   if (row.title && row.title.trim()) return row.title.trim()
@@ -25,7 +27,10 @@ function makeDisplayTitle(row: JournalRow) {
 }
 
 export default function JournalListScreen() {
-  const nav = useNavigation<any>()
+  const nav =
+    useNavigation<
+      NativeStackNavigationProp<RootStackParamList, 'JournalList'>
+    >()
   const insets = useSafeAreaInsets()
 
   useLayoutEffect(() => {

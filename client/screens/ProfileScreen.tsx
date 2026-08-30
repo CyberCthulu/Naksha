@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import supabase from '../lib/supabase'
 import { signOut } from '../lib/auth'
@@ -25,6 +26,7 @@ import PurchasesCard from '../components/profile/PurchasesCard'
 import ChartPreferencesCard from '../components/profile/ChartPreferencesCard'
 import AccountActionsCard from '../components/profile/AccountActionsCard'
 import { LoadingState } from '../components/ui/LoadingState'
+import type { RootStackParamList } from '../navigation/types'
 
 // Chart preference types – stored in public.chart_preferences
 type HouseSystem = 'whole_sign' | 'placidus' | 'equal'
@@ -71,7 +73,8 @@ function supportedChartPreferences(input: Partial<ChartPreferences>): ChartPrefe
 }
 
 export default function ProfileScreen() {
-  const navigation = useNavigation<any>()
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList, 'Profile'>>()
   const insets = useSafeAreaInsets()
 
   // ✅ prevent “double header” clash (stack header + in-screen header)
