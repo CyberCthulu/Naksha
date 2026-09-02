@@ -205,21 +205,38 @@ Gate: full verification; no visual regression against the baseline screenshots; 
 
 ### Slice 3 — Typography
 
-Scope: font dependencies and assets (**only if approved**), `useFonts` with splash gating and a mandatory fallback path, and the typography roles in `AppText`.
+Scope: install the approved `expo-font` and `expo-splash-screen`; bundle font assets; `useFonts` with splash gating and a mandatory fallback path; the typography roles in `AppText`.
+Display serif: **Cormorant Garamond SemiBold**, provisional. Validate on Android at `heading` size and above. If legibility or rendering is poor, switch to the pre-approved **EB Garamond** — a finding to record, not a decision to re-open.
 Not in scope: applying roles across screens; that is Slices 4-6.
-Gate: full verification; **release-build** font verification on device; confirmed graceful fallback when font loading fails or exceeds the 3 s budget.
+Gate: full verification; **release-build** font verification on device; confirmed graceful fallback when font loading fails or exceeds the 3 s budget; explicit Cormorant/EB Garamond determination recorded.
 
 ### Slice 4 — Primitives
 
-Scope: `Button` variants and sizes; `Card` absorbing `uiStyles.card`; `FormField` / `TextField` error and focus states; standardized `LoadingState`; new `ErrorState`, `EmptyState`, `Stack`; delete the zero-importer `Screen.tsx`; delete the unused `formStyles.pickerWrap`.
-Not in scope: migrating screens onto the new primitives.
-Gate: full verification; every new and changed primitive meets the §10 accessibility requirements.
+Scope: install `lucide-react-native` (peer-depends on the already-present `react-native-svg`) and add the `Icon` wrapper enforcing the size and stroke tokens; `Button` variants and sizes; `Card` absorbing `uiStyles.card`; `FormField` / `TextField` error and focus states; standardized `LoadingState`; new `ErrorState`, `EmptyState`, `Stack`; delete the zero-importer `Screen.tsx`; delete the unused `formStyles.pickerWrap`.
+Icons are imported individually where practical, never as a barrel. Astrological and zodiac glyphs stay as text — they are content, not chrome.
+Not in scope: migrating screens onto the new primitives; replacing Dashboard decorative emoji, which belongs to the Dashboard redesign slice.
+Gate: full verification; every new and changed primitive meets the accessibility requirements in `design-system.md` §10; every icon-only control carries an `accessibilityLabel`.
 
-### Slice 5 — App shell
+### Slice 5 — App shell and edge-to-edge
 
-Scope: resolve the duplicate header architecture — either navigator headers or one shared in-screen header, **not both**; root background; safe-area and gutter consistency; screen top padding driven by `insets.top` rather than a fixed 40.
-Not in scope: `RootStackParamList`, route names, params, linking config, or the auth/unauthenticated stack split — all unchanged.
-Gate: full verification; deep-link and auth-callback routing re-verified on device.
+This slice is deliberately larger than its neighbours: **adopting edge-to-edge piecemeal is what makes it expensive.** The shell and the inset model change together, once.
+
+Scope, implemented and tested as **one** change:
+
+- `ScreenHeader` — the single shared in-screen header primitive, replacing six ad-hoc top rows. Navigator headers and in-screen headers are **never shown simultaneously**.
+- Adopt Android edge-to-edge: remove `edgeToEdgeEnabled=false` and `android:windowOptOutEdgeToEdgeEnforcement`.
+- Safe-area handling across every screen; screen top padding driven by `insets.top`, never a fixed 40.
+- Status and navigation bar treatment.
+- Keyboard behavior — including a real Android path, since `KeyboardAvoidingView` is currently a no-op there.
+- Scrolling content insets.
+- Modal insets, including the `InterpretationModal` sheet and its `statusBarTranslucent` posture. **This is where D-08 is resolved** — by then it is a design requirement, not an open QA question.
+- Root background wiring for the §6 variants.
+
+Unchanged: native-stack routing, transitions, `RootStackParamList`, route names, parameters, linking config, the auth/unauthenticated stack split, and Android hardware-back behavior.
+
+Not in scope: per-screen visual redesign.
+
+Gate: full verification; on-device verification of status and navigation bars, keyboard on every form, safe areas in both gesture and 3-button navigation, modal insets, and hardware-back; deep-link and auth-callback routing re-verified; **the opt-out is removed only once all of the above pass together.**
 
 ### Slice 6 — Natal Chart and interpretation flagship
 
@@ -227,6 +244,10 @@ Scope: the Chart route and the interpretation sheet, including both `ChartScreen
 Preserve: chart calculations, chart data, chart-wheel behavior, positions, houses, aspects, saved-chart behavior, navigation, persistence, Supabase behavior; and the interpretation modal's route, callbacks, data, content, circular pager behavior, sentence-splitting/clipping fix, and existing tests.
 Not in scope: the reference's tabbed interpretation design; transit information inside natal interpretations; any new route or feature.
 Gate: the full validation gate in stage 8 above, compared against the baseline screenshots, on device.
+
+### Later — Dashboard redesign slice
+
+Not sequenced here; it belongs to stage 9 propagation. Recorded now because it owns one deferred item: **replacing the Dashboard's decorative emoji** (`🌌` in the welcome heading; `☀️` / `🌙` in the "Your Signs" card) with standardized icons. The Sun and Moon rows specifically become the astrological glyphs `☉` and `☽`, matching what `ChartWheel` and `ChartCompass` already render.
 
 ## Transition to Release Hardening
 

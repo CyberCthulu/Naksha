@@ -664,6 +664,25 @@ already do this correctly.
 
 ## 11. Icons
 
+**`lucide-react-native` is the functional UI icon system.** Approved; installed
+in Slice 4, not before.
+
+It depends on `react-native-svg`, **already a dependency at 15.12.1** — the same
+library the background variants in §6 use. No additional rendering dependency is
+introduced.
+
+Import icons **individually where practical**:
+
+```tsx
+// preferred — one icon, one import
+import { ChevronLeft } from 'lucide-react-native'
+
+// avoid — pulls the barrel
+import * as Icons from 'lucide-react-native'
+```
+
+### 11.1 Sizing
+
 | Token | Size | Use |
 | --- | --- | --- |
 | `icon.sm` | 16 | Inline with `bodySmall` |
@@ -671,20 +690,45 @@ already do this correctly.
 | `icon.lg` | 24 | Headers, actions |
 | `icon.xl` | 28 | Hero, empty states |
 
-Optical container is always ≥ 48 dp regardless of glyph size.
+Stroke width `1.75` at `sm`/`md`, `1.5` at `lg`/`xl` — thinner strokes at larger
+sizes keep optical weight even. Color is always a semantic token, never a
+literal. The optical container is **always ≥ 48 dp** regardless of glyph size.
 
-**The icon strategy itself is an open decision** — `ui-audit.md` §14, decision 3. The app
-currently has no icon library — only text glyphs (`‹ › ✕ ˄ ˅`) and emoji
-(`🌌 ☀️ 🌙` in `DashboardScreen`, plus zodiac and planet glyphs which are
-legitimate content, not icons).
+### 11.2 What is an icon, and what is not
 
-Recommended default if no other decision is taken: **keep text glyphs for V1**
-(zero new dependency, zero bundle cost), standardize them to these sizes, and
-make the accessibility labels in §10.3 mandatory. Emoji in Dashboard headings
-should be reconsidered separately — they render inconsistently across Android
-versions and read against the editorial direction.
+Three categories, with different rules:
 
----
+| Category | Treatment |
+| --- | --- |
+| **Functional controls** | `lucide-react-native`. **Never emoji, never text glyphs.** |
+| **Astrological and zodiac glyphs** (`☉ ☽ ♀ ♂ ♈ ♉ …`) | **Preserved as meaningful celestial symbols.** They are content, not chrome — they carry astrological meaning and have no Lucide equivalent. Rendered as text, styled through typography tokens. |
+| **Decorative emoji** | **Removed.** |
+
+### 11.3 Replacements owed
+
+| Current | Location | Becomes |
+| --- | --- | --- |
+| `‹` back, ×6 implementations | `ChartHeader`, `ProfileHeader`, `MyCharts`, `JournalList`, `JournalEditor`, `CheckEmail`, `CompleteProfile`, `CreateGuestChart` | `ChevronLeft`, `icon.lg` |
+| `‹` / `›` pager nav | `InterpretationModal` | `ChevronLeft` / `ChevronRight`, `icon.lg` |
+| `✕` close | `InterpretationModal` | `X`, `icon.lg` |
+| `˄` / `˅` chevron | `ChartCompass` | `ChevronUp` / `ChevronDown`, `icon.md` |
+| `+` prefix on "Share your thoughts" | `JournalListScreen` | `Plus`, `icon.md` |
+| `🌌` in "Welcome to Naksha 🌌" | `DashboardScreen` | Removed or replaced with a standardized icon |
+| `☀️` Sun row, `🌙` Moon row | `DashboardScreen` "Your Signs" card | Replaced with the **astrological glyphs** `☉` / `☽`, which are the correct symbols and already used by `ChartWheel` and `ChartCompass` |
+
+The Dashboard emoji replacements happen **during the Dashboard redesign slice**,
+not earlier — they are visual changes, not defect fixes.
+
+Note the `☀️` → `☉` case specifically: this is not "emoji to icon", it is
+**emoji to the correct astrological glyph**, and it makes the Dashboard
+consistent with the chart surface, which already renders `☉` and `☽`.
+
+### 11.4 Accessibility
+
+Lucide icons render as SVG and are **invisible to screen readers by default**.
+Every icon-only control must therefore carry an `accessibilityLabel` on its
+touchable container — see §10.3. Decorative icons inside a labelled control take
+`accessibilityElementsHidden` so they are not announced twice.
 
 ## 12. Motion and Reduced Motion
 
@@ -779,7 +823,18 @@ Files that already exist and are **modified**, not replaced:
 | `components/ui/FormField.tsx`, `TextField.tsx` | Error and focus states |
 
 **New** files in `components/ui/` — following existing conventions:
-`ErrorState.tsx`, `EmptyState.tsx`, `Stack.tsx`, `Background.tsx`.
+`ErrorState.tsx`, `EmptyState.tsx`, `Stack.tsx`, `Background.tsx`, `Icon.tsx`
+(a thin wrapper enforcing the §11.1 size and stroke tokens), and
+`ScreenHeader.tsx` (the single shared in-screen header, replacing six ad-hoc
+top rows).
+
+**Approved dependencies, installed in the slice that needs them — not now:**
+
+| Dependency | Slice | Note |
+| --- | --- | --- |
+| `expo-font` | 3 | Font loading |
+| `expo-splash-screen` | 3 | Load gating |
+| `lucide-react-native` | 4 | Functional icons; peer-depends on the already-present `react-native-svg` |
 
 **Deleted:** `components/ui/Screen.tsx` — zero importers.
 
@@ -789,15 +844,22 @@ linking config, and the interpretation modal's interaction behavior.
 
 ---
 
-## 15. Open Questions for Review
+## 15. Remaining Open Questions
 
-1. **Serif choice.** Cormorant Garamond, or the larger-x-height EB Garamond
-   fallback? Decidable only on a device at `heading` size.
-2. **Font dependencies.** Approve adding `expo-font` and `expo-splash-screen`?
-   Without them there is no serif display face and §4 collapses to a
-   system-font hierarchy.
-3. **Icon strategy** — see §11 above and `ui-audit.md` §14, decision 3.
-4. **Dashboard emoji** (`🌌 ☀️ 🌙`) — keep, or retire as inconsistent with the
-   editorial direction?
-5. **`accent` ceiling.** Is "≤ 5 % of visible area" the right review criterion,
-   or should gold usage be governed by the enumerated allow-list in §1.2 alone?
+Resolved since first draft: serif choice (Cormorant Garamond SemiBold
+provisional, EB Garamond fallback — §4.4); font dependencies (approved — §4.4);
+icon strategy (`lucide-react-native` — §11); Dashboard emoji (replaced during
+the Dashboard slice — §11.3); the gold ceiling (a review heuristic, not a
+measurement — §1.2).
+
+Still open:
+
+1. **Header mechanism detail.** One shared in-screen header primitive is
+   decided, and navigator headers will not be shown alongside it. What remains is
+   the primitive's own composition: title truncation policy, and the right-slot
+   convention across the four shapes in use today (empty, "Edit" link, save
+   pill, none). A Slice 5 design decision.
+2. **Cormorant vs. EB Garamond.** Pre-approved either way; decided by device
+   evidence in Slice 3, not by further discussion.
+3. **`accent.bright` scope.** Currently permitted for hero glyph and focused
+   planet only. Confirm this is not also wanted for the active pager indicator.

@@ -130,7 +130,7 @@ to the pre-redesign defect-hardening series (Slice 1), except where noted.
 | D-05 | Nested touchables in the saved-chart row | Medium | Slice 1 — narrow fix |
 | D-06 | Back-button touch targets below 48 dp | Medium | Slice 1 — narrow fix |
 | D-07 | Per-render saved-chart revalidation | Low-Medium | **Separate engineering/performance change with focused verification — not bundled into Slice 1's UI fixes** |
-| D-08 | Interpretation sheet positioning unverified on Android | Low-Medium | **Android QA investigation only. No code change until reproduced or verified on a device.** |
+| D-08 | Interpretation sheet positioning unverified on Android | Low-Medium | **Android QA investigation only. No code change until reproduced or verified on a device.** Superseded by Slice 5, which owns modal insets under edge-to-edge |
 
 ### D-01 — Invisible text on the auth callback screen
 
@@ -225,6 +225,10 @@ tests assert reduced safe-area padding but run in a renderer, not on a device.
 **This is an open QA question, not a known bug.** Do not change code for it
 until it is reproduced or verified on a device. If device verification shows
 correct rendering, close it as a non-issue and record that here.
+
+Because Slice 5 adopts edge-to-edge and owns modal insets, D-08 is expected to
+be **resolved there as a design requirement** rather than patched in isolation.
+Patching it against the current opted-out inset model would be work thrown away.
 
 ---
 
@@ -338,6 +342,10 @@ minimum, default, and **largest** Android font size:
 `JournalEditorScreen` (`behavior` is `undefined` when not iOS). Keyboard handling
 relies entirely on `android:windowSoftInputMode="adjustResize"`.
 
+This baseline is captured **with edge-to-edge opted out**. Edge-to-edge is
+adopted in Slice 5, at which point every check in §6.2, §6.3, and §6.4 must be
+re-run — the inset model changes underneath all of them.
+
 | Check | Surface |
 | --- | --- |
 | Field remains visible while focused | Signup (long form), CompleteProfile, CreateGuestChart |
@@ -363,7 +371,7 @@ relies entirely on `android:windowSoftInputMode="adjustResize"`.
 
 | Check | Note |
 | --- | --- |
-| Sheet top position | **D-08** — `transparent` modal without `statusBarTranslucent`, positioned at `insets.top + 52` |
+| Sheet top position | **D-08** — `transparent` modal without `statusBarTranslucent`, positioned at `insets.top + 52`. Baseline observation only; **resolved as a design requirement in Slice 5**, not patched beforehand |
 | Sheet bottom inset | gesture bar vs. 3-button navigation |
 | Backdrop dismissal | tap outside the sheet |
 | Android hardware/gesture back | `onRequestClose` |
