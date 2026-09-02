@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   primaryText: {
-    color: theme.colors.cardBg,
+    color: theme.colors.textOnLight,
   },
   ghostText: {
     color: theme.colors.text,

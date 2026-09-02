@@ -37,6 +37,13 @@ const mockNavigation = {
   reset: jest.fn(),
 }
 
+function flattenStyles(style: unknown): Record<string, unknown> {
+  if (!style) return {}
+  if (Array.isArray(style)) return Object.assign({}, ...style.map(flattenStyles))
+  if (typeof style === 'object') return style as Record<string, unknown>
+  return {}
+}
+
 async function settleAsyncWork() {
   for (let i = 0; i < 10; i += 1) {
     await Promise.resolve()
@@ -359,5 +366,18 @@ describe('AuthCallbackScreen', () => {
       index: 0,
       routes: [{ name: 'Dashboard' }],
     })
+  })
+
+  it('renders the verifying label in an explicit visible color', async () => {
+    const screen = await renderScreen()
+    const label = screen.root.find((node) => String(node.type) === 'Text')
+
+    expect(label.children).toContain('Verifying your account\u2026')
+
+    // Regression guard for D-01: with no explicit color this text rendered in
+    // React Native's default black against the app's black background.
+    const style = flattenStyles(label.props.style)
+    expect(style.color).toBeDefined()
+    expect(style.color).toBe('#fff')
   })
 })
