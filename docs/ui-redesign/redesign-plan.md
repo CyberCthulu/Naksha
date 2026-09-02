@@ -205,15 +205,17 @@ Gate: full verification; no visual regression against the baseline screenshots; 
 
 ### Slice 3 — Typography
 
-Scope: install the approved `expo-font` and `expo-splash-screen`; bundle font assets; `useFonts` with splash gating and a mandatory fallback path; the typography roles in `AppText`.
-Display serif: **Cormorant Garamond SemiBold**, provisional. Validate on Android at `heading` size and above. If legibility or rendering is poor, switch to the pre-approved **EB Garamond** — a finding to record, not a decision to re-open.
+Scope: install `expo-font`, `expo-splash-screen`, `@expo-google-fonts/inter`, and `@expo-google-fonts/cormorant-garamond`. `expo-font` is the loader only and supplies no typefaces. Load exactly four families — `Inter_400Regular`, `Inter_500Medium`, `Inter_600SemiBold`, `CormorantGaramond_600SemiBold`. Then `useFonts` with splash gating and a mandatory fallback path, and the typography roles in `AppText`.
+Display serif: **Cormorant Garamond SemiBold**, provisional. Validate on Android at `heading` size and above. If legibility or rendering is poor, **replace** it with the pre-approved EB Garamond — a finding to record, not a decision to re-open. **Do not install EB Garamond alongside Cormorant.** Only one serif ships.
 Not in scope: applying roles across screens; that is Slices 4-6.
 Gate: full verification; **release-build** font verification on device; confirmed graceful fallback when font loading fails or exceeds the 3 s budget; explicit Cormorant/EB Garamond determination recorded.
 
 ### Slice 4 — Primitives
 
-Scope: install `lucide-react-native` (peer-depends on the already-present `react-native-svg`) and add the `Icon` wrapper enforcing the size and stroke tokens; `Button` variants and sizes; `Card` absorbing `uiStyles.card`; `FormField` / `TextField` error and focus states; standardized `LoadingState`; new `ErrorState`, `EmptyState`, `Stack`; delete the zero-importer `Screen.tsx`; delete the unused `formStyles.pickerWrap`.
-Icons are imported individually where practical, never as a barrel. Astrological and zodiac glyphs stay as text — they are content, not chrome.
+Scope: install `lucide-react-native` (peer-depends on the already-present `react-native-svg`) and add the `Icon` primitive enforcing the size, stroke, and accessibility policy — **all icons render through it**, never raw in a screen; `Button` variants and sizes; `Card` absorbing `uiStyles.card`; `FormField` / `TextField` error and focus states; standardized `LoadingState`; new `ErrorState`, `EmptyState`, `Stack`; delete the zero-importer `Screen.tsx`; delete the unused `formStyles.pickerWrap`.
+Icons are imported individually where practical, never as a barrel. Accessibility labels go on the `Pressable`/`Button`, never on the decorative icon; `Icon` is hidden from assistive technology by default. Astrological and zodiac glyphs stay as text — they are content, not chrome. Emoji are never functional controls.
+
+Touch targets: every standard interactive control gets an actual or enclosing `Pressable` of at least 48 dp. The `sm` button's 40 dp visual sits inside a 48 dp touch area. `hitSlop` is not a substitute.
 Not in scope: migrating screens onto the new primitives; replacing Dashboard decorative emoji, which belongs to the Dashboard redesign slice.
 Gate: full verification; every new and changed primitive meets the accessibility requirements in `design-system.md` §10; every icon-only control carries an `accessibilityLabel`.
 
@@ -223,7 +225,7 @@ This slice is deliberately larger than its neighbours: **adopting edge-to-edge p
 
 Scope, implemented and tested as **one** change:
 
-- `ScreenHeader` — the single shared in-screen header primitive, replacing six ad-hoc top rows. Navigator headers and in-screen headers are **never shown simultaneously**.
+- `ScreenHeader` — the single shared in-screen header primitive, replacing six ad-hoc top rows. Navigator headers and in-screen headers are **never shown simultaneously**. Policy in `design-system.md` §11A: flexible title area, title may wrap to two lines, no absolute positioning that can overlap actions, 48 dp back target, at-least-48 dp right target, Edit/Save may remain text actions, and the header expands safely under Android font scaling.
 - Adopt Android edge-to-edge: remove `edgeToEdgeEnabled=false` and `android:windowOptOutEdgeToEdgeEnforcement`.
 - Safe-area handling across every screen; screen top padding driven by `insets.top`, never a fixed 40.
 - Status and navigation bar treatment.

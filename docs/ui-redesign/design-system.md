@@ -97,7 +97,7 @@ Each state color also gets a `.muted` fill at 12 % alpha for banner backgrounds.
 | Role | Value | Use |
 | --- | --- | --- |
 | `accent` | `#C9A45C` | The single warm gold. |
-| `accent.bright` | `#E3C078` | Hero glyph and focused planet **only**. |
+| `accent.bright` | `#E3C078` | **Reserved** for the hero glyph or the currently focused planet. Nothing else. |
 | `accent.muted` | `rgba(201,164,92,0.14)` | Accent fills, selected-row wash. |
 | `accent.border` | `rgba(201,164,92,0.38)` | Focus ring, selected border. |
 
@@ -107,7 +107,7 @@ Each state color also gets a `.muted` fill at 12 % alpha for banner backgrounds.
 2. Focus and selected states.
 3. Section eyebrow labels in the interpretation reading surface.
 4. Chart-wheel planet glyphs and the focal-planet halo.
-5. The active page indicator in the interpretation pager.
+5. The active page indicator in the interpretation pager — using `accent`, **not** `accent.bright`.
 
 Gold is **prohibited** for: body copy, more than one primary action per screen,
 card backgrounds, borders on non-interactive surfaces, decorative dividers, and
@@ -333,9 +333,34 @@ or rendering at heading sizes on device. Switching to it is a Slice 3 finding,
 not a re-opened design decision — both are pre-approved, and device evidence
 picks between them.
 
-**Approved dependencies** (not installed until Slice 3): `expo-font`, and
-`expo-splash-screen` for load gating. Neither is currently in
-`client/package.json`.
+#### Sourcing
+
+`expo-font` is the loader; **it does not supply the typefaces**. The families
+come from the Expo Google Fonts packages.
+
+| Package | Provides |
+| --- | --- |
+| `@expo-google-fonts/inter` | Inter font assets |
+| `@expo-google-fonts/cormorant-garamond` | Cormorant Garamond font assets |
+| `expo-font` | `useFonts` loader |
+| `expo-splash-screen` | Load gating |
+
+Load exactly these four families — no more:
+
+```
+Inter_400Regular
+Inter_500Medium
+Inter_600SemiBold
+CormorantGaramond_600SemiBold
+```
+
+**Do not install EB Garamond alongside Cormorant.** It is a *replacement*
+candidate, not a parallel option — installed only if Cormorant fails Android
+device review in Slice 3. Shipping both would double the serif payload for no
+delivered value.
+
+None of these four packages is currently in `client/package.json`. All are
+approved; all are installed in Slice 3, not before.
 
 Note: **`expo-status-bar` is already a dependency** and is the correct existing
 tool for the D-03 status-bar fix — no new dependency is needed there.
@@ -489,8 +514,12 @@ React Native's core `Button` in `ChartScreen` and `ChartScreenContent`.
 | `md` | 48 | `md` / `lg` | Default |
 | `lg` | 56 | `lg` / `xl` | Screen-level primary |
 
-**Every size keeps a ≥ 48 dp touch target**, using `hitSlop` where the visual is
-smaller than 48.
+**Every size sits within a ≥ 48 dp touch area.** The `sm` size has a 40 dp
+*visual*; its `Pressable` must still present at least 48 dp. A visually compact
+control is allowed — a compact touch target is not.
+
+`hitSlop` alone is **not** sufficient to make a 40 dp control accessible. See
+§10.2.
 
 | State | Treatment |
 | --- | --- |
@@ -638,7 +667,7 @@ already do this correctly.
 
 | Requirement | Rule |
 | --- | --- |
-| Touch target | **≥ 48 × 48 dp**, always. Use `hitSlop` when the visual is smaller |
+| Touch target | **Every standard interactive control has an actual or enclosing `Pressable` touch area of at least 48 × 48 dp.** A visually compact control may sit *inside* that 48 dp container. `hitSlop` may extend a target that is already close to compliant — it is **not** a substitute for a real 48 dp touch area, and must not be used to justify a 40 dp button |
 | Role | Every interactive element declares `accessibilityRole` |
 | Label | Every interactive element has a meaningful `accessibilityLabel` |
 | **Icon-only controls** | **Must** have a label. `‹`, `›`, `✕`, `˄`, `˅` are announced as punctuation today |
@@ -653,8 +682,8 @@ already do this correctly.
 
 | Element | Current | Required |
 | --- | --- | --- |
-| Back `‹` × 6 implementations | 24×33 to 40×36 dp, unlabeled | 48×48 via `hitSlop`, `accessibilityLabel="Go back"` |
-| Interpretation `‹` / `›` / `✕` | 40×40, unlabeled | 48×48, "Previous", "Next", "Close" |
+| Back `‹` × 6 implementations | 24×33 to 40×36 dp, unlabeled | `ChevronLeft` at `icon.lg` inside a **48×48 dp `Pressable`**, `accessibilityLabel="Go back"` |
+| Interpretation `‹` / `›` / `✕` | 40×40, unlabeled | Lucide icons inside **48×48 dp `Pressable`s**; "Previous", "Next", "Close" |
 | `ChartCompass` chevron | unlabeled | Labeled + `expanded` state |
 | `ChoiceRow` | no role/state | `radio` role + `selected` state |
 | Planet / house rows | no role/label | `button` role, label reading placement and meaning |
@@ -664,8 +693,11 @@ already do this correctly.
 
 ## 11. Icons
 
-**`lucide-react-native` is the functional UI icon system.** Approved; installed
-in Slice 4, not before.
+**`lucide-react-native` is confirmed as Naksha's functional icon library.**
+Approved; installed in Slice 4, not before.
+
+It covers back, edit, save, delete, journal, chevrons, account, calendar,
+visibility, and every other functional control.
 
 It depends on `react-native-svg`, **already a dependency at 15.12.1** — the same
 library the background variants in §6 use. No additional rendering dependency is
@@ -680,6 +712,41 @@ import { ChevronLeft } from 'lucide-react-native'
 // avoid — pulls the barrel
 import * as Icons from 'lucide-react-native'
 ```
+
+**All icons are wrapped through the shared `Icon` primitive**, never rendered
+directly in a screen. `Icon` is what enforces the size and stroke tokens in
+§11.1 and the accessibility posture in §11.4; a raw Lucide import in a screen
+bypasses both.
+
+```tsx
+// preferred
+<Icon glyph={ChevronLeft} size="lg" tone="primary" />
+
+// avoid — bypasses size, stroke, and a11y policy
+<ChevronLeft size={24} color="#F4EFE6" />
+```
+
+### 11.0 Expected coverage
+
+| Function | Icon | Replaces |
+| --- | --- | --- |
+| Back | `ChevronLeft` | six `‹` text implementations |
+| Next / previous | `ChevronRight` / `ChevronLeft` | pager `›` / `‹` |
+| Close | `X` | `✕` |
+| Expand / collapse | `ChevronDown` / `ChevronUp` | `˅` / `˄` |
+| Edit | `Pencil` | "Edit" text link |
+| Save | `Check` | save pills |
+| Delete | `Trash2` | "Delete" text link |
+| Journal | `NotebookPen` | — |
+| Account | `UserRound` | — |
+| Calendar / date | `Calendar` | `DateField` affordance |
+| Time | `Clock` | `TimeField` affordance |
+| Visibility | `Eye` / `EyeOff` | password reveal (does not exist today) |
+| Add | `Plus` | `+` prefix |
+| Location | `MapPin` | — |
+
+Edit and Save may remain **text** actions in the header per §4 of the shell
+policy; where they appear as icons elsewhere, these are the glyphs.
 
 ### 11.1 Sizing
 
@@ -725,10 +792,51 @@ consistent with the chart surface, which already renders `☉` and `☽`.
 
 ### 11.4 Accessibility
 
-Lucide icons render as SVG and are **invisible to screen readers by default**.
-Every icon-only control must therefore carry an `accessibilityLabel` on its
-touchable container — see §10.3. Decorative icons inside a labelled control take
-`accessibilityElementsHidden` so they are not announced twice.
+**Accessibility labels belong on the `Pressable` or `Button`, never on the
+icon.** The icon is decorative; the control carries the meaning.
+
+```tsx
+// correct — the control is labelled, the icon is silent
+<Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={...}>
+  <Icon glyph={ChevronLeft} size="lg" />
+</Pressable>
+
+// wrong — labels the decoration, not the control
+<Pressable onPress={...}>
+  <Icon glyph={ChevronLeft} accessibilityLabel="Go back" />
+</Pressable>
+```
+
+`Icon` therefore renders as non-focusable and hidden from assistive technology by
+default (`accessibilityElementsHidden` / `importantForAccessibility="no"`), so an
+icon inside a labelled control is never announced twice. This is a property of
+the primitive, not something each call site has to remember.
+
+## 11A. ScreenHeader Policy
+
+One shared in-screen header primitive replaces the six ad-hoc top rows the audit
+found (four different geometries, three titles disagreeing with their navigator
+counterparts).
+
+| Rule | |
+| --- | --- |
+| Title area | **Flexible.** Sized by content within the space left by the actions — never a fixed width |
+| Title wrapping | **May wrap to two lines.** Truncation is the last resort, not the first |
+| Layout | **No absolute positioning.** Actions and title occupy a flex row so the title can never overlap an action |
+| Back action | **48 dp target** |
+| Right action | **At least a 48 dp target** |
+| Edit / Save | **May remain text actions** — they are clearer as words than as glyphs |
+| Font scaling | Header **expands safely** under Android font scaling; it grows rather than clipping or overlapping |
+| Navigator header | **Never displayed simultaneously.** One header, always |
+
+The two-line allowance and the no-absolute-positioning rule exist for the same
+reason: the current headers centre a `flex: 1` title between fixed-width side
+slots with no truncation policy, which is exactly the arrangement that breaks
+first under large font scale.
+
+Unchanged by this primitive: native-stack routing, transitions,
+`RootStackParamList`, route names, parameters, linking config, and Android
+hardware-back behavior.
 
 ## 12. Motion and Reduced Motion
 
@@ -832,9 +940,14 @@ top rows).
 
 | Dependency | Slice | Note |
 | --- | --- | --- |
-| `expo-font` | 3 | Font loading |
+| `expo-font` | 3 | Loader only — supplies no typefaces |
 | `expo-splash-screen` | 3 | Load gating |
+| `@expo-google-fonts/inter` | 3 | `Inter_400Regular`, `Inter_500Medium`, `Inter_600SemiBold` |
+| `@expo-google-fonts/cormorant-garamond` | 3 | `CormorantGaramond_600SemiBold` |
 | `lucide-react-native` | 4 | Functional icons; peer-depends on the already-present `react-native-svg` |
+
+`@expo-google-fonts/eb-garamond` is **not** installed. It enters only as a
+replacement for Cormorant if Slice 3's Android device review rejects it.
 
 **Deleted:** `components/ui/Screen.tsx` — zero importers.
 
@@ -847,19 +960,17 @@ linking config, and the interpretation modal's interaction behavior.
 ## 15. Remaining Open Questions
 
 Resolved since first draft: serif choice (Cormorant Garamond SemiBold
-provisional, EB Garamond fallback — §4.4); font dependencies (approved — §4.4);
-icon strategy (`lucide-react-native` — §11); Dashboard emoji (replaced during
-the Dashboard slice — §11.3); the gold ceiling (a review heuristic, not a
-measurement — §1.2).
+provisional, EB Garamond fallback — §4.4); font dependencies and sourcing
+(§4.4); icon library (`lucide-react-native` confirmed — §11); Dashboard emoji
+(replaced during the Dashboard slice — §11.3); the gold ceiling (a review
+heuristic, not a measurement — §1.2); `accent.bright` scope (§1.2);
+touch-target policy (§10.2); `ScreenHeader` policy (§11A).
 
 Still open:
 
-1. **Header mechanism detail.** One shared in-screen header primitive is
-   decided, and navigator headers will not be shown alongside it. What remains is
-   the primitive's own composition: title truncation policy, and the right-slot
-   convention across the four shapes in use today (empty, "Edit" link, save
-   pill, none). A Slice 5 design decision.
-2. **Cormorant vs. EB Garamond.** Pre-approved either way; decided by device
-   evidence in Slice 3, not by further discussion.
-3. **`accent.bright` scope.** Currently permitted for hero glyph and focused
-   planet only. Confirm this is not also wanted for the active pager indicator.
+1. **`ScreenHeader` right-slot inventory.** The policy is settled (§11A). What
+   remains is per-screen: which routes carry a right action at all, and whether
+   any need a second one. A Slice 5 mapping exercise, not an open design
+   question.
+2. **Cormorant vs. EB Garamond.** Pre-approved either way; decided by Android
+   device evidence in Slice 3, not by further discussion. Only one ships.

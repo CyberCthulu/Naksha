@@ -72,7 +72,11 @@ The dormant GL dependencies are **not** removed until all references and configu
 
 ### Icon system
 
-`lucide-react-native` is the functional UI icon system. It may be proposed now and is installed in the implementation slice that first needs it (Slice 4). Import icons individually where practical, rather than as a barrel, to keep the bundle proportionate.
+`lucide-react-native` is **confirmed** as Naksha's functional icon library. It covers back, edit, save, delete, journal, chevrons, account, calendar, visibility, and other functional controls. It is installed in the slice that first needs it (Slice 4).
+
+Import icons individually where practical rather than as a barrel, and **wrap them through the shared `Icon` primitive** — a raw Lucide import in a screen bypasses the size, stroke, and accessibility policy.
+
+**Accessibility labels belong on the `Pressable` or `Button`, not on the decorative icon.**
 
 Astrology and zodiac glyphs (`☉ ☽ ♈` and the rest) are **preserved as meaningful celestial symbols** — they are content, not chrome.
 
@@ -84,13 +88,39 @@ The app uses **one shared in-screen header primitive**. Navigator headers and in
 
 Native-stack routing, transitions, route names, parameters, linking, and Android hardware-back behavior remain unchanged.
 
+The header primitive has a fixed policy: a flexible title area that may wrap to two lines; no absolute positioning that could overlap actions; a 48 dp back target and an at-least-48 dp right target; Edit and Save may remain text actions; and it expands safely under Android font scaling. Full policy in `design-system.md` §11A.
+
 **Android edge-to-edge is adopted during Slice 5.** The current opt-out (`edgeToEdgeEnabled=false`, `android:windowOptOutEdgeToEdgeEnforcement=true`) is removed only when the shared shell, safe-area handling, status and navigation bars, keyboard behavior, scrolling content, and modal insets are implemented together and tested as one change.
+
+### Touch targets
+
+Every standard interactive control has an **actual or enclosing `Pressable` touch area of at least 48 × 48 dp.** A visually compact control may sit inside that 48 dp container.
+
+`hitSlop` may extend a target that is already close to compliant. It is **not** a substitute for a real 48 dp touch area and must not be used to justify a 40 dp button.
 
 ### Typography foundation
 
-`expo-font` and `expo-splash-screen` are **approved** for the typography foundation. They are installed in Slice 3, not before.
+Approved, installed in Slice 3 and not before. `expo-font` is the loader and **supplies no typefaces**; the families come from the Expo Google Fonts packages.
 
-**Cormorant Garamond SemiBold** is the provisional display serif, to be validated on Android. **EB Garamond** remains the fallback if Cormorant shows poor legibility or rendering at heading sizes.
+- `@expo-google-fonts/inter`
+- `@expo-google-fonts/cormorant-garamond`
+- `expo-font`
+- `expo-splash-screen`
+
+Load exactly these four families: `Inter_400Regular`, `Inter_500Medium`, `Inter_600SemiBold`, `CormorantGaramond_600SemiBold`.
+
+**Cormorant Garamond SemiBold** is the provisional display serif, to be validated on Android. **EB Garamond** remains a replacement candidate only if Cormorant fails that device review — **it is not installed alongside Cormorant.** Only one serif ships.
+
+### Production identity ownership
+
+Neither of these is a redesign deliverable, and both are hard Play Store blockers. They are recorded here so they have an owner.
+
+| Item | Current state | Owner |
+| --- | --- | --- |
+| Custom Naksha launcher / store icon | `assets/icon.png`, `adaptive-icon.png`, and `splash-icon.png` are **stock Expo placeholders** | **Brand-polish task, after the flagship visual direction is approved** |
+| Application name and Android package identifier | `name`/`slug` are `"client"`; package is `com.anonymous.client` | **Release-hardening configuration task** |
+
+The stock Expo icon and `com.anonymous.client` cannot ship to Play.
 
 ### Pre-existing defects
 
