@@ -9,6 +9,7 @@ import {
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import * as Linking from 'expo-linking'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
+import { StatusBar } from 'expo-status-bar'
 
 import supabase from './lib/supabase'
 import { SpaceProvider } from './components/space/SpaceProvider'
@@ -116,6 +117,7 @@ export default function App() {
   if (!authReady) {
     return (
       <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }}>
+        <StatusBar style="light" />
         <ActivityIndicator size="large" />
       </View>
     )
@@ -125,6 +127,7 @@ export default function App() {
     <SafeAreaProvider>
     <SpaceProvider>
       <View style={{ flex: 1, backgroundColor: '#000' }}>
+        <StatusBar style="light" />
         {/* <SpaceBackground /> */}
 
         <AuthContext.Provider value={{ user }}>
