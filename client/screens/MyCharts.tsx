@@ -1,5 +1,11 @@
 //screens/MyCharts.tsx
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from 'react'
 import {
   View,
   Text,
@@ -17,6 +23,7 @@ import { type ChartRow, listCharts, deleteChart } from '../lib/charts'
 import {
   UNSUPPORTED_CHART_DATA_MESSAGE,
   validateChartData,
+  type ChartDataValidationResult,
 } from '../lib/chartDataValidation'
 
 import { uiStyles } from '../components/ui/uiStyles'
@@ -24,6 +31,35 @@ import { theme } from '../components/ui/theme'
 import { Button } from '../components/ui/Button'
 import { LoadingState } from '../components/ui/LoadingState'
 import type { RootStackParamList } from '../navigation/types'
+
+type ChartListItem = {
+  row: ChartRow
+  validation: ChartDataValidationResult
+  summary: string
+}
+
+function toChartListItem(row: ChartRow): ChartListItem {
+  const validation = validateChartData(row.chart_data)
+  const meta = validation.status === 'valid' ? validation.data.meta : null
+
+  const unavailableSummary =
+    validation.status === 'unsupported'
+      ? 'Update Naksha to view this chart'
+      : 'Chart data unavailable'
+
+  const base = meta
+    ? [meta.birth_date, meta.birth_time, meta.time_zone]
+        .filter(Boolean)
+        .join(' · ')
+    : unavailableSummary
+
+  const coords =
+    meta?.birth_lat != null && meta.birth_lon != null
+      ? ` · (${meta.birth_lat.toFixed(2)}, ${meta.birth_lon.toFixed(2)})`
+      : ''
+
+  return { row, validation, summary: `${base}${coords}` }
+}
 
 export default function MyChartsScreen() {
   const nav =
@@ -64,10 +100,10 @@ export default function MyChartsScreen() {
     load()
   }, [load])
 
-  const openChart = useCallback(
-    (row: ChartRow) => {
-      const validation = validateChartData(row.chart_data)
+  const items = useMemo(() => rows.map(toChartListItem), [rows])
 
+  const openChart = useCallback(
+    ({ row, validation }: ChartListItem) => {
       if (validation.status === 'unsupported') {
         Alert.alert('Chart update required', UNSUPPORTED_CHART_DATA_MESSAGE)
         return
@@ -163,7 +199,7 @@ export default function MyChartsScreen() {
         <View style={{ width: 24 }} />
       </View>
 
-      {rows.length === 0 ? (
+      {items.length === 0 ? (
         <View style={uiStyles.center}>
           <Text style={uiStyles.muted}>No charts yet.</Text>
           <Text style={uiStyles.muted}>Save one from the chart screen to get started.</Text>
@@ -174,56 +210,31 @@ export default function MyChartsScreen() {
             padding: theme.spacing.screen,
             paddingBottom: insets.bottom + 24,
           }}
-          data={rows}
-          keyExtractor={(r) => String(r.id)}
+          data={items}
+          keyExtractor={(item) => String(item.row.id)}
           ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-          renderItem={({ item }) => {
-            const validation = validateChartData(item.chart_data)
-            const data =
-              validation.status === 'valid' ? validation.data : null
-            const meta = data?.meta
-            const unavailableSummary =
-              validation.status === 'unsupported'
-                ? 'Update Naksha to view this chart'
-                : 'Chart data unavailable'
+          renderItem={({ item }) => (
+            <View style={uiStyles.card}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${item.row.name}`}
+                onPress={() => openChart(item)}
+                style={styles.openRegion}
+              >
+                <Text style={styles.title}>{item.row.name}</Text>
+                <Text style={styles.sub}>{item.summary}</Text>
+              </TouchableOpacity>
 
-            const base = meta
-              ? [meta.birth_date, meta.birth_time, meta.time_zone]
-                  .filter(Boolean)
-                  .join(' · ')
-              : unavailableSummary
-
-            const coords =
-              meta?.birth_lat != null && meta.birth_lon != null
-                ? ` · (${meta.birth_lat.toFixed(2)}, ${meta.birth_lon.toFixed(2)})`
-                : ''
-
-            return (
-              <View style={uiStyles.card}>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open ${item.name}`}
-                  onPress={() => openChart(item)}
-                  style={styles.openRegion}
-                >
-                  <Text style={styles.title}>{item.name}</Text>
-                  <Text style={styles.sub}>
-                    {base}
-                    {coords}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel={`Delete ${item.name}`}
-                  onPress={() => remove(item)}
-                  style={styles.deleteButton}
-                >
-                  <Text style={styles.delete}>Delete</Text>
-                </TouchableOpacity>
-              </View>
-            )
-          }}
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={`Delete ${item.row.name}`}
+                onPress={() => remove(item.row)}
+                style={styles.deleteButton}
+              >
+                <Text style={styles.delete}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         />
       )}
     </View>

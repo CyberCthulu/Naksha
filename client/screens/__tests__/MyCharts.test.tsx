@@ -5,6 +5,7 @@ import TestRenderer from 'react-test-renderer'
 import MyChartsScreen from '../MyCharts'
 import { Button } from '../../components/ui/Button'
 import { deleteChart, listCharts } from '../../lib/charts'
+import { validateChartData } from '../../lib/chartDataValidation'
 import supabase from '../../lib/supabase'
 
 const mockNavigation = {
@@ -26,6 +27,15 @@ jest.mock('../../lib/supabase', () => ({
   default: { auth: { getUser: jest.fn() } },
 }))
 
+jest.mock('../../lib/chartDataValidation', () => {
+  const actual = jest.requireActual('../../lib/chartDataValidation')
+  return {
+    __esModule: true,
+    ...actual,
+    validateChartData: jest.fn(actual.validateChartData),
+  }
+})
+
 jest.mock('../../lib/charts', () => ({
   __esModule: true,
   listCharts: jest.fn(),
@@ -34,6 +44,7 @@ jest.mock('../../lib/charts', () => ({
 
 const { act, create } = TestRenderer
 
+const mockedValidate = validateChartData as jest.Mock
 const mockedListCharts = listCharts as jest.Mock
 const mockedDeleteChart = deleteChart as jest.Mock
 const mockedGetUser = (supabase as unknown as {
@@ -65,6 +76,34 @@ const CHART_ROW = {
     houses: null,
     planet_houses: null,
   },
+}
+
+function chartRow(
+  id: number,
+  name: string,
+  chartData: unknown,
+  overrides: Record<string, unknown> = {}
+) {
+  return { ...CHART_ROW, id, name, chart_data: chartData, ...overrides }
+}
+
+const LEGACY_DATA = {
+  meta: { ...CHART_ROW.chart_data.meta, name: 'Legacy Chart' },
+  planets: [{ name: 'Sun', lon: 10 }],
+  aspects: [],
+  houses: null,
+  planet_houses: null,
+}
+
+const CURRENT_DATA = { ...LEGACY_DATA, schema_version: 1, calculation_version: 1 }
+
+const FUTURE_DATA = { ...LEGACY_DATA, schema_version: 2, calculation_version: 1 }
+
+const MALFORMED_DATA = { meta: { birth_date: 5 }, planets: 'nope' }
+
+const NO_COORDS_DATA = {
+  ...LEGACY_DATA,
+  meta: { ...LEGACY_DATA.meta, birth_lat: null, birth_lon: null },
 }
 
 let renderer: ReturnType<typeof create> | null = null
@@ -108,6 +147,7 @@ describe('MyCharts row interactions', () => {
     jest.spyOn(Alert, 'alert').mockImplementation(jest.fn())
 
     renderer = null
+    mockedValidate.mockClear()
     mockedGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
     mockedListCharts.mockResolvedValue([CHART_ROW])
     mockedDeleteChart.mockResolvedValue(undefined)
@@ -213,6 +253,108 @@ describe('MyCharts row interactions', () => {
     expect(mockedDeleteChart).toHaveBeenCalledWith(7, 'user-1')
     expect(mockedListCharts).toHaveBeenCalled()
     expect(mockNavigation.navigate).not.toHaveBeenCalled()
+  })
+
+  it('preserves legacy, current, unsupported, malformed and no-coordinate rows', async () => {
+    mockedListCharts.mockResolvedValue([
+      chartRow(1, 'Legacy', LEGACY_DATA),
+      chartRow(2, 'Current', CURRENT_DATA),
+      chartRow(3, 'Future', FUTURE_DATA),
+      chartRow(4, 'Broken', MALFORMED_DATA),
+      chartRow(5, 'NoCoords', NO_COORDS_DATA),
+    ])
+
+    const screen = await renderScreen()
+    const texts = hostTexts(screen)
+
+    // Legacy (unversioned) and current both render their birth summary.
+    expect(
+      texts.filter((t) =>
+        t.startsWith('1997-09-15 · 13:55:00 · America/Los_Angeles')
+      )
+    ).toHaveLength(3)
+    // Coordinates appear only where both are present.
+    expect(
+      texts.filter((t) => t.includes('(37.49, -122.23)'))
+    ).toHaveLength(2)
+    expect(texts).toContain('Update Naksha to view this chart')
+    expect(texts).toContain('Chart data unavailable')
+  })
+
+  it('refuses to open unsupported and malformed charts', async () => {
+    mockedListCharts.mockResolvedValue([
+      chartRow(3, 'Future', FUTURE_DATA),
+      chartRow(4, 'Broken', MALFORMED_DATA),
+    ])
+    const screen = await renderScreen()
+
+    await act(async () => {
+      findByAccessibilityLabel(screen, 'Open Future').props.onPress()
+      await settleAsyncWork()
+    })
+    expect(Alert.alert).toHaveBeenLastCalledWith(
+      'Chart update required',
+      expect.stringContaining('does not support')
+    )
+
+    await act(async () => {
+      findByAccessibilityLabel(screen, 'Open Broken').props.onPress()
+      await settleAsyncWork()
+    })
+    expect(Alert.alert).toHaveBeenLastCalledWith(
+      'Chart unavailable',
+      'This saved chart data could not be read. Recreate the chart to open it again.'
+    )
+
+    expect(mockNavigation.navigate).not.toHaveBeenCalled()
+  })
+
+  it('validates each row once per load and not again when opening', async () => {
+    mockedListCharts.mockResolvedValue([
+      chartRow(1, 'Legacy', LEGACY_DATA),
+      chartRow(2, 'Current', CURRENT_DATA),
+    ])
+
+    const screen = await renderScreen()
+
+    // D-07 regression guard: validation is derived from the rows collection,
+    // so two rows cost exactly two validations no matter how many times the
+    // screen re-renders.
+    expect(mockedValidate).toHaveBeenCalledTimes(2)
+
+    await act(async () => {
+      findByAccessibilityLabel(screen, 'Open Legacy').props.onPress()
+      await settleAsyncWork()
+    })
+
+    // Opening reuses the derived result rather than revalidating.
+    expect(mockedValidate).toHaveBeenCalledTimes(2)
+    expect(mockNavigation.navigate).toHaveBeenCalledTimes(1)
+  })
+
+  it('revalidates after a reload so rows are never stale', async () => {
+    mockedListCharts.mockResolvedValue([chartRow(1, 'Legacy', LEGACY_DATA)])
+    const screen = await renderScreen()
+
+    expect(mockedValidate).toHaveBeenCalledTimes(1)
+    expect(hostTexts(screen)).toContain('Legacy')
+
+    mockedListCharts.mockResolvedValue([chartRow(9, 'Replacement', CURRENT_DATA)])
+
+    await act(async () => {
+      findByAccessibilityLabel(screen, 'Delete Legacy').props.onPress()
+      await settleAsyncWork()
+    })
+    const actions = (Alert.alert as unknown as jest.Mock).mock.calls[0][2]
+    await act(async () => {
+      await actions.find((a: { text: string }) => a.text === 'Delete').onPress()
+      await settleAsyncWork()
+    })
+
+    const texts = hostTexts(screen)
+    expect(texts).toContain('Replacement')
+    expect(texts).not.toContain('Legacy')
+    expect(mockedValidate).toHaveBeenCalledTimes(2)
   })
 
   it('offers a retry path from the error state', async () => {
