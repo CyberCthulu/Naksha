@@ -1,8 +1,9 @@
 # Naksha UI/UX Redesign Plan
 
-Status: planning and baseline phase
+Status: stages 1-2 complete; stage 3 proposed and awaiting approval; no implementation started
 Direction: Android-first, premium/celestial/editorial
 Constraint: preserve current V1 behavior throughout the migration
+Binding decisions: see `README.md` "Binding Decisions" (accepted 2026-09-02)
 
 ## Migration Sequence
 
@@ -12,7 +13,11 @@ baseline -> current UI audit -> design system/tokens -> typography -> primitives
 
 Each stage should end with a reviewable artifact and a clear behavior-regression check. Do not begin broad screen propagation before the flagship screen validates the direction.
 
-## 1. Baseline
+## 1. Baseline — documentarily complete, visually incomplete
+
+Recorded in `baseline.md`: branch `main`, commit `deaae7e6`, verification results, the cold-cache Jest flake and its remedy, the D-01 to D-08 defect register, the Android screenshot checklist, and device-QA requirements.
+
+**Outstanding:** the screenshot captures and device QA themselves. They require a device or emulator and are the gating dependency for the flagship review.
 
 Capture the state from which visual changes will be judged:
 
@@ -24,7 +29,9 @@ Capture the state from which visual changes will be judged:
 
 Record existing defects separately from redesign preferences so visual work does not accidentally redefine behavior.
 
-## 2. Current UI Audit
+## 2. Current UI Audit — complete and accepted
+
+Delivered in `ui-audit.md` and accepted 2026-09-02 as the planning baseline. It inventories 14 routes plus the interpretation sheet and 46 shared UI files, ranks 16 findings across three tiers, records 8 pre-existing defects separately from redesign preferences, and assigns a disposition to every shared component.
 
 Audit the active V1 experience before choosing solutions:
 
@@ -40,7 +47,11 @@ Audit the active V1 experience before choosing solutions:
 
 The audit should rank user-facing problems and identify which existing components can be retained.
 
-## 3. Design System and Tokens
+## 3. Design System and Tokens — proposed, awaiting approval
+
+Delivered in `design-system.md` as a **proposal**. It extends the existing `theme.ts`, `uiStyles.ts`, `AppText`, `Button`, `Card`, `LoadingState`, `FormField`, and `TextField` rather than introducing a parallel V2 library, and it maps every existing token key and style onto its replacement.
+
+Open questions are listed in `design-system.md` §15. Nothing is implemented until those are settled and Slice 2 is authorized.
 
 After the audit and visual review, approve the minimum token contract needed for implementation:
 
@@ -91,11 +102,15 @@ Apply approved foundations to the app-level experience:
 
 The typed `RootStackParamList` and current deep-link/auth callback behavior remain intact.
 
-## 7. Flagship Screen
+## 7. Flagship Screen — selected
 
-Select one representative screen after the UI audit. It should exercise enough of the system to validate the design direction, likely including content hierarchy, shared actions, loading/error states, and Android scrolling.
+**The flagship slice is the Natal Chart route plus the interpretation sheet/modal.** Selected 2026-09-02.
 
-The screen choice and its detailed composition require explicit review; this plan does not pre-approve a Dashboard redesign or any specific layout.
+It must preserve chart calculations, chart data, chart-wheel behavior, positions, houses, aspects, saved-chart behavior, navigation, persistence, and Supabase behavior.
+
+The interpretation modal preserves its route, callbacks, data, content, circular pager behavior, sentence-splitting and clipping fix, and existing tests. Its visual hierarchy may be redesigned later; its interaction behavior does not change in this slice. The reference image's tabbed interpretation design is not reproduced.
+
+Its detailed composition still requires explicit review. This plan does not pre-approve any specific layout.
 
 For the chosen screen:
 
@@ -153,7 +168,65 @@ cd ..
 git diff --check
 ```
 
+The test gate is only meaningful once Slice 0 lands. Until then, `npm test` can fail with 5000 ms timeouts on a cold cache while the product is healthy — see `baseline.md` §3. Do not read a cold-cache timeout as a regression, and do not raise the global timeout to hide it.
+
 Also perform focused Android visual/manual QA for every changed state. Automated tests protect behavior; they do not approve visual quality.
+
+## Implementation Slice Queue
+
+Prepared 2026-09-02. **Not executed.** Each slice is independently reviewable and ends at a gate. No slice begins before its predecessor's gate passes.
+
+### Slice 0 — Deterministic Jest configuration
+
+Scope: `client/jest.config.js` only. Add `maxWorkers: 2`.
+Not in scope: raising `testTimeout`; changing any test; changing any application code.
+Gate: `npx jest --clearCache`, then `npm test` passes 183/183 on the **first** run, repeated from a cleared cache at least twice. If it does not, escalate to a documented `testTimeout` increase as a second, separate step.
+Why first: every later slice uses this suite as its regression gate.
+
+### Slice 1 — Pre-redesign defects
+
+Scope: D-01 through D-06, as narrow behavioral fixes with **no visual redesign**.
+
+- D-01: give the auth-callback text an explicit color.
+- D-02: correct `Button` primary foreground/background roles.
+- D-03: align splash, status bar, and interface style with the **existing** dark application, using the already-present `expo-status-bar`. Not the new palette — that is Slice 2.
+- D-04: give the MyCharts error branch a recovery action.
+- D-05: resolve the nested touchables in the saved-chart row. **Confirm the actual misbehavior on a device before choosing the fix shape.**
+- D-06: bring back-button touch targets to 48 dp via `hitSlop`, and label them.
+
+Not in scope: D-07, which is a separate engineering/performance change with focused verification; D-08, which is an Android QA investigation with no code change until reproduced on a device; any token, typography, or layout change.
+Gate: full verification, plus device confirmation of D-01, D-02, and D-03.
+
+### Slice 2 — Design tokens
+
+Scope: expand `components/ui/theme.ts` to the approved semantic roles, keeping all six existing keys as deprecated aliases so no consumer breaks. Add `Background` with the quiet/atmospheric/hero/flat variants using the already-present `react-native-svg`. Add reduced-motion detection at the root.
+Not in scope: typography; component restyling; deleting `uiStyles`; removing the dormant GL dependencies.
+Gate: full verification; no visual regression against the baseline screenshots; alias removal deferred.
+
+### Slice 3 — Typography
+
+Scope: font dependencies and assets (**only if approved**), `useFonts` with splash gating and a mandatory fallback path, and the typography roles in `AppText`.
+Not in scope: applying roles across screens; that is Slices 4-6.
+Gate: full verification; **release-build** font verification on device; confirmed graceful fallback when font loading fails or exceeds the 3 s budget.
+
+### Slice 4 — Primitives
+
+Scope: `Button` variants and sizes; `Card` absorbing `uiStyles.card`; `FormField` / `TextField` error and focus states; standardized `LoadingState`; new `ErrorState`, `EmptyState`, `Stack`; delete the zero-importer `Screen.tsx`; delete the unused `formStyles.pickerWrap`.
+Not in scope: migrating screens onto the new primitives.
+Gate: full verification; every new and changed primitive meets the §10 accessibility requirements.
+
+### Slice 5 — App shell
+
+Scope: resolve the duplicate header architecture — either navigator headers or one shared in-screen header, **not both**; root background; safe-area and gutter consistency; screen top padding driven by `insets.top` rather than a fixed 40.
+Not in scope: `RootStackParamList`, route names, params, linking config, or the auth/unauthenticated stack split — all unchanged.
+Gate: full verification; deep-link and auth-callback routing re-verified on device.
+
+### Slice 6 — Natal Chart and interpretation flagship
+
+Scope: the Chart route and the interpretation sheet, including both `ChartScreen` route-guard branches and the replacement of React Native's core `Button` in `ChartScreen` and `ChartScreenContent`.
+Preserve: chart calculations, chart data, chart-wheel behavior, positions, houses, aspects, saved-chart behavior, navigation, persistence, Supabase behavior; and the interpretation modal's route, callbacks, data, content, circular pager behavior, sentence-splitting/clipping fix, and existing tests.
+Not in scope: the reference's tabbed interpretation design; transit information inside natal interpretations; any new route or feature.
+Gate: the full validation gate in stage 8 above, compared against the baseline screenshots, on device.
 
 ## Transition to Release Hardening
 
