@@ -100,7 +100,12 @@ export default function JournalListScreen() {
     <View style={{ flex: 1 }}>
       {/* Top bar */}
       <View style={[styles.topRow, { paddingTop: insets.top + 12 }]}>
-        <TouchableOpacity onPress={() => nav.goBack()}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          onPress={() => nav.goBack()}
+          style={styles.backBtn}
+        >
           <Text style={styles.backText}>‹</Text>
         </TouchableOpacity>
 
@@ -179,10 +184,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.screen,
     marginBottom: 8,
   },
+  backBtn: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   backText: {
     fontSize: 28,
     color: theme.colors.text,
-    width: 24,
   },
   screenTitle: {
     flex: 1,

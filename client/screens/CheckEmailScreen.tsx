@@ -192,6 +192,8 @@ export default function CheckEmailScreen() {
     <AuthContainer>
       <View style={styles.topRow}>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Back to login"
           onPress={() => navigation.replace('Login')}
           style={styles.iconBtn}
         >
@@ -264,8 +266,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   iconBtn: {
-    width: 40,
-    height: 36,
+    width: 48,
+    height: 48,
+    alignItems: 'center',
     justifyContent: 'center',
   },
   iconText: {

@@ -26,7 +26,12 @@ export default function ChartHeader({
   return (
     <>
       <View style={styles.topRow}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          onPress={onBack}
+          style={styles.backBtn}
+        >
           <Text style={styles.backText}>‹</Text>
         </TouchableOpacity>
 
@@ -65,8 +70,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   backBtn: {
-    width: 36,
-    height: 36,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
@@ -85,7 +90,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   rightSlot: {
-    width: 44,
+    width: 56,
   },
   subtitle: {
     color: theme.colors.sub,

@@ -81,6 +81,8 @@ export default function CreateGuestChartScreen() {
     <AuthContainer>
       <View style={styles.topRow}>
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
@@ -156,8 +158,8 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   backButton: {
-    width: 36,
-    height: 36,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
@@ -176,7 +178,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   rightSlot: {
-    width: 44,
+    width: 56,
   },
   subtitle: {
     marginTop: 6,

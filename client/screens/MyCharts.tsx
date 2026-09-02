@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Alert,
   StyleSheet,
-  GestureResponderEvent,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -22,6 +21,7 @@ import {
 
 import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
+import { Button } from '../components/ui/Button'
 import { LoadingState } from '../components/ui/LoadingState'
 import type { RootStackParamList } from '../navigation/types'
 
@@ -134,6 +134,9 @@ export default function MyChartsScreen() {
     return (
       <View style={uiStyles.center}>
         <Text style={uiStyles.errorText}>{error}</Text>
+        <Button title="Retry" onPress={load} />
+        <View style={{ height: 8 }} />
+        <Button title="Go Back" variant="ghost" onPress={() => nav.goBack()} />
       </View>
     )
   }
@@ -146,7 +149,12 @@ export default function MyChartsScreen() {
           { paddingTop: insets.top + 12 },
         ]}
       >
-        <TouchableOpacity onPress={() => nav.goBack()}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          onPress={() => nav.goBack()}
+          style={styles.backBtn}
+        >
           <Text style={styles.backText}>‹</Text>
         </TouchableOpacity>
 
@@ -191,27 +199,29 @@ export default function MyChartsScreen() {
                 : ''
 
             return (
-              <TouchableOpacity
-                onPress={() => openChart(item)}
-                style={uiStyles.card}
-              >
-                <View style={{ flex: 1 }}>
+              <View style={uiStyles.card}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${item.name}`}
+                  onPress={() => openChart(item)}
+                  style={styles.openRegion}
+                >
                   <Text style={styles.title}>{item.name}</Text>
                   <Text style={styles.sub}>
                     {base}
                     {coords}
                   </Text>
-                </View>
+                </TouchableOpacity>
 
                 <TouchableOpacity
-                  onPress={(e: GestureResponderEvent) => {
-                    e.stopPropagation()
-                    remove(item)
-                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Delete ${item.name}`}
+                  onPress={() => remove(item)}
+                  style={styles.deleteButton}
                 >
                   <Text style={styles.delete}>Delete</Text>
                 </TouchableOpacity>
-              </TouchableOpacity>
+              </View>
             )
           }}
         />
@@ -227,10 +237,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.screen,
     marginBottom: 8,
   },
+  backBtn: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   backText: {
     fontSize: 28,
     color: theme.colors.text,
-    width: 24,
   },
   screenTitle: {
     flex: 1,
@@ -249,9 +264,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 13,
   },
+  openRegion: {
+    flex: 1,
+  },
+  deleteButton: {
+    alignSelf: 'flex-start',
+    justifyContent: 'center',
+    minHeight: 48,
+  },
   delete: {
     color: theme.colors.danger,
     fontWeight: '600',
-    marginLeft: 12,
   },
 })

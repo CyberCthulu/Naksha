@@ -206,7 +206,12 @@ export default function CompleteProfileScreen() {
     <AuthContainer>
       {/* Top bar */}
       <View style={styles.topRow}>
-        <TouchableOpacity onPress={onSkip} style={styles.iconBtn}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          onPress={onSkip}
+          style={styles.iconBtn}
+        >
           <Text style={styles.iconText}>‹</Text>
         </TouchableOpacity>
 
@@ -267,8 +272,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   iconBtn: {
-    width: 40,
-    height: 36,
+    width: 48,
+    height: 48,
+    alignItems: 'center',
     justifyContent: 'center',
   },
   iconText: {

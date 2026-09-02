@@ -133,7 +133,12 @@ export default function JournalEditorScreen() {
       <View style={{ flex: 1 }}>
         {/* Top bar */}
         <View style={[styles.topRow, { paddingTop: insets.top + 12 }]}>
-          <TouchableOpacity onPress={() => nav.goBack()} style={styles.iconBtn}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            onPress={() => nav.goBack()}
+            style={styles.iconBtn}
+          >
             <Text style={styles.iconText}>‹</Text>
           </TouchableOpacity>
 
@@ -262,8 +267,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   iconBtn: {
-    width: 40,
-    height: 36,
+    width: 48,
+    height: 48,
+    alignItems: 'center',
     justifyContent: 'center',
   },
   iconText: {

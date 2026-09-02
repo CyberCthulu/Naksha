@@ -18,7 +18,12 @@ export default function ProfileHeader({
   return (
     <>
       <View style={styles.topRow}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          onPress={onBack}
+          style={styles.backBtn}
+        >
           <Text style={styles.backText}>‹</Text>
         </TouchableOpacity>
 
@@ -51,8 +56,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   backBtn: {
-    width: 36,
-    height: 36,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
