@@ -1,5 +1,5 @@
 import React from 'react'
-import { AccessibilityInfo, Text, View } from 'react-native'
+import { AccessibilityInfo, Text } from 'react-native'
 import TestRenderer from 'react-test-renderer'
 import { Circle, Rect } from 'react-native-svg'
 
