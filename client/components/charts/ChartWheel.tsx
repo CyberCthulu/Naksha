@@ -4,6 +4,8 @@ import Svg, { Circle, Line, G, Text as SvgText } from 'react-native-svg'
 import { Aspect, HouseCusp, PlanetPos } from '../../lib/astro'
 import { theme } from '../ui/theme'
 
+type PlanetAccentName = keyof typeof theme.planet
+
 const ZODIAC_ABBR = ['Ar', 'Ta', 'Ge', 'Cn', 'Le', 'Vi', 'Li', 'Sc', 'Sg', 'Cp', 'Aq', 'Pi']
 
 const GLYPH: Record<string, string> = {
@@ -24,9 +26,17 @@ type Props = {
   planets: PlanetPos[]
   aspects: Aspect[]
   houses: HouseCusp[] | null
+  /** Visual emphasis only. Never affects geometry. */
+  focusedPlanet?: PlanetAccentName | null
 }
 
-export default function ChartWheel({ size, planets, aspects, houses }: Props) {
+export default function ChartWheel({
+  size,
+  planets,
+  aspects,
+  houses,
+  focusedPlanet = null,
+}: Props) {
   const pad = 16
   const cx = size / 2
   const cy = size / 2
@@ -59,12 +69,14 @@ export default function ChartWheel({ size, planets, aspects, houses }: Props) {
       width={size}
       height={size}
       viewBox={`${-pad} ${-pad} ${size + pad * 2} ${size + pad * 2}`}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
     >
       <Circle
         cx={cx}
         cy={cy}
         r={rOuter}
-        stroke={theme.colors.border}
+        stroke={theme.border.strong}
         strokeWidth={1}
         fill="none"
       />
@@ -72,7 +84,7 @@ export default function ChartWheel({ size, planets, aspects, houses }: Props) {
         cx={cx}
         cy={cy}
         r={rInner}
-        stroke="rgba(255,255,255,0.25)"
+        stroke={theme.border.base}
         strokeWidth={1}
         fill="none"
       />
@@ -90,7 +102,7 @@ export default function ChartWheel({ size, planets, aspects, houses }: Props) {
               y1={y1}
               x2={x2}
               y2={y2}
-              stroke="rgba(255,255,255,0.35)"
+              stroke={theme.border.base}
               strokeWidth={1}
             />
             <SvgText
@@ -99,7 +111,7 @@ export default function ChartWheel({ size, planets, aspects, houses }: Props) {
               fontSize={10}
               textAnchor="middle"
               dy={3}
-              fill={theme.colors.text}
+              fill={theme.accent.base}
             >
               {ZODIAC_ABBR[i]}
             </SvgText>
@@ -120,7 +132,7 @@ export default function ChartWheel({ size, planets, aspects, houses }: Props) {
               y1={y1}
               x2={x2}
               y2={y2}
-              stroke="rgba(255,255,255,0.55)"
+              stroke={theme.border.strong}
               strokeWidth={1}
             />
             <SvgText
@@ -129,7 +141,7 @@ export default function ChartWheel({ size, planets, aspects, houses }: Props) {
               fontSize={9}
               textAnchor="middle"
               dy={3}
-              fill={theme.colors.text}
+              fill={theme.text.tertiary}
             >
               {h.house}
             </SvgText>
@@ -152,7 +164,7 @@ export default function ChartWheel({ size, planets, aspects, houses }: Props) {
             y1={y1}
             x2={x2}
             y2={y2}
-            stroke="rgba(255,255,255,0.45)"
+            stroke={theme.border.strong}
             strokeWidth={aspectStroke[a.type]}
             opacity={0.85}
             strokeDasharray={
@@ -165,22 +177,31 @@ export default function ChartWheel({ size, planets, aspects, houses }: Props) {
       {planets.map((p) => {
         const { x, y } = toXY(p.lon, rPlanets)
         const glyph = GLYPH[p.name] ?? p.name[0]
+        const isFocused = focusedPlanet === p.name
+        const accent = isFocused
+          ? theme.planet[p.name as PlanetAccentName]
+          : theme.accent.base
 
         return (
           <G key={p.name}>
+            {/* Focused halo. Purely decorative; the marker position is
+                unchanged and the geometry above is untouched. */}
+            {isFocused ? (
+              <Circle cx={x} cy={y} r={15} fill={accent} opacity={0.14} />
+            ) : null}
             <Circle
               cx={x}
               cy={y}
               r={9}
-              fill="rgba(0,0,0,0.55)"
-              stroke={theme.colors.border}
-              strokeWidth={1}
+              fill={theme.background.raised}
+              stroke={isFocused ? accent : theme.border.strong}
+              strokeWidth={isFocused ? 1.5 : 1}
             />
             <SvgText
               x={x}
               y={y}
               fontSize={9}
-              fill={theme.colors.text}
+              fill={isFocused ? accent : theme.text.primary}
               textAnchor="middle"
               dy={3}
             >

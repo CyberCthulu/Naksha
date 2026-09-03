@@ -1,14 +1,12 @@
 //screens/ChartScreen.tsx
 import React, { useLayoutEffect } from 'react'
-import { View, Text, Button } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 
 import { normalizeZone } from '../lib/timezones'
 import ChartScreenContent from '../components/charts/ChartScreenContent'
 import type { RootStackParamList } from '../navigation/types'
 
-// shared UI
-import { uiStyles } from '../components/ui/uiStyles'
+import { ErrorState } from '../components/ui/ErrorState'
 
 type ChartScreenProps = NativeStackScreenProps<RootStackParamList, 'Chart'>
 
@@ -26,18 +24,15 @@ export default function ChartScreen({ navigation, route }: ChartScreenProps) {
 
   if (!profile?.birth_date || !profile?.birth_time || !profile?.time_zone) {
     return (
-      <View style={uiStyles.center}>
-        <Text style={uiStyles.h1}>Natal Chart</Text>
-        <Text style={uiStyles.muted}>
-          Missing birth date, time, or time zone. Please complete your profile.
-        </Text>
-        <View style={{ marginTop: 16 }}>
-          <Button
-            title="Back to Dashboard"
-            onPress={() => navigation.navigate('Dashboard')}
-          />
-        </View>
-      </View>
+      <ErrorState
+        testID="chart-missing-birth-data"
+        title="Natal Chart"
+        description="Missing birth date, time, or time zone. Please complete your profile."
+        action={{
+          label: 'Back to Dashboard',
+          onPress: () => navigation.navigate('Dashboard'),
+        }}
+      />
     )
   }
 
@@ -45,13 +40,21 @@ export default function ChartScreen({ navigation, route }: ChartScreenProps) {
 
   if (!tz) {
     return (
-      <View style={uiStyles.center}>
-        <Text style={uiStyles.h1}>Natal Chart</Text>
-        <Text style={uiStyles.muted}>
-          Your saved time zone isn’t valid. Update it in “Complete Profile”.
-        </Text>
-        <Text style={uiStyles.muted}>Current: {String(profile.time_zone)}</Text>
-      </View>
+      <ErrorState
+        testID="chart-invalid-time-zone"
+        title="Natal Chart"
+        description={`Your saved time zone isn’t valid. Update it in “Complete Profile”. Current: ${String(
+          profile.time_zone
+        )}`}
+        action={{
+          label: 'Complete Profile',
+          onPress: () => navigation.navigate('CompleteProfile'),
+        }}
+        secondaryAction={{
+          label: 'Back to Dashboard',
+          onPress: () => navigation.navigate('Dashboard'),
+        }}
+      />
     )
   }
 

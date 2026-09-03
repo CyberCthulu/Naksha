@@ -1,11 +1,5 @@
 import React, { useEffect, useMemo } from 'react'
-import {
-  Button,
-  ScrollView,
-  Text,
-  useWindowDimensions,
-  View,
-} from 'react-native'
+import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -23,12 +17,16 @@ import {
 } from '../../lib/lexicon'
 import useChartData from '../../hooks/useChartData'
 import useChartInterpretation from '../../hooks/useChartInterpretation'
+import { AppText } from '../ui/AppText'
+import { Button } from '../ui/Button'
+import { Icon } from '../ui/Icon'
 import { theme } from '../ui/theme'
-import { uiStyles } from '../ui/uiStyles'
 import { LoadingState } from '../ui/LoadingState'
 import AspectsList from './AspectsList'
 import ChartCompass from './ChartCompass'
 import ChartHeader from './ChartHeader'
+import { ChartHero } from './ChartHero'
+import { ChartSection } from './ChartSection'
 import ChartWheel from './ChartWheel'
 import HousesList from './HousesList'
 import InterpretationModal from './InterpretationModal'
@@ -96,8 +94,8 @@ export default function ChartScreenContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planets, focusPlanet, clearFocus])
 
-  const maxChart = 360
-  const size = Math.min(Math.max(280, width - 32), maxChart)
+  // Dominant but never wider than the viewport gutters allow.
+  const size = Math.min(Math.max(240, width - theme.space.xl * 2), 380)
 
   const subtitleLocation = profile.birth_location ?? null
   const subtitleZone = parsedSaved?.meta.time_zone ?? tz
@@ -157,12 +155,14 @@ export default function ChartScreenContent({
   return (
     <>
       <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{
-          padding: theme.spacing.screen,
-          paddingTop: insets.top + theme.space.xs,
-          paddingBottom: insets.bottom + 28,
-        }}
+        style={styles.screen}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: insets.top + theme.space.xs,
+            paddingBottom: insets.bottom + theme.space.xxxl,
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         <ChartHeader
@@ -171,71 +171,106 @@ export default function ChartScreenContent({
           subtitleLocation={subtitleLocation}
           subtitleZone={subtitleZone}
           subtitleCoords={subtitleCoords}
-          sunTitle={sunSummary ? `Sun in ${sunSummary.signName}` : null}
-          sunShortMeaning={sunSummary?.meaning?.short ?? null}
         />
 
-        <View style={{ alignItems: 'center', marginBottom: 10 }}>
-          <Button
-            title={
-              !canSaveChart
-                ? 'View Only'
-                : isSaved
-                ? 'Saved to My Charts'
-                : chartMode === 'guest'
-                ? 'Save Chart'
-                : 'Save Chart Data'
-            }
-            onPress={saveCurrentChart}
-            disabled={isSaved || !canSaveChart}
-          />
+        {/* Chart context: what this chart can and cannot do. */}
+        <View style={styles.contextBlock}>
+          {!canSaveChart ? (
+            <View testID="chart-status-view-only" style={styles.statusChip}>
+              <AppText variant="eyebrow" style={styles.statusLabel}>
+                View Only
+              </AppText>
+              <AppText variant="bodySmall" style={styles.statusNote}>
+                Add a birth location to save houses and chart data.
+              </AppText>
+            </View>
+          ) : isSaved ? (
+            <View testID="chart-status-saved" style={styles.savedChip}>
+              <Icon name="save" size="sm" color={theme.accent.base} />
+              <AppText variant="eyebrow" style={styles.savedLabel}>
+                Saved to My Charts
+              </AppText>
+            </View>
+          ) : (
+            <Button
+              testID="chart-save-action"
+              title={chartMode === 'guest' ? 'Save Chart' : 'Save Chart Data'}
+              onPress={saveCurrentChart}
+            />
+          )}
+
+          {canSaveChart && saveWarning && chartMode === 'self' ? (
+            <AppText
+              testID="chart-save-warning"
+              variant="bodySmall"
+              accessibilityLiveRegion="polite"
+              style={styles.warning}
+            >
+              {saveWarning}
+            </AppText>
+          ) : null}
         </View>
 
-        {!canSaveChart && (
-          <View style={[uiStyles.card, { alignItems: 'center' }]}>
-            <Text style={[uiStyles.text, { textAlign: 'center' }]}>
-              Add a birth location to save houses and chart data.
-            </Text>
-          </View>
-        )}
-
-        {canSaveChart && saveWarning && chartMode === 'self' && (
-          <View style={uiStyles.card}>
-            <Text style={[uiStyles.errorText, { textAlign: 'center' }]}>
-              {saveWarning}
-            </Text>
-          </View>
-        )}
-
-        <View style={{ alignItems: 'center' }}>
+        {/* Focal point. */}
+        <View style={styles.wheelFrame}>
           <ChartWheel
             size={size}
             planets={planets}
             aspects={aspects}
             houses={houses}
+            focusedPlanet={focusedPlanet}
           />
         </View>
 
-        <PlanetPositionsList
-          planets={planets}
-          planetHouses={planetHouses}
-          focusedPlanet={focusedPlanet}
-          onFocusPlanet={openPlanetInterpretation}
-        />
+        {sunSummary ? (
+          <ChartHero
+            title={`Sun in ${sunSummary.signName}`}
+            meaning={sunSummary.meaning?.short ?? null}
+            planet="Sun"
+          />
+        ) : null}
 
-        <View style={{ height: 16 }} />
+        <ChartSection
+          testID="chart-section-positions"
+          eyebrow="Placements"
+          title="Positions"
+        >
+          <PlanetPositionsList
+            planets={planets}
+            planetHouses={planetHouses}
+            focusedPlanet={focusedPlanet}
+            onFocusPlanet={openPlanetInterpretation}
+          />
+        </ChartSection>
 
-        <HousesList
-          houses={houses}
-          focusedHouse={focusedHouse}
-          onFocusHouse={openHouseInterpretation}
-        />
+        <ChartSection
+          testID="chart-section-houses"
+          eyebrow="Life areas"
+          title="Houses"
+          note="Whole Sign"
+        >
+          <HousesList
+            houses={houses}
+            focusedHouse={focusedHouse}
+            onFocusHouse={openHouseInterpretation}
+          />
+        </ChartSection>
 
-        <View style={{ height: 16 }} />
+        <ChartSection
+          testID="chart-section-compass"
+          eyebrow="Legend"
+          title="Glyph Compass"
+        >
+          <ChartCompass />
+        </ChartSection>
 
-        <ChartCompass style={{ marginBottom: 12 }} />
-
-        <AspectsList aspects={aspects} />
+        <ChartSection
+          testID="chart-section-aspects"
+          eyebrow="Relationships"
+          title="Aspects"
+        >
+          <AspectsList aspects={aspects} />
+        </ChartSection>
       </ScrollView>
 
       <InterpretationModal
@@ -249,3 +284,45 @@ export default function ChartScreenContent({
     </>
   )
 }
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: theme.space.xl,
+  },
+  contextBlock: {
+    alignItems: 'center',
+  },
+  statusChip: {
+    alignItems: 'center',
+    paddingHorizontal: theme.space.md,
+  },
+  statusLabel: {
+    color: theme.text.tertiary,
+  },
+  statusNote: {
+    color: theme.text.secondary,
+    marginTop: theme.space.xs,
+    textAlign: 'center',
+  },
+  savedChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: theme.space.xs,
+    minHeight: theme.touchTarget.min,
+  },
+  savedLabel: {
+    color: theme.accent.base,
+  },
+  warning: {
+    color: theme.state.danger,
+    marginTop: theme.space.sm,
+    textAlign: 'center',
+  },
+  wheelFrame: {
+    alignItems: 'center',
+    marginTop: theme.space.lg,
+  },
+})
