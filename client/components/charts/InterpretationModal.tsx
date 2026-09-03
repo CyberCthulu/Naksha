@@ -3,13 +3,14 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import {
   Modal,
   View,
-  Text,
   StyleSheet,
   Pressable,
   ScrollView,
 } from 'react-native'
 import PagerView from 'react-native-pager-view'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { AppText } from '../ui/AppText'
+import { Icon } from '../ui/Icon'
 import { theme } from '../ui/theme'
 import InterpretationCard from './InterpretationCard'
 import { Interpretation } from '../../lib/lexicon'
@@ -178,40 +179,64 @@ export default function InterpretationModal({
         {/* Fixed header row */}
         <View style={styles.headerRow}>
           <Pressable
+            testID="interpretation-prev"
+            accessibilityRole="button"
+            accessibilityLabel="Previous interpretation"
+            accessibilityState={{ disabled: pages.length <= 1 }}
             onPress={handlePrevPress}
-            style={styles.navButton}
+            style={({ pressed }) => [
+              styles.navButton,
+              pressed && styles.pressed,
+              pages.length <= 1 && styles.navDisabled,
+            ]}
             disabled={pages.length <= 1}
           >
-            <Text
-              style={[
-                styles.navText,
-                pages.length <= 1 && styles.navTextDisabled,
-              ]}
-            >
-              ‹
-            </Text>
+            <Icon name="chevron-left" size="lg" />
           </Pressable>
 
-          <Text style={styles.headerTitle}>{headerTitle}</Text>
+          <View style={styles.headerCenter}>
+            <AppText variant="eyebrow" style={styles.headerTitle}>
+              {headerTitle}
+            </AppText>
+            {pages.length > 1 ? (
+              <AppText
+                testID="interpretation-position"
+                variant="numeric"
+                style={styles.headerPosition}
+              >
+                {`${normalizedCurrentIndex + 1} / ${pages.length}`}
+              </AppText>
+            ) : null}
+          </View>
 
           <View style={styles.headerActions}>
             <Pressable
+              testID="interpretation-next"
+              accessibilityRole="button"
+              accessibilityLabel="Next interpretation"
+              accessibilityState={{ disabled: pages.length <= 1 }}
               onPress={handleNextPress}
-              style={styles.navButton}
+              style={({ pressed }) => [
+                styles.navButton,
+                pressed && styles.pressed,
+                pages.length <= 1 && styles.navDisabled,
+              ]}
               disabled={pages.length <= 1}
             >
-              <Text
-                style={[
-                  styles.navText,
-                  pages.length <= 1 && styles.navTextDisabled,
-                ]}
-              >
-                ›
-              </Text>
+              <Icon name="chevron-right" size="lg" />
             </Pressable>
 
-            <Pressable onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeText}>✕</Text>
+            <Pressable
+              testID="interpretation-close"
+              accessibilityRole="button"
+              accessibilityLabel="Close interpretation"
+              onPress={onClose}
+              style={({ pressed }) => [
+                styles.closeButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Icon name="close" size="lg" />
             </Pressable>
           </View>
         </View>
@@ -237,6 +262,7 @@ export default function InterpretationModal({
                     showsVerticalScrollIndicator={false}
                   >
                     <InterpretationCard
+                      eyebrow={headerTitle}
                       title={page.title}
                       subtitle={page.subtitle}
                       summary={page.summary}
@@ -256,64 +282,61 @@ export default function InterpretationModal({
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: theme.scrim,
   },
   sheet: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(10,10,10,0.97)',
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
+    backgroundColor: theme.surface.raised,
+    borderTopLeftRadius: theme.radius.xl,
+    borderTopRightRadius: theme.radius.xl,
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: theme.colors.border,
-    paddingTop: 10,
-    paddingHorizontal: 14,
+    borderColor: theme.border.strong,
+    paddingTop: theme.space.sm,
+    paddingHorizontal: theme.space.lg,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: theme.space.xs,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
-    flex: 1,
+    color: theme.text.tertiary,
     textAlign: 'center',
-    color: theme.colors.text,
-    fontSize: 16,
-    fontWeight: '700',
+  },
+  headerPosition: {
+    color: theme.accent.base,
+    fontSize: 12,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   navButton: {
-    width: 40,
-    height: 40,
+    minWidth: theme.touchTarget.min,
+    minHeight: theme.touchTarget.min,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  navText: {
-    color: theme.colors.text,
-    fontSize: 28,
-    fontWeight: '500',
-    lineHeight: 28,
-  },
-  navTextDisabled: {
+  navDisabled: {
     opacity: 0.3,
   },
+  pressed: {
+    opacity: 0.7,
+  },
   closeButton: {
-    width: 40,
-    height: 40,
+    minWidth: theme.touchTarget.min,
+    minHeight: theme.touchTarget.min,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  closeText: {
-    color: theme.colors.text,
-    fontSize: 20,
-    fontWeight: '700',
   },
   contentArea: {
     flex: 1,

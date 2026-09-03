@@ -187,21 +187,6 @@ function hasText(root: TestRenderer.ReactTestRenderer, expected: string) {
     .some((node) => textValue(node.props.children).includes(expected))
 }
 
-function findPressableByText(
-  root: TestRenderer.ReactTestRenderer,
-  label: string
-) {
-  const pressable = root.root.findAll((node) =>
-    typeof node.props?.onPress === 'function' &&
-    node
-      .findAllByType(Text)
-      .some((textNode) => textValue(textNode.props.children).includes(label))
-  )
-
-  if (!pressable[0]) throw new Error(`Could not find pressable: ${label}`)
-  return pressable[0]
-}
-
 function findByTestID(root: TestRenderer.ReactTestRenderer, testID: string) {
   const node = root.root.findAll((item) => item.props.testID === testID)[0]
 
@@ -213,14 +198,25 @@ function pager(root: TestRenderer.ReactTestRenderer) {
   return findByTestID(root, 'interpretation-pager')
 }
 
+function findControl(root: TestRenderer.ReactTestRenderer, testID: string) {
+  const control = root.root.findAll(
+    (node) =>
+      typeof node.props?.onPress === 'function' &&
+      node.props?.testID === testID
+  )[0]
+
+  if (!control) throw new Error(`Could not find control: ${testID}`)
+  return control
+}
+
 async function press(
   root: TestRenderer.ReactTestRenderer,
-  label: string
+  testID: string
 ) {
-  const pressable = findPressableByText(root, label)
+  const control = findControl(root, testID)
 
   await act(async () => {
-    pressable.props.onPress()
+    control.props.onPress()
     await settleAsyncWork()
   })
 }
@@ -266,8 +262,8 @@ describe('InterpretationModal', () => {
 
     expect(hasText(screen, 'Sun in Aries')).toBe(true)
     expect(hasText(screen, 'A bright first page.')).toBe(true)
-    expect(findPressableByText(screen, '‹').props.disabled).toBe(true)
-    expect(findPressableByText(screen, '›').props.disabled).toBe(true)
+    expect(findControl(screen, 'interpretation-prev').props.disabled).toBe(true)
+    expect(findControl(screen, 'interpretation-next').props.disabled).toBe(true)
     expect(pager(screen).props.initialPage).toBe(0)
     expect(React.Children.count(pager(screen).props.children)).toBe(1)
 
@@ -318,7 +314,7 @@ describe('InterpretationModal', () => {
 
     expect(hasText(screen, 'Sun in Aries')).toBe(true)
 
-    await press(screen, '›')
+    await press(screen, 'interpretation-next')
     expect(onChangeIndex).toHaveBeenLastCalledWith(1)
 
     await updateModal({
@@ -326,7 +322,7 @@ describe('InterpretationModal', () => {
       onChangeIndex,
     })
 
-    await press(screen, '‹')
+    await press(screen, 'interpretation-prev')
     expect(onChangeIndex).toHaveBeenLastCalledWith(0)
   })
 
@@ -335,7 +331,7 @@ describe('InterpretationModal', () => {
       currentIndex: 0,
     })
 
-    await press(screen, '‹')
+    await press(screen, 'interpretation-prev')
 
     expect(onChangeIndex).toHaveBeenCalledWith(2)
   })
@@ -345,7 +341,7 @@ describe('InterpretationModal', () => {
       currentIndex: 2,
     })
 
-    await press(screen, '›')
+    await press(screen, 'interpretation-next')
 
     expect(onChangeIndex).toHaveBeenCalledWith(0)
   })
@@ -389,7 +385,7 @@ describe('InterpretationModal', () => {
   it('calls onClose from the close control', async () => {
     const { renderer: screen, onClose } = renderModal()
 
-    await press(screen, '✕')
+    await press(screen, 'interpretation-close')
 
     expect(onClose).toHaveBeenCalled()
   })
