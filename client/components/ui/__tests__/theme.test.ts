@@ -161,3 +161,93 @@ describe('V2 semantic tokens', () => {
     expect(theme.motion.exit).toBe(120)
   })
 })
+
+describe('typography roles', () => {
+  const SERIF = 'CormorantGaramond_600SemiBold'
+
+  it('exposes exactly the eleven approved roles', () => {
+    expect(Object.keys(theme.typography)).toEqual([
+      'display',
+      'title',
+      'heading',
+      'subheading',
+      'eyebrow',
+      'bodyLarge',
+      'body',
+      'bodySmall',
+      'caption',
+      'button',
+      'numeric',
+    ])
+  })
+
+  it('uses the serif only for display, title and heading', () => {
+    expect(theme.typography.display.fontFamily).toBe(SERIF)
+    expect(theme.typography.title.fontFamily).toBe(SERIF)
+    expect(theme.typography.heading.fontFamily).toBe(SERIF)
+
+    const serifRoles = Object.entries(theme.typography)
+      .filter(([, style]) => style.fontFamily === SERIF)
+      .map(([name]) => name)
+    expect(serifRoles).toEqual(['display', 'title', 'heading'])
+  })
+
+  it('maps each sans role to its registered weight family', () => {
+    expect(theme.typography.subheading.fontFamily).toBe('Inter_600SemiBold')
+    expect(theme.typography.eyebrow.fontFamily).toBe('Inter_600SemiBold')
+    expect(theme.typography.button.fontFamily).toBe('Inter_600SemiBold')
+    expect(theme.typography.bodyLarge.fontFamily).toBe('Inter_400Regular')
+    expect(theme.typography.body.fontFamily).toBe('Inter_400Regular')
+    expect(theme.typography.bodySmall.fontFamily).toBe('Inter_400Regular')
+    expect(theme.typography.caption.fontFamily).toBe('Inter_400Regular')
+    expect(theme.typography.numeric.fontFamily).toBe('Inter_500Medium')
+  })
+
+  it('carries the approved sizes and line heights', () => {
+    const metrics = Object.fromEntries(
+      Object.entries(theme.typography).map(([name, style]) => [
+        name,
+        [style.fontSize, style.lineHeight],
+      ])
+    )
+
+    expect(metrics).toEqual({
+      display: [32, 38],
+      title: [26, 32],
+      heading: [20, 26],
+      subheading: [15, 20],
+      eyebrow: [12, 16],
+      bodyLarge: [16, 26],
+      body: [15, 23],
+      bodySmall: [13, 20],
+      caption: [12, 16],
+      button: [15, 20],
+      numeric: [14, 20],
+    })
+  })
+
+  it('applies the approved letter spacing', () => {
+    expect(theme.typography.display.letterSpacing).toBe(-0.5)
+    expect(theme.typography.title.letterSpacing).toBe(-0.3)
+    expect(theme.typography.heading.letterSpacing).toBe(-0.2)
+    expect(theme.typography.button.letterSpacing).toBe(0.2)
+  })
+
+  it('gives eyebrow positive tracking and uppercase transform', () => {
+    expect(theme.typography.eyebrow.letterSpacing).toBe(0.8)
+    expect(theme.typography.eyebrow.textTransform).toBe('uppercase')
+  })
+
+  it('gives the numeric role tabular figures', () => {
+    expect(theme.typography.numeric.fontVariant).toEqual(['tabular-nums'])
+  })
+
+  it('never pairs a weight-specific family with a fontWeight', () => {
+    // expo-font registers each weight as its own family. Adding fontWeight on
+    // top asks the platform to synthesize a weight it already has, which is how
+    // faux-bold and faux-thin appear on Android.
+    for (const [name, style] of Object.entries(theme.typography)) {
+      expect([name, 'fontWeight' in style]).toEqual([name, false])
+    }
+  })
+})

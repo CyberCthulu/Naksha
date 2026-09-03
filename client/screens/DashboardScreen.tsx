@@ -403,7 +403,7 @@ export default function DashboardScreen() {
       ]}
       showsVerticalScrollIndicator={false}
     >
-      <TitleText style={uiStyles.h1}>Welcome to Naksha 🌌</TitleText>
+      <TitleText variant="title">Welcome to Naksha 🌌</TitleText>
 
       <AppText style={uiStyles.sub}>
         {displayName ? `Hello, ${displayName}!` : 'Hello!'}

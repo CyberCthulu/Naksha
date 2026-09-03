@@ -1,4 +1,5 @@
 // components/ui/theme.ts
+import type { TextStyle } from 'react-native'
 //
 // Two layers live here during the V2 migration:
 //
@@ -97,10 +98,103 @@ const planet = {
 const scrim = 'rgba(4,6,12,0.72)'
 
 // ---------------------------------------------------------------------------
+// Typography
+// ---------------------------------------------------------------------------
+
+/**
+ * Registered family names, one per loaded weight.
+ *
+ * expo-font registers each weight as its own family, so roles set `fontFamily`
+ * and never `fontWeight`. Pairing a weight-specific family with a fontWeight is
+ * what produces synthetic faux-bold and faux-thin on Android.
+ */
+export const fontFamilies = {
+  serifSemiBold: 'CormorantGaramond_600SemiBold',
+  sansRegular: 'Inter_400Regular',
+  sansMedium: 'Inter_500Medium',
+  sansSemiBold: 'Inter_600SemiBold',
+} as const
+
+/**
+ * The eleven approved roles. Serif is restricted to display/title/heading and
+ * is never used for body copy: Cormorant has a low x-height and thin strokes
+ * that do not survive small sizes on Android.
+ */
+const typography = {
+  display: {
+    fontFamily: fontFamilies.serifSemiBold,
+    fontSize: 32,
+    lineHeight: 38,
+    letterSpacing: -0.5,
+  },
+  title: {
+    fontFamily: fontFamilies.serifSemiBold,
+    fontSize: 26,
+    lineHeight: 32,
+    letterSpacing: -0.3,
+  },
+  heading: {
+    fontFamily: fontFamilies.serifSemiBold,
+    fontSize: 20,
+    lineHeight: 26,
+    letterSpacing: -0.2,
+  },
+  subheading: {
+    fontFamily: fontFamilies.sansSemiBold,
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  eyebrow: {
+    fontFamily: fontFamilies.sansSemiBold,
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  /** The interpretation reading surface. */
+  bodyLarge: {
+    fontFamily: fontFamilies.sansRegular,
+    fontSize: 16,
+    lineHeight: 26,
+  },
+  body: {
+    fontFamily: fontFamilies.sansRegular,
+    fontSize: 15,
+    lineHeight: 23,
+  },
+  bodySmall: {
+    fontFamily: fontFamilies.sansRegular,
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  caption: {
+    fontFamily: fontFamilies.sansRegular,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  button: {
+    fontFamily: fontFamilies.sansSemiBold,
+    fontSize: 15,
+    lineHeight: 20,
+    letterSpacing: 0.2,
+  },
+  /** Degrees, orbs, coordinates. Tabular figures hold columns without a fixed width. */
+  numeric: {
+    fontFamily: fontFamilies.sansMedium,
+    fontSize: 14,
+    lineHeight: 20,
+    fontVariant: ['tabular-nums'],
+  },
+} satisfies Record<string, TextStyle>
+
+export type TypographyRole = keyof typeof typography
+
+// ---------------------------------------------------------------------------
 // Theme
 // ---------------------------------------------------------------------------
 
 export const theme = {
+  typography,
   // === DEPRECATED V1 COMPATIBILITY — exact original values, do not re-point ===
   colors: {
     text: '#fff',

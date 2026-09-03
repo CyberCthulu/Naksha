@@ -10,6 +10,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import * as Linking from 'expo-linking'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
+import { useAppFonts } from './components/ui/useAppFonts'
 
 import supabase from './lib/supabase'
 import { SpaceProvider } from './components/space/SpaceProvider'
@@ -84,6 +85,12 @@ const TransparentTheme = {
 export default function App() {
   const [user, setUser] = useState<any | null>(null)
   const [authReady, setAuthReady] = useState(false)
+
+  // Holds the native splash until the four app fonts resolve, then hides it.
+  // Failure and timeout both count as resolved, so the app can never be
+  // stranded behind the splash by a font. Auth initialization below is
+  // untouched and keeps its own loading state.
+  useAppFonts()
 
   useEffect(() => {
     let mounted = true

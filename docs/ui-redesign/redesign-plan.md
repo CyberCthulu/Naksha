@@ -207,12 +207,20 @@ Gate: full verification; no visual regression against the baseline screenshots; 
 
 **Deliberately not delivered — no screen has migrated.** Every V1 compatibility key keeps its exact pre-V2 value; none is aliased to a V2 role, so importing the token layer repaints nothing. `Background` is created but not applied anywhere; global application belongs to Slice 5. 35 files still consume `theme.colors.*` and are visually unchanged.
 
-### Slice 3 — Typography
+### Slice 3 — Typography — **IMPLEMENTED, pending Cormorant Android visual approval**
 
-Scope: install `expo-font`, `expo-splash-screen`, `@expo-google-fonts/inter`, and `@expo-google-fonts/cormorant-garamond`. `expo-font` is the loader only and supplies no typefaces. Load exactly four families — `Inter_400Regular`, `Inter_500Medium`, `Inter_600SemiBold`, `CormorantGaramond_600SemiBold`. Then `useFonts` with splash gating and a mandatory fallback path, and the typography roles in `AppText`.
+Scope: install the approved `expo-font` and `expo-splash-screen`; bundle font assets; `useFonts` with splash gating and a mandatory fallback path; the typography roles in `AppText`.
 Display serif: **Cormorant Garamond SemiBold**, provisional. Validate on Android at `heading` size and above. If legibility or rendering is poor, **replace** it with the pre-approved EB Garamond — a finding to record, not a decision to re-open. **Do not install EB Garamond alongside Cormorant.** Only one serif ships.
 Not in scope: applying roles across screens; that is Slices 4-6.
 Gate: full verification; **release-build** font verification on device; confirmed graceful fallback when font loading fails or exceeds the 3 s budget; explicit Cormorant/EB Garamond determination recorded.
+
+**Delivered.** `theme.typography` carries all eleven approved roles with their families, sizes, line heights, tracking, uppercase transform, and tabular figures. `useAppFonts` loads exactly four families through `expo-font`, holds the native splash, and releases it on success, failure, or a 3-second timeout. `AppText`, `MutedText`, and `TitleText` gained an opt-in `variant` prop.
+
+**Not delivered — no screen has migrated.** Omitting `variant` preserves the exact V1 appearance, so the eleven files using these components are visually unchanged. Exactly one existing element opts in — the Dashboard greeting — so Cormorant can be judged in Expo Go without redesigning anything.
+
+**Open gate: Cormorant Garamond has not been seen on an Android device.** Slice 3 cannot be signed off until it is. If it reads poorly at `heading` size and above, the pre-approved replacement is EB Garamond; that swap is a finding, not a reopened decision.
+
+Deferred to a development build: the runtime `useFonts` path is what Expo Go supports. The `expo-font` config plugin was added to `app.json` by the installer and is inert until a prebuild happens.
 
 ### Slice 4 — Primitives
 
