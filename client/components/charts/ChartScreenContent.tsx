@@ -23,9 +23,12 @@ import { Icon } from '../ui/Icon'
 import { theme } from '../ui/theme'
 import { LoadingState } from '../ui/LoadingState'
 import AspectsList from './AspectsList'
-import ChartCompass from './ChartCompass'
 import ChartHeader from './ChartHeader'
 import { ChartHero } from './ChartHero'
+import {
+  GlyphCompass,
+  GLYPH_COMPASS_TRIGGER_CLEARANCE,
+} from './GlyphCompass'
 import { ChartSection } from './ChartSection'
 import ChartWheel from './ChartWheel'
 import HousesList from './HousesList'
@@ -160,7 +163,10 @@ export default function ChartScreenContent({
           styles.content,
           {
             paddingTop: insets.top + theme.space.xs,
-            paddingBottom: insets.bottom + theme.space.xxxl,
+            paddingBottom:
+              insets.bottom +
+              theme.space.xxxl +
+              GLYPH_COMPASS_TRIGGER_CLEARANCE,
           },
         ]}
         keyboardShouldPersistTaps="handled"
@@ -257,21 +263,15 @@ export default function ChartScreenContent({
         </ChartSection>
 
         <ChartSection
-          testID="chart-section-compass"
-          eyebrow="Legend"
-          title="Glyph Compass"
-        >
-          <ChartCompass />
-        </ChartSection>
-
-        <ChartSection
           testID="chart-section-aspects"
-          eyebrow="Relationships"
+          eyebrow="Planetary dynamics"
           title="Aspects"
         >
           <AspectsList aspects={aspects} />
         </ChartSection>
       </ScrollView>
+
+      <GlyphCompass hidden={interpretationVisible} />
 
       <InterpretationModal
         visible={interpretationVisible && activePages.length > 0}

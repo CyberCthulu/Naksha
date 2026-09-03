@@ -1,8 +1,10 @@
 import React from 'react'
+import { Modal, ScrollView } from 'react-native'
 import TestRenderer from 'react-test-renderer'
 
 import ChartScreenContent from '../ChartScreenContent'
 import ChartWheel from '../ChartWheel'
+import { GLYPH_COMPASS_TRIGGER_CLEARANCE } from '../GlyphCompass'
 import { theme } from '../../ui/theme'
 import { SpaceProvider } from '../../space/SpaceProvider'
 import useChartData from '../../../hooks/useChartData'
@@ -95,6 +97,16 @@ function hostTexts(screen: ReturnType<typeof create>) {
     .map((n) => n.children.filter((c) => typeof c === 'string').join(''))
 }
 
+function chartScroll(screen: ReturnType<typeof create>) {
+  // Once the legend panel is open there are two: the chart and the legend.
+  const scrolls = screen.root
+    .findAllByType(ScrollView)
+    .filter((n) => n.props.testID !== 'glyph-compass-scroll')
+
+  expect(scrolls).toHaveLength(1)
+  return scrolls[0]
+}
+
 function byTestID(screen: ReturnType<typeof create>, testID: string) {
   return screen.root.findAll((n) => n.props?.testID === testID)
 }
@@ -117,7 +129,7 @@ describe('Chart section hierarchy', () => {
 
   it('renders the sections in the approved order', () => {
     const screen = renderChart()
-    const order = ['positions', 'houses', 'compass', 'aspects']
+    const order = ['positions', 'houses', 'aspects']
 
     const indexes = order.map((name) => {
       const nodes = byTestID(screen, `chart-section-${name}`)
@@ -173,6 +185,94 @@ describe('Chart section hierarchy', () => {
     // ChartScreenContent focuses the Sun on mount via SpaceProvider.
     const wheel = renderChart().root.findByType(ChartWheel)
     expect(wheel.props.focusedPlanet).toBe('Sun')
+  })
+
+  it('keeps the legend out of the document flow, as a route utility', () => {
+    const screen = renderChart()
+
+    // The inline section used to sit after all twelve houses, several screens
+    // below the wheel it describes.
+    expect(byTestID(screen, 'chart-section-compass')).toHaveLength(0)
+    expect(hostTexts(screen)).not.toContain('Explore chart symbols')
+
+    const trigger = screen.root.findAll(
+      (n) =>
+        typeof n.props?.onPress === 'function' &&
+        n.props?.testID === 'glyph-compass-trigger'
+    )
+    expect(trigger).toHaveLength(1)
+  })
+
+  it('mounts the legend trigger outside the scrolling document', () => {
+    const screen = renderChart()
+    const scroll = chartScroll(screen)
+
+    const insideScroll = scroll.findAll(
+      (n) => n.props?.testID === 'glyph-compass-trigger'
+    )
+    expect(insideScroll).toHaveLength(0)
+  })
+
+  it('keeps the chart scrollable and unmoved while the legend is open', () => {
+    const screen = renderChart()
+    const contentBefore = chartScroll(screen).props.contentContainerStyle
+
+    const trigger = () =>
+      screen.root.findAll(
+        (n) =>
+          typeof n.props?.onPress === 'function' &&
+          n.props?.testID === 'glyph-compass-trigger'
+      )[0]
+
+    act(() => trigger().props.onPress())
+
+    const scrollAfter = chartScroll(screen)
+
+    // The chart is neither disabled nor programmatically scrolled: the legend
+    // is a sibling overlay with no reference to it.
+    expect(scrollAfter.props.scrollEnabled).not.toBe(false)
+    expect(scrollAfter.props.contentOffset).toBeUndefined()
+    expect(scrollAfter.props.contentContainerStyle).toBe(contentBefore)
+    expect(scrollAfter.props.ref).toBeUndefined()
+  })
+
+  it('renders the legend outside any React Native Modal', () => {
+    const screen = renderChart()
+
+    act(() =>
+      screen.root
+        .findAll(
+          (n) =>
+            typeof n.props?.onPress === 'function' &&
+            n.props?.testID === 'glyph-compass-trigger'
+        )[0]
+        .props.onPress()
+    )
+
+    const panel = screen.root.findAll(
+      (n) => typeof n.type === 'string' && n.props?.testID === 'glyph-compass-panel'
+    )
+    expect(panel).toHaveLength(1)
+
+    // The only Modal on the chart route is the interpretation sheet.
+    const modals = screen.root.findAllByType(Modal)
+    for (const modal of modals) {
+      expect(
+        modal.findAll((n) => n.props?.testID === 'glyph-compass-panel')
+      ).toHaveLength(0)
+    }
+  })
+
+  it('leaves room for the last row to clear the floating trigger', () => {
+    const screen = renderChart()
+    const content = chartScroll(screen).props.contentContainerStyle
+    const flat = Array.isArray(content)
+      ? Object.assign({}, ...content.filter(Boolean))
+      : content
+
+    expect(flat.paddingBottom).toBeGreaterThanOrEqual(
+      48 + GLYPH_COMPASS_TRIGGER_CLEARANCE
+    )
   })
 
   it('renders the hero placement under the wheel', () => {
@@ -335,6 +435,37 @@ describe('Chart typography and accent rules', () => {
       act(() => mounted.unmount())
     }
     renderer = null
+  })
+
+  it('labels the aspects section without implying synastry', () => {
+    const texts = hostTexts(renderChart())
+
+    expect(texts).toContain('Planetary dynamics')
+    expect(texts).toContain('Aspects')
+    expect(texts).not.toContain('Relationships')
+  })
+
+  it('gives the wheel only visual props, never geometry', () => {
+    const wheel = renderChart().root.findByType(ChartWheel)
+
+    // focusedPlanet is presentation only. Everything the wheel computes from
+    // must still arrive by identity.
+    expect(Object.keys(wheel.props).sort()).toEqual(
+      ['aspects', 'focusedPlanet', 'houses', 'planets', 'size'].sort()
+    )
+    expect(wheel.props.planets).toBe(PLANETS)
+    expect(wheel.props.aspects).toBe(ASPECTS)
+    expect(wheel.props.houses).toBe(HOUSES)
+  })
+
+  it('tints only the focused planet, leaving the rest subordinate', () => {
+    const rendered = JSON.stringify(renderChart().toJSON())
+
+    expect(rendered).toContain(theme.planet.Sun)
+    for (const [name, value] of Object.entries(theme.planet)) {
+      if (name === 'Sun') continue
+      expect(rendered).not.toContain(value)
+    }
   })
 
   it('uses at most one planet accent across the surface', () => {

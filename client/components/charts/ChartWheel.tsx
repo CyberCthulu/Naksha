@@ -6,6 +6,24 @@ import { theme } from '../ui/theme'
 
 type PlanetAccentName = keyof typeof theme.planet
 
+/**
+ * Structural line weights, brightest to faintest.
+ *
+ * The border tokens are 10-18% alpha hairlines intended for card edges on a
+ * solid surface. At 1px over a gradient they all but vanish, so the wheel
+ * paints its structure with a solid slate and an explicit opacity per role.
+ * This keeps one deliberate order of visual weight: focused planet, planet
+ * discs, sign glyphs, house numbers, rim, house lines, sign ticks, aspects.
+ */
+const WHEEL = {
+  rim: 0.55,
+  innerRim: 0.34,
+  signTick: 0.3,
+  houseLine: 0.42,
+  aspect: 0.4,
+  planetRing: 0.5,
+} as const
+
 const ZODIAC_ABBR = ['Ar', 'Ta', 'Ge', 'Cn', 'Le', 'Vi', 'Li', 'Sc', 'Sg', 'Cp', 'Aq', 'Pi']
 
 const GLYPH: Record<string, string> = {
@@ -76,7 +94,8 @@ export default function ChartWheel({
         cx={cx}
         cy={cy}
         r={rOuter}
-        stroke={theme.border.strong}
+        stroke={theme.text.tertiary}
+        strokeOpacity={WHEEL.rim}
         strokeWidth={1}
         fill="none"
       />
@@ -84,7 +103,8 @@ export default function ChartWheel({
         cx={cx}
         cy={cy}
         r={rInner}
-        stroke={theme.border.base}
+        stroke={theme.text.tertiary}
+        strokeOpacity={WHEEL.innerRim}
         strokeWidth={1}
         fill="none"
       />
@@ -102,7 +122,8 @@ export default function ChartWheel({
               y1={y1}
               x2={x2}
               y2={y2}
-              stroke={theme.border.base}
+              stroke={theme.text.tertiary}
+              strokeOpacity={WHEEL.signTick}
               strokeWidth={1}
             />
             <SvgText
@@ -132,7 +153,8 @@ export default function ChartWheel({
               y1={y1}
               x2={x2}
               y2={y2}
-              stroke={theme.border.strong}
+              stroke={theme.text.tertiary}
+              strokeOpacity={WHEEL.houseLine}
               strokeWidth={1}
             />
             <SvgText
@@ -141,7 +163,7 @@ export default function ChartWheel({
               fontSize={9}
               textAnchor="middle"
               dy={3}
-              fill={theme.text.tertiary}
+              fill={theme.text.secondary}
             >
               {h.house}
             </SvgText>
@@ -164,9 +186,9 @@ export default function ChartWheel({
             y1={y1}
             x2={x2}
             y2={y2}
-            stroke={theme.border.strong}
+            stroke={theme.text.tertiary}
             strokeWidth={aspectStroke[a.type]}
-            opacity={0.85}
+            opacity={WHEEL.aspect}
             strokeDasharray={
               a.type === 'sextile' ? '4 4' : a.type === 'trine' ? '8 6' : undefined
             }
@@ -194,7 +216,8 @@ export default function ChartWheel({
               cy={y}
               r={9}
               fill={theme.background.raised}
-              stroke={isFocused ? accent : theme.border.strong}
+              stroke={isFocused ? accent : theme.text.tertiary}
+              strokeOpacity={isFocused ? 1 : WHEEL.planetRing}
               strokeWidth={isFocused ? 1.5 : 1}
             />
             <SvgText

@@ -1,10 +1,8 @@
 // components/charts/ChartCompass.tsx
-import React, { useState } from 'react'
-import { View, Text, StyleSheet, ViewStyle, Pressable } from 'react-native'
+import React from 'react'
+import { View, Text, StyleSheet } from 'react-native'
 import Svg, { Line as SvgLine } from 'react-native-svg'
 import { AppText } from '../ui/AppText'
-import { Card } from '../ui/Card'
-import { Icon } from '../ui/Icon'
 import { theme } from '../ui/theme'
 
 export const PLANET_GLYPH: Record<string, string> = {
@@ -35,79 +33,58 @@ export const SIGN_INFO = [
   { abbr: 'Pi', name: 'Pisces', glyph: '♓︎' },
 ] as const
 
-type Props = {
-  style?: ViewStyle
-  defaultOpen?: boolean
-}
-
 type AspectVariant = 'conj' | 'opp' | 'square' | 'trine' | 'sextile'
 type LegendLineProps = { label: string; variant?: AspectVariant }
 
-export default function ChartCompass({ style, defaultOpen = false }: Props) {
-  const [open, setOpen] = useState(defaultOpen)
-
+/**
+ * The legend body on its own, with no surface or disclosure of its own.
+ *
+ * It used to live inline after the twelve house rows, several screens below
+ * the wheel, where it could not actually serve as a legend for the thing it
+ * describes. It is now presented by GlyphCompass as a route-level utility.
+ */
+export function GlyphCompassContent() {
   return (
-    <Card style={style}>
-      {/* Header / Toggle */}
-      <Pressable
-        testID="glyph-compass-toggle"
-        accessibilityRole="button"
-        accessibilityLabel="Glyph Compass"
-        accessibilityHint={open ? 'Collapse the legend' : 'Expand the legend'}
-        accessibilityState={{ expanded: open }}
-        onPress={() => setOpen((v) => !v)}
-        style={({ pressed }) => [styles.header, pressed && styles.pressed]}
-      >
-        <AppText variant="heading" style={styles.title}>
-          Glyph Compass
-        </AppText>
-        <Icon name={open ? 'collapse' : 'expand'} size="md" />
-      </Pressable>
-
-      <AppText variant="caption" style={styles.sub}>
-        Stays inline while you scroll.
+    <View testID="glyph-compass-content">
+      <AppText variant="eyebrow" style={styles.section}>
+        Planets
       </AppText>
-
-      {!open ? null : (
-        <>
-          {/* Planets */}
-          <AppText variant="eyebrow" style={styles.section}>Planets</AppText>
-          <View style={styles.grid2}>
-            {Object.entries(PLANET_GLYPH).map(([name, glyph]) => (
-              <View key={name} style={styles.row}>
-                <Text style={styles.glyph}>{glyph}</Text>
-                <Text style={styles.label}>{name}</Text>
-              </View>
-            ))}
+      <View style={styles.grid2}>
+        {Object.entries(PLANET_GLYPH).map(([name, glyph]) => (
+          <View key={name} style={styles.row}>
+            <Text style={styles.glyph}>{glyph}</Text>
+            <Text style={styles.label}>{name}</Text>
           </View>
+        ))}
+      </View>
 
-          {/* Signs */}
-          <AppText variant="eyebrow" style={styles.section}>Signs</AppText>
-          <View style={styles.grid2}>
-            {SIGN_INFO.map((s) => (
-              <View key={s.abbr} style={styles.row}>
-                <Text style={styles.glyph}>{s.glyph}</Text>
-                <Text style={styles.label}>{`${s.abbr} · ${s.name}`}</Text>
-              </View>
-            ))}
+      <AppText variant="eyebrow" style={styles.section}>
+        Signs
+      </AppText>
+      <View style={styles.grid2}>
+        {SIGN_INFO.map((s) => (
+          <View key={s.abbr} style={styles.row}>
+            <Text style={styles.glyph}>{s.glyph}</Text>
+            <Text style={styles.label}>{`${s.abbr} · ${s.name}`}</Text>
           </View>
+        ))}
+      </View>
 
-          {/* Aspects */}
-          <AppText variant="eyebrow" style={styles.section}>Aspects</AppText>
-          <View style={styles.grid2}>
-            <LegendLine label="Conjunction · 0°" variant="conj" />
-            <LegendLine label="Opposition · 180°" variant="opp" />
-            <LegendLine label="Square · 90°" variant="square" />
-            <LegendLine label="Trine · 120°" variant="trine" />
-            <LegendLine label="Sextile · 60°" variant="sextile" />
-          </View>
+      <AppText variant="eyebrow" style={styles.section}>
+        Aspects
+      </AppText>
+      <View style={styles.grid2}>
+        <LegendLine label="Conjunction · 0°" variant="conj" />
+        <LegendLine label="Opposition · 180°" variant="opp" />
+        <LegendLine label="Square · 90°" variant="square" />
+        <LegendLine label="Trine · 120°" variant="trine" />
+        <LegendLine label="Sextile · 60°" variant="sextile" />
+      </View>
 
-          <AppText variant="caption" style={styles.hint}>
-            Tip: sextiles are dashed; trines are thicker.
-          </AppText>
-        </>
-      )}
-    </Card>
+      <AppText variant="caption" style={styles.hint}>
+        Tip: sextiles are dashed; trines are thicker.
+      </AppText>
+    </View>
   )
 }
 
@@ -152,24 +129,6 @@ function LegendLine({ label, variant = 'conj' }: LegendLineProps) {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: theme.touchTarget.min,
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  title: {
-    flex: 1,
-    color: theme.text.primary,
-  },
-  sub: {
-    color: theme.text.tertiary,
-    marginBottom: theme.space.xs,
-  },
-
   section: {
     marginTop: theme.space.md,
     marginBottom: theme.space.xs,

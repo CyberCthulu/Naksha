@@ -194,10 +194,20 @@ export default function InterpretationModal({
             <Icon name="chevron-left" size="lg" />
           </Pressable>
 
-          <View style={styles.headerCenter}>
-            <AppText variant="eyebrow" style={styles.headerTitle}>
-              {headerTitle}
-            </AppText>
+          {/* The interpretation type is already the content eyebrow, so the
+              chrome shows position only. The type is kept in the accessible
+              name so it is still announced without being drawn twice. */}
+          <View
+            testID="interpretation-position-group"
+            accessible
+            accessibilityRole="header"
+            accessibilityLabel={
+              pages.length > 1
+                ? `${headerTitle}, ${normalizedCurrentIndex + 1} of ${pages.length}`
+                : headerTitle
+            }
+            style={styles.headerCenter}
+          >
             {pages.length > 1 ? (
               <AppText
                 testID="interpretation-position"
@@ -308,13 +318,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
-  headerTitle: {
-    color: theme.text.tertiary,
-    textAlign: 'center',
-  },
   headerPosition: {
     color: theme.accent.base,
-    fontSize: 12,
+    letterSpacing: 0.5,
   },
   headerActions: {
     flexDirection: 'row',

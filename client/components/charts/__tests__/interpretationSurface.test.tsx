@@ -201,6 +201,50 @@ describe('Interpretation modal chrome', () => {
     expect(hostTexts(screen)).toContain('2 / 2')
   })
 
+  it('does not draw the interpretation type in the chrome', () => {
+    const screen = renderModal()
+
+    const group = screen.root.findAll(
+      (n) => n.props?.testID === 'interpretation-position-group'
+    )[0]
+    const chromeTexts = group
+      .findAll((n) => String(n.type) === 'Text')
+      .map((n) => n.children.filter((c) => typeof c === 'string').join(''))
+
+    // The chrome shows position only; the type lives on the content eyebrow.
+    expect(chromeTexts).not.toContain('Planet Interpretation')
+    expect(chromeTexts).toContain('1 / 2')
+
+    // Each rendered page still carries the eyebrow exactly once. The pager
+    // renders sentinel copies either side of the real pages, so the count
+    // tracks pager pages rather than real ones.
+    const pagerPages = screen.root.findAllByType(InterpretationCard)
+    const eyebrows = hostTexts(screen).filter(
+      (t) => t === 'Planet Interpretation'
+    )
+    expect(eyebrows).toHaveLength(pagerPages.length)
+  })
+
+  it('still names the interpretation type for assistive technology', () => {
+    const group = renderModal({ currentIndex: 1 }).root.findAll(
+      (n) => n.props?.testID === 'interpretation-position-group'
+    )[0]
+
+    expect(group.props.accessible).toBe(true)
+    expect(group.props.accessibilityLabel).toBe(
+      'Planet Interpretation, 2 of 2'
+    )
+  })
+
+  it('names the type alone when there is only one page', () => {
+    const group = renderModal({ pages: [PAGES[0]] }).root.findAll(
+      (n) => n.props?.testID === 'interpretation-position-group'
+    )[0]
+
+    expect(group.props.accessibilityLabel).toBe('Planet Interpretation')
+    expect(hostTexts(renderModal({ pages: [PAGES[0]] }))).not.toContain('1 / 1')
+  })
+
   it('keeps the whole interpretation scrollable with no fixed height', () => {
     const screen = renderModal()
     const scrolls = screen.root.findAllByType(ScrollView)
