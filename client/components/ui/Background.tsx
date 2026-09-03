@@ -186,7 +186,7 @@ export function Background({
 
       {children}
 
-      {/* Status-bar protection.
+      {/* System-bar protection.
           Under edge-to-edge the window extends beneath the system bars, so a
           screen's contentContainer paddingTop positions its first item but
           does nothing about items that scroll up into that region and stay
@@ -217,6 +217,27 @@ export function Background({
           ]}
         />
       ) : null}
+
+      {/* The navigation bar has the same problem: content scrolls up behind
+          the back/home/recents buttons and stays visible there. The gradient
+          has faded out well before the bottom, so this strip is always the
+          flat environment colour. */}
+      {insets.bottom > 0 ? (
+        <View
+          testID="background-navigation-bar-protection"
+          pointerEvents="none"
+          accessible={false}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={[
+            styles.navigationBarProtection,
+            {
+              height: insets.bottom,
+              backgroundColor: theme.background.base,
+            },
+          ]}
+        />
+      ) : null}
     </View>
   )
 }
@@ -225,6 +246,12 @@ const styles = StyleSheet.create({
   statusBarProtection: {
     position: 'absolute',
     top: 0,
+    left: 0,
+    right: 0,
+  },
+  navigationBarProtection: {
+    position: 'absolute',
+    bottom: 0,
     left: 0,
     right: 0,
   },

@@ -6,7 +6,7 @@ import { Circle, Rect } from 'react-native-svg'
 import { Background, type BackgroundVariant } from '../Background'
 import { theme } from '../theme'
 
-let mockInsets = { top: 24, right: 0, bottom: 0, left: 0 }
+let mockInsets = { top: 24, right: 0, bottom: 48, left: 0 }
 
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => mockInsets,
@@ -75,7 +75,7 @@ describe('Background', () => {
   beforeEach(() => {
     ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
     renderer = null
-    mockInsets = { top: 24, right: 0, bottom: 0, left: 0 }
+    mockInsets = { top: 24, right: 0, bottom: 48, left: 0 }
     mockReducedMotion(false)
   })
 
@@ -250,7 +250,7 @@ describe('Background status-bar protection', () => {
   beforeEach(() => {
     ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
     renderer = null
-    mockInsets = { top: 24, right: 0, bottom: 0, left: 0 }
+    mockInsets = { top: 24, right: 0, bottom: 48, left: 0 }
     mockReducedMotion(false)
   })
 
@@ -281,7 +281,7 @@ describe('Background status-bar protection', () => {
   }
 
   it('sizes itself from the real top safe-area inset', async () => {
-    mockInsets = { top: 37, right: 0, bottom: 0, left: 0 }
+    mockInsets = { top: 37, right: 0, bottom: 48, left: 0 }
     const screen = await renderBackground('quiet')
 
     expect(protectionStyle(screen).height).toBe(37)
@@ -329,8 +329,14 @@ describe('Background status-bar protection', () => {
     const rendered = screen.toJSON() as any
     const children = Array.isArray(rendered.children) ? rendered.children : []
 
-    const lastChild = children[children.length - 1]
-    expect(lastChild.props.testID).toBe('background-status-bar-protection')
+    const ids = children.map((c: any) => c?.props?.testID)
+    const statusIndex = ids.indexOf('background-status-bar-protection')
+    const navIndex = ids.indexOf('background-navigation-bar-protection')
+    const contentIndex = ids.lastIndexOf(undefined)
+
+    // Both protection layers must be painted after any content sibling.
+    expect(statusIndex).toBeGreaterThan(contentIndex)
+    expect(navIndex).toBeGreaterThan(contentIndex)
   })
 
   it('is mounted once per Background, not once per child', async () => {
@@ -363,5 +369,95 @@ describe('Background status-bar protection', () => {
     const screen = await renderBackground('hero')
 
     expect(protectionStyle(screen).backgroundColor).toBe(theme.background.base)
+  })
+})
+
+describe('Background navigation-bar protection', () => {
+  beforeEach(() => {
+    ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
+    renderer = null
+    mockInsets = { top: 24, right: 0, bottom: 48, left: 0 }
+    mockReducedMotion(false)
+  })
+
+  afterEach(() => {
+    if (renderer) {
+      const mounted = renderer
+      act(() => {
+        mounted.unmount()
+      })
+    }
+    renderer = null
+    jest.restoreAllMocks()
+  })
+
+  function navProtection(screen: ReturnType<typeof create>) {
+    return screen.root.findAll(
+      (node) =>
+        typeof node.type === 'string' &&
+        node.props?.testID === 'background-navigation-bar-protection'
+    )
+  }
+
+  function navStyle(screen: ReturnType<typeof create>) {
+    const style = navProtection(screen)[0].props.style
+    return Array.isArray(style)
+      ? Object.assign({}, ...style.filter(Boolean))
+      : style
+  }
+
+  it('sizes itself from the real bottom safe-area inset', async () => {
+    mockInsets = { top: 24, right: 0, bottom: 61, left: 0 }
+    const screen = await renderBackground('atmospheric')
+
+    expect(navStyle(screen).height).toBe(61)
+  })
+
+  it('renders nothing on a device with no bottom inset', async () => {
+    mockInsets = { top: 24, right: 0, bottom: 0, left: 0 }
+    const screen = await renderBackground('quiet')
+
+    expect(navProtection(screen)).toHaveLength(0)
+  })
+
+  it('is anchored to the bottom and contributes no layout', async () => {
+    const screen = await renderBackground('quiet')
+    const style = navStyle(screen)
+
+    expect(style.position).toBe('absolute')
+    expect(style.bottom).toBe(0)
+    expect(style.paddingBottom).toBeUndefined()
+    expect(style.marginBottom).toBeUndefined()
+  })
+
+  it('is non-interactive and hidden from assistive technology', async () => {
+    const layer = navProtection(await renderBackground('hero'))[0]
+
+    expect(layer.props.pointerEvents).toBe('none')
+    expect(layer.props.accessible).toBe(false)
+    expect(layer.props.accessibilityElementsHidden).toBe(true)
+    expect(layer.props.importantForAccessibility).toBe('no-hide-descendants')
+  })
+
+  it('uses the flat environment colour, where the gradient has faded out', async () => {
+    for (const variant of ['quiet', 'atmospheric', 'hero'] as const) {
+      const screen = await renderBackground(variant)
+      expect(navStyle(screen).backgroundColor).toBe(theme.background.base)
+      act(() => screen.unmount())
+      renderer = null
+    }
+  })
+
+  it('is mounted once per Background', async () => {
+    await act(async () => {
+      renderer = create(
+        <Background variant="quiet">
+          <Text>a</Text>
+          <Text>b</Text>
+        </Background>
+      )
+    })
+
+    expect(navProtection(renderer!)).toHaveLength(1)
   })
 })
