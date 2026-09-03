@@ -400,7 +400,7 @@ export default function DashboardScreen() {
       contentContainerStyle={[
         styles.screenContent,
         {
-          paddingTop: insets.top + theme.space.md,
+          paddingTop: insets.top + theme.space.xs,
           paddingBottom: insets.bottom + 80,
         },
       ]}

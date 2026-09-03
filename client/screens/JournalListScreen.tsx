@@ -102,7 +102,7 @@ export default function JournalListScreen() {
       <ScreenHeader
         title="Your Journal"
         onBack={() => nav.goBack()}
-        style={[styles.header, { paddingTop: insets.top + theme.space.md }]}
+        style={[styles.header, { paddingTop: insets.top + theme.space.xs }]}
       />
 
       <FlatList

@@ -32,7 +32,7 @@ export default function AuthContainer({
         contentContainerStyle={{
           flexGrow: 1,
           paddingHorizontal: theme.spacing.screen,
-          paddingTop: insets.top + 16,
+          paddingTop: insets.top + theme.space.xs,
           paddingBottom: insets.bottom + 24,
           justifyContent: centered ? 'center' : 'flex-start',
         }}

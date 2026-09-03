@@ -183,7 +183,7 @@ export default function MyChartsScreen() {
       <ScreenHeader
         title="My Charts"
         onBack={() => nav.goBack()}
-        style={[styles.header, { paddingTop: insets.top + theme.space.md }]}
+        style={[styles.header, { paddingTop: insets.top + theme.space.xs }]}
       />
 
       {items.length === 0 ? (

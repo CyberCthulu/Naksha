@@ -160,7 +160,7 @@ export default function ChartScreenContent({
         style={{ flex: 1 }}
         contentContainerStyle={{
           padding: theme.spacing.screen,
-          paddingTop: insets.top + 12,
+          paddingTop: insets.top + theme.space.xs,
           paddingBottom: insets.bottom + 28,
         }}
         keyboardShouldPersistTaps="handled"

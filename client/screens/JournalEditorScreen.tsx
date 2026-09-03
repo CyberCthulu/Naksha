@@ -142,7 +142,7 @@ export default function JournalEditorScreen() {
           }}
           style={[
             styles.header,
-            { paddingTop: insets.top + theme.space.md },
+            { paddingTop: insets.top + theme.space.xs },
           ]}
         />
 

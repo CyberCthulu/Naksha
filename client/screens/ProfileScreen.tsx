@@ -291,7 +291,7 @@ export default function ProfileScreen() {
       style={{ flex: 1 }}
       contentContainerStyle={{
         padding: theme.spacing.screen,
-        paddingTop: insets.top + 12, // ✅ avoids header/status overlap
+        paddingTop: insets.top + theme.space.xs,
         paddingBottom: insets.bottom + 32,
       }}
     >
