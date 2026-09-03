@@ -1,6 +1,6 @@
 // App.tsx
 import React, { useEffect, useState, createContext } from 'react'
-import { View, ActivityIndicator } from 'react-native'
+import { View, ActivityIndicator, StyleSheet } from 'react-native'
 import {
   NavigationContainer,
   DefaultTheme,
@@ -11,6 +11,9 @@ import * as Linking from 'expo-linking'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 import { useAppFonts } from './components/ui/useAppFonts'
+import { Background, type BackgroundVariant } from './components/ui/Background'
+import { ReducedMotionProvider } from './components/ui/useReducedMotion'
+import { theme } from './components/ui/theme'
 
 import supabase from './lib/supabase'
 import { SpaceProvider } from './components/space/SpaceProvider'
@@ -32,6 +35,50 @@ import JournalListScreen from './screens/JournalListScreen'
 import ProfileScreen from './screens/ProfileScreen'
 import { normalizeAuthCallbackUrlForRouting } from './lib/authCallbackUrl'
 import type { RootStackParamList } from './navigation/types'
+
+/**
+ * One Background per route, wrapped at registration rather than inside each
+ * screen. Defined at module scope so the wrapped component identity is stable
+ * and screens are not remounted on every App render.
+ */
+function withBackground<P extends object>(
+  Screen: React.ComponentType<P>,
+  variant: BackgroundVariant
+) {
+  function BackgroundScreen(props: P) {
+    return (
+      <Background variant={variant}>
+        <Screen {...props} />
+      </Background>
+    )
+  }
+
+  BackgroundScreen.displayName = `withBackground(${
+    Screen.displayName || Screen.name || 'Screen'
+  })`
+
+  return BackgroundScreen
+}
+
+// quiet: forms, auth, recovery, lists and the journal editor.
+const LoginRoute = withBackground(LoginScreen, 'quiet')
+const SignupRoute = withBackground(SignupScreen, 'quiet')
+const CheckEmailRoute = withBackground(CheckEmailScreen, 'quiet')
+const ForgotPasswordRoute = withBackground(ForgotPasswordScreen, 'quiet')
+const ResetPasswordRoute = withBackground(ResetPasswordScreen, 'quiet')
+const AuthCallbackRoute = withBackground(AuthCallbackScreen, 'quiet')
+const CompleteProfileRoute = withBackground(CompleteProfileScreen, 'quiet')
+const CreateGuestChartRoute = withBackground(CreateGuestChartScreen, 'quiet')
+const JournalListRoute = withBackground(JournalListScreen, 'quiet')
+const JournalEditorRoute = withBackground(JournalEditorScreen, 'quiet')
+
+// atmospheric: the browsing and account surfaces.
+const DashboardRoute = withBackground(DashboardScreen, 'atmospheric')
+const MyChartsRoute = withBackground(MyChartsScreen, 'atmospheric')
+const ProfileRoute = withBackground(ProfileScreen, 'atmospheric')
+
+// hero: the flagship chart surface.
+const ChartRoute = withBackground(ChartScreen, 'hero')
 
 export const AuthContext = createContext<{ user: any | null }>({ user: null })
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -123,17 +170,18 @@ export default function App() {
 
   if (!authReady) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' }}>
+      <View style={styles.bootRoot}>
         <StatusBar style="light" />
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={theme.accent.base} />
       </View>
     )
   }
 
   return (
     <SafeAreaProvider>
+    <ReducedMotionProvider>
     <SpaceProvider>
-      <View style={{ flex: 1, backgroundColor: '#000' }}>
+      <View style={styles.appRoot}>
         <StatusBar style="light" />
         {/* <SpaceBackground /> */}
 
@@ -149,90 +197,46 @@ export default function App() {
             >
               {user ? (
                 <>
-                  <Stack.Screen name="Dashboard" component={DashboardScreen} />
-                  <Stack.Screen
-                    name="CompleteProfile"
-                    component={CompleteProfileScreen}
-                    options={{
-                      headerShown: true,
-                      title: 'Complete Profile',
-                      headerTransparent: true,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="CreateGuestChart"
-                    component={CreateGuestChartScreen}
-                    options={{
-                      headerShown: true,
-                      title: 'Create Guest Chart',
-                      headerTransparent: true,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="Chart"
-                    component={ChartScreen}
-                    options={{
-                      headerShown: true,
-                      title: 'Birth Chart',
-                      headerTransparent: true,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="MyCharts"
-                    component={MyChartsScreen}
-                    options={{
-                      headerShown: true,
-                      title: 'My Saved Charts',
-                      headerTransparent: true,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="JournalList"
-                    component={JournalListScreen}
-                    options={{
-                      headerShown: true,
-                      title: 'My Journal',
-                      headerTransparent: true,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="JournalEditor"
-                    component={JournalEditorScreen}
-                    options={{
-                      headerShown: true,
-                      title: 'Journal Entry',
-                      headerTransparent: true,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="Profile"
-                    component={ProfileScreen}
-                    options={{
-                      headerShown: true,
-                      title: 'My Profile',
-                      headerTransparent: true,
-                    }}
-                  />
+                  <Stack.Screen name="Dashboard" component={DashboardRoute} />
+                  <Stack.Screen name="CompleteProfile" component={CompleteProfileRoute} />
+                  <Stack.Screen name="CreateGuestChart" component={CreateGuestChartRoute} />
+                  <Stack.Screen name="Chart" component={ChartRoute} />
+                  <Stack.Screen name="MyCharts" component={MyChartsRoute} />
+                  <Stack.Screen name="JournalList" component={JournalListRoute} />
+                  <Stack.Screen name="JournalEditor" component={JournalEditorRoute} />
+                  <Stack.Screen name="Profile" component={ProfileRoute} />
                 </>
               ) : (
                 <>
-                  <Stack.Screen name="Login" component={LoginScreen} />
-                  <Stack.Screen name="Signup" component={SignupScreen} />
-                  <Stack.Screen
-                    name="ForgotPassword"
-                    component={ForgotPasswordScreen}
-                  />
-                  <Stack.Screen name="CheckEmail" component={CheckEmailScreen} />
+                  <Stack.Screen name="Login" component={LoginRoute} />
+                  <Stack.Screen name="Signup" component={SignupRoute} />
+                  <Stack.Screen name="ForgotPassword" component={ForgotPasswordRoute} />
+                  <Stack.Screen name="CheckEmail" component={CheckEmailRoute} />
                 </>
               )}
 
-              <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-              <Stack.Screen name="AuthCallback" component={AuthCallbackScreen} />
+              <Stack.Screen name="ResetPassword" component={ResetPasswordRoute} />
+              <Stack.Screen name="AuthCallback" component={AuthCallbackRoute} />
             </Stack.Navigator>
           </NavigationContainer>
         </AuthContext.Provider>
       </View>
     </SpaceProvider>
+    </ReducedMotionProvider>
     </SafeAreaProvider>
   )
 }
+
+const styles = StyleSheet.create({
+  appRoot: {
+    flex: 1,
+    // Fallback beneath every route Background, so a screen is never bare white.
+    backgroundColor: theme.background.base,
+  },
+  bootRoot: {
+    flex: 1,
+    backgroundColor: theme.background.base,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+})

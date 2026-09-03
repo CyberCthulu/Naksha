@@ -23,6 +23,7 @@ import {
 import type { RootStackParamList } from '../navigation/types'
 
 import AuthContainer from '../components/auth/AuthContainer'
+import { ScreenHeader } from '../components/ui/ScreenHeader'
 import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
 
@@ -190,20 +191,11 @@ export default function CheckEmailScreen() {
 
   return (
     <AuthContainer>
-      <View style={styles.topRow}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel="Back to login"
-          onPress={() => navigation.replace('Login')}
-          style={styles.iconBtn}
-        >
-          <Text style={styles.iconText}>‹</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>Check Email</Text>
-
-        <View style={{ width: 72 }} />
-      </View>
+      <ScreenHeader
+        title="Check Email"
+        onBack={() => navigation.replace('Login')}
+        backAccessibilityLabel="Back to login"
+      />
 
       <View style={uiStyles.card}>
         <Text style={styles.title}>Enter your confirmation code</Text>

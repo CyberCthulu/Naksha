@@ -389,7 +389,7 @@ export default function DashboardScreen() {
         <AppText style={uiStyles.errorText}>{error}</AppText>
         <Button title="Retry" onPress={load} />
         <View style={{ height: 8 }} />
-        <Button title="Sign Out" onPress={signOut} />
+        <Button title="Sign Out" variant="destructive" onPress={signOut} />
       </View>
     )
   }
@@ -399,7 +399,10 @@ export default function DashboardScreen() {
       style={styles.screen}
       contentContainerStyle={[
         styles.screenContent,
-        { paddingBottom: insets.bottom + 80 },
+        {
+          paddingTop: insets.top + theme.space.md,
+          paddingBottom: insets.bottom + 80,
+        },
       ]}
       showsVerticalScrollIndicator={false}
     >
@@ -520,7 +523,6 @@ const styles = StyleSheet.create({
   },
   screenContent: {
     padding: theme.spacing.screen,
-    paddingTop: theme.spacing.top,
   },
   actionsPanel: {
     marginTop: 4,

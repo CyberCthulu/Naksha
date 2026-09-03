@@ -10,7 +10,6 @@ import {
   Platform,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
 } from 'react-native'
 import {
   useRoute,
@@ -23,6 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { upsertJournal } from '../lib/journals'
 import { AppText, MutedText } from '../components/ui/AppText'
 import { Card } from '../components/ui/Card'
+import { ScreenHeader } from '../components/ui/ScreenHeader'
 import { theme } from '../components/ui/theme'
 import { uiStyles } from '../components/ui/uiStyles'
 import type {
@@ -131,31 +131,20 @@ export default function JournalEditorScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
     >
       <View style={{ flex: 1 }}>
-        {/* Top bar */}
-        <View style={[styles.topRow, { paddingTop: insets.top + 12 }]}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            onPress={() => nav.goBack()}
-            style={styles.iconBtn}
-          >
-            <Text style={styles.iconText}>‹</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.screenTitle}>{headerTitle}</Text>
-
-          <TouchableOpacity
-            onPress={onSave}
-            disabled={saving}
-            style={[styles.savePill, saving && { opacity: 0.7 }]}
-          >
-            {saving ? (
-              <ActivityIndicator />
-            ) : (
-              <Text style={styles.savePillText}>Save</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+        <ScreenHeader
+          title={headerTitle}
+          onBack={() => nav.goBack()}
+          rightAction={{
+            label: 'Save',
+            onPress: onSave,
+            loading: saving,
+            accessibilityLabel: 'Save entry',
+          }}
+          style={[
+            styles.header,
+            { paddingTop: insets.top + theme.space.md },
+          ]}
+        />
 
         <ScrollView
           keyboardShouldPersistTaps="handled"
@@ -260,44 +249,8 @@ export default function JournalEditorScreen() {
 }
 
 const styles = StyleSheet.create({
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  header: {
     paddingHorizontal: theme.spacing.screen,
-    marginBottom: 8,
-  },
-  iconBtn: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconText: {
-    fontSize: 30,
-    color: theme.colors.text,
-  },
-  screenTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '700',
-    color: theme.colors.text,
-  },
-
-  savePill: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 999,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    backgroundColor: theme.colors.cardBg,
-    minWidth: 70,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  savePillText: {
-    color: theme.colors.text,
-    fontWeight: '800',
   },
 
   h1: {

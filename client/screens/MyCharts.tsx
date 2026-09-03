@@ -29,6 +29,7 @@ import {
 import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
 import { Button } from '../components/ui/Button'
+import { ScreenHeader } from '../components/ui/ScreenHeader'
 import { LoadingState } from '../components/ui/LoadingState'
 import type { RootStackParamList } from '../navigation/types'
 
@@ -179,25 +180,11 @@ export default function MyChartsScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <View
-        style={[
-          styles.topRow,
-          { paddingTop: insets.top + 12 },
-        ]}
-      >
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          onPress={() => nav.goBack()}
-          style={styles.backBtn}
-        >
-          <Text style={styles.backText}>‹</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.screenTitle}>My Charts</Text>
-
-        <View style={{ width: 24 }} />
-      </View>
+      <ScreenHeader
+        title="My Charts"
+        onBack={() => nav.goBack()}
+        style={[styles.header, { paddingTop: insets.top + theme.space.md }]}
+      />
 
       {items.length === 0 ? (
         <View style={uiStyles.center}>
@@ -242,28 +229,8 @@ export default function MyChartsScreen() {
 }
 
 const styles = StyleSheet.create({
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  header: {
     paddingHorizontal: theme.spacing.screen,
-    marginBottom: 8,
-  },
-  backBtn: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backText: {
-    fontSize: 28,
-    color: theme.colors.text,
-  },
-  screenTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '700',
-    color: theme.colors.text,
   },
   title: {
     color: theme.colors.text,
