@@ -6,6 +6,12 @@ import { Circle, Rect } from 'react-native-svg'
 import { Background, type BackgroundVariant } from '../Background'
 import { theme } from '../theme'
 
+let mockInsets = { top: 24, right: 0, bottom: 0, left: 0 }
+
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => mockInsets,
+}))
+
 const { act, create } = TestRenderer
 
 let renderer: ReturnType<typeof create> | null = null
@@ -69,6 +75,7 @@ describe('Background', () => {
   beforeEach(() => {
     ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
     renderer = null
+    mockInsets = { top: 24, right: 0, bottom: 0, left: 0 }
     mockReducedMotion(false)
   })
 
@@ -236,5 +243,125 @@ describe('Background reduced-motion behavior', () => {
     const screen = await renderBackground('atmospheric')
 
     expect(stars(screen)).toHaveLength(12)
+  })
+})
+
+describe('Background status-bar protection', () => {
+  beforeEach(() => {
+    ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
+    renderer = null
+    mockInsets = { top: 24, right: 0, bottom: 0, left: 0 }
+    mockReducedMotion(false)
+  })
+
+  afterEach(() => {
+    if (renderer) {
+      const mounted = renderer
+      act(() => {
+        mounted.unmount()
+      })
+    }
+    renderer = null
+    jest.restoreAllMocks()
+  })
+
+  function protection(screen: ReturnType<typeof create>) {
+    return screen.root.findAll(
+      (node) =>
+        typeof node.type === 'string' &&
+        node.props?.testID === 'background-status-bar-protection'
+    )
+  }
+
+  function protectionStyle(screen: ReturnType<typeof create>) {
+    const style = protection(screen)[0].props.style
+    return Array.isArray(style)
+      ? Object.assign({}, ...style.filter(Boolean))
+      : style
+  }
+
+  it('sizes itself from the real top safe-area inset', async () => {
+    mockInsets = { top: 37, right: 0, bottom: 0, left: 0 }
+    const screen = await renderBackground('quiet')
+
+    expect(protectionStyle(screen).height).toBe(37)
+  })
+
+  it('renders nothing when there is no top inset', async () => {
+    mockInsets = { top: 0, right: 0, bottom: 0, left: 0 }
+    const screen = await renderBackground('quiet')
+
+    expect(protection(screen)).toHaveLength(0)
+  })
+
+  it('is non-interactive and hidden from assistive technology', async () => {
+    const screen = await renderBackground('atmospheric')
+    const layer = protection(screen)[0]
+
+    expect(layer.props.pointerEvents).toBe('none')
+    expect(layer.props.accessible).toBe(false)
+    expect(layer.props.accessibilityElementsHidden).toBe(true)
+    expect(layer.props.importantForAccessibility).toBe('no-hide-descendants')
+  })
+
+  it('contributes no layout, so no second inset is introduced', async () => {
+    const screen = await renderBackground('quiet')
+    const style = protectionStyle(screen)
+
+    // Absolute positioning is what lets it occlude scrolled content without
+    // pushing anything down a second time.
+    expect(style.position).toBe('absolute')
+    expect(style.top).toBe(0)
+    expect(style.paddingTop).toBeUndefined()
+    expect(style.marginTop).toBeUndefined()
+
+    const root = screen.root.find(
+      (node) => String(node.type) === 'View' && !!node.props.onLayout
+    )
+    const rootStyle = Array.isArray(root.props.style)
+      ? Object.assign({}, ...root.props.style.filter(Boolean))
+      : root.props.style
+    expect(rootStyle.paddingTop).toBeUndefined()
+  })
+
+  it('paints over scrolling content rather than under it', async () => {
+    const screen = await renderBackground('quiet')
+    const rendered = screen.toJSON() as any
+    const children = Array.isArray(rendered.children) ? rendered.children : []
+
+    const lastChild = children[children.length - 1]
+    expect(lastChild.props.testID).toBe('background-status-bar-protection')
+  })
+
+  it('is mounted once per Background, not once per child', async () => {
+    await act(async () => {
+      renderer = create(
+        <Background variant="atmospheric">
+          <Text>one</Text>
+          <Text>two</Text>
+          <Text>three</Text>
+        </Background>
+      )
+    })
+
+    expect(protection(renderer!)).toHaveLength(1)
+  })
+
+  it('matches the gradient upper stop on decorated variants', async () => {
+    for (const variant of ['quiet', 'atmospheric', 'hero'] as const) {
+      const screen = await renderBackground(variant)
+      expect(protectionStyle(screen).backgroundColor).toBe(
+        theme.background.raised
+      )
+      act(() => screen.unmount())
+      renderer = null
+    }
+  })
+
+  it('falls back to the flat environment colour when decoration is off', async () => {
+    mockReducedMotion(true)
+    const screen = await renderBackground('hero')
+
+    expect(protectionStyle(screen).backgroundColor).toBe(theme.background.base)
   })
 })

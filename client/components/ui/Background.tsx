@@ -14,6 +14,7 @@ import Svg, {
   Rect,
   Stop,
 } from 'react-native-svg'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { theme, type PlanetAccent } from './theme'
 import { useReducedMotion } from './useReducedMotion'
@@ -72,6 +73,7 @@ export function Background({
   testID,
 }: Props) {
   const reduceMotion = useReducedMotion()
+  const insets = useSafeAreaInsets()
   const [size, setSize] = useState<{ width: number; height: number } | null>(
     null
   )
@@ -183,11 +185,49 @@ export function Background({
       ) : null}
 
       {children}
+
+      {/* Status-bar protection.
+          Under edge-to-edge the window extends beneath the system bars, so a
+          screen's contentContainer paddingTop positions its first item but
+          does nothing about items that scroll up into that region and stay
+          visible behind the status icons. This paints over that strip.
+
+          It is absolutely positioned and rendered after children, so it
+          occludes scrolled content without contributing any layout -- there is
+          no second inset and no header is pushed down twice. */}
+      {insets.top > 0 ? (
+        <View
+          testID="background-status-bar-protection"
+          pointerEvents="none"
+          accessible={false}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={[
+            styles.statusBarProtection,
+            {
+              height: insets.top,
+              // Match what sits directly beneath: the gradient's upper stop on
+              // decorated variants, the flat environment otherwise. A base-
+              // coloured strip over the gradient would read as a dark band.
+              backgroundColor:
+                effectiveVariant === 'flat'
+                  ? theme.background.base
+                  : theme.background.raised,
+            },
+          ]}
+        />
+      ) : null}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
+  statusBarProtection: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+  },
   container: {
     flex: 1,
     // The flat fallback. Painted unconditionally, so content stays legible
