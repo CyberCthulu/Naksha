@@ -242,6 +242,15 @@ describe('typography roles', () => {
     expect(theme.typography.numeric.fontVariant).toEqual(['tabular-nums'])
   })
 
+  it('disables Android font padding so lineHeight is the only authority', () => {
+    // Android otherwise adds space from the font's own ascent/descent metrics
+    // on top of lineHeight, which for a low-x-height serif reads as a large
+    // unexplained gap above the text.
+    for (const [name, style] of Object.entries(theme.typography)) {
+      expect([name, style.includeFontPadding]).toEqual([name, false])
+    }
+  })
+
   it('never pairs a weight-specific family with a fontWeight', () => {
     // expo-font registers each weight as its own family. Adding fontWeight on
     // top asks the platform to synthesize a weight it already has, which is how

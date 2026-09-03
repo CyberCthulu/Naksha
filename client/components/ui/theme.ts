@@ -119,35 +119,46 @@ export const fontFamilies = {
  * The eleven approved roles. Serif is restricted to display/title/heading and
  * is never used for body copy: Cormorant has a low x-height and thin strokes
  * that do not survive small sizes on Android.
+ *
+ * Every role disables includeFontPadding. Android otherwise reserves extra
+ * space from the font's own ascent and descent metrics on top of lineHeight,
+ * which for a low-x-height serif like Cormorant reads as a large unexplained
+ * gap above the text. Turning it off makes lineHeight the single authority on
+ * a role's vertical size.
  */
 const typography = {
   display: {
     fontFamily: fontFamilies.serifSemiBold,
     fontSize: 32,
     lineHeight: 38,
+    includeFontPadding: false,
     letterSpacing: -0.5,
   },
   title: {
     fontFamily: fontFamilies.serifSemiBold,
     fontSize: 26,
     lineHeight: 32,
+    includeFontPadding: false,
     letterSpacing: -0.3,
   },
   heading: {
     fontFamily: fontFamilies.serifSemiBold,
     fontSize: 20,
     lineHeight: 26,
+    includeFontPadding: false,
     letterSpacing: -0.2,
   },
   subheading: {
     fontFamily: fontFamilies.sansSemiBold,
     fontSize: 15,
     lineHeight: 20,
+    includeFontPadding: false,
   },
   eyebrow: {
     fontFamily: fontFamilies.sansSemiBold,
     fontSize: 12,
     lineHeight: 16,
+    includeFontPadding: false,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
@@ -156,26 +167,31 @@ const typography = {
     fontFamily: fontFamilies.sansRegular,
     fontSize: 16,
     lineHeight: 26,
+    includeFontPadding: false,
   },
   body: {
     fontFamily: fontFamilies.sansRegular,
     fontSize: 15,
     lineHeight: 23,
+    includeFontPadding: false,
   },
   bodySmall: {
     fontFamily: fontFamilies.sansRegular,
     fontSize: 13,
     lineHeight: 20,
+    includeFontPadding: false,
   },
   caption: {
     fontFamily: fontFamilies.sansRegular,
     fontSize: 12,
     lineHeight: 16,
+    includeFontPadding: false,
   },
   button: {
     fontFamily: fontFamilies.sansSemiBold,
     fontSize: 15,
     lineHeight: 20,
+    includeFontPadding: false,
     letterSpacing: 0.2,
   },
   /** Degrees, orbs, coordinates. Tabular figures hold columns without a fixed width. */
@@ -183,6 +199,7 @@ const typography = {
     fontFamily: fontFamilies.sansMedium,
     fontSize: 14,
     lineHeight: 20,
+    includeFontPadding: false,
     fontVariant: ['tabular-nums'],
   },
 } satisfies Record<string, TextStyle>
