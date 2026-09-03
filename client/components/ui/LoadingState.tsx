@@ -2,6 +2,7 @@ import type { ActivityIndicatorProps } from 'react-native'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 
 import { AppText } from './AppText'
+import { theme } from './theme'
 import { uiStyles } from './uiStyles'
 
 type Props = {
@@ -12,9 +13,10 @@ type Props = {
 export function LoadingState({ label = 'Loading', size }: Props) {
   return (
     <View style={uiStyles.center}>
-      <ActivityIndicator size={size} />
+      <ActivityIndicator size={size} color={theme.accent.base} />
       <AppText
         accessibilityLabel={label}
+        accessibilityLiveRegion="polite"
         numberOfLines={1}
         style={styles.label}
       >
@@ -26,10 +28,11 @@ export function LoadingState({ label = 'Loading', size }: Props) {
 
 const styles = StyleSheet.create({
   label: {
-    lineHeight: 20,
-    marginTop: 8,
+    ...theme.typography.bodySmall,
+    color: theme.text.secondary,
+    marginTop: theme.space.sm,
     minWidth: 160,
-    paddingHorizontal: 8,
+    paddingHorizontal: theme.space.sm,
     textAlign: 'center',
   },
 })

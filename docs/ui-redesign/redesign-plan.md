@@ -222,14 +222,25 @@ Gate: full verification; **release-build** font verification on device; confirme
 
 Deferred to a development build: the runtime `useFonts` path is what Expo Go supports. The `expo-font` config plugin was added to `app.json` by the installer and is inert until a prebuild happens.
 
-### Slice 4 — Primitives
+### Slice 4 — Primitives — **IMPLEMENTED**
 
 Scope: install `lucide-react-native` (peer-depends on the already-present `react-native-svg`) and add the `Icon` primitive enforcing the size, stroke, and accessibility policy — **all icons render through it**, never raw in a screen; `Button` variants and sizes; `Card` absorbing `uiStyles.card`; `FormField` / `TextField` error and focus states; standardized `LoadingState`; new `ErrorState`, `EmptyState`, `Stack`; delete the zero-importer `Screen.tsx`; delete the unused `formStyles.pickerWrap`.
 Icons are imported individually where practical, never as a barrel. Accessibility labels go on the `Pressable`/`Button`, never on the decorative icon; `Icon` is hidden from assistive technology by default. Astrological and zodiac glyphs stay as text — they are content, not chrome. Emoji are never functional controls.
-
 Touch targets: every standard interactive control gets an actual or enclosing `Pressable` of at least 48 dp. The `sm` button's 40 dp visual sits inside a 48 dp touch area. `hitSlop` is not a substitute.
 Not in scope: migrating screens onto the new primitives; replacing Dashboard decorative emoji, which belongs to the Dashboard redesign slice.
 Gate: full verification; every new and changed primitive meets the accessibility requirements in `design-system.md` §10; every icon-only control carries an `accessibilityLabel`.
+
+**Delivered.** `Icon` wraps sixteen individually imported Lucide glyphs behind a semantic name map and is the only file permitted to import Lucide. `Button` gained the five approved variants plus `ghost` as an alias for `secondary`, three sizes, and a loading state, all inside a guaranteed 48 dp touch area. `Card` moved to the opaque surfaces with `default`/`raised`/`selected`. `FormField` and `TextField` gained label, hint, error, focus, and disabled semantics. `LoadingState` moved to semantic typography and an accent indicator. `ErrorState`, `EmptyState`, and `Stack` are new. `Screen.tsx` was deleted after re-confirming zero importers.
+
+**Not delivered — no feature screen was migrated.** Existing callers were left untouched, so several now render V2 primitives inside V1 screens. Those inconsistencies are expected and are resolved during screen propagation, not here.
+
+**Known temporary inconsistencies, for later screen migration:**
+
+- Dashboard's error branch has two default-variant Buttons, so it now shows two gold primary actions; one of them is Sign Out, which should be destructive. Both are call-site fixes for the Dashboard slice.
+- Cards on the Dashboard, guidance cards, and the Journal editor are now opaque navy against screens that are still pure black.
+- Auth screens render V2 fields and gold-free secondary buttons inside otherwise V1 layouts.
+- `uiStyles.card` still has sixteen callers and is untouched; `Card` and `uiStyles.card` therefore look different until those migrate.
+- `formStyles.ts` is now orphaned — `TextField` was its last consumer. It is deliberately retained, as retiring it is out of scope for this slice.
 
 ### Slice 5 — App shell and edge-to-edge
 
