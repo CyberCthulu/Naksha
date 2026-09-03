@@ -34,15 +34,44 @@ jest.mock('react-native-pager-view', () => {
         },
         ref: React.Ref<{ setPageWithoutAnimation: jest.Mock }>
       ) => {
-        React.useImperativeHandle(ref, () => ({
-          setPageWithoutAnimation: jest.fn(),
-        }))
+        // The real PagerView confirms every page change through
+        // onPageSelected, including the ones the app commands itself. The
+        // stub used to swallow that, which hid the stale-confirmation race
+        // that made rapid prev/next taps bounce on device.
+        const { onPageSelected } = props
+
+        // Track the page the pager is actually on, because the real component
+        // confirms a change through onPageSelected only when it genuinely
+        // moves. Asking for the page it is already showing does nothing and
+        // emits nothing -- and swallowing that distinction hid a guard leak
+        // that stopped swipes registering after a button press.
+        const currentPage = React.useRef(props.initialPage ?? 0)
+
+        const handlePageSelected = React.useCallback(
+          (event: { nativeEvent: { position: number } }) => {
+            currentPage.current = event.nativeEvent.position
+            onPageSelected?.(event)
+          },
+          [onPageSelected]
+        )
+
+        React.useImperativeHandle(
+          ref,
+          () => ({
+            setPageWithoutAnimation: (target: number) => {
+              if (currentPage.current === target) return
+              currentPage.current = target
+              onPageSelected?.({ nativeEvent: { position: target } })
+            },
+          }),
+          [onPageSelected]
+        )
 
         return (
           <View
             testID={props.testID}
             initialPage={props.initialPage}
-            onPageSelected={props.onPageSelected}
+            onPageSelected={handlePageSelected}
             style={props.style}
           >
             {props.children}
@@ -400,6 +429,96 @@ describe('InterpretationModal', () => {
     })
 
     expect(onClose).toHaveBeenCalled()
+  })
+
+  it('does not bounce backwards when next is tapped rapidly', async () => {
+    const onChangeIndex = jest.fn()
+    const { renderer: screen } = renderModal({ currentIndex: 0, onChangeIndex })
+
+    // Three quick taps, feeding each new index straight back the way
+    // ChartScreenContent does.
+    for (let tap = 0; tap < 3; tap += 1) {
+      await press(screen, 'interpretation-next')
+      const calls = onChangeIndex.mock.calls
+      const latest = calls[calls.length - 1][0] as number
+      await updateModal({ currentIndex: latest, onChangeIndex })
+    }
+
+    // Every reported index moves forward and wraps. A stale confirmation from
+    // a superseded command used to report an earlier page and snap the reader
+    // back, which is what made rapid tapping oscillate.
+    expect(onChangeIndex.mock.calls.map((call) => call[0])).toEqual([1, 2, 0])
+  })
+
+  it('still honours a genuine swipe once no command is outstanding', async () => {
+    const onChangeIndex = jest.fn()
+    const { renderer: screen } = renderModal({ currentIndex: 0, onChangeIndex })
+
+    // Let the mount command confirm itself first.
+    await act(async () => {
+      await settleAsyncWork()
+    })
+    onChangeIndex.mockClear()
+
+    act(() => {
+      pager(screen).props.onPageSelected({ nativeEvent: { position: 2 } })
+    })
+
+    expect(onChangeIndex).toHaveBeenCalledWith(1)
+  })
+
+  it('keeps reporting swipes after a button press', async () => {
+    const onChangeIndex = jest.fn()
+    const { renderer: screen } = renderModal({ currentIndex: 0, onChangeIndex })
+
+    await act(async () => {
+      await settleAsyncWork()
+    })
+
+    // Button first, feeding the new index back the way the screen does.
+    await press(screen, 'interpretation-next')
+    await updateModal({ currentIndex: 1, onChangeIndex })
+    onChangeIndex.mockClear()
+
+    // Then swipe twice. Both must be reported: the effect that follows the
+    // first swipe asks for the page the pager is already on, which produces
+    // no confirmation, and the guard used to stay armed and swallow the next.
+    act(() => {
+      pager(screen).props.onPageSelected({ nativeEvent: { position: 3 } })
+    })
+    expect(onChangeIndex).toHaveBeenLastCalledWith(2)
+
+    await updateModal({ currentIndex: 2, onChangeIndex })
+
+    act(() => {
+      pager(screen).props.onPageSelected({ nativeEvent: { position: 2 } })
+    })
+    expect(onChangeIndex).toHaveBeenLastCalledWith(1)
+    expect(onChangeIndex).toHaveBeenCalledTimes(2)
+  })
+
+  it('reports several consecutive swipes', async () => {
+    const onChangeIndex = jest.fn()
+    const { renderer: screen } = renderModal({ currentIndex: 0, onChangeIndex })
+
+    await act(async () => {
+      await settleAsyncWork()
+    })
+    onChangeIndex.mockClear()
+
+    for (const [position, expected] of [
+      [2, 1],
+      [3, 2],
+      [2, 1],
+    ] as const) {
+      act(() => {
+        pager(screen).props.onPageSelected({ nativeEvent: { position } })
+      })
+      expect(onChangeIndex).toHaveBeenLastCalledWith(expected)
+      await updateModal({ currentIndex: expected, onChangeIndex })
+    }
+
+    expect(onChangeIndex).toHaveBeenCalledTimes(3)
   })
 
   it('resets pager mounting state after close and reopen', async () => {

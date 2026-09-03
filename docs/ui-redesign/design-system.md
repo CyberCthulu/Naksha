@@ -142,9 +142,13 @@ for contrast on deep navy and desaturated for restraint.
 
 **Usage rules — deliberately narrow:**
 
-1. **At most one planet accent is active at a time**, driven by the existing
-   `SpaceProvider.focusedPlanet` contract, which already exists and is already
-   load-bearing for the chart screen.
+1. **One planet accent at a time, except for a selected aspect**, which lights
+   both of its participants. Driven by the existing
+   `SpaceProvider.focusedPlanet` contract plus the chart's selection state.
+   The exception is the point of the rule rather than a breach of it: an
+   aspect *is* a relationship between two bodies, and showing the line without
+   showing which two it joins leaves the reader counting round the wheel. A
+   selected house lights no planet at all.
 2. Permitted surfaces: the chart-wheel glyph tint; the focal-planet halo in a
    `hero` background at ≤ 8 % opacity; the interpretation page's eyebrow rule.
 3. **Prohibited**: body text, card backgrounds, buttons, borders on inputs, list
@@ -850,7 +854,29 @@ than introduces.
 | Transitions | Platform default stack animation. No custom transitions in this migration |
 | Modal | `animationType="slide"` — **unchanged**, part of the preserved interaction behavior |
 | Press feedback | Opacity only. No scale, no spring |
+| Chart selection glow | The single approved exception — see below |
 | Duration budget | If any motion is later approved: 150 ms enter, 120 ms exit |
+
+### The one exception: chart selection glow
+
+Approved after Slice 6B device review. The chart wheel may run **one**
+continuously animating value, and only under all of these conditions:
+
+| Condition | |
+| --- | --- |
+| Scope | The selected planet's outer halo and the selected aspect's glow stroke. Nothing else. |
+| Count | One shared value for the whole wheel, driving opacity only. |
+| Geometry | Never animated. Coordinates, radii, aspect endpoints and house boundaries are computed once and do not move. |
+| Character | A slow breath — 1800ms, eased, reversing. Mystical, not game-like. |
+| Thread | Reanimated on the UI thread, so it cannot stutter the chart scroll. |
+| Lifetime | Cancelled when the selection changes or clears, and on unmount. |
+| Reduced motion | Static glow when the preference is `true` **or unresolved**. |
+
+This does **not** authorize continuous animation anywhere else. Backgrounds
+remain static, screens remain static, and any further exception needs its own
+review. The justification is narrow: a selected line among a dozen crossing
+lines is genuinely hard to pick out when static, and a slow opacity breath
+identifies it without moving anything the reader is trying to measure.
 
 ### Reduced motion
 

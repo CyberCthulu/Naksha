@@ -21,7 +21,8 @@ import { GlyphCompassContent } from './ChartCompass'
  * Height the chart scroll must reserve so its last row can clear the trigger.
  * Exported so ChartScreenContent cannot drift out of step with it.
  */
-export const GLYPH_COMPASS_TRIGGER_CLEARANCE = theme.touchTarget.min + theme.space.xl
+export const GLYPH_COMPASS_TRIGGER_CLEARANCE =
+  theme.touchTarget.min + theme.space.xxxl
 
 type Props = {
   /** Hidden while another chart overlay owns the screen. */
@@ -98,8 +99,8 @@ export function GlyphCompass({ hidden = false }: Props) {
           ]}
         >
           <Icon name="expand" size="sm" color={theme.accent.base} />
-          <AppText variant="button" style={styles.triggerLabel}>
-            Glyph Compass
+          <AppText variant="caption" style={styles.triggerLabel}>
+            Compass
           </AppText>
         </Pressable>
       ) : null}
@@ -152,14 +153,25 @@ export function GlyphCompass({ hidden = false }: Props) {
 }
 
 const styles = StyleSheet.create({
+  /*
+   * Compact on purpose.
+   *
+   * The wide "Glyph Compass" pill sat over the hero copy and the "Read full
+   * interpretation" action. This keeps the full 48dp touch target -- the
+   * minHeight and the horizontal padding still add up to it -- while taking
+   * far less width, and the chart reserves matching bottom clearance so no
+   * final content can be trapped underneath.
+   */
   trigger: {
     position: 'absolute',
-    right: theme.space.xl,
+    right: theme.space.md,
     flexDirection: 'row',
     alignItems: 'center',
-    columnGap: theme.space.xs,
+    justifyContent: 'center',
+    columnGap: theme.space.hair,
+    minWidth: theme.touchTarget.min,
     minHeight: theme.touchTarget.min,
-    paddingHorizontal: theme.space.lg,
+    paddingHorizontal: theme.space.sm,
     borderRadius: theme.radius.pill,
     borderWidth: 1,
     borderColor: theme.border.accent,

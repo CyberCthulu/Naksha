@@ -97,11 +97,14 @@ function hostTexts(screen: ReturnType<typeof create>) {
     .map((n) => n.children.filter((c) => typeof c === 'string').join(''))
 }
 
+const NON_CHART_SCROLLS = ['glyph-compass-scroll']
+
 function chartScroll(screen: ReturnType<typeof create>) {
-  // Once the legend panel is open there are two: the chart and the legend.
+  // The chart shares the tree with the wheel pan strip and, once open, the
+  // legend panel. Only the outer vertical scroll is the chart document.
   const scrolls = screen.root
     .findAllByType(ScrollView)
-    .filter((n) => n.props.testID !== 'glyph-compass-scroll')
+    .filter((n) => !NON_CHART_SCROLLS.includes(n.props.testID))
 
   expect(scrolls).toHaveLength(1)
   return scrolls[0]
@@ -283,6 +286,79 @@ describe('Chart section hierarchy', () => {
   })
 })
 
+describe('Hero placement title', () => {
+  beforeEach(() => {
+    ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
+    jest.clearAllMocks()
+    renderer = null
+  })
+
+  afterEach(() => {
+    if (renderer) {
+      const mounted = renderer
+      act(() => mounted.unmount())
+    }
+    renderer = null
+  })
+
+  it('names the sign for a planet anywhere on the wheel', () => {
+    // One planet per sign, so no longitude range can silently produce a
+    // half-formed title like "Jupiter in".
+    const perSign = Array.from({ length: 12 }, (_, i) => ({
+      name: ['Sun','Moon','Mercury','Venus','Mars','Jupiter',
+             'Saturn','Uranus','Neptune','Pluto'][i % 10],
+      lon: i * 30 + 15,
+    }))
+
+    for (const planet of perSign) {
+      mockedUseChartData.mockReturnValue(
+        chartState({ planets: [planet], aspects: [], planetHouses: null })
+      )
+
+      const screen = renderChart()
+      const hero = screen.root.findAll(
+        (n) => n.props?.testID === 'chart-hero'
+      )[0]
+      const texts = hero
+        .findAll((n) => String(n.type) === 'Text')
+        .map((n) => n.children.filter((c) => typeof c === 'string').join(''))
+
+      const title = texts.find((t) => t.includes(' in '))
+      expect(title).toBeDefined()
+      // Never trailing: the sign must actually be there.
+      expect(title!.trim().endsWith(' in')).toBe(false)
+      expect(title).toMatch(
+        /^\w+ in (Aries|Taurus|Gemini|Cancer|Leo|Virgo|Libra|Scorpio|Sagittarius|Capricorn|Aquarius|Pisces)$/
+      )
+
+      act(() => screen.unmount())
+      renderer = null
+    }
+  })
+
+  it('names the sign for Jupiter in Aquarius specifically', () => {
+    mockedUseChartData.mockReturnValue(
+      chartState({
+        planets: [{ name: 'Jupiter', lon: 306 }],
+        aspects: [],
+        planetHouses: [{ name: 'Jupiter', house: 3 }],
+      })
+    )
+
+    const screen = renderChart()
+    const hero = screen.root.findAll(
+      (n) => n.props?.testID === 'chart-hero'
+    )[0]
+    const texts = hero
+      .findAll((n) => String(n.type) === 'Text')
+      .map((n) => n.children.filter((c) => typeof c === 'string').join(''))
+
+    expect(texts).toContain('Jupiter in Aquarius')
+    expect(texts).not.toContain('Jupiter in ')
+    expect(texts).not.toContain('Jupiter in')
+  })
+})
+
 describe('Chart content coverage', () => {
   beforeEach(() => {
     ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
@@ -451,7 +527,16 @@ describe('Chart typography and accent rules', () => {
     // focusedPlanet is presentation only. Everything the wheel computes from
     // must still arrive by identity.
     expect(Object.keys(wheel.props).sort()).toEqual(
-      ['aspects', 'focusedPlanet', 'houses', 'planets', 'size'].sort()
+      [
+        'aspects',
+        'focusedPlanet',
+        'houses',
+        'onSelectAspect',
+        'onSelectPlanet',
+        'planets',
+        'selection',
+        'size',
+      ].sort()
     )
     expect(wheel.props.planets).toBe(PLANETS)
     expect(wheel.props.aspects).toBe(ASPECTS)

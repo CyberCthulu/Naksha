@@ -8,6 +8,7 @@ import {
 } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import * as Linking from 'expo-linking'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 import { useAppFonts } from './components/ui/useAppFonts'
@@ -178,6 +179,9 @@ export default function App() {
   }
 
   return (
+    // Exactly one gesture root for the whole app, outermost so every gesture
+    // detector below it is inside the same handler tree.
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaProvider>
     <ReducedMotionProvider>
     <SpaceProvider>
@@ -224,6 +228,7 @@ export default function App() {
     </SpaceProvider>
     </ReducedMotionProvider>
     </SafeAreaProvider>
+    </GestureHandlerRootView>
   )
 }
 

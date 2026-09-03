@@ -95,6 +95,28 @@ const planet = {
   Pluto: '#A98A7C',
 } as const
 
+/**
+ * Glow variants of the planet accents.
+ *
+ * The accents are tuned to read as *ink* on a dark surface, which makes the
+ * darker ones -- Pluto, Mars, Mercury -- almost invisible as a large
+ * low-opacity halo. These are the same hues lifted to a common high
+ * luminance, so every planet glows with roughly equal presence while keeping
+ * its own identity, which a single generic gold could not do.
+ */
+const planetGlow = {
+  Sun: '#FFD98A',
+  Moon: '#DCE4F5',
+  Mercury: '#CFD6EA',
+  Venus: '#F4D9B8',
+  Mars: '#F08A6A',
+  Jupiter: '#EFD7B0',
+  Saturn: '#E8D49B',
+  Uranus: '#A9E4E4',
+  Neptune: '#A6B8F0',
+  Pluto: '#D3B4A5',
+} as const
+
 const scrim = 'rgba(4,6,12,0.72)'
 
 // ---------------------------------------------------------------------------
@@ -206,12 +228,39 @@ const typography = {
 
 export type TypographyRole = keyof typeof typography
 
+/**
+ * How far each role may scale with the device font setting.
+ *
+ * A role pairs a scaling fontSize with a fixed lineHeight, so unbounded
+ * scaling eventually makes the glyphs taller than their own line box. With
+ * includeFontPadding disabled that does not merely crowd -- it clips, and a
+ * wrapped second line can disappear entirely, which is how "Jupiter in
+ * Aquarius" lost its sign while its interpretation copy stayed correct.
+ *
+ * Values follow design-system.md 13.3: the interpretation reading surface
+ * scales without limit, everything else is bounded so its layout survives.
+ */
+export const typographyMaxScale = {
+  display: 1.6,
+  title: 1.6,
+  heading: 1.6,
+  subheading: 1.5,
+  eyebrow: 1.5,
+  bodyLarge: undefined,
+  body: 2,
+  bodySmall: 2,
+  caption: 1.5,
+  button: 1.5,
+  numeric: 1.4,
+} as const satisfies Record<TypographyRole, number | undefined>
+
 // ---------------------------------------------------------------------------
 // Theme
 // ---------------------------------------------------------------------------
 
 export const theme = {
   typography,
+  typographyMaxScale,
   // === DEPRECATED V1 COMPATIBILITY — exact original values, do not re-point ===
   colors: {
     text: '#fff',
@@ -239,6 +288,7 @@ export const theme = {
   accent,
   state,
   planet,
+  planetGlow,
   scrim,
 
   space: {

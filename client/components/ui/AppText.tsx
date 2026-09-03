@@ -4,6 +4,19 @@ import { Text, StyleSheet, TextProps } from 'react-native'
 import { theme, type TypographyRole } from './theme'
 
 /**
+ * Bound how far a role scales with the device font setting.
+ *
+ * Each role pairs a scaling fontSize with a fixed lineHeight, so unbounded
+ * scaling eventually makes glyphs taller than their own line box -- and with
+ * includeFontPadding disabled that clips rather than crowds. The caps come
+ * from design-system.md 13.3; the interpretation reading surface is
+ * deliberately uncapped.
+ */
+function variantScaleCap(variant: TypographyRole) {
+  return theme.typographyMaxScale[variant]
+}
+
+/**
  * `variant` is opt-in and additive.
  *
  * AppText, MutedText and TitleText are used across 11 files. Applying the V2
@@ -32,6 +45,7 @@ function variantStyle(variant: TypographyRole) {
 export function AppText({ variant, style, ...rest }: AppTextProps) {
   return (
     <Text
+      maxFontSizeMultiplier={variant ? variantScaleCap(variant) : undefined}
       {...rest}
       style={[variant ? variantStyle(variant) : styles.text, style]}
     />
@@ -41,6 +55,7 @@ export function AppText({ variant, style, ...rest }: AppTextProps) {
 export function MutedText({ variant, style, ...rest }: AppTextProps) {
   return (
     <Text
+      maxFontSizeMultiplier={variant ? variantScaleCap(variant) : undefined}
       {...rest}
       style={[variant ? theme.typography[variant] : null, styles.muted, style]}
     />
@@ -50,6 +65,7 @@ export function MutedText({ variant, style, ...rest }: AppTextProps) {
 export function TitleText({ variant, style, ...rest }: AppTextProps) {
   return (
     <Text
+      maxFontSizeMultiplier={variant ? variantScaleCap(variant) : undefined}
       {...rest}
       style={[variant ? variantStyle(variant) : styles.title, style]}
     />
