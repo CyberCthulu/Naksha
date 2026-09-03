@@ -197,11 +197,15 @@ Scope: D-01 through D-06, as narrow behavioral fixes with **no visual redesign**
 Not in scope: D-07, which is a separate engineering/performance change with focused verification; D-08, which is an Android QA investigation with no code change until reproduced on a device; any token, typography, or layout change.
 Gate: full verification, plus device confirmation of D-01, D-02, and D-03.
 
-### Slice 2 — Design tokens
+### Slice 2 — Design tokens — **COMPLETE**
 
 Scope: expand `components/ui/theme.ts` to the approved semantic roles, keeping all six existing keys as deprecated aliases so no consumer breaks. Add `Background` with the quiet/atmospheric/hero/flat variants using the already-present `react-native-svg`. Add reduced-motion detection at the root.
 Not in scope: typography; component restyling; deleting `uiStyles`; removing the dormant GL dependencies.
 Gate: full verification; no visual regression against the baseline screenshots; alias removal deferred.
+
+**Delivered.** `theme.ts` now carries the full V2 semantic layer — background, surface, border, text, accent, state, planet, scrim, space, radius, elevation, icon, touch-target, and motion-budget tokens. `Background.tsx` implements the four static variants on `react-native-svg` with deterministic star positions. `useReducedMotion.tsx` provides the tri-state preference hook and an optional root provider.
+
+**Deliberately not delivered — no screen has migrated.** Every V1 compatibility key keeps its exact pre-V2 value; none is aliased to a V2 role, so importing the token layer repaints nothing. `Background` is created but not applied anywhere; global application belongs to Slice 5. 35 files still consume `theme.colors.*` and are visually unchanged.
 
 ### Slice 3 — Typography
 
