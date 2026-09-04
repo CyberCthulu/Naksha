@@ -19,12 +19,15 @@ import ChartWheel, {
   wheelPlanetPoints,
 } from '../ChartWheel'
 import {
+  ASPECT_BAND_TOLERANCE,
   ASPECT_HIT_TOLERANCE,
+  distanceToSegment,
   houseAtPoint,
   inverseTransformPoint,
   nearestPointIndex,
   nearestSegmentIndex,
   PLANET_HIT_RADIUS,
+  resolveWheelTap,
 } from '../chartWheelInteraction'
 import useChartData from '../../../hooks/useChartData'
 
@@ -944,6 +947,202 @@ describe('House selection on the wheel', () => {
     expect(
       screen.root.findAll((n) => n.props?.testID === 'chart-house-detail')
     ).toHaveLength(0)
+  })
+})
+
+describe('Tap arbitration in the house band', () => {
+  const SIZE = 320
+
+  function targets() {
+    return {
+      planetPoints: wheelPlanetPoints(SIZE, PLANETS),
+      aspectSegments: wheelAspectSegments(SIZE, PLANETS, ASPECTS),
+      houseBand: wheelHouseBand(SIZE),
+      houses: HOUSES,
+    }
+  }
+
+  function radiusOf(point: { x: number; y: number }) {
+    const { center } = wheelHouseBand(SIZE)
+    return Math.hypot(point.x - center.x, point.y - center.y)
+  }
+
+  function pointAt(lon: number, radius: number) {
+    const { center } = wheelHouseBand(SIZE)
+    const angle = ((90 - lon) * Math.PI) / 180
+    return {
+      x: center.x + Math.cos(angle) * radius,
+      y: center.y + Math.sin(angle) * radius,
+    }
+  }
+
+  function nearestAspectDistance(point: { x: number; y: number }) {
+    return Math.min(
+      ...wheelAspectSegments(SIZE, PLANETS, ASPECTS).map((segment) =>
+        distanceToSegment(point, segment)
+      )
+    )
+  }
+
+  it('ends every aspect line inside the house band, which is the cause', () => {
+    // rAspect sits between rHouseInner and rHouseOuter, so an aspect endpoint
+    // is not merely near the ring -- it is in it. That is why the corridor has
+    // to tighten there: at full width each endpoint claims the band around its
+    // own planet's longitude. If the wheel ever moves rAspect clear of the
+    // band, the tightening below is no longer buying anything.
+    const band = wheelHouseBand(SIZE)
+
+    wheelAspectSegments(SIZE, PLANETS, ASPECTS).forEach((segment) => {
+      ;[segment.a, segment.b].forEach((end) => {
+        expect(radiusOf(end)).toBeGreaterThan(band.innerRadius)
+        expect(radiusOf(end)).toBeLessThan(band.outerRadius)
+      })
+    })
+  })
+
+  it('keeps the band corridor tighter than the open-field one', () => {
+    expect(ASPECT_BAND_TOLERANCE).toBeLessThan(ASPECT_HIT_TOLERANCE)
+  })
+
+  it('gives the wedge to the house when a tap is only near a line', () => {
+    const band = wheelHouseBand(SIZE)
+    const radius = radiusOf(wheelAspectSegments(SIZE, PLANETS, ASPECTS)[0].a)
+    const planetPoints = wheelPlanetPoints(SIZE, PLANETS)
+
+    // Points on the ring that the old full corridor would have claimed for an
+    // aspect, while sitting nowhere near enough to be a deliberate line tap.
+    const nearMisses = []
+    for (let lon = 0; lon < 360; lon += 0.5) {
+      const point = pointAt(lon, radius)
+      const distance = nearestAspectDistance(point)
+
+      if (
+        distance > ASPECT_BAND_TOLERANCE + 2 &&
+        distance < ASPECT_HIT_TOLERANCE - 2 &&
+        nearestPointIndex(point, planetPoints, PLANET_HIT_RADIUS) == null &&
+        houseAtPoint(point, band, HOUSES) != null
+      ) {
+        nearMisses.push(point)
+      }
+    }
+
+    expect(nearMisses.length).toBeGreaterThan(0)
+
+    nearMisses.forEach((point) => {
+      // What used to happen: the aspect took it.
+      expect(
+        nearestSegmentIndex(
+          point,
+          wheelAspectSegments(SIZE, PLANETS, ASPECTS),
+          ASPECT_HIT_TOLERANCE
+        )
+      ).not.toBeNull()
+
+      expect(resolveWheelTap(point, targets())).toEqual({
+        kind: 'house',
+        house: expect.any(Number),
+      })
+    })
+  })
+
+  it('still takes an aspect from a tap placed on the line in the band', () => {
+    // A conjunction's whole chord lies in the band, so a precise tap there has
+    // to keep working. Walk in from the endpoint to the first point that is
+    // past the planet's own control and still inside the ring.
+    const band = wheelHouseBand(SIZE)
+    const segment = wheelAspectSegments(SIZE, PLANETS, ASPECTS)[0]
+    const planetPoints = wheelPlanetPoints(SIZE, PLANETS)
+
+    let onLine: { x: number; y: number } | null = null
+    for (let t = 0; t <= 0.25; t += 0.002) {
+      const point = {
+        x: segment.a.x + (segment.b.x - segment.a.x) * t,
+        y: segment.a.y + (segment.b.y - segment.a.y) * t,
+      }
+      if (
+        nearestPointIndex(point, planetPoints, PLANET_HIT_RADIUS) == null &&
+        houseAtPoint(point, band, HOUSES) != null
+      ) {
+        onLine = point
+        break
+      }
+    }
+
+    expect(onLine).not.toBeNull()
+    expect(resolveWheelTap(onLine!, targets())).toEqual({
+      kind: 'aspect',
+      index: expect.any(Number),
+    })
+  })
+
+  it('leaves the open-field corridor alone', () => {
+    const segments = wheelAspectSegments(SIZE, PLANETS, ASPECTS)
+    const segment = segments[0]
+    const mid = {
+      x: (segment.a.x + segment.b.x) / 2,
+      y: (segment.a.y + segment.b.y) / 2,
+    }
+    const dx = segment.b.x - segment.a.x
+    const dy = segment.b.y - segment.a.y
+    const length = Math.hypot(dx, dy)
+    const offset = ASPECT_HIT_TOLERANCE - 6
+    const off = {
+      x: mid.x + (-dy / length) * offset,
+      y: mid.y + (dx / length) * offset,
+    }
+
+    // Well inside the ring, so the tightening must not reach it.
+    expect(houseAtPoint(off, wheelHouseBand(SIZE), HOUSES)).toBeNull()
+    expect(resolveWheelTap(off, targets())).toEqual({
+      kind: 'aspect',
+      index: expect.any(Number),
+    })
+  })
+
+  it('holds slop steady on screen as the wheel is zoomed', () => {
+    const segments = wheelAspectSegments(SIZE, PLANETS, ASPECTS)
+    const segment = segments[0]
+    const mid = {
+      x: (segment.a.x + segment.b.x) / 2,
+      y: (segment.a.y + segment.b.y) / 2,
+    }
+    const dx = segment.b.x - segment.a.x
+    const dy = segment.b.y - segment.a.y
+    const length = Math.hypot(dx, dy)
+    const offset = ASPECT_HIT_TOLERANCE - 6
+    const off = {
+      x: mid.x + (-dy / length) * offset,
+      y: mid.y + (dx / length) * offset,
+    }
+
+    // Fitted, this offset is a hit. Magnified three times it is three times
+    // further from the line on screen, so it must stop being one -- otherwise
+    // zooming in to separate crowded targets would widen the corridors along
+    // with the drawing and make them harder to tell apart, not easier.
+    expect(resolveWheelTap(off, targets(), 1)).toEqual({
+      kind: 'aspect',
+      index: expect.any(Number),
+    })
+    expect(resolveWheelTap(off, targets(), 3)).toBeNull()
+  })
+
+  it('leaves planets winning outright, at any zoom', () => {
+    const planetPoints = wheelPlanetPoints(SIZE, PLANETS)
+
+    planetPoints.forEach((point, index) => {
+      expect(resolveWheelTap(point, targets(), 1)).toEqual({
+        kind: 'planet',
+        index,
+      })
+      expect(resolveWheelTap(point, targets(), 3)).toEqual({
+        kind: 'planet',
+        index,
+      })
+    })
+  })
+
+  it('selects nothing in empty chart space', () => {
+    expect(resolveWheelTap({ x: 2, y: 2 }, targets())).toBeNull()
   })
 })
 

@@ -18,17 +18,13 @@ import ChartWheel, {
   wheelPlanetPoints,
 } from './ChartWheel'
 import {
-  ASPECT_HIT_TOLERANCE,
   clampScale,
   clampTranslation,
   focalTranslation,
-  houseAtPoint,
   inverseTransformPoint,
   MAX_WHEEL_SCALE,
   MIN_WHEEL_SCALE,
-  nearestPointIndex,
-  nearestSegmentIndex,
-  PLANET_HIT_RADIUS,
+  resolveWheelTap,
 } from './chartWheelInteraction'
 
 type PlanetAccentName = keyof typeof theme.planet
@@ -116,8 +112,8 @@ export function InteractiveChartWheel({
    *
    * The gesture detector is attached to the untransformed frame, so the touch
    * has to be pushed back through the current zoom and pan before it can be
-   * compared with wheel-space geometry. Planets are tested first and win
-   * outright inside their radius, even when an aspect passes through them.
+   * compared with wheel-space geometry. Which target that point belongs to is
+   * `resolveWheelTap`'s decision; this only dispatches it.
    */
   const handleTap = useCallback(
     (x: number, y: number) => {
@@ -129,13 +125,13 @@ export function InteractiveChartWheel({
         center
       )
 
-      const planetIndex = nearestPointIndex(
+      const hit = resolveWheelTap(
         local,
-        planetPoints,
-        PLANET_HIT_RADIUS
+        { planetPoints, aspectSegments, houseBand, houses },
+        view.scale
       )
 
-      if (planetIndex != null) {
+      if (hit?.kind === 'planet') {
         // The planet's own 48dp control already handled this touch and
         // resolved it to the nearest planet. Selecting again here fired a
         // second, differently-resolved selection, which is what made a tap in
@@ -143,28 +139,13 @@ export function InteractiveChartWheel({
         return
       }
 
-      /*
-       * Aspects before houses.
-       *
-       * The aspect corridor is narrow and its endpoints sit just inside the
-       * house band, so testing lines first keeps them reachable; the house
-       * band then catches everything else in the ring, which is most of it.
-       */
-      const aspectIndex = nearestSegmentIndex(
-        local,
-        aspectSegments,
-        ASPECT_HIT_TOLERANCE
-      )
-
-      if (aspectIndex != null) {
-        onSelectAspect(aspectIndex)
+      if (hit?.kind === 'aspect') {
+        onSelectAspect(hit.index)
         return
       }
 
-      const house = houseAtPoint(local, houseBand, houses)
-
-      if (house != null) {
-        onSelectHouse(house)
+      if (hit?.kind === 'house') {
+        onSelectHouse(hit.house)
         return
       }
 
