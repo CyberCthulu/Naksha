@@ -1,6 +1,6 @@
 // components/charts/ChartHero.tsx
 import React from 'react'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 
 import { AppText } from '../ui/AppText'
 import { Button } from '../ui/Button'
@@ -57,6 +57,47 @@ export function ChartHero({
       <AppText key={title} variant="display" style={styles.title}>
         {title}
       </AppText>
+
+      {/* TEMPORARY A/B DIAGNOSTIC — remove before committing.
+          Same string, one suspect property changed per row. Whichever rows
+          show the full title identify the property eating the last word. */}
+      <View style={{ alignSelf: 'stretch', marginTop: 12 }}>
+        <Text style={{ color: '#6FBF8B', fontSize: 11 }}>
+          {`A: as-is  |  string=${JSON.stringify(title)}`}
+        </Text>
+        <Text style={{ color: '#6FBF8B', fontSize: 11, marginTop: 6 }}>B: no letterSpacing</Text>
+        <Text
+          key={`b-${title}`}
+          style={[theme.typography.display, styles.title, { letterSpacing: 0 }]}
+        >
+          {title}
+        </Text>
+        <Text style={{ color: '#6FBF8B', fontSize: 11, marginTop: 6 }}>C: includeFontPadding true</Text>
+        <Text
+          key={`c-${title}`}
+          style={[theme.typography.display, styles.title, { includeFontPadding: true }]}
+        >
+          {title}
+        </Text>
+        <Text style={{ color: '#6FBF8B', fontSize: 11, marginTop: 6 }}>D: stretched full width</Text>
+        <Text
+          key={`d-${title}`}
+          style={[theme.typography.display, styles.title, { alignSelf: 'stretch' }]}
+        >
+          {title}
+        </Text>
+        <Text style={{ color: '#6FBF8B', fontSize: 11, marginTop: 6 }}>E: no lineHeight</Text>
+        <Text
+          key={`e-${title}`}
+          style={[
+            theme.typography.display,
+            styles.title,
+            { lineHeight: undefined },
+          ]}
+        >
+          {title}
+        </Text>
+      </View>
 
       {house ? (
         <AppText variant="eyebrow" style={styles.house}>
