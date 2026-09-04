@@ -34,7 +34,7 @@ export function ChartHouseDetail({
         Life area
       </AppText>
 
-      <AppText key={`house-${house}`} variant="display" style={styles.title}>
+      <AppText variant="display" style={styles.title}>
         {`House ${house}`}
       </AppText>
 
@@ -68,7 +68,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.space.sm,
   },
   eyebrow: { color: theme.accent.base },
-  title: { color: theme.text.primary, textAlign: 'center' },
+  // Full width, not shrink-to-fit -- see the note on ChartHero's title.
+  title: {
+    alignSelf: 'stretch',
+    color: theme.text.primary,
+    textAlign: 'center',
+  },
   sign: { color: theme.accent.base, marginTop: theme.space.hair },
   summary: {
     color: theme.text.secondary,
