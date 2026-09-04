@@ -24,6 +24,7 @@ import {
   distanceToSegment,
   houseAtPoint,
   inverseTransformPoint,
+  nearestPlanetIndex,
   nearestPointIndex,
   nearestSegmentIndex,
   PLANET_HIT_RADIUS,
@@ -1143,6 +1144,145 @@ describe('Tap arbitration in the house band', () => {
 
   it('selects nothing in empty chart space', () => {
     expect(resolveWheelTap({ x: 2, y: 2 }, targets())).toBeNull()
+  })
+})
+
+describe('Planet controls over the house band', () => {
+  const SIZE = 320
+
+  function targets() {
+    return {
+      planetPoints: wheelPlanetPoints(SIZE, PLANETS),
+      aspectSegments: wheelAspectSegments(SIZE, PLANETS, ASPECTS),
+      houseBand: wheelHouseBand(SIZE),
+      houses: HOUSES,
+    }
+  }
+
+  function radiusOf(point: { x: number; y: number }) {
+    const { center } = wheelHouseBand(SIZE)
+    return Math.hypot(point.x - center.x, point.y - center.y)
+  }
+
+  it('overhangs the band, which is the whole reason for the boundary', () => {
+    const band = wheelHouseBand(SIZE)
+    const ring = radiusOf(wheelPlanetPoints(SIZE, PLANETS)[0])
+
+    // The marker sits clear of the band; its 48dp control does not.
+    expect(ring).toBeGreaterThan(band.outerRadius)
+    expect(ring - PLANET_HIT_RADIUS).toBeLessThan(band.outerRadius)
+  })
+
+  it('gives a touch on the ring to the house, not to the nearer planet', () => {
+    const band = wheelHouseBand(SIZE)
+    const planetPoints = wheelPlanetPoints(SIZE, PLANETS)
+    const segments = wheelAspectSegments(SIZE, PLANETS, ASPECTS)
+
+    // Every point on the ring that a planet's control used to claim. Points
+    // sitting on an aspect line are excluded rather than asserted about: an
+    // aspect ends inside the band and a precise tap on one still takes it.
+    const contested = []
+    for (let lon = 0; lon < 360; lon += 0.5) {
+      for (
+        let radius = band.innerRadius + 1;
+        radius < band.outerRadius;
+        radius += 1
+      ) {
+        const angle = ((90 - lon) * Math.PI) / 180
+        const point = {
+          x: band.center.x + Math.cos(angle) * radius,
+          y: band.center.y + Math.sin(angle) * radius,
+        }
+
+        const onALine = segments.some(
+          (segment) => distanceToSegment(point, segment) <= ASPECT_BAND_TOLERANCE
+        )
+
+        if (
+          !onALine &&
+          nearestPointIndex(point, planetPoints, PLANET_HIT_RADIUS) != null
+        ) {
+          contested.push(point)
+        }
+      }
+    }
+
+    expect(contested.length).toBeGreaterThan(0)
+
+    contested.forEach((point) => {
+      // The band-aware test declines where the plain disc test did not.
+      expect(
+        nearestPlanetIndex(point, planetPoints, band, PLANET_HIT_RADIUS)
+      ).toBeNull()
+      expect(resolveWheelTap(point, targets())).toEqual({
+        kind: 'house',
+        house: expect.any(Number),
+      })
+    })
+  })
+
+  it('leaves the marker and its outward slop fully selectable', () => {
+    const band = wheelHouseBand(SIZE)
+    const planetPoints = wheelPlanetPoints(SIZE, PLANETS)
+
+    planetPoints.forEach((point, index) => {
+      expect(nearestPlanetIndex(point, planetPoints, band)).toBe(index)
+
+      // Outward, away from the band, nothing is given up.
+      const angle = Math.atan2(point.y - band.center.y, point.x - band.center.x)
+      const out = {
+        x: point.x + Math.cos(angle) * (PLANET_HIT_RADIUS - 2),
+        y: point.y + Math.sin(angle) * (PLANET_HIT_RADIUS - 2),
+      }
+      expect(nearestPlanetIndex(out, planetPoints, band)).toBe(index)
+    })
+  })
+
+  it('declines the press itself, so the tap is not simply swallowed', () => {
+    // The Pressable and the gesture layer both see this touch. If only the
+    // gesture layer applied the boundary the control would still fire and
+    // select the planet, so the two have to resolve it the same way.
+    const screen = renderChart()
+    const size = wheel(screen).props.size
+    const band = wheelHouseBand(size)
+    const origin = wheelPlanetPoints(size, PLANETS)[2]
+    const angle = Math.atan2(origin.y - band.center.y, origin.x - band.center.x)
+    const onRing = {
+      x: band.center.x + Math.cos(angle) * (band.outerRadius - 2),
+      y: band.center.y + Math.sin(angle) * (band.outerRadius - 2),
+    }
+
+    const before = wheel(screen).props.focusedPlanet
+
+    act(() =>
+      control(screen, 'wheel-planet-Mars')[0].props.onPress({
+        nativeEvent: {
+          locationX: onRing.x - origin.x + PLANET_HIT_SIZE / 2,
+          locationY: onRing.y - origin.y + PLANET_HIT_SIZE / 2,
+        },
+      })
+    )
+
+    expect(wheel(screen).props.focusedPlanet).toBe(before)
+
+    // The same control, pressed on the marker, still selects.
+    act(() =>
+      control(screen, 'wheel-planet-Mars')[0].props.onPress({
+        nativeEvent: {
+          locationX: PLANET_HIT_SIZE / 2,
+          locationY: PLANET_HIT_SIZE / 2,
+        },
+      })
+    )
+    expect(wheel(screen).props.focusedPlanet).toBe('Mars')
+  })
+
+  it('still takes an assistive activation with no touch location', () => {
+    const screen = renderChart()
+
+    act(() => control(screen, 'wheel-planet-Moon')[0].props.onPress())
+
+    expect(wheel(screen).props.focusedPlanet).toBe('Moon')
   })
 })
 

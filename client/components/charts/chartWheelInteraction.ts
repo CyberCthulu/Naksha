@@ -261,6 +261,40 @@ export function houseAtPoint(
   return null
 }
 
+/**
+ * Index of the planet under a point, or null, with the house band excluded.
+ *
+ * A planet marker sits on its own ring, comfortably outside the house band --
+ * but its 48dp control does not. At a wheel of 345 the control overhangs the
+ * drawn band by about 10 points, which is enough to claim more than half the
+ * band arc of the wedge behind it. With two planets close together that wedge
+ * effectively cannot be selected at all: taps on houses 12 and 1 kept landing
+ * on Mars or Pluto.
+ *
+ * So the drawn band belongs to the houses. Inside its outer edge a touch is
+ * never a planet, however near one is; outside it the control is untouched and
+ * still a full 48dp in every direction the planets actually crowd each other.
+ * The boundary is one the reader can see, which is what makes it explicable
+ * rather than arbitrary.
+ *
+ * Both the gesture layer and the planet's own Pressable resolve through this,
+ * so the two cannot disagree about who owns a touch.
+ */
+export function nearestPlanetIndex(
+  point: Point,
+  points: Point[],
+  band: HouseBand,
+  radius: number = PLANET_HIT_RADIUS
+): number | null {
+  'worklet'
+  const dx = point.x - band.center.x
+  const dy = point.y - band.center.y
+
+  if (Math.sqrt(dx * dx + dy * dy) < band.outerRadius) return null
+
+  return nearestPointIndex(point, points, radius)
+}
+
 export type WheelTapTargets = {
   planetPoints: Point[]
   aspectSegments: Segment[]
@@ -301,9 +335,10 @@ export function resolveWheelTap(
    * drawn inside the transformed wheel, so it stays 48 wheel-local points at
    * every scale and this has to describe the same region.
    */
-  const planetIndex = nearestPointIndex(
+  const planetIndex = nearestPlanetIndex(
     point,
     targets.planetPoints,
+    targets.houseBand,
     PLANET_HIT_RADIUS
   )
   if (planetIndex != null) return { kind: 'planet', index: planetIndex }

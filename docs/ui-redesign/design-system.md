@@ -738,10 +738,26 @@ detail. A tap resolves as: planet, then house band, then aspect, then nothing.
 
 | Target | Allowance | |
 | --- | --- | --- |
-| Planet | 48 dp control, radius 24 | Drawn inside the transformed wheel, so it is 48 wheel-local points at every scale. The control resolves the touch itself; the gesture layer defers to it rather than selecting a second time, which is what once made a tap in a cluster land on a neighbour. |
+| Planet | 48 dp control, radius 24, **excluding the drawn house band** | Drawn inside the transformed wheel, so it is 48 wheel-local points at every scale. The control resolves the touch itself; the gesture layer defers to it rather than selecting a second time, which is what once made a tap in a cluster land on a neighbour. |
 | Aspect, in the open field | 24 | Generous, because the stroke is only 1.2-2.0 wide. |
 | Aspect, inside the house band | 6 | Tightened. Every aspect line **ends at a radius inside the house band**, so at the full corridor each endpoint claims the band around its own planet's longitude — and a wedge holding several planets had almost no surface left that resolved to a house. A tap placed *on* a line still takes the aspect, which is all a conjunction needs, its whole chord being in the band. |
 | House band | Drawn ring plus 16 either side | The padding is what makes the house number itself a target. |
+
+**The drawn house band belongs to the houses.** A planet marker sits on its own
+ring, outside the band — but its 48 dp control does not. At a 345-point wheel
+the control overhangs the drawn band by about 10 points, which claims more than
+half the band arc of the wedge behind it; with two planets close together that
+wedge could not be selected at all, and taps on houses 12 and 1 landed on Mars
+or Pluto. So a touch inside the band's outer edge is never a planet, however
+near one is. Outside that edge the control is untouched, and it keeps its full
+48 dp in the tangential direction, which is the axis where planets crowd each
+other. The boundary is a line the reader can see, which is what makes it
+explicable rather than arbitrary.
+
+Both the gesture layer and the planet's own `Pressable` resolve through the
+same function. They have to: the control and the gesture both see the touch, so
+if only one applied the boundary the control would still fire and select the
+planet.
 
 **Slop is screen-space.** Every allowance above is stated in points under the
 finger and divided by the current scale before it is compared against

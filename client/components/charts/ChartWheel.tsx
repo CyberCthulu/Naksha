@@ -13,7 +13,7 @@ import Animated, {
 
 import { useReducedMotion } from '../ui/useReducedMotion'
 import {
-  nearestPointIndex,
+  nearestPlanetIndex,
   PLANET_HIT_RADIUS,
 } from './chartWheelInteraction'
 
@@ -644,6 +644,7 @@ export default function ChartWheel({
   if (!onSelectPlanet) return wheel
 
   const planetPoints = planets.map((p) => toScreen(p.lon, rPlanets))
+  const houseBand = wheelHouseBand(size)
 
   /**
    * Resolve a touch on a planet target to the *nearest* planet.
@@ -653,6 +654,12 @@ export default function ChartWheel({
    * happens to be on top receives the touch, which is an arbitrary function of
    * render order, so resolving by distance from the actual touch point makes
    * the outcome match what the reader aimed at.
+   *
+   * Returns null when the touch belongs to the house band instead. The control
+   * is a square that overhangs the ring below it, and the wedge under that
+   * overhang has to stay selectable -- see `nearestPlanetIndex`. Declining here
+   * is safe because the gesture layer sees the same touch and resolves it with
+   * the same rule, so the house is what gets selected rather than nothing.
    */
   const resolvePlanetTouch = (
     fallback: PlanetAccentName,
@@ -671,8 +678,13 @@ export default function ChartWheel({
       y: origin.y - PLANET_HIT_SIZE / 2 + locationY,
     }
 
-    const nearest = nearestPointIndex(point, planetPoints, PLANET_HIT_RADIUS)
-    if (nearest == null) return fallback
+    const nearest = nearestPlanetIndex(
+      point,
+      planetPoints,
+      houseBand,
+      PLANET_HIT_RADIUS
+    )
+    if (nearest == null) return null
 
     return asAccentName(planets[nearest].name) ?? fallback
   }
@@ -700,16 +712,16 @@ export default function ChartWheel({
             accessibilityLabel={p.name}
             accessibilityHint="Selects this planet on the chart"
             accessibilityState={{ selected: isFocused }}
-            onPress={(event) =>
-              onSelectPlanet(
-                resolvePlanetTouch(
-                  key,
-                  index,
-                  event?.nativeEvent?.locationX,
-                  event?.nativeEvent?.locationY
-                )
+            onPress={(event) => {
+              const resolved = resolvePlanetTouch(
+                key,
+                index,
+                event?.nativeEvent?.locationX,
+                event?.nativeEvent?.locationY
               )
-            }
+
+              if (resolved) onSelectPlanet(resolved)
+            }}
             style={[
               styles.hit,
               {
