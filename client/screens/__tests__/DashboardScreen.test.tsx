@@ -3,6 +3,7 @@ import { InteractionManager, Text } from 'react-native'
 import TestRenderer from 'react-test-renderer'
 
 import DashboardScreen from '../DashboardScreen'
+import { Button } from '../../components/ui/Button'
 import supabase from '../../lib/supabase'
 import { signOut } from '../../lib/auth'
 import {
@@ -810,6 +811,16 @@ describe('DashboardScreen', () => {
       'Could not load your saved chart. Please try again.'
     )
     expectText(screen, 'Retry')
+
+    // Retry stays the single primary action; Sign Out is destructive, not a
+    // second gold call to action sitting beside it.
+    const errorButtons = screen.root.findAllByType(Button)
+    const retry = errorButtons.find((b) => b.props.title === 'Retry')
+    const signOut = errorButtons.find((b) => b.props.title === 'Sign Out')
+
+    expect(retry?.props.variant).toBeUndefined()
+    expect(signOut?.props.variant).toBe('destructive')
+
     expect(mockedGetChartCalculationPreferences()).not.toHaveBeenCalled()
     expect(mockedBuildChartData()).not.toHaveBeenCalled()
     expect(mockedSaveChart()).not.toHaveBeenCalled()

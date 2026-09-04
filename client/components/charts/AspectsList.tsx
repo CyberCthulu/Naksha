@@ -1,10 +1,19 @@
 //components/charts/AspectsList.tsx
 import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { Aspect } from '../../lib/astro'
 import { getAspectMeaning, type AspectType } from '../../lib/lexicon'
+import { AppText } from '../ui/AppText'
 import { theme } from '../ui/theme'
-import { uiStyles } from '../ui/uiStyles'
+import { PLANET_GLYPH } from './ChartCompass'
+
+const ASPECT_LABEL: Record<AspectType, string> = {
+  conj: 'Conjunction',
+  opp: 'Opposition',
+  square: 'Square',
+  trine: 'Trine',
+  sextile: 'Sextile',
+}
 
 function asAspectType(t: string): AspectType | null {
   const allowed: AspectType[] = ['conj', 'opp', 'square', 'trine', 'sextile']
@@ -16,58 +25,96 @@ type Props = {
 }
 
 export default function AspectsList({ aspects }: Props) {
+  if (aspects.length === 0) {
+    return (
+      <AppText variant="bodySmall" style={styles.fallback}>
+        None (within default orbs)
+      </AppText>
+    )
+  }
+
   return (
-    <>
-      <Text style={styles.h2}>Aspects</Text>
+    <View>
+      {aspects
+        .slice()
+        .sort((a, b) => a.orb - b.orb)
+        .map((a, i) => {
+          const at = asAspectType(a.type)
+          const meaning = at ? getAspectMeaning(at) : null
+          const glyphA = PLANET_GLYPH[a.a]
+          const glyphB = PLANET_GLYPH[a.b]
 
-      {aspects.length === 0 ? (
-        <Text style={uiStyles.muted}>None (within default orbs)</Text>
-      ) : (
-        aspects
-          .slice()
-          .sort((a, b) => a.orb - b.orb)
-          .map((a, i) => {
-            const at = asAspectType(a.type)
-            const meaning = at ? getAspectMeaning(at) : null
-
-            return (
-              <View key={`${a.a}-${a.b}-${i}`} style={styles.itemRow}>
-                <Text style={styles.itemLeft}>
-                  {`${a.a} ${a.type} ${a.b} (${a.orb.toFixed(2)}°)`}
-                </Text>
-                <Text style={styles.itemRight} numberOfLines={3}>
-                  {meaning?.short ?? ''}
-                </Text>
+          return (
+            <View
+              key={`${a.a}-${a.b}-${i}`}
+              testID={`aspect-row-${a.a}-${a.b}`}
+              style={styles.row}
+            >
+              <View style={styles.headline}>
+                <AppText variant="subheading" style={styles.pair}>
+                  {glyphA ? `${glyphA} ` : ''}
+                  {a.a}
+                  <AppText style={styles.pairJoin}> · </AppText>
+                  {glyphB ? `${glyphB} ` : ''}
+                  {a.b}
+                </AppText>
               </View>
-            )
-          })
-      )}
-    </>
+
+              <View style={styles.metaRow}>
+                <AppText variant="eyebrow" style={styles.type}>
+                  {at ? ASPECT_LABEL[at] : a.type}
+                </AppText>
+                <AppText variant="numeric" style={styles.orb}>
+                  {`${a.orb.toFixed(2)}° orb`}
+                </AppText>
+              </View>
+
+              {meaning?.short ? (
+                <AppText variant="bodySmall" style={styles.summary}>
+                  {meaning.short}
+                </AppText>
+              ) : null}
+            </View>
+          )
+        })}
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  h2: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginTop: 16,
-    color: theme.colors.text,
+  fallback: {
+    color: theme.text.secondary,
   },
-  itemRow: {
+  row: {
+    paddingVertical: theme.space.md,
+  },
+  headline: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8,
+    flexWrap: 'wrap',
   },
-  itemLeft: {
-    width: 150,
-    fontFamily: 'monospace' as any,
-    color: theme.colors.text,
+  pair: {
+    color: theme.text.primary,
+    flexShrink: 1,
   },
-  itemRight: {
-    flex: 1,
+  pairJoin: {
+    color: theme.text.tertiary,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    columnGap: theme.space.sm,
+    marginTop: theme.space.xs,
+  },
+  type: {
+    color: theme.accent.base,
+  },
+  orb: {
+    color: theme.text.tertiary,
     fontSize: 12,
-    color: theme.colors.sub,
-    paddingLeft: 10,
-    lineHeight: 16,
+  },
+  summary: {
+    color: theme.text.secondary,
+    marginTop: theme.space.xs,
   },
 })

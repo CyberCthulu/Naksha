@@ -1,17 +1,14 @@
 // components/charts/HousesList.tsx
 import React from 'react'
-import { Text, StyleSheet, Pressable } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 import { HouseCusp } from '../../lib/astro'
 import {
-  signIndexFromLongitude,
   zodiacNameFromLongitude,
   getHouseSignMeaning,
   type HouseNumber,
 } from '../../lib/lexicon'
+import { AppText } from '../ui/AppText'
 import { theme } from '../ui/theme'
-import { uiStyles } from '../ui/uiStyles'
-
-const ZODIAC_ABBR = ['Ar', 'Ta', 'Ge', 'Cn', 'Le', 'Vi', 'Li', 'Sc', 'Sg', 'Cp', 'Aq', 'Pi']
 
 function asHouseNumber(n: number): HouseNumber | null {
   return n >= 1 && n <= 12 ? (n as HouseNumber) : null
@@ -28,76 +25,112 @@ export default function HousesList({
   focusedHouse,
   onFocusHouse,
 }: Props) {
+  if (!houses) {
+    return (
+      <AppText variant="bodySmall" style={styles.fallback}>
+        Houses require a birth location. Add or update your birth place to view
+        house cusps.
+      </AppText>
+    )
+  }
+
   return (
-    <>
-      <Text style={styles.h2}>Houses (Whole Sign)</Text>
+    <View>
+      {houses.map((h) => {
+        const signName = zodiacNameFromLongitude(h.lon)
+        const hn = asHouseNumber(h.house)
+        const meaning = hn ? getHouseSignMeaning(hn, signName) : null
+        const isActive = hn != null && focusedHouse === hn
 
-      {!houses ? (
-        <Text style={uiStyles.muted}>
-          Houses require a birth location. Add or update your birth place to view house cusps.
-        </Text>
-      ) : (
-        houses.map((h) => {
-          const signIdx = signIndexFromLongitude(h.lon)
-          const signName = zodiacNameFromLongitude(h.lon)
-          const hn = asHouseNumber(h.house)
-          const meaning = hn ? getHouseSignMeaning(hn, signName) : null
-          const isActive = hn != null && focusedHouse === hn
-
-          return (
-            <Pressable
-              key={`house-row-${h.house}`}
-              disabled={!hn}
-              onPress={() => hn && onFocusHouse(hn)}
+        return (
+          <Pressable
+            key={`house-row-${h.house}`}
+            testID={`house-row-${h.house}`}
+            disabled={!hn}
+            accessibilityRole={hn ? 'button' : undefined}
+            accessibilityLabel={
+              hn ? `House ${hn} in ${signName}` : undefined
+            }
+            accessibilityState={hn ? { selected: isActive } : undefined}
+            onPress={() => hn && onFocusHouse(hn)}
+            style={({ pressed }) => [
+              styles.row,
+              pressed && styles.pressed,
+              isActive && styles.activeRow,
+            ]}
+          >
+            <View
               style={[
-                styles.itemRow,
-                hn && styles.pressableRow,
-                isActive && styles.activeRow,
+                styles.focusBar,
+                isActive && styles.focusBarActive,
               ]}
-            >
-              <Text style={styles.itemLeft}>
-                {`House ${String(h.house).padStart(2, ' ')}  ${ZODIAC_ABBR[signIdx]}`}
-              </Text>
-              <Text style={styles.itemRight} numberOfLines={4}>
-                {meaning?.short ?? ''}
-              </Text>
-            </Pressable>
-          )
-        })
-      )}
-    </>
+            />
+
+            <View style={styles.body}>
+              <View style={styles.headline}>
+                <AppText variant="numeric" style={styles.number}>
+                  {`House ${h.house}`}
+                </AppText>
+                <AppText variant="bodySmall" style={styles.sign}>
+                  {signName}
+                </AppText>
+              </View>
+
+              {meaning?.short ? (
+                <AppText variant="bodySmall" style={styles.summary}>
+                  {meaning.short}
+                </AppText>
+              ) : null}
+            </View>
+          </Pressable>
+        )
+      })}
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  h2: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginTop: 16,
-    color: theme.colors.text,
+  fallback: {
+    color: theme.text.secondary,
   },
-  itemRow: {
+  row: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8,
+    minHeight: theme.touchTarget.min,
+    paddingVertical: theme.space.md,
   },
-  pressableRow: {
-    borderRadius: 8,
-    paddingVertical: 4,
+  pressed: {
+    opacity: 0.7,
   },
   activeRow: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: theme.surface.selected,
   },
-  itemLeft: {
-    width: 150,
-    fontFamily: 'monospace' as any,
-    color: theme.colors.text,
+  focusBar: {
+    width: 2,
+    borderRadius: 1,
+    backgroundColor: 'transparent',
+    marginRight: theme.space.md,
   },
-  itemRight: {
+  focusBarActive: {
+    backgroundColor: theme.accent.base,
+  },
+  body: {
     flex: 1,
-    fontSize: 12,
-    color: theme.colors.sub,
-    paddingLeft: 10,
-    lineHeight: 16,
+  },
+  headline: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    columnGap: theme.space.sm,
+    rowGap: theme.space.hair,
+  },
+  number: {
+    color: theme.text.primary,
+  },
+  sign: {
+    color: theme.accent.base,
+  },
+  summary: {
+    color: theme.text.secondary,
+    marginTop: theme.space.xs,
   },
 })

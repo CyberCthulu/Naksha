@@ -163,6 +163,22 @@ function textInputByPlaceholder(
   return input
 }
 
+async function pressByAccessibilityLabel(
+  root: TestRenderer.ReactTestRenderer,
+  label: string
+) {
+  const target = root.root.find(
+    (node) =>
+      typeof node.props?.onPress === 'function' &&
+      node.props?.accessibilityLabel === label
+  )
+
+  await act(async () => {
+    target.props.onPress()
+    await settleAsyncWork()
+  })
+}
+
 async function press(root: TestRenderer.ReactTestRenderer, label: string) {
   const target = findPressableByText(root, label)
 
@@ -206,7 +222,7 @@ describe('CreateGuestChartScreen', () => {
   it('goes back from the header back control', async () => {
     const screen = await renderScreen()
 
-    await press(screen, '‹')
+    await pressByAccessibilityLabel(screen, 'Go back')
 
     expect(mockNavigation.goBack).toHaveBeenCalled()
   })

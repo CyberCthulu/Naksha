@@ -1,11 +1,5 @@
-import React, { useEffect, useMemo } from 'react'
-import {
-  Button,
-  ScrollView,
-  Text,
-  useWindowDimensions,
-  View,
-} from 'react-native'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -14,27 +8,59 @@ import { useSpace } from '../space/SpaceProvider'
 import type { ChartData } from '../../lib/charts'
 import { parseChartData } from '../../lib/chartDataValidation'
 import type { ChartMode, ChartProfile } from '../../lib/domainTypes'
-import { asPlanetKey } from '../../lib/chartInterpretation'
+import { asHouseNumber, asPlanetKey } from '../../lib/chartInterpretation'
 import { buildHousePages, buildPlanetPages } from '../../lib/chartPageBuilders'
 import {
+  getAspectMeaning,
+  getHouseMeaning,
+  getHouseSignMeaning,
   getPlanetSignMeaning,
+  type AspectType,
+  type HouseNumber,
   type PlanetKey,
   zodiacNameFromLongitude,
 } from '../../lib/lexicon'
 import useChartData from '../../hooks/useChartData'
 import useChartInterpretation from '../../hooks/useChartInterpretation'
+import type { PlanetPos } from '../../lib/astro'
+import { AppText } from '../ui/AppText'
+import { Button } from '../ui/Button'
+import { Icon } from '../ui/Icon'
 import { theme } from '../ui/theme'
-import { uiStyles } from '../ui/uiStyles'
 import { LoadingState } from '../ui/LoadingState'
 import AspectsList from './AspectsList'
-import ChartCompass from './ChartCompass'
 import ChartHeader from './ChartHeader'
-import ChartWheel from './ChartWheel'
+import { ChartAspectDetail } from './ChartAspectDetail'
+import { ChartHouseDetail } from './ChartHouseDetail'
+import { ChartHero } from './ChartHero'
+import {
+  GlyphCompass,
+  GLYPH_COMPASS_TRIGGER_CLEARANCE,
+} from './GlyphCompass'
+import { ChartSection } from './ChartSection'
+import type { ChartSelection } from './ChartWheel'
+import { InteractiveChartWheel } from './InteractiveChartWheel'
 import HousesList from './HousesList'
 import InterpretationModal from './InterpretationModal'
 import PlanetPositionsList from './PlanetPositionsList'
 import type { InterpretationPage } from './interpretationTypes'
 import type { RootStackParamList } from '../../navigation/types'
+
+const ASPECT_TYPES: AspectType[] = [
+  'conj',
+  'opp',
+  'square',
+  'trine',
+  'sextile',
+]
+
+const ASPECT_LABELS: Record<AspectType, string> = {
+  conj: 'Conjunction',
+  opp: 'Opposition',
+  square: 'Square',
+  trine: 'Trine',
+  sextile: 'Sextile',
+}
 
 type Props = {
   profile: ChartProfile
@@ -96,8 +122,16 @@ export default function ChartScreenContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planets, focusPlanet, clearFocus])
 
-  const maxChart = 360
-  const size = Math.min(Math.max(280, width - 32), maxChart)
+  // Dominant but never wider than the viewport gutters allow. Zoom is a
+  // gesture now, so the rendered size stays fixed and the wheel scales.
+  const size = Math.min(Math.max(240, width - theme.space.xl * 2), 380)
+
+  const [selection, setSelection] = useState<ChartSelection>(null)
+
+  const selectAspect = useCallback((index: number | null) => {
+    setSelection(index == null ? null : { kind: 'aspect', index })
+  }, [])
+
 
   const subtitleLocation = profile.birth_location ?? null
   const subtitleZone = parsedSaved?.meta.time_zone ?? tz
@@ -140,15 +174,132 @@ export default function ChartScreenContent({
     housePages,
   })
 
-  const sunSummary = useMemo(() => {
-    const sun = planets.find((p) => p.name === 'Sun')
-    if (!sun) return null
+  /**
+   * The one way a planet becomes selected.
+   *
+   * Device testing found the wheel and the Positions rows maintaining
+   * different state: the rows called through to the interpretation hook,
+   * which set focusedPlanet but never ChartSelection, so the halo rendered
+   * from focus while the glow animation keyed off a selection that was still
+   * null. Both paths now run through here, and opening the modal is an option
+   * on the selection rather than the thing that performs it -- so a direct
+   * wheel tap starts the glow immediately, with no modal involved.
+   */
+  const selectPlanet = useCallback(
+    (planet: PlanetKey, options?: { openInterpretation?: boolean }) => {
+      focusPlanet(planet)
+      setSelection({ kind: 'planet', planet })
 
-    const signName = zodiacNameFromLongitude(sun.lon)
-    const meaning = getPlanetSignMeaning('Sun', signName)
+      if (options?.openInterpretation) {
+        openPlanetInterpretation(planet)
+      }
+    },
+    [focusPlanet, openPlanetInterpretation]
+  )
 
-    return { signName, meaning }
-  }, [planets])
+  const selectPlanetFromWheel = useCallback(
+    (planet: PlanetKey) => selectPlanet(planet),
+    [selectPlanet]
+  )
+
+  const selectPlanetAndRead = useCallback(
+    (planet: PlanetKey) => selectPlanet(planet, { openInterpretation: true }),
+    [selectPlanet]
+  )
+
+  /**
+   * The one way a house becomes selected, mirroring selectPlanet.
+   *
+   * Wheel taps select and explain without opening anything; the Houses rows
+   * additionally open the full interpretation, exactly as the Positions rows
+   * do for planets.
+   */
+  const selectHouse = useCallback(
+    (house: number, options?: { openInterpretation?: boolean }) => {
+      setSelection({ kind: 'house', house })
+
+      const houseNumber = asHouseNumber(house)
+      if (houseNumber && options?.openInterpretation) {
+        openHouseInterpretation(houseNumber)
+      }
+    },
+    [openHouseInterpretation]
+  )
+
+  const selectHouseFromWheel = useCallback(
+    (house: number) => selectHouse(house),
+    [selectHouse]
+  )
+
+  const selectHouseAndRead = useCallback(
+    (house: HouseNumber) => selectHouse(house, { openInterpretation: true }),
+    [selectHouse]
+  )
+
+
+
+
+  const selectedHouse = useMemo(() => {
+    if (selection?.kind !== 'house') return null
+
+    const cusp = houses?.find((h) => h.house === selection.house)
+    if (!cusp) return null
+
+    const houseNumber = asHouseNumber(cusp.house)
+    if (!houseNumber) return null
+
+    const signName = zodiacNameFromLongitude(cusp.lon)
+    const signMeaning = getHouseSignMeaning(houseNumber, signName)
+    const generic = getHouseMeaning(houseNumber)
+
+    return {
+      house: houseNumber,
+      signName,
+      summary: signMeaning?.short ?? generic?.short ?? null,
+    }
+  }, [selection, houses])
+
+  const selectedAspect = useMemo(() => {
+    if (selection?.kind !== 'aspect') return null
+
+    const aspect = aspects[selection.index]
+    if (!aspect) return null
+
+    const type = ASPECT_TYPES.includes(aspect.type as AspectType)
+      ? (aspect.type as AspectType)
+      : null
+
+    return {
+      aspect,
+      label: type ? ASPECT_LABELS[type] : aspect.type,
+      summary: type ? getAspectMeaning(type)?.short ?? null : null,
+    }
+  }, [selection, aspects])
+
+  // The hero explains whichever planet is currently focused. Focus already
+  // defaults to the Sun on mount, so the fitted, untouched chart still opens
+  // on its headline placement.
+  const heroSummary = useMemo(() => {
+    const selected: PlanetPos | undefined =
+      planets.find((p) => p.name === focusedPlanet) ??
+      planets.find((p) => p.name === 'Sun')
+
+    if (!selected) return null
+
+    const planetKey = asPlanetKey(selected.name)
+    if (!planetKey) return null
+
+    const signName = zodiacNameFromLongitude(selected.lon)
+    const meaning = getPlanetSignMeaning(planetKey, signName)
+    const house = planetHouses?.find((ph) => ph.name === selected.name)
+
+    return {
+      planetKey,
+      signName,
+      house: house?.house ?? null,
+      meaning,
+    }
+  }, [planets, planetHouses, focusedPlanet])
 
   if (loading) {
     return <LoadingState label="Loading chart" size="large" />
@@ -157,12 +308,17 @@ export default function ChartScreenContent({
   return (
     <>
       <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{
-          padding: theme.spacing.screen,
-          paddingTop: insets.top + 12,
-          paddingBottom: insets.bottom + 28,
-        }}
+        style={styles.screen}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: insets.top + theme.space.xs,
+            paddingBottom:
+              insets.bottom +
+              theme.space.xxxl +
+              GLYPH_COMPASS_TRIGGER_CLEARANCE,
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         <ChartHeader
@@ -171,72 +327,126 @@ export default function ChartScreenContent({
           subtitleLocation={subtitleLocation}
           subtitleZone={subtitleZone}
           subtitleCoords={subtitleCoords}
-          sunTitle={sunSummary ? `Sun in ${sunSummary.signName}` : null}
-          sunShortMeaning={sunSummary?.meaning?.short ?? null}
         />
 
-        <View style={{ alignItems: 'center', marginBottom: 10 }}>
-          <Button
-            title={
-              !canSaveChart
-                ? 'View Only'
-                : isSaved
-                ? 'Saved to My Charts'
-                : chartMode === 'guest'
-                ? 'Save Chart'
-                : 'Save Chart Data'
-            }
-            onPress={saveCurrentChart}
-            disabled={isSaved || !canSaveChart}
-          />
+        {/* Chart context: what this chart can and cannot do. */}
+        <View style={styles.contextBlock}>
+          {!canSaveChart ? (
+            <View testID="chart-status-view-only" style={styles.statusChip}>
+              <AppText variant="eyebrow" style={styles.statusLabel}>
+                View Only
+              </AppText>
+              <AppText variant="bodySmall" style={styles.statusNote}>
+                Add a birth location to save houses and chart data.
+              </AppText>
+            </View>
+          ) : isSaved ? (
+            <View testID="chart-status-saved" style={styles.savedChip}>
+              <Icon name="save" size="sm" color={theme.accent.base} />
+              <AppText variant="eyebrow" style={styles.savedLabel}>
+                Saved to My Charts
+              </AppText>
+            </View>
+          ) : (
+            <Button
+              testID="chart-save-action"
+              title={chartMode === 'guest' ? 'Save Chart' : 'Save Chart Data'}
+              onPress={saveCurrentChart}
+            />
+          )}
+
+          {canSaveChart && saveWarning && chartMode === 'self' ? (
+            <AppText
+              testID="chart-save-warning"
+              variant="bodySmall"
+              accessibilityLiveRegion="polite"
+              style={styles.warning}
+            >
+              {saveWarning}
+            </AppText>
+          ) : null}
         </View>
 
-        {!canSaveChart && (
-          <View style={[uiStyles.card, { alignItems: 'center' }]}>
-            <Text style={[uiStyles.text, { textAlign: 'center' }]}>
-              Add a birth location to save houses and chart data.
-            </Text>
-          </View>
-        )}
-
-        {canSaveChart && saveWarning && chartMode === 'self' && (
-          <View style={uiStyles.card}>
-            <Text style={[uiStyles.errorText, { textAlign: 'center' }]}>
-              {saveWarning}
-            </Text>
-          </View>
-        )}
-
-        <View style={{ alignItems: 'center' }}>
-          <ChartWheel
+        {/* Focal point. Pinch to zoom, drag to pan once enlarged. */}
+        <View style={styles.wheelFrame}>
+          <InteractiveChartWheel
             size={size}
             planets={planets}
             aspects={aspects}
             houses={houses}
+            focusedPlanet={focusedPlanet}
+            selection={selection}
+            onSelectPlanet={selectPlanetFromWheel}
+            onSelectAspect={selectAspect}
+            onSelectHouse={selectHouseFromWheel}
           />
         </View>
 
-        <PlanetPositionsList
-          planets={planets}
-          planetHouses={planetHouses}
-          focusedPlanet={focusedPlanet}
-          onFocusPlanet={openPlanetInterpretation}
-        />
+        {selectedHouse ? (
+          <ChartHouseDetail
+            testID="chart-house-detail"
+            house={selectedHouse.house}
+            signName={selectedHouse.signName}
+            summary={selectedHouse.summary}
+            onOpen={() => selectHouseAndRead(selectedHouse.house)}
+          />
+        ) : null}
 
-        <View style={{ height: 16 }} />
+        {selectedAspect ? (
+          <ChartAspectDetail
+            testID="chart-aspect-detail"
+            aspect={selectedAspect.aspect}
+            label={selectedAspect.label}
+            summary={selectedAspect.summary}
+          />
+        ) : null}
 
-        <HousesList
-          houses={houses}
-          focusedHouse={focusedHouse}
-          onFocusHouse={openHouseInterpretation}
-        />
+        {!selectedAspect && !selectedHouse && heroSummary ? (
+          <ChartHero
+            title={`${heroSummary.planetKey} in ${heroSummary.signName}`}
+            meaning={heroSummary.meaning?.short ?? null}
+            house={heroSummary.house}
+            planet={heroSummary.planetKey}
+            onOpen={() => selectPlanetAndRead(heroSummary.planetKey)}
+          />
+        ) : null}
 
-        <View style={{ height: 16 }} />
+        <ChartSection
+          testID="chart-section-positions"
+          eyebrow="Placements"
+          title="Positions"
+        >
+          <PlanetPositionsList
+            planets={planets}
+            planetHouses={planetHouses}
+            focusedPlanet={focusedPlanet}
+            onFocusPlanet={selectPlanetAndRead}
+          />
+        </ChartSection>
 
-        <ChartCompass style={{ marginBottom: 12 }} />
+        <ChartSection
+          testID="chart-section-houses"
+          eyebrow="Life areas"
+          title="Houses"
+          note="Whole Sign"
+        >
+          <HousesList
+            houses={houses}
+            focusedHouse={focusedHouse}
+            onFocusHouse={selectHouseAndRead}
+          />
+        </ChartSection>
 
-        <AspectsList aspects={aspects} />
+        <ChartSection
+          testID="chart-section-aspects"
+          eyebrow="Planetary dynamics"
+          title="Aspects"
+        >
+          <AspectsList aspects={aspects} />
+        </ChartSection>
       </ScrollView>
+
+      <GlyphCompass hidden={interpretationVisible} />
 
       <InterpretationModal
         visible={interpretationVisible && activePages.length > 0}
@@ -249,3 +459,45 @@ export default function ChartScreenContent({
     </>
   )
 }
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: theme.space.xl,
+  },
+  contextBlock: {
+    alignItems: 'center',
+  },
+  statusChip: {
+    alignItems: 'center',
+    paddingHorizontal: theme.space.md,
+  },
+  statusLabel: {
+    color: theme.text.tertiary,
+  },
+  statusNote: {
+    color: theme.text.secondary,
+    marginTop: theme.space.xs,
+    textAlign: 'center',
+  },
+  savedChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: theme.space.xs,
+    minHeight: theme.touchTarget.min,
+  },
+  savedLabel: {
+    color: theme.accent.base,
+  },
+  warning: {
+    color: theme.state.danger,
+    marginTop: theme.space.sm,
+    textAlign: 'center',
+  },
+  wheelFrame: {
+    marginTop: theme.space.lg,
+  },
+
+})

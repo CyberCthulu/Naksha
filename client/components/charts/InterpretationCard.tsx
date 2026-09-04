@@ -2,6 +2,7 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { Interpretation } from '../../lib/lexicon'
+import { AppText } from '../ui/AppText'
 import { theme } from '../ui/theme'
 
 type InterpretationBlock = {
@@ -15,6 +16,8 @@ type Props = {
   subtitle?: string | null
   summary?: string | null
   blocks?: InterpretationBlock[]
+  /** Small uppercase label above the title, e.g. "Planet Interpretation". */
+  eyebrow?: string | null
 }
 
 type TextSegment = {
@@ -75,6 +78,7 @@ export default function InterpretationCard({
   subtitle = null,
   summary = null,
   blocks = [],
+  eyebrow = null,
 }: Props) {
   const visibleBlocks = blocks.filter((block) => {
     if (!block.interpretation) return false
@@ -90,6 +94,12 @@ export default function InterpretationCard({
 
   return (
     <View style={[styles.card]}>
+      {!!eyebrow && (
+        <AppText variant="eyebrow" style={styles.eyebrow}>
+          {eyebrow}
+        </AppText>
+      )}
+
       <Text style={styles.title}>{title}</Text>
 
       {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
@@ -144,52 +154,53 @@ export default function InterpretationCard({
 
 const styles = StyleSheet.create({
   card: {
-    marginTop: 12,
+    marginTop: theme.space.md,
+  },
+  eyebrow: {
+    ...theme.typography.eyebrow,
+    color: theme.accent.base,
+    marginBottom: theme.space.xs,
   },
   title: {
-    color: theme.colors.text,
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
+    ...theme.typography.display,
+    color: theme.text.primary,
   },
   subtitle: {
-    color: theme.colors.sub,
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 10,
+    ...theme.typography.bodySmall,
+    color: theme.accent.base,
+    marginTop: theme.space.xs,
+    marginBottom: theme.space.lg,
   },
   summaryBlock: {
-    marginTop: 4,
-    marginBottom: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    marginTop: theme.space.xs,
+    marginBottom: theme.space.lg,
+    paddingBottom: theme.space.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: theme.border.base,
   },
   summaryText: {
-    color: theme.colors.text,
-    fontSize: 15,
-    lineHeight: 22,
+    ...theme.typography.bodyLarge,
+    color: theme.text.primary,
   },
   blockSpacing: {
-    marginTop: 14,
+    marginTop: theme.space.xl,
   },
   blockTitle: {
-    color: theme.colors.text,
-    fontSize: 15,
-    fontWeight: '700',
-    marginBottom: 6,
+    ...theme.typography.heading,
+    color: theme.text.primary,
+    marginBottom: theme.space.sm,
   },
   bodyText: {
-    color: theme.colors.text,
-    fontSize: 14,
-    lineHeight: 24,
+    ...theme.typography.bodyLarge,
+    color: theme.text.secondary,
+    // Part of the verified long-text clipping fix. Deliberately kept true even
+    // though the typography roles disable it everywhere else.
     includeFontPadding: true,
   },
   paragraphGap: {
-    marginTop: 10,
+    marginTop: theme.space.md,
   },
   blockBottomSpacer: {
-    height: 8,
+    height: theme.space.sm,
   },
 })

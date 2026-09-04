@@ -3,13 +3,14 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import {
   Modal,
   View,
-  Text,
   StyleSheet,
   Pressable,
   ScrollView,
 } from 'react-native'
 import PagerView from 'react-native-pager-view'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { AppText } from '../ui/AppText'
+import { Icon } from '../ui/Icon'
 import { theme } from '../ui/theme'
 import InterpretationCard from './InterpretationCard'
 import { Interpretation } from '../../lib/lexicon'
@@ -47,7 +48,28 @@ export default function InterpretationModal({
 }: Props) {
   const pagerRef = useRef<PagerView>(null)
   const hasMountedRef = useRef(false)
-  const isInternalJumpRef = useRef(false)
+  /**
+   * The pager page we last asked for, if we are still waiting for it.
+   *
+   * PagerView confirms every page change with onPageSelected, including the
+   * ones we command. Tapping next twice quickly issues two commands, and the
+   * confirmation for the first arrives after the second has been sent -- so
+   * acting on it moved the reader back a page. That is the bouncing. Holding
+   * the outstanding target lets a superseded confirmation be recognised and
+   * dropped, while a genuine swipe, which has no outstanding target, is still
+   * handled normally.
+   */
+  const pendingPagerIndexRef = useRef<number | null>(null)
+  /**
+   * The page the pager last told us it is on.
+   *
+   * Needed because asking for the page it is already showing is a no-op, and
+   * a no-op produces no confirmation. Arming the guard for a confirmation that
+   * will never arrive leaves it armed forever, and every later swipe then
+   * looks superseded and is dropped -- which is how swiping stopped updating
+   * the position while the buttons carried on working.
+   */
+  const currentPagerIndexRef = useRef<number | null>(null)
   const insets = useSafeAreaInsets()
 
   const normalizedCurrentIndex =
@@ -68,6 +90,31 @@ export default function InterpretationModal({
     [pages.length]
   )
 
+  /** Ask the pager for a page and remember that we are expecting it. */
+  const commitPage = useCallback((target: number) => {
+    if (currentPagerIndexRef.current === target) {
+      // Already there. No move, so no confirmation is coming.
+      pendingPagerIndexRef.current = null
+      return
+    }
+
+    pendingPagerIndexRef.current = target
+    pagerRef.current?.setPageWithoutAnimation(target)
+  }, [])
+
+  /** As above, deferred a frame so a settling swipe is not interrupted. */
+  const commitPageNextFrame = useCallback((target: number) => {
+    if (currentPagerIndexRef.current === target) {
+      pendingPagerIndexRef.current = null
+      return
+    }
+
+    pendingPagerIndexRef.current = target
+    requestAnimationFrame(() => {
+      pagerRef.current?.setPageWithoutAnimation(target)
+    })
+  }, [])
+
   const toRealIndex = (pagerIndex: number) => {
     if (pages.length <= 1) return 0
     if (pagerIndex === 0) return pages.length - 1
@@ -82,24 +129,31 @@ export default function InterpretationModal({
 
     if (!hasMountedRef.current) {
       hasMountedRef.current = true
-      requestAnimationFrame(() => {
-        pagerRef.current?.setPageWithoutAnimation(targetPagerIndex)
-      })
+
+      // The pager mounts on initialPage, so it is already where we want it.
+      // Recording that matters: without it the first commit is a silent no-op
+      // that arms the guard for a confirmation which never comes, and every
+      // subsequent swipe then looks superseded.
+      currentPagerIndexRef.current = targetPagerIndex
+      commitPageNextFrame(targetPagerIndex)
       return
     }
 
-    if (isInternalJumpRef.current) {
-      isInternalJumpRef.current = false
-      return
-    }
-
-    pagerRef.current?.setPageWithoutAnimation(targetPagerIndex)
-  }, [visible, pages.length, normalizedCurrentIndex, toPagerIndex])
+    commitPage(targetPagerIndex)
+  }, [
+    visible,
+    pages.length,
+    normalizedCurrentIndex,
+    toPagerIndex,
+    commitPage,
+    commitPageNextFrame,
+  ])
 
   useEffect(() => {
     if (!visible) {
       hasMountedRef.current = false
-      isInternalJumpRef.current = false
+      pendingPagerIndexRef.current = null
+      currentPagerIndexRef.current = null
     }
   }, [visible])
 
@@ -126,23 +180,30 @@ export default function InterpretationModal({
 
     const pagerIndex = event.nativeEvent.position
 
-    if (pagerIndex === 0) {
-      isInternalJumpRef.current = true
-      onChangeIndex(pages.length - 1)
+    // Wherever the pager reports itself, that is where it is -- record it
+    // before deciding whether to act on the event.
+    currentPagerIndexRef.current = pagerIndex
 
-      requestAnimationFrame(() => {
-        pagerRef.current?.setPageWithoutAnimation(pages.length)
-      })
+    const pending = pendingPagerIndexRef.current
+
+    if (pending !== null) {
+      // Only the confirmation for the page we actually asked for clears the
+      // guard. Anything else is a late confirmation from a command that has
+      // since been superseded, and acting on it is what made rapid taps bounce
+      // back to the previous page.
+      if (pagerIndex === pending) pendingPagerIndexRef.current = null
+      return
+    }
+
+    if (pagerIndex === 0) {
+      onChangeIndex(pages.length - 1)
+      commitPageNextFrame(pages.length)
       return
     }
 
     if (pagerIndex === pagerPages.length - 1) {
-      isInternalJumpRef.current = true
       onChangeIndex(0)
-
-      requestAnimationFrame(() => {
-        pagerRef.current?.setPageWithoutAnimation(1)
-      })
+      commitPageNextFrame(1)
       return
     }
 
@@ -178,40 +239,74 @@ export default function InterpretationModal({
         {/* Fixed header row */}
         <View style={styles.headerRow}>
           <Pressable
+            testID="interpretation-prev"
+            accessibilityRole="button"
+            accessibilityLabel="Previous interpretation"
+            accessibilityState={{ disabled: pages.length <= 1 }}
             onPress={handlePrevPress}
-            style={styles.navButton}
+            style={({ pressed }) => [
+              styles.navButton,
+              pressed && styles.pressed,
+              pages.length <= 1 && styles.navDisabled,
+            ]}
             disabled={pages.length <= 1}
           >
-            <Text
-              style={[
-                styles.navText,
-                pages.length <= 1 && styles.navTextDisabled,
-              ]}
-            >
-              ‹
-            </Text>
+            <Icon name="chevron-left" size="lg" />
           </Pressable>
 
-          <Text style={styles.headerTitle}>{headerTitle}</Text>
+          {/* The interpretation type is already the content eyebrow, so the
+              chrome shows position only. The type is kept in the accessible
+              name so it is still announced without being drawn twice. */}
+          <View
+            testID="interpretation-position-group"
+            accessible
+            accessibilityRole="header"
+            accessibilityLabel={
+              pages.length > 1
+                ? `${headerTitle}, ${normalizedCurrentIndex + 1} of ${pages.length}`
+                : headerTitle
+            }
+            style={styles.headerCenter}
+          >
+            {pages.length > 1 ? (
+              <AppText
+                testID="interpretation-position"
+                variant="numeric"
+                style={styles.headerPosition}
+              >
+                {`${normalizedCurrentIndex + 1} / ${pages.length}`}
+              </AppText>
+            ) : null}
+          </View>
 
           <View style={styles.headerActions}>
             <Pressable
+              testID="interpretation-next"
+              accessibilityRole="button"
+              accessibilityLabel="Next interpretation"
+              accessibilityState={{ disabled: pages.length <= 1 }}
               onPress={handleNextPress}
-              style={styles.navButton}
+              style={({ pressed }) => [
+                styles.navButton,
+                pressed && styles.pressed,
+                pages.length <= 1 && styles.navDisabled,
+              ]}
               disabled={pages.length <= 1}
             >
-              <Text
-                style={[
-                  styles.navText,
-                  pages.length <= 1 && styles.navTextDisabled,
-                ]}
-              >
-                ›
-              </Text>
+              <Icon name="chevron-right" size="lg" />
             </Pressable>
 
-            <Pressable onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeText}>✕</Text>
+            <Pressable
+              testID="interpretation-close"
+              accessibilityRole="button"
+              accessibilityLabel="Close interpretation"
+              onPress={onClose}
+              style={({ pressed }) => [
+                styles.closeButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Icon name="close" size="lg" />
             </Pressable>
           </View>
         </View>
@@ -237,6 +332,7 @@ export default function InterpretationModal({
                     showsVerticalScrollIndicator={false}
                   >
                     <InterpretationCard
+                      eyebrow={headerTitle}
                       title={page.title}
                       subtitle={page.subtitle}
                       summary={page.summary}
@@ -256,64 +352,57 @@ export default function InterpretationModal({
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: theme.scrim,
   },
   sheet: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(10,10,10,0.97)',
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
+    backgroundColor: theme.surface.raised,
+    borderTopLeftRadius: theme.radius.xl,
+    borderTopRightRadius: theme.radius.xl,
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: theme.colors.border,
-    paddingTop: 10,
-    paddingHorizontal: 14,
+    borderColor: theme.border.strong,
+    paddingTop: theme.space.sm,
+    paddingHorizontal: theme.space.lg,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: theme.space.xs,
   },
-  headerTitle: {
+  headerCenter: {
     flex: 1,
-    textAlign: 'center',
-    color: theme.colors.text,
-    fontSize: 16,
-    fontWeight: '700',
+    alignItems: 'center',
+  },
+  headerPosition: {
+    color: theme.accent.base,
+    letterSpacing: 0.5,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   navButton: {
-    width: 40,
-    height: 40,
+    minWidth: theme.touchTarget.min,
+    minHeight: theme.touchTarget.min,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  navText: {
-    color: theme.colors.text,
-    fontSize: 28,
-    fontWeight: '500',
-    lineHeight: 28,
-  },
-  navTextDisabled: {
+  navDisabled: {
     opacity: 0.3,
   },
+  pressed: {
+    opacity: 0.7,
+  },
   closeButton: {
-    width: 40,
-    height: 40,
+    minWidth: theme.touchTarget.min,
+    minHeight: theme.touchTarget.min,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  closeText: {
-    color: theme.colors.text,
-    fontSize: 20,
-    fontWeight: '700',
   },
   contentArea: {
     flex: 1,

@@ -1,0 +1,250 @@
+// components/charts/chartWheelInteraction.ts
+
+/**
+ * Pure interaction maths for the chart wheel.
+ *
+ * Deliberately separate from both the drawing and the gesture layer: zoom
+ * clamping, focal-point anchoring and hit testing are the parts most likely to
+ * be wrong, and keeping them free of Reanimated and gesture-handler means they
+ * can be tested directly rather than through a simulated pinch.
+ *
+ * Every function carries the 'worklet' directive so the gesture layer can call
+ * it on the UI thread. They remain ordinary functions in Node.
+ */
+
+export const MIN_WHEEL_SCALE = 1
+export const MAX_WHEEL_SCALE = 3
+
+/**
+ * Touch slop for aspect selection, in wheel-local points.
+ *
+ * 24 either side gives an interaction corridor of roughly 48 around a stroke
+ * that is only 1.2-2.0 wide, which is what makes every aspect reachable rather
+ * than only the ones that happen to fall under a finger.
+ */
+export const ASPECT_HIT_TOLERANCE = 24
+
+/** Radius of a planet's hit region, in wheel-local points. */
+export const PLANET_HIT_RADIUS = 24
+
+/** Extra slop either side of the visible house band, in wheel-local points. */
+export const HOUSE_HIT_PADDING = 16
+
+export type Point = { x: number; y: number }
+export type Segment = { a: Point; b: Point }
+
+export function clampScale(scale: number): number {
+  'worklet'
+  if (!Number.isFinite(scale)) return MIN_WHEEL_SCALE
+  return Math.min(Math.max(scale, MIN_WHEEL_SCALE), MAX_WHEEL_SCALE)
+}
+
+/**
+ * How far the wheel may be moved at a given scale.
+ *
+ * At 1x there is no slack, so the wheel cannot be nudged at all. Above that,
+ * travel is limited to the overflow the zoom actually created, which is what
+ * stops the wheel being flung off-screen and left there.
+ */
+export function maxTranslation(size: number, scale: number): number {
+  'worklet'
+  const overflow = (size * clampScale(scale) - size) / 2
+  return Math.max(0, overflow)
+}
+
+export function clampTranslation(
+  value: number,
+  size: number,
+  scale: number
+): number {
+  'worklet'
+  const limit = maxTranslation(size, scale)
+  if (!Number.isFinite(value)) return 0
+  return Math.min(Math.max(value, -limit), limit)
+}
+
+/**
+ * Translation that keeps the pinch focal point under the fingers.
+ *
+ * Without this the wheel zooms about its centre and the detail being pinched
+ * slides away from the gesture.
+ */
+export function focalTranslation(
+  translation: number,
+  focal: number,
+  center: number,
+  previousScale: number,
+  nextScale: number
+): number {
+  'worklet'
+  const from = clampScale(previousScale)
+  const to = clampScale(nextScale)
+  const offset = focal - center
+  return (translation - offset) * (to / from) + offset
+}
+
+/** Distance from a point to a line segment, in the same units. */
+export function distanceToSegment(point: Point, segment: Segment): number {
+  'worklet'
+  const dx = segment.b.x - segment.a.x
+  const dy = segment.b.y - segment.a.y
+  const lengthSquared = dx * dx + dy * dy
+
+  if (lengthSquared === 0) {
+    const px = point.x - segment.a.x
+    const py = point.y - segment.a.y
+    return Math.sqrt(px * px + py * py)
+  }
+
+  let t =
+    ((point.x - segment.a.x) * dx + (point.y - segment.a.y) * dy) /
+    lengthSquared
+  t = Math.min(Math.max(t, 0), 1)
+
+  const cx = segment.a.x + t * dx
+  const cy = segment.a.y + t * dy
+  const ox = point.x - cx
+  const oy = point.y - cy
+
+  return Math.sqrt(ox * ox + oy * oy)
+}
+
+/**
+ * Index of the closest aspect within tolerance, or null.
+ *
+ * Ties resolve to the lowest index, so a tap on an intersection always picks
+ * the same aspect rather than depending on iteration order or float noise.
+ */
+export function nearestSegmentIndex(
+  point: Point,
+  segments: Segment[],
+  tolerance: number = ASPECT_HIT_TOLERANCE
+): number | null {
+  'worklet'
+  let bestIndex: number | null = null
+  let bestDistance = Number.POSITIVE_INFINITY
+
+  for (let index = 0; index < segments.length; index += 1) {
+    const distance = distanceToSegment(point, segments[index])
+
+    if (distance <= tolerance && distance < bestDistance) {
+      bestDistance = distance
+      bestIndex = index
+    }
+  }
+
+  return bestIndex
+}
+
+/**
+ * Undo the wheel's zoom/pan transform for a touch point.
+ *
+ * The gesture detector is attached to the untransformed frame, so a touch
+ * arrives in frame coordinates while all hit geometry is expressed in the
+ * wheel's own untransformed space. React Native applies `translate` then
+ * `scale` about the view centre, so a wheel-local point L lands at
+ * `centre + (L - centre) * scale + translate`. This is that inverted.
+ */
+export function inverseTransformPoint(
+  point: Point,
+  translateX: number,
+  translateY: number,
+  scale: number,
+  center: number
+): Point {
+  'worklet'
+  const s = clampScale(scale)
+
+  return {
+    x: (point.x - translateX - center) / s + center,
+    y: (point.y - translateY - center) / s + center,
+  }
+}
+
+/**
+ * Index of the planet under a point, or null.
+ *
+ * Planets are tested before aspects so a tap inside a planet's region always
+ * selects the planet, even when an aspect line passes directly through it.
+ */
+export function nearestPointIndex(
+  point: Point,
+  points: Point[],
+  radius: number = PLANET_HIT_RADIUS
+): number | null {
+  'worklet'
+  let bestIndex: number | null = null
+  let bestDistance = Number.POSITIVE_INFINITY
+
+  for (let index = 0; index < points.length; index += 1) {
+    const dx = point.x - points[index].x
+    const dy = point.y - points[index].y
+    const distance = Math.sqrt(dx * dx + dy * dy)
+
+    if (distance <= radius && distance < bestDistance) {
+      bestDistance = distance
+      bestIndex = index
+    }
+  }
+
+  return bestIndex
+}
+
+export type HouseBand = {
+  center: Point
+  innerRadius: number
+  outerRadius: number
+}
+
+/**
+ * Longitude, in degrees, of a point relative to the wheel centre.
+ *
+ * Inverts the same mapping the drawing uses: a longitude is placed at screen
+ * angle `90 - lon`, measured anticlockwise from twelve o'clock.
+ */
+export function longitudeAtPoint(point: Point, center: Point): number {
+  'worklet'
+  const dx = point.x - center.x
+  const dy = point.y - center.y
+  const screenAngle = (Math.atan2(dy, dx) * 180) / Math.PI
+  const lon = 90 - screenAngle
+
+  return ((lon % 360) + 360) % 360
+}
+
+/**
+ * House number under a point, or null.
+ *
+ * Whole Sign houses each span exactly 30 degrees from their cusp, so a point
+ * inside the house band belongs to whichever cusp it follows. The band is
+ * padded either side of the drawn ring so the target is comfortable without
+ * swallowing the planet ring outside it or the aspect field inside it.
+ */
+export function houseAtPoint(
+  point: Point,
+  band: HouseBand,
+  houses: { house: number; lon: number }[] | null
+): number | null {
+  'worklet'
+  if (!houses || houses.length === 0) return null
+
+  const dx = point.x - band.center.x
+  const dy = point.y - band.center.y
+  const radius = Math.sqrt(dx * dx + dy * dy)
+
+  if (
+    radius < band.innerRadius - HOUSE_HIT_PADDING ||
+    radius > band.outerRadius + HOUSE_HIT_PADDING
+  ) {
+    return null
+  }
+
+  const lon = longitudeAtPoint(point, band.center)
+
+  for (const house of houses) {
+    const offset = ((lon - house.lon) % 360 + 360) % 360
+    if (offset < 30) return house.house
+  }
+
+  return null
+}

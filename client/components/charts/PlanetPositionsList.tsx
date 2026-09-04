@@ -1,102 +1,22 @@
 // components/charts/PlanetPositionsList.tsx
 import React from 'react'
-import { Text, StyleSheet, Pressable, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 import { PlanetPos, PlanetHousePlacement } from '../../lib/astro'
 import {
   signIndexFromLongitude,
   zodiacNameFromLongitude,
-  getPlanetSignMeaning,
-  getPlanetHouseMeaning,
   type PlanetKey,
   type HouseNumber,
 } from '../../lib/lexicon'
+import { asPlanetKey, buildPlanetSummary } from '../../lib/chartInterpretation'
+import { AppText } from '../ui/AppText'
 import { theme } from '../ui/theme'
-
-const ZODIAC_ABBR = [
-  'Ar',
-  'Ta',
-  'Ge',
-  'Cn',
-  'Le',
-  'Vi',
-  'Li',
-  'Sc',
-  'Sg',
-  'Cp',
-  'Aq',
-  'Pi',
-]
+import { PLANET_GLYPH, SIGN_INFO } from './ChartCompass'
 
 const degInSign = (lon: number) => ((lon % 30) + 30) % 30
 
-function asPlanetKey(name: string): PlanetKey | null {
-  const allowed: PlanetKey[] = [
-    'Sun',
-    'Moon',
-    'Mercury',
-    'Venus',
-    'Mars',
-    'Jupiter',
-    'Saturn',
-    'Uranus',
-    'Neptune',
-    'Pluto',
-  ]
-  return (allowed as string[]).includes(name) ? (name as PlanetKey) : null
-}
-
 function asHouseNumber(n: number): HouseNumber | null {
   return n >= 1 && n <= 12 ? (n as HouseNumber) : null
-}
-
-function trimPeriod(text: string): string {
-  return text.trim().replace(/[.!?]+$/, '')
-}
-
-function toClause(text: string): string {
-  const trimmed = trimPeriod(text)
-
-  if (!trimmed) return ''
-
-  if (trimmed.startsWith('Your ')) {
-    return `your ${trimmed.slice(5)}`
-  }
-
-  if (trimmed.startsWith('You ')) {
-    return `you ${trimmed.slice(4)}`
-  }
-
-  return trimmed.charAt(0).toLowerCase() + trimmed.slice(1)
-}
-
-function buildPlanetSummary(
-  planetName: string,
-  lon: number,
-  planetHouses: PlanetHousePlacement[] | null
-): string {
-  const pk = asPlanetKey(planetName)
-  if (!pk) return ''
-
-  const signName = zodiacNameFromLongitude(lon)
-  const signMeaning = getPlanetSignMeaning(pk, signName)
-
-  const placement = planetHouses?.find((p) => p.name === planetName)
-  const houseNumber = placement ? asHouseNumber(placement.house) : null
-  const houseMeaning = houseNumber
-    ? getPlanetHouseMeaning(pk, houseNumber)
-    : null
-
-  if (signMeaning?.short && houseMeaning?.short) {
-    const signPart = trimPeriod(signMeaning.short)
-    const housePart = toClause(houseMeaning.short)
-
-    return `${signPart}. This tends to show up most clearly when ${housePart}.`
-  }
-
-  if (signMeaning?.short) return signMeaning.short
-  if (houseMeaning?.short) return houseMeaning.short
-
-  return ''
 }
 
 function formatPlanetPosition(lon: number) {
@@ -116,11 +36,7 @@ function formatPlanetPosition(lon: number) {
     signIdx = (signIdx + 1) % 12
   }
 
-  return {
-    signIdx,
-    deg,
-    min,
-  }
+  return { signIdx, deg, min }
 }
 
 type Props = {
@@ -137,84 +53,142 @@ export default function PlanetPositionsList({
   onFocusPlanet,
 }: Props) {
   return (
-    <>
-      <Text style={styles.h2}>Positions</Text>
-
+    <View>
       {planets.map((p) => {
-        const { signIdx, deg, min } = formatPlanetPosition(p.lon)
+        const { deg, min } = formatPlanetPosition(p.lon)
         const mm = String(min).padStart(2, '0')
+        const signName = zodiacNameFromLongitude(p.lon)
 
         const pk = asPlanetKey(p.name)
         const isActive = pk != null && focusedPlanet === pk
         const summary = buildPlanetSummary(p.name, p.lon, planetHouses)
 
         const placement = planetHouses?.find((ph) => ph.name === p.name)
-        const houseLabel = placement ? `H${placement.house}` : ''
+        const houseNumber = placement
+          ? asHouseNumber(placement.house)
+          : null
+
+        const glyph = pk ? PLANET_GLYPH[pk] : null
+        const accent = isActive && pk ? theme.planet[pk] : theme.text.tertiary
 
         return (
           <Pressable
             key={p.name}
+            testID={`position-row-${p.name}`}
             disabled={!pk}
+            accessibilityRole={pk ? 'button' : undefined}
+            accessibilityLabel={
+              pk
+                ? `${p.name} in ${signName}${
+                    houseNumber ? `, house ${houseNumber}` : ''
+                  }`
+                : undefined
+            }
+            accessibilityState={pk ? { selected: isActive } : undefined}
             onPress={() => pk && onFocusPlanet(pk)}
-            style={[
-              styles.itemRow,
-              pk && styles.pressableRow,
+            style={({ pressed }) => [
+              styles.row,
+              pressed && styles.pressed,
               isActive && styles.activeRow,
             ]}
           >
-            <View style={styles.itemLeft}>
-              <Text style={styles.itemLeftText}>{p.name}</Text>
-              <Text style={styles.itemLeftText}>
-                {`${ZODIAC_ABBR[signIdx]} ${deg}°${mm}′`}
-              </Text>
-              {!!houseLabel && (
-                <Text style={styles.itemLeftText}>{houseLabel}</Text>
-              )}
-            </View>
+            {/* A focus bar, so selection is never signalled by colour alone. */}
+            <View
+              style={[
+                styles.focusBar,
+                isActive && { backgroundColor: accent },
+              ]}
+            />
 
-            <Text style={styles.itemRight} numberOfLines={4}>
-              {summary}
-            </Text>
+            <View style={styles.body}>
+              <View style={styles.headline}>
+                {glyph ? (
+                  <AppText style={[styles.glyph, { color: accent }]}>
+                    {glyph}
+                  </AppText>
+                ) : null}
+
+                <AppText variant="subheading" style={styles.name}>
+                  {p.name}
+                </AppText>
+
+                <AppText variant="numeric" style={styles.degree}>
+                  {`${deg}°${mm}′`}
+                </AppText>
+
+                <AppText variant="bodySmall" style={styles.sign}>
+                  {signName}
+                </AppText>
+
+                {houseNumber ? (
+                  <AppText variant="numeric" style={styles.house}>
+                    {`House ${houseNumber}`}
+                  </AppText>
+                ) : null}
+              </View>
+
+              {summary ? (
+                <AppText variant="bodySmall" style={styles.summary}>
+                  {summary}
+                </AppText>
+              ) : null}
+            </View>
           </Pressable>
         )
       })}
-    </>
+    </View>
   )
 }
 
+export { SIGN_INFO }
+
 const styles = StyleSheet.create({
-  h2: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginTop: 16,
-    color: theme.colors.text,
-  },
-  itemRow: {
+  row: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8,
+    minHeight: theme.touchTarget.min,
+    paddingVertical: theme.space.md,
   },
-  pressableRow: {
-    borderRadius: 8,
-    paddingVertical: 4,
+  pressed: {
+    opacity: 0.7,
   },
   activeRow: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: theme.surface.selected,
   },
-  itemLeft: {
-    width: 150,
+  focusBar: {
+    width: 2,
+    borderRadius: 1,
+    backgroundColor: 'transparent',
+    marginRight: theme.space.md,
   },
-  itemLeftText: {
-    fontFamily: 'monospace' as any,
-    color: theme.colors.text,
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  itemRight: {
+  body: {
     flex: 1,
+  },
+  headline: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    columnGap: theme.space.sm,
+    rowGap: theme.space.hair,
+  },
+  glyph: {
+    fontSize: 18,
+    lineHeight: 24,
+  },
+  name: {
+    color: theme.text.primary,
+  },
+  degree: {
+    color: theme.text.primary,
+  },
+  sign: {
+    color: theme.text.secondary,
+  },
+  house: {
+    color: theme.text.tertiary,
     fontSize: 12,
-    color: theme.colors.sub,
-    paddingLeft: 10,
-    lineHeight: 16,
+  },
+  summary: {
+    color: theme.text.secondary,
+    marginTop: theme.space.xs,
   },
 })

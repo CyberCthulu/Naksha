@@ -1,5 +1,11 @@
 //screens/MyCharts.tsx
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from 'react'
 import {
   View,
   Text,
@@ -7,7 +13,6 @@ import {
   TouchableOpacity,
   Alert,
   StyleSheet,
-  GestureResponderEvent,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -18,12 +23,44 @@ import { type ChartRow, listCharts, deleteChart } from '../lib/charts'
 import {
   UNSUPPORTED_CHART_DATA_MESSAGE,
   validateChartData,
+  type ChartDataValidationResult,
 } from '../lib/chartDataValidation'
 
 import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
+import { Button } from '../components/ui/Button'
+import { ScreenHeader } from '../components/ui/ScreenHeader'
 import { LoadingState } from '../components/ui/LoadingState'
 import type { RootStackParamList } from '../navigation/types'
+
+type ChartListItem = {
+  row: ChartRow
+  validation: ChartDataValidationResult
+  summary: string
+}
+
+function toChartListItem(row: ChartRow): ChartListItem {
+  const validation = validateChartData(row.chart_data)
+  const meta = validation.status === 'valid' ? validation.data.meta : null
+
+  const unavailableSummary =
+    validation.status === 'unsupported'
+      ? 'Update Naksha to view this chart'
+      : 'Chart data unavailable'
+
+  const base = meta
+    ? [meta.birth_date, meta.birth_time, meta.time_zone]
+        .filter(Boolean)
+        .join(' · ')
+    : unavailableSummary
+
+  const coords =
+    meta?.birth_lat != null && meta.birth_lon != null
+      ? ` · (${meta.birth_lat.toFixed(2)}, ${meta.birth_lon.toFixed(2)})`
+      : ''
+
+  return { row, validation, summary: `${base}${coords}` }
+}
 
 export default function MyChartsScreen() {
   const nav =
@@ -64,10 +101,10 @@ export default function MyChartsScreen() {
     load()
   }, [load])
 
-  const openChart = useCallback(
-    (row: ChartRow) => {
-      const validation = validateChartData(row.chart_data)
+  const items = useMemo(() => rows.map(toChartListItem), [rows])
 
+  const openChart = useCallback(
+    ({ row, validation }: ChartListItem) => {
       if (validation.status === 'unsupported') {
         Alert.alert('Chart update required', UNSUPPORTED_CHART_DATA_MESSAGE)
         return
@@ -134,28 +171,22 @@ export default function MyChartsScreen() {
     return (
       <View style={uiStyles.center}>
         <Text style={uiStyles.errorText}>{error}</Text>
+        <Button title="Retry" onPress={load} />
+        <View style={{ height: 8 }} />
+        <Button title="Go Back" variant="ghost" onPress={() => nav.goBack()} />
       </View>
     )
   }
 
   return (
     <View style={{ flex: 1 }}>
-      <View
-        style={[
-          styles.topRow,
-          { paddingTop: insets.top + 12 },
-        ]}
-      >
-        <TouchableOpacity onPress={() => nav.goBack()}>
-          <Text style={styles.backText}>‹</Text>
-        </TouchableOpacity>
+      <ScreenHeader
+        title="My Charts"
+        onBack={() => nav.goBack()}
+        style={[styles.header, { paddingTop: insets.top + theme.space.xs }]}
+      />
 
-        <Text style={styles.screenTitle}>My Charts</Text>
-
-        <View style={{ width: 24 }} />
-      </View>
-
-      {rows.length === 0 ? (
+      {items.length === 0 ? (
         <View style={uiStyles.center}>
           <Text style={uiStyles.muted}>No charts yet.</Text>
           <Text style={uiStyles.muted}>Save one from the chart screen to get started.</Text>
@@ -166,54 +197,31 @@ export default function MyChartsScreen() {
             padding: theme.spacing.screen,
             paddingBottom: insets.bottom + 24,
           }}
-          data={rows}
-          keyExtractor={(r) => String(r.id)}
+          data={items}
+          keyExtractor={(item) => String(item.row.id)}
           ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-          renderItem={({ item }) => {
-            const validation = validateChartData(item.chart_data)
-            const data =
-              validation.status === 'valid' ? validation.data : null
-            const meta = data?.meta
-            const unavailableSummary =
-              validation.status === 'unsupported'
-                ? 'Update Naksha to view this chart'
-                : 'Chart data unavailable'
-
-            const base = meta
-              ? [meta.birth_date, meta.birth_time, meta.time_zone]
-                  .filter(Boolean)
-                  .join(' · ')
-              : unavailableSummary
-
-            const coords =
-              meta?.birth_lat != null && meta.birth_lon != null
-                ? ` · (${meta.birth_lat.toFixed(2)}, ${meta.birth_lon.toFixed(2)})`
-                : ''
-
-            return (
+          renderItem={({ item }) => (
+            <View style={uiStyles.card}>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${item.row.name}`}
                 onPress={() => openChart(item)}
-                style={uiStyles.card}
+                style={styles.openRegion}
               >
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.title}>{item.name}</Text>
-                  <Text style={styles.sub}>
-                    {base}
-                    {coords}
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  onPress={(e: GestureResponderEvent) => {
-                    e.stopPropagation()
-                    remove(item)
-                  }}
-                >
-                  <Text style={styles.delete}>Delete</Text>
-                </TouchableOpacity>
+                <Text style={styles.title}>{item.row.name}</Text>
+                <Text style={styles.sub}>{item.summary}</Text>
               </TouchableOpacity>
-            )
-          }}
+
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={`Delete ${item.row.name}`}
+                onPress={() => remove(item.row)}
+                style={styles.deleteButton}
+              >
+                <Text style={styles.delete}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         />
       )}
     </View>
@@ -221,23 +229,8 @@ export default function MyChartsScreen() {
 }
 
 const styles = StyleSheet.create({
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  header: {
     paddingHorizontal: theme.spacing.screen,
-    marginBottom: 8,
-  },
-  backText: {
-    fontSize: 28,
-    color: theme.colors.text,
-    width: 24,
-  },
-  screenTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '700',
-    color: theme.colors.text,
   },
   title: {
     color: theme.colors.text,
@@ -249,9 +242,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 13,
   },
+  openRegion: {
+    flex: 1,
+  },
+  deleteButton: {
+    alignSelf: 'flex-start',
+    justifyContent: 'center',
+    minHeight: 48,
+  },
   delete: {
     color: theme.colors.danger,
     fontWeight: '600',
-    marginLeft: 12,
   },
 })

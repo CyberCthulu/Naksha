@@ -1,95 +1,82 @@
 //components/charts/ChartHeader.tsx
 import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { StyleSheet, View } from 'react-native'
+
+import { AppText } from '../ui/AppText'
+import { ScreenHeader } from '../ui/ScreenHeader'
 import { theme } from '../ui/theme'
-import { uiStyles } from '../ui/uiStyles'
 
 type Props = {
   title?: string
   subtitleLocation?: string | null
   subtitleZone?: string | null
   subtitleCoords?: string
-  sunTitle?: string | null
-  sunShortMeaning?: string | null
   onBack: () => void
 }
 
+/**
+ * Chart identity: the screen header plus the birth context that names this
+ * particular chart. The same data as before, but split onto its own lines so a
+ * long place name wraps instead of forming one dense centred run-on.
+ */
 export default function ChartHeader({
   title = 'Natal Chart',
   subtitleLocation,
   subtitleZone,
   subtitleCoords = '',
-  sunTitle,
-  sunShortMeaning,
   onBack,
 }: Props) {
+  const coords = subtitleCoords.trim().replace(/^\(|\)$/g, '')
+
   return (
     <>
-      <View style={styles.topRow}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-          <Text style={styles.backText}>‹</Text>
-        </TouchableOpacity>
+      <ScreenHeader title={title} onBack={onBack} />
 
-        <Text style={styles.screenTitle}>{title}</Text>
+      {subtitleLocation || subtitleZone ? (
+        <View style={styles.identity}>
+          {subtitleLocation ? (
+            <AppText variant="body" style={styles.place}>
+              {subtitleLocation}
+            </AppText>
+          ) : null}
 
-        <View style={styles.rightSlot} />
-      </View>
+          {subtitleZone ? (
+            <AppText variant="caption" style={styles.meta}>
+              {subtitleZone}
+            </AppText>
+          ) : null}
 
-      {(subtitleLocation || subtitleZone) && (
-        <Text style={styles.subtitle}>
-          {subtitleLocation ? `${subtitleLocation}` : ''}
-          {subtitleLocation && subtitleZone ? ' · ' : ''}
-          {subtitleZone}
-          {subtitleCoords}
-        </Text>
-      )}
-
-      {!!sunShortMeaning && !!sunTitle && (
-        <View style={[uiStyles.card, { alignItems: 'center' }]}>
-          <Text style={[uiStyles.cardTitle, { textAlign: 'center' }]}>
-            {sunTitle}
-          </Text>
-          <Text style={[uiStyles.text, { opacity: 0.9, textAlign: 'center' }]}>
-            {sunShortMeaning}
-          </Text>
+          {coords ? (
+            <AppText variant="numeric" style={styles.coords}>
+              {coords}
+            </AppText>
+          ) : null}
         </View>
-      )}
+      ) : null}
     </>
   )
 }
 
 const styles = StyleSheet.create({
-  topRow: {
-    flexDirection: 'row',
+  identity: {
     alignItems: 'center',
-    marginBottom: 8,
+    marginTop: theme.space.xs,
+    marginBottom: theme.space.lg,
+    paddingHorizontal: theme.space.md,
   },
-  backBtn: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-  },
-  backText: {
-    color: theme.colors.text,
-    fontSize: 28,
-    lineHeight: 28,
-    marginTop: -2,
-  },
-  screenTitle: {
-    flex: 1,
+  place: {
+    color: theme.text.secondary,
     textAlign: 'center',
-    color: theme.colors.text,
-    fontSize: 18,
-    fontWeight: '700',
   },
-  rightSlot: {
-    width: 44,
-  },
-  subtitle: {
-    color: theme.colors.sub,
+  meta: {
+    color: theme.text.tertiary,
+    marginTop: theme.space.hair,
     textAlign: 'center',
-    marginBottom: 10,
+  },
+  coords: {
+    color: theme.text.tertiary,
+    fontSize: 12,
+    marginTop: theme.space.hair,
+    textAlign: 'center',
   },
 })

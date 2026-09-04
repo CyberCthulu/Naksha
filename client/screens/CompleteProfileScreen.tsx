@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Alert,
   TouchableOpacity,
-  ActivityIndicator,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
@@ -23,6 +22,7 @@ import ProfileFields from '../components/auth/ProfileFields'
 
 // Shared UI theme
 import { theme } from '../components/ui/theme'
+import { ScreenHeader } from '../components/ui/ScreenHeader'
 import { uiStyles } from '../components/ui/uiStyles'
 import { LoadingState } from '../components/ui/LoadingState'
 import type { RootStackParamList } from '../navigation/types'
@@ -205,21 +205,16 @@ export default function CompleteProfileScreen() {
   return (
     <AuthContainer>
       {/* Top bar */}
-      <View style={styles.topRow}>
-        <TouchableOpacity onPress={onSkip} style={styles.iconBtn}>
-          <Text style={styles.iconText}>‹</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>Complete Profile</Text>
-
-        <TouchableOpacity
-          onPress={onSave}
-          disabled={saving}
-          style={[styles.savePill, saving && { opacity: 0.7 }]}
-        >
-          {saving ? <ActivityIndicator /> : <Text style={styles.saveText}>Save</Text>}
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        title="Complete Profile"
+        onBack={onSkip}
+        rightAction={{
+          label: 'Save',
+          onPress: onSave,
+          loading: saving,
+          accessibilityLabel: 'Save profile',
+        }}
+      />
 
       {error && <Text style={[uiStyles.errorText, { marginBottom: 10 }]}>{error}</Text>}
 
@@ -267,8 +262,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   iconBtn: {
-    width: 40,
-    height: 36,
+    width: 48,
+    height: 48,
+    alignItems: 'center',
     justifyContent: 'center',
   },
   iconText: {

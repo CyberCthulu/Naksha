@@ -16,6 +16,7 @@ import { listJournals, deleteJournal, JournalRow } from '../lib/journals'
 import { uiStyles } from '../components/ui/uiStyles'
 import { theme } from '../components/ui/theme'
 import { LoadingState } from '../components/ui/LoadingState'
+import { ScreenHeader } from '../components/ui/ScreenHeader'
 import type { RootStackParamList } from '../navigation/types'
 
 function makeDisplayTitle(row: JournalRow) {
@@ -98,16 +99,11 @@ export default function JournalListScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Top bar */}
-      <View style={[styles.topRow, { paddingTop: insets.top + 12 }]}>
-        <TouchableOpacity onPress={() => nav.goBack()}>
-          <Text style={styles.backText}>‹</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.screenTitle}>Your Journal</Text>
-
-        <View style={{ width: 24 }} />
-      </View>
+      <ScreenHeader
+        title="Your Journal"
+        onBack={() => nav.goBack()}
+        style={[styles.header, { paddingTop: insets.top + theme.space.xs }]}
+      />
 
       <FlatList
         data={rows}
@@ -173,23 +169,8 @@ export default function JournalListScreen() {
 }
 
 const styles = StyleSheet.create({
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  header: {
     paddingHorizontal: theme.spacing.screen,
-    marginBottom: 8,
-  },
-  backText: {
-    fontSize: 28,
-    color: theme.colors.text,
-    width: 24,
-  },
-  screenTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '700',
-    color: theme.colors.text,
   },
 
   link: { fontWeight: '600', color: '#007AFF' },

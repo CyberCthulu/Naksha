@@ -1,70 +1,171 @@
 // components/ui/Button.tsx
 import React from 'react'
-import { Pressable, Text, StyleSheet, ViewStyle } from 'react-native'
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type ViewStyle,
+} from 'react-native'
 import { theme } from './theme'
+
+export type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'tertiary'
+  | 'destructive'
+  | 'destructiveSolid'
+  /** Backward-compatible alias for `secondary`. */
+  | 'ghost'
+
+export type ButtonSize = 'sm' | 'md' | 'lg'
 
 interface ButtonProps {
   title: string
-  variant?: 'primary' | 'ghost'
+  variant?: ButtonVariant
+  size?: ButtonSize
   disabled?: boolean
+  loading?: boolean
   onPress?: () => void
   style?: ViewStyle
+  accessibilityLabel?: string
+  testID?: string
 }
 
-export function Button({ title, variant = 'primary', disabled = false, onPress, style }: ButtonProps) {
+/** `ghost` predates the V2 variants and means the same thing as `secondary`. */
+function resolveVariant(variant: ButtonVariant): Exclude<ButtonVariant, 'ghost'> {
+  return variant === 'ghost' ? 'secondary' : variant
+}
+
+export function Button({
+  title,
+  variant = 'primary',
+  size = 'md',
+  disabled = false,
+  loading = false,
+  onPress,
+  style,
+  accessibilityLabel,
+  testID,
+}: ButtonProps) {
+  const resolved = resolveVariant(variant)
+  const isDisabled = disabled || loading
+
   return (
     <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
+      onPress={onPress}
+      disabled={isDisabled}
+      // The touch area is always at least 48dp even when the visual surface is
+      // smaller, so a compact button is never a compact target.
       style={({ pressed }) => [
-        styles.button,
-        styles[variant],
-        disabled && styles.disabled,
-        pressed && styles.pressed,
+        styles.touchTarget,
+        pressed && !isDisabled && styles.pressed,
         style,
       ]}
-      onPress={onPress}
-      disabled={disabled}
     >
-      <Text style={[styles.text, styles[`${variant}Text`], disabled && styles.disabledText]}>
-        {title}
-      </Text>
+      <View
+        style={[
+          styles.surface,
+          sizeStyles[size],
+          surfaceStyles[resolved],
+          isDisabled && styles.disabled,
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator
+            testID="button-spinner"
+            size="small"
+            color={labelStyles[resolved].color}
+            style={styles.spinner}
+          />
+        ) : null}
+        <Text style={[styles.label, labelSizeStyles[size], labelStyles[resolved]]}>
+          {title}
+        </Text>
+      </View>
     </Pressable>
   )
 }
 
 const styles = StyleSheet.create({
-  button: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+  touchTarget: {
+    minHeight: theme.touchTarget.min,
+    justifyContent: 'center',
+  },
+  surface: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 44,
-  },
-  primary: {
-    backgroundColor: theme.colors.text,
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  disabled: {
-    opacity: 0.5,
+    borderRadius: theme.radius.sm,
+    borderWidth: 0,
   },
   pressed: {
-    opacity: 0.8,
+    opacity: 0.88,
   },
-  text: {
-    fontSize: 16,
-    fontWeight: '500',
+  disabled: {
+    opacity: 0.45,
   },
-  primaryText: {
-    color: theme.colors.cardBg,
+  spinner: {
+    marginRight: theme.space.sm,
   },
-  ghostText: {
-    color: theme.colors.text,
+  label: {
+    ...theme.typography.button,
+    textAlign: 'center',
   },
-  disabledText: {
-    opacity: 0.7,
+})
+
+const sizeStyles = StyleSheet.create({
+  sm: {
+    minHeight: 40,
+    paddingHorizontal: theme.space.md,
   },
+  md: {
+    minHeight: theme.touchTarget.min,
+    paddingHorizontal: theme.space.lg,
+  },
+  lg: {
+    minHeight: 56,
+    paddingHorizontal: theme.space.xl,
+  },
+})
+
+const labelSizeStyles = StyleSheet.create({
+  sm: { fontSize: 14 },
+  md: {},
+  lg: { fontSize: 16 },
+})
+
+const surfaceStyles = StyleSheet.create({
+  primary: {
+    backgroundColor: theme.accent.base,
+  },
+  secondary: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: theme.border.strong,
+  },
+  tertiary: {
+    backgroundColor: 'transparent',
+  },
+  destructive: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: theme.border.base,
+  },
+  destructiveSolid: {
+    backgroundColor: theme.state.danger,
+  },
+})
+
+const labelStyles = StyleSheet.create({
+  primary: { color: theme.text.onAccent },
+  secondary: { color: theme.text.primary },
+  tertiary: { color: theme.accent.base },
+  destructive: { color: theme.state.danger },
+  destructiveSolid: { color: theme.text.onAccent },
 })

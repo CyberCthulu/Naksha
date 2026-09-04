@@ -1,5 +1,6 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 
+import { ScreenHeader } from '../ui/ScreenHeader'
 import { theme } from '../ui/theme'
 
 type Props = {
@@ -17,17 +18,16 @@ export default function ProfileHeader({
 }: Props) {
   return (
     <>
-      <View style={styles.topRow}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-          <Text style={styles.backText}>‹</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.screenTitle}>My Profile</Text>
-
-        <TouchableOpacity onPress={onEditProfile} style={styles.editBtn}>
-          <Text style={styles.link}>Edit</Text>
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        title="My Profile"
+        onBack={onBack}
+        rightAction={{
+          label: 'Edit',
+          onPress: onEditProfile,
+          accessibilityLabel: 'Edit profile',
+        }}
+        style={styles.header}
+      />
 
       <View style={styles.headerRow}>
         <View style={styles.avatar}>
@@ -45,32 +45,9 @@ export default function ProfileHeader({
 }
 
 const styles = StyleSheet.create({
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  header: {
     marginBottom: 14,
   },
-  backBtn: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-  },
-  backText: {
-    color: theme.colors.text,
-    fontSize: 28,
-    lineHeight: 28,
-    marginTop: -2,
-  },
-  screenTitle: {
-    flex: 1,
-    textAlign: 'center',
-    color: theme.colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  editBtn: { width: 60, alignItems: 'flex-end' },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -90,5 +67,4 @@ const styles = StyleSheet.create({
   avatarText: { color: theme.colors.text, fontSize: 22, fontWeight: '700' },
   name: { fontSize: 20, fontWeight: '700', color: theme.colors.text },
   email: { color: theme.colors.sub, marginTop: 2 },
-  link: { fontWeight: '700', color: '#007AFF' },
 })
