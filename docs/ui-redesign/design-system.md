@@ -140,6 +140,30 @@ for contrast on deep navy and desaturated for restraint.
 | Neptune | `#7D94D9` | `#4f79ff` (too saturated) |
 | Pluto | `#A98A7C` | `#b08a7a` |
 
+**The glow palette.** The accents above are tuned to read as *ink* on deep
+navy, which is the wrong job for a large low-opacity wash: as a halo, Pluto and
+Mars all but vanished while Sun blazed. `theme.planetGlow` is the same ten hues
+lifted to a common high luminance, and it owns every luminous surface — the
+selected planet's halo and stable ring, and the halos on both endpoints of a
+selected aspect. The identity survives; no single planet dominates.
+
+| Planet | Accent (`theme.planet`) | Glow (`theme.planetGlow`) |
+| --- | --- | --- |
+| Sun | `#E8B44A` | `#FFD98A` |
+| Moon | `#B9C2D6` | `#DCE4F5` |
+| Mercury | `#A8B0C8` | `#CFD6EA` |
+| Venus | `#E0BE96` | `#F4D9B8` |
+| Mars | `#C7563A` | `#F08A6A` |
+| Jupiter | `#D6B98C` | `#EFD7B0` |
+| Saturn | `#CBB577` | `#E8D49B` |
+| Uranus | `#7FC4C4` | `#A9E4E4` |
+| Neptune | `#7D94D9` | `#A6B8F0` |
+| Pluto | `#A98A7C` | `#D3B4A5` |
+
+The two are not interchangeable. Ink stays ink (glyph tints, the inner accent
+fill); glow stays glow (halos, rings). Using a glow value as text or a fill at
+full opacity breaks the restraint the accent table exists to enforce.
+
 **Usage rules — deliberately narrow:**
 
 1. **One planet accent at a time, except for a selected aspect**, which lights
@@ -693,6 +717,44 @@ already do this correctly.
 | Planet / house rows | no role/label | `button` role, label reading placement and meaning |
 | Journal long-press delete | **no discoverable affordance** | Visible action or an accessibility action |
 
+### 10.4 Direct manipulation on the chart wheel
+
+Added in Slice 6B and revised there after device review. The wheel is the one
+surface in the app with continuous direct manipulation, so its rules are
+written down rather than left to the implementation.
+
+| Rule | |
+| --- | --- |
+| Zoom | Pinch, continuous, clamped to 1x-3x. No discrete zoom buttons. The focal point stays under the fingers, so the detail being pinched does not slide away. |
+| Pan | Enabled only while zoomed, and limited to the overflow the zoom created, so the wheel cannot be flung off-screen and left there. |
+| Reset | Double tap. |
+| Accessibility | The same three operations are exposed as `zoomIn` / `zoomOut` / `resetZoom` accessibility actions, because a pinch is not reachable by every user. |
+| Gesture composition | Pinch and pan are recognised **simultaneously**, and that pair is **raced** against the tap group. Racing is what keeps a two-finger pinch from queueing behind a one-finger tap recogniser. Taps are bounded by movement and duration rather than by pointer count. |
+| Overlays | No full-screen `Pressable` over the wheel. One claimed every touch through the responder system and stopped the pinch from ever starting. |
+
+**Tap arbitration.** Three target types overlap on the same pixels, so the
+order and the tolerances are part of the design, not an implementation
+detail. A tap resolves as: planet, then house band, then aspect, then nothing.
+
+| Target | Allowance | |
+| --- | --- | --- |
+| Planet | 48 dp control, radius 24 | Drawn inside the transformed wheel, so it is 48 wheel-local points at every scale. The control resolves the touch itself; the gesture layer defers to it rather than selecting a second time, which is what once made a tap in a cluster land on a neighbour. |
+| Aspect, in the open field | 24 | Generous, because the stroke is only 1.2-2.0 wide. |
+| Aspect, inside the house band | 6 | Tightened. Every aspect line **ends at a radius inside the house band**, so at the full corridor each endpoint claims the band around its own planet's longitude — and a wedge holding several planets had almost no surface left that resolved to a house. A tap placed *on* a line still takes the aspect, which is all a conjunction needs, its whole chord being in the band. |
+| House band | Drawn ring plus 16 either side | The padding is what makes the house number itself a target. |
+
+**Slop is screen-space.** Every allowance above is stated in points under the
+finger and divided by the current scale before it is compared against
+wheel-local geometry. Stated in wheel-local points instead, a corridor grows
+with the drawing — at 3x the aspect band measured 72 points on screen — so
+zooming in to separate crowded targets made them harder to tell apart, not
+easier. The planet radius is the deliberate exception, for the reason in the
+table above.
+
+None of this touches chart calculation or geometry: hit testing reads the same
+endpoint, radius and cusp numbers the wheel draws with, and computes nothing of
+its own.
+
 ---
 
 ## 11. Icons
@@ -854,29 +916,61 @@ than introduces.
 | Transitions | Platform default stack animation. No custom transitions in this migration |
 | Modal | `animationType="slide"` — **unchanged**, part of the preserved interaction behavior |
 | Press feedback | Opacity only. No scale, no spring |
-| Chart selection glow | The single approved exception — see below |
+| Chart wheel selection | The single approved exception — see below |
 | Duration budget | If any motion is later approved: 150 ms enter, 120 ms exit |
 
-### The one exception: chart selection glow
+### The one exception: chart wheel selection
 
-Approved after Slice 6B device review. The chart wheel may run **one**
-continuously animating value, and only under all of these conditions:
+Approved after Slice 6B device review, and revised there. The chart wheel may
+run **two** continuously animating values, and only under all of these
+conditions.
 
 | Condition | |
 | --- | --- |
-| Scope | The selected planet's outer halo and the selected aspect's glow stroke. Nothing else. |
-| Count | One shared value for the whole wheel, driving opacity only. |
-| Geometry | Never animated. Coordinates, radii, aspect endpoints and house boundaries are computed once and do not move. |
-| Character | A slow breath — 1800ms, eased, reversing. Mystical, not game-like. |
+| Scope | The selected planet's outer halo; a selected aspect's stroke and bloom, plus the halos on **both** of its endpoint planets. Nothing else on the wheel, and nothing anywhere else in the app. |
+| Count | Two shared values for the whole wheel: `glow` drives opacity, `trace` drives `strokeDashoffset`. Both are shared by every animated element, so the count does not grow with the number of planets or aspects. |
+| Geometry | Never animated. Coordinates, radii, aspect endpoints and house boundaries are computed once and do not move. `strokeDashoffset` shifts where the dashes fall along a fixed line; it does not move the line. |
+| Character — glow | A slow breath: `GLOW_MAX` 0.7 to `GLOW_MIN` 0.3 over 1800 ms, eased in-out, reversing. It never reaches zero — a selection that fades to invisible reads as a bug. |
+| Character — dash | Linear travel of exactly one dash period per repeat, so the flow is continuous with no jump at the loop boundary. Per aspect type, from `ASPECT_MOTION`. |
 | Thread | Reanimated on the UI thread, so it cannot stutter the chart scroll. |
 | Lifetime | Cancelled when the selection changes or clears, and on unmount. |
-| Reduced motion | Static glow when the preference is `true` **or unresolved**. |
+| Reduced motion | When the preference is `true` **or unresolved**: `glow` pins at `GLOW_MAX`, `trace` at 0. The dash pattern is still drawn, so the selected state stays unmistakable while nothing moves. |
+
+**Why dashes and not a tracer.** Three device rounds rejected earlier attempts
+because each read as *an animation sliding over a line* rather than the line
+itself carrying motion. The cause was structural: a solid stroke underneath a
+moving highlight gives the eye a stationary rail to measure the highlight
+against. The accepted design has **no solid stroke beneath** — the dashes *are*
+the line, so what moves is the line. A selected aspect is exactly two layers:
+
+| Layer | |
+| --- | --- |
+| `aspect-bloom-{i}` | Full length, `accent.base`, stroke width `+5`, opacity `glow x ASPECT_BLOOM_OPACITY` (0.25), so at most ~0.175. Faint enough that it never reads as a rail; present so the aspect stays legible between dashes. |
+| `aspect-selected-{i}` | The line itself, `accent.bright`, stroke width `+0.6`, dashed per type, animated offset. |
+
+**Motion differs by aspect type**, because the types mean different things and a
+single tempo made them interchangeable:
+
+| Type | dash / gap | duration | direction |
+| --- | --- | --- | --- |
+| Conjunction | 3 / 5 | 2400 ms | outward |
+| Opposition | 11 / 9 | 1700 ms | inward |
+| Square | 4 / 4 | 700 ms | outward |
+| Trine | 13 / 8 | 2000 ms | outward |
+| Sextile | 3 / 12 | 1250 ms | outward |
+
+**Both endpoints light.** A selected aspect puts both participants in the
+wheel's highlight set, each in its own `planetGlow` hue (§1.3) — the line says
+there is a relationship, the two glowing markers say between what. Each gets
+the same three layers a directly selected planet gets: an animated halo, a
+planet-coloured inner accent, and a static ring that is never absent while the
+selection stands. A selected house lights no planet.
 
 This does **not** authorize continuous animation anywhere else. Backgrounds
 remain static, screens remain static, and any further exception needs its own
 review. The justification is narrow: a selected line among a dozen crossing
-lines is genuinely hard to pick out when static, and a slow opacity breath
-identifies it without moving anything the reader is trying to measure.
+lines is genuinely hard to pick out when static, and slow motion identifies it
+without moving anything the reader is trying to measure.
 
 ### Reduced motion
 
@@ -971,6 +1065,9 @@ top rows).
 | `@expo-google-fonts/inter` | 3 | `Inter_400Regular`, `Inter_500Medium`, `Inter_600SemiBold` |
 | `@expo-google-fonts/cormorant-garamond` | 3 | `CormorantGaramond_600SemiBold` |
 | `lucide-react-native` | 4 | Functional icons; peer-depends on the already-present `react-native-svg` |
+| `react-native-gesture-handler` | 6B | Pinch, pan and tap recognition on the chart wheel |
+| `react-native-reanimated` | 6B | The selection glow and dash travel, on the UI thread |
+| `react-native-worklets` | 6B | Reanimated 4's worklet runtime; added by it, not chosen separately |
 
 `@expo-google-fonts/eb-garamond` is **not** installed. It enters only as a
 replacement for Cormorant if Slice 3's Android device review rejects it.

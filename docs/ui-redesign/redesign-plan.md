@@ -270,6 +270,50 @@ Preserve: chart calculations, chart data, chart-wheel behavior, positions, house
 Not in scope: the reference's tabbed interpretation design; transit information inside natal interpretations; any new route or feature.
 Gate: the full validation gate in stage 8 above, compared against the baseline screenshots, on device.
 
+### Slice 6B — Interactive chart wheel exploration
+
+Added after Slice 6's gate, because the flagship read as a picture rather than
+something to explore. Scope: pinch/pan zoom on the wheel, tap-to-select for
+planets, aspects and houses, the selection treatment for each, and the Glyph
+Compass as a persistent Chart-route utility.
+
+Preserve: chart calculations, chart data, aspect ordering and orb precision,
+wheel geometry, saved-chart behavior, navigation, persistence, Supabase
+behavior, and the interpretation modal's route, callbacks, content and pager
+behavior.
+
+Not in scope: sign selection, new routes, new features, transit information.
+
+Approved dependencies, installed in this slice: `react-native-gesture-handler`,
+`react-native-reanimated`, `react-native-worklets`.
+
+**Device-approved behavior.** Recorded here because it was settled by device
+evidence over several rounds and supersedes earlier written specifications,
+including a gradient-stroke aspect design that was proposed and then overtaken:
+
+1. A selected aspect keeps its **type-specific dash treatment**; the dash
+   offset is what moves. There is no solid stroke beneath it and no separate
+   tracer — the dashes are the line. See design-system.md §12.
+2. Both of a selected aspect's **endpoint planets glow**, each in its own
+   `theme.planetGlow` hue.
+3. **Only the selected relationship animates.** One glow value and one dash
+   value drive the whole wheel.
+4. **Reduced motion** renders the selected dash pattern statically, at full
+   glow, with no travel.
+5. **Aspect geometry and calculations are unchanged.** Only the offset at which
+   dashes fall along a fixed line animates.
+6. Pinch/pan, and the crowded-wedge hit-test arbitration that followed it,
+   behave as described in design-system.md §10.4 — including the tightened
+   aspect corridor inside the house band and screen-space slop.
+
+Two flagship defects were closed in the same slice: the chart headline is laid
+out at its container's width rather than shrinking to fit, after an Android
+measurement quirk dropped the last word of "Jupiter in Aquarius"; and the
+interpretation pager guards against stale page confirmations so rapid paging
+and swiping both report the page they are on.
+
+Gate: the stage 8 validation gate, on device.
+
 ### Later — Dashboard redesign slice
 
 Not sequenced here; it belongs to stage 9 propagation. Recorded now because it owns one deferred item: **replacing the Dashboard's decorative emoji** (`🌌` in the welcome heading; `☀️` / `🌙` in the "Your Signs" card) with standardized icons. The Sun and Moon rows specifically become the astrological glyphs `☉` and `☽`, matching what `ChartWheel` and `ChartCompass` already render.
