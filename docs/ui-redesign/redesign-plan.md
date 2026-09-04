@@ -270,7 +270,7 @@ Preserve: chart calculations, chart data, chart-wheel behavior, positions, house
 Not in scope: the reference's tabbed interpretation design; transit information inside natal interpretations; any new route or feature.
 Gate: the full validation gate in stage 8 above, compared against the baseline screenshots, on device.
 
-### Slice 6B — Interactive chart wheel exploration
+### Slice 6B — Interactive chart wheel exploration — **DEVICE-APPROVED**
 
 Added after Slice 6's gate, because the flagship read as a picture rather than
 something to explore. Scope: pinch/pan zoom on the wheel, tap-to-select for
@@ -312,7 +312,20 @@ measurement quirk dropped the last word of "Jupiter in Aquarius"; and the
 interpretation pager guards against stale page confirmations so rapid paging
 and swiping both report the page they are on.
 
-Gate: the stage 8 validation gate, on device.
+Three defects were found and closed during device review, each of them a case
+of one control quietly claiming another's surface:
+
+- the **aspect corridor inside the house band**, tightened from 24 to 6,
+  because every aspect line ends at a radius inside the band;
+- **planet controls overhanging the ring below them** by ~10 points, which let
+  Mars and Pluto absorb taps meant for houses 12 and 1;
+- **slop stated in wheel-local points**, which magnified every corridor with
+  the drawing so zooming in to reach a crowded target made it harder.
+
+Gate: the stage 8 validation gate, on device — **passed 2026-09-04**. Confirmed
+on a physical Android device: pinch zoom, planet selection in clusters, aspect
+selection and its two-endpoint glow, house wedge selection including the
+crowded wedges, the headline placement, and the interpretation pager.
 
 ### Later — Dashboard redesign slice
 
