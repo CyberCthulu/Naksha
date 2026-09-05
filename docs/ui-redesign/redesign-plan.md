@@ -407,6 +407,24 @@ When the profile is incomplete the chart destination is disabled, says why,
 and cannot navigate — asserted directly rather than through a branch that
 could pass without ever reaching the disabled state.
 
+**Settled architecture — not to be reopened during later propagation.** Three
+Android rounds converged on this and it is the shape the rest of the migration
+should assume:
+
+| Decision | |
+| --- | --- |
+| Navigation position | Destinations sit **above** the guidance, under the identity block. Reached without scrolling past the content the screen exists for. |
+| Navigation form | One strip of five equal `flex` columns — never a percentage grid. Icon over a short label. |
+| Primary emphasis | Ink, not geometry. The chart destination is the only gold thing on the screen; there is no full-width gold button anywhere on the Dashboard. |
+| Guidance form | **Today / This Week tabs**, not a stack. They are two views of one thing, so they are peers on a selector. |
+| Default | Today, every visit. No remembered selection — the screen's recurring job is today. |
+| Rendering | Only the selected panel is rendered. The inactive one is absent, not hidden: no layout, no assistive reach. |
+| Panel state | Expanded flags live on the screen, because an unmounted panel cannot keep its own. Today and This Week stay independent across switches. |
+| Cost of switching | None. No rebuild, no chart work, no I/O — a selector that recalculates is not a selector. |
+
+Later slices inherit the two patterns as documented in design-system.md §10.3a
+rather than re-deriving them per screen.
+
 Gate: the stage 8 validation gate, on device — **passed 2026-09-05**, over
 three Android rounds. The first confirmed the identity block, the signs line
 and the birth context, and rejected the stacked guidance cards and the
