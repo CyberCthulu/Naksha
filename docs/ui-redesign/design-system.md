@@ -563,10 +563,25 @@ row).
 ### 7.4 Hierarchy rules
 
 1. One `primary` per screen. If two actions feel primary, one is not.
-2. Destructive actions never share a variant with navigation. Dashboard's Sign
-   Out becomes `destructive`.
+2. Destructive actions never share a variant with navigation.
 3. Ghost/secondary is the default for repeated navigation actions.
-4. Navigation to another screen is `secondary` or `tertiary`, never `primary`.
+4. Navigation to another screen is `secondary` or `tertiary`, never the
+   `primary` Button variant — but a screen may still mark **one** destination
+   as the thing it exists to lead to. See below.
+
+**Emphasis without a slab.** Slice 7 found the limit of rule 4. The Dashboard's
+reason to exist is the natal chart, and a full-width gold `primary` Button
+reads as an interruption wherever it is placed — it was tried above the
+guidance, below it, and between the two cards. What worked was moving the
+emphasis from geometry to ink: the chart sits in the same quiet strip as the
+other four destinations and is simply the only one drawn in `accent.base`.
+Rule 1 still holds — there is exactly one emphasised action — and rule 4 still
+holds, because no navigation uses the filled `primary` surface.
+
+**Sign out is not navigation.** It was removed from the Dashboard's ordinary
+actions entirely. It survives as the `tertiary` secondary action of the fatal
+`ErrorState`, where it is a way out of a broken session rather than a place to
+go, and it is wrapped so a failed sign-out reports itself.
 
 ### 7.5 Mapping
 
@@ -716,6 +731,22 @@ already do this correctly.
 | `ChoiceRow` | no role/state | `radio` role + `selected` state |
 | Planet / house rows | no role/label | `button` role, label reading placement and meaning |
 | Journal long-press delete | **no discoverable affordance** | Visible action or an accessibility action |
+
+### 10.3a Quick navigation and in-screen selectors
+
+Two patterns established on the Dashboard in Slice 7. Both are presentation
+only: neither adds a route, a param or a navigator.
+
+| Pattern | Rules |
+| --- | --- |
+| **Quick-navigation strip** | Equal columns sized by `flex`, never a percentage basis — a percentage grid overlaps its neighbour as soon as the font scale grows. Icon above a short visible label, both from the shared `Icon` set. Labels wrap and are never clamped. Each column is a 48 dp target with an `accessibilityLabel` phrased as the action it performs ("Open my charts"), not as the label it shows ("Saved"). Unbordered and secondary ink, so the strip introduces destinations without competing with content. |
+| **In-screen tab selector** | `accessibilityRole="tablist"` on the row, `"tab"` on each control, `accessibilityState={{ selected }}`. At least 48 dp high. Selection is carried by an indicator rule **and** an ink step, never colour alone. Only the selected panel is rendered — not hidden, absent — so the inactive one occupies no layout and assistive technology cannot reach it. Any state belonging to a panel is held by the screen, because an unmounted panel cannot keep its own. Switching a selector never triggers computation, I/O or persistence. |
+
+The tab rule that matters most is the last one. A selector that recalculates is
+no longer a selector: it is navigation wearing a tab's clothes, and the
+distinction shows up as a stutter the first time a reader flicks between them.
+
+---
 
 ### 10.4 Direct manipulation on the chart wheel
 

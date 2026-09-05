@@ -13,6 +13,8 @@ import Eye from 'lucide-react-native/icons/eye'
 import EyeOff from 'lucide-react-native/icons/eye-off'
 import MapPin from 'lucide-react-native/icons/map-pin'
 import NotebookPen from 'lucide-react-native/icons/notebook-pen'
+import Library from 'lucide-react-native/icons/library'
+import Orbit from 'lucide-react-native/icons/orbit'
 import Pencil from 'lucide-react-native/icons/pencil'
 import Plus from 'lucide-react-native/icons/plus'
 import Trash2 from 'lucide-react-native/icons/trash-2'
@@ -39,6 +41,11 @@ const ICONS = {
   save: Check,
   delete: Trash2,
   journal: NotebookPen,
+  // The reader's own chart. Orbit reads as a chart wheel at small sizes
+  // without being an astrological glyph, which would make it content.
+  charts: Orbit,
+  // A collection of saved charts, which is a different idea from a chart.
+  library: Library,
   account: UserRound,
   calendar: Calendar,
   visibility: Eye,

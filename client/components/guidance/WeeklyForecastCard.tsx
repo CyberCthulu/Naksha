@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import type {
@@ -12,8 +11,8 @@ import type {
 import { AppText, MutedText } from '../ui/AppText'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
+import { Icon } from '../ui/Icon'
 import { theme } from '../ui/theme'
-import { uiStyles } from '../ui/uiStyles'
 
 const MONTHS = [
   'Jan',
@@ -65,15 +64,15 @@ function TransitHighlight({
 }) {
   return (
     <View style={styles.listItem}>
-      <AppText style={styles.itemTitle}>
+      <AppText variant="subheading" style={styles.itemTitle}>
         {transit.transitPlanet} {ASPECT_LABELS[transit.aspect]} natal{' '}
         {transit.natalPlanet}
       </AppText>
-      <MutedText style={styles.body}>
+      <MutedText variant="bodySmall" style={styles.body}>
         {formatDate(transit.date)} | {transit.orb.toFixed(1)}° orb
       </MutedText>
       {transit.activeDays > 1 ? (
-        <MutedText style={styles.persistence}>
+        <MutedText variant="caption" style={styles.persistence}>
           Active on {transit.activeDays} of 7 sampled days
         </MutedText>
       ) : null}
@@ -81,17 +80,21 @@ function TransitHighlight({
   )
 }
 
+/** Expansion is owned by the Dashboard -- see the note on TodayEnergyCard. */
 export function WeeklyForecastCard({
   forecast,
+  expanded,
+  onExpandedChange,
   onJournalReflection,
 }: {
   forecast: WeeklyForecast
+  expanded: boolean
+  onExpandedChange: (next: boolean) => void
   onJournalReflection?: (
     prompt: ReflectionPrompt,
     practice: SuggestedPractice
   ) => void
 }) {
-  const [expanded, setExpanded] = useState(false)
   const topTheme = forecast.weeklyThemes[0]
   const topTransit = forecast.strongestTransits[0]
   const reflectionPrompt = forecast.representativePrompt
@@ -99,100 +102,117 @@ export function WeeklyForecastCard({
 
   return (
     <Card>
+      {/* Bounded toggle -- see the note on TodayEnergyCard. */}
       <Pressable
         accessibilityLabel={`${expanded ? 'Collapse' : 'Expand'} Weekly Forecast details`}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
-        onPress={() => setExpanded((current) => !current)}
+        onPress={() => onExpandedChange(!expanded)}
+        testID="weekly-forecast-toggle"
         style={({ pressed }) => [
-          styles.toggleSurface,
+          styles.header,
           pressed && styles.togglePressed,
         ]}
       >
-        <AppText style={uiStyles.cardTitle}>Weekly Forecast</AppText>
-        <MutedText style={styles.dateRange}>
-          {formatDate(forecast.startDate)} - {formatDate(forecast.endDate)}
-        </MutedText>
-
-        {!expanded ? (
-          <>
-            <View style={styles.section}>
-              <AppText style={styles.sectionTitle}>Weekly pattern</AppText>
-              {topTheme ? (
-                <View style={styles.listItem}>
-                  <AppText style={styles.itemTitle}>
-                    {topTheme.title}
-                  </AppText>
-                  <MutedText numberOfLines={2} style={styles.body}>
-                    {topTheme.body}
-                  </MutedText>
-                </View>
-              ) : (
-                <MutedText style={styles.body}>
-                  Weekly theme unavailable.
-                </MutedText>
-              )}
-            </View>
-
-            <View style={styles.section}>
-              <AppText style={styles.sectionTitle}>
-                Strongest transit
-              </AppText>
-              {topTransit ? (
-                <TransitHighlight transit={topTransit} />
-              ) : (
-                <MutedText style={styles.body}>
-                  No tight personal transit highlights this week.
-                </MutedText>
-              )}
-            </View>
-          </>
-        ) : null}
-
-        <MutedText style={styles.toggleHint}>
-          {expanded ? 'Tap to collapse' : 'Tap to expand'}
-        </MutedText>
+        <AppText variant="heading" style={styles.title}>
+          Weekly Forecast
+        </AppText>
+        <Icon
+          name={expanded ? 'collapse' : 'expand'}
+          size="sm"
+          color={theme.text.secondary}
+        />
       </Pressable>
+
+      <MutedText variant="eyebrow" style={styles.dateRange}>
+        {formatDate(forecast.startDate)} - {formatDate(forecast.endDate)}
+      </MutedText>
+
+      {!expanded ? (
+        <>
+          <View style={styles.section}>
+            <AppText variant="subheading" style={styles.sectionTitle}>
+              Weekly pattern
+            </AppText>
+            {topTheme ? (
+              <View style={styles.listItem}>
+                <AppText variant="subheading" style={styles.itemTitle}>
+                  {topTheme.title}
+                </AppText>
+                <MutedText
+                  variant="body"
+                  numberOfLines={2}
+                  style={styles.body}
+                >
+                  {topTheme.body}
+                </MutedText>
+              </View>
+            ) : (
+              <MutedText variant="body" style={styles.body}>
+                Weekly theme unavailable.
+              </MutedText>
+            )}
+          </View>
+
+          <View style={styles.section}>
+            <AppText variant="subheading" style={styles.sectionTitle}>
+              Strongest transit
+            </AppText>
+            {topTransit ? (
+              <TransitHighlight transit={topTransit} />
+            ) : (
+              <MutedText variant="body" style={styles.body}>
+                No tight personal transit highlights this week.
+              </MutedText>
+            )}
+          </View>
+        </>
+      ) : null}
 
       {expanded ? (
         <>
           <View style={styles.section}>
-            <AppText style={styles.sectionTitle}>Weekly pattern</AppText>
+            <AppText variant="subheading" style={styles.sectionTitle}>
+              Weekly pattern
+            </AppText>
             {forecast.weeklyThemes.map((theme) => (
               <View
                 key={`${theme.tone}:${theme.title}`}
                 style={styles.listItem}
               >
-                <AppText style={styles.itemTitle}>{theme.title}</AppText>
-                <MutedText style={styles.body}>{theme.body}</MutedText>
+                <AppText variant="subheading" style={styles.itemTitle}>
+                  {theme.title}
+                </AppText>
+                <MutedText variant="body" style={styles.body}>
+                  {theme.body}
+                </MutedText>
               </View>
             ))}
           </View>
 
           <View style={styles.section}>
-            <AppText style={styles.sectionTitle}>Daily rhythm</AppText>
+            <AppText variant="subheading" style={styles.sectionTitle}>
+              Daily rhythm
+            </AppText>
             {forecast.dailyThemes.map((day) => (
               <View
                 key={day.date}
                 style={styles.rhythmRow}
                 testID={`weekly-rhythm-${day.date}`}
               >
-                <AppText style={styles.rhythmDay}>
+                <AppText variant="subheading" style={styles.rhythmDay}>
                   {formatWeekday(day.date)}
                 </AppText>
                 <View style={styles.rhythmContent}>
-                  <AppText numberOfLines={1} style={styles.rhythmTheme}>
+                  <AppText variant="subheading" style={styles.rhythmTheme}>
                     {day.title}
                   </AppText>
-                  <MutedText
-                    numberOfLines={1}
-                    style={styles.rhythmSummary}
-                  >
+                  <MutedText variant="bodySmall" style={styles.rhythmSummary}>
                     {day.summary}
                   </MutedText>
                   {day.transitHouse ? (
                     <MutedText
-                      numberOfLines={2}
+                      variant="bodySmall"
                       style={styles.rhythmHouse}
                       testID={`weekly-rhythm-house-${day.date}`}
                     >
@@ -206,7 +226,7 @@ export function WeeklyForecastCard({
           </View>
 
           <View style={styles.section}>
-            <AppText style={styles.sectionTitle}>
+            <AppText variant="subheading" style={styles.sectionTitle}>
               Underlying transits
             </AppText>
             {forecast.strongestTransits.length > 0 ? (
@@ -217,40 +237,45 @@ export function WeeklyForecastCard({
                 />
               ))
             ) : (
-              <MutedText style={styles.body}>
+              <MutedText variant="body" style={styles.body}>
                 No tight personal transit highlights this week.
               </MutedText>
             )}
           </View>
 
           {reflectionPrompt && reflectionPractice ? (
-            <View style={styles.section}>
-              <AppText style={styles.sectionTitle}>Weekly reflection</AppText>
-              <AppText style={styles.itemTitle}>
+            <View style={[styles.section, styles.majorBreak]}>
+              <AppText variant="subheading" style={styles.sectionTitle}>
+                Weekly reflection
+              </AppText>
+              <AppText variant="subheading" style={styles.itemTitle}>
                 {reflectionPrompt.title}
               </AppText>
-              <MutedText style={styles.body}>
+              <MutedText variant="body" style={styles.body}>
                 {reflectionPrompt.prompt}
               </MutedText>
               {reflectionPrompt.followUp ? (
-                <MutedText style={styles.followUp}>
+                <MutedText variant="body" style={styles.followUp}>
                   {reflectionPrompt.followUp}
                 </MutedText>
               ) : null}
-              <MutedText style={styles.deeperFraming}>
+              <MutedText variant="body" style={styles.deeperFraming}>
                 Deeper layer: notice what repeated across the week and
                 what may be easy to avoid. Use this as reflection, not a
                 diagnosis. Pause if it feels overwhelming.
               </MutedText>
-              <AppText style={styles.practiceTitle}>Grounding practice</AppText>
-              <AppText style={styles.itemTitle}>
+              <AppText variant="subheading" style={styles.practiceTitle}>
+                Grounding practice
+              </AppText>
+              <AppText variant="subheading" style={styles.itemTitle}>
                 {reflectionPractice.title}
               </AppText>
-              <MutedText style={styles.body}>
+              <MutedText variant="body" style={styles.body}>
                 {reflectionPractice.summary}
               </MutedText>
               {reflectionPractice.steps.map((step, index) => (
                 <MutedText
+                  variant="body"
                   key={`${reflectionPractice.id}:${index}`}
                   style={styles.practiceStep}
                 >
@@ -260,7 +285,7 @@ export function WeeklyForecastCard({
               {onJournalReflection ? (
                 <Button
                   title="Journal weekly reflection"
-                  variant="ghost"
+                  variant="tertiary"
                   onPress={() =>
                     onJournalReflection(
                       reflectionPrompt,
@@ -277,15 +302,15 @@ export function WeeklyForecastCard({
             accessibilityLabel="Collapse Weekly Forecast details"
             accessibilityRole="button"
             accessibilityState={{ expanded: true }}
-            onPress={() => setExpanded(false)}
+            onPress={() => onExpandedChange(false)}
             style={({ pressed }) => [
               styles.bottomToggle,
               pressed && styles.togglePressed,
             ]}
             testID="weekly-forecast-bottom-collapse"
           >
-            <MutedText style={styles.bottomToggleText}>
-              Tap to collapse
+            <MutedText variant="bodySmall" style={styles.bottomToggleText}>
+              Collapse
             </MutedText>
           </Pressable>
         </>
@@ -295,112 +320,109 @@ export function WeeklyForecastCard({
 }
 
 const styles = StyleSheet.create({
-  toggleSurface: {
-    borderRadius: 4,
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    columnGap: theme.space.md,
+    justifyContent: 'space-between',
+    minHeight: theme.touchTarget.min,
+  },
+  title: {
+    color: theme.text.primary,
+    flexShrink: 1,
   },
   togglePressed: {
     opacity: 0.75,
   },
-  toggleHint: {
-    fontSize: 12,
-    marginTop: 10,
-  },
   dateRange: {
-    fontSize: 12,
+    color: theme.accent.base,
+    marginTop: theme.space.hair,
   },
+  /* Spacing-led rhythm -- see the note on TodayEnergyCard. */
   section: {
+    marginTop: theme.space.lg,
+  },
+  majorBreak: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: theme.colors.border,
-    marginTop: 12,
-    paddingTop: 10,
+    borderTopColor: theme.border.base,
+    paddingTop: theme.space.lg,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 2,
+    color: theme.text.primary,
+    marginBottom: theme.space.xs,
   },
   listItem: {
-    marginTop: 7,
+    marginTop: theme.space.sm,
   },
   itemTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 2,
+    color: theme.text.primary,
+    marginBottom: theme.space.hair,
   },
   body: {
-    fontSize: 13,
-    lineHeight: 19,
+    color: theme.text.secondary,
   },
   persistence: {
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: 2,
+    color: theme.text.tertiary,
+    marginTop: theme.space.hair,
   },
+  /*
+   * The weekday column is sized by its own content rather than pinned to 38.
+   * A fixed column clips "Wed" the moment the device font scale grows, and a
+   * three-letter label in one face varies by only a couple of points anyway.
+   */
   rhythmRow: {
     flexDirection: 'row',
-    marginTop: 9,
-    minHeight: 36,
+    columnGap: theme.space.md,
+    marginTop: theme.space.md,
   },
   rhythmDay: {
-    fontSize: 13,
-    fontWeight: '600',
-    width: 38,
+    color: theme.text.tertiary,
   },
   rhythmContent: {
     flex: 1,
   },
   rhythmTheme: {
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 19,
+    color: theme.text.primary,
   },
   rhythmSummary: {
-    fontSize: 12,
-    lineHeight: 16,
-    marginTop: 1,
+    color: theme.text.secondary,
+    marginTop: theme.space.hair,
   },
   rhythmHouse: {
-    fontSize: 12,
-    lineHeight: 16,
-    marginTop: 1,
+    color: theme.text.tertiary,
+    marginTop: theme.space.hair,
   },
   followUp: {
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: 6,
+    color: theme.text.secondary,
+    marginTop: theme.space.sm,
   },
   deeperFraming: {
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: 8,
+    color: theme.text.tertiary,
+    marginTop: theme.space.md,
   },
   practiceTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 2,
-    marginTop: 10,
+    color: theme.text.primary,
+    marginBottom: theme.space.xs,
+    marginTop: theme.space.lg,
   },
   practiceStep: {
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: 4,
+    color: theme.text.secondary,
+    marginTop: theme.space.xs,
   },
   journalButton: {
-    marginTop: 6,
+    marginTop: theme.space.md,
     alignSelf: 'flex-start',
   },
   bottomToggle: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: theme.colors.border,
+    borderTopColor: theme.border.base,
     justifyContent: 'center',
-    marginTop: 12,
-    minHeight: 48,
-    paddingTop: 12,
-    paddingBottom: 8,
+    marginTop: theme.space.lg,
+    minHeight: theme.touchTarget.min,
+    paddingTop: theme.space.md,
     width: '100%',
   },
   bottomToggleText: {
-    fontSize: 12,
-    lineHeight: 18,
+    color: theme.text.secondary,
   },
 })

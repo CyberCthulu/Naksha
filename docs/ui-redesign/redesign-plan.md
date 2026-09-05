@@ -327,9 +327,100 @@ on a physical Android device: pinch zoom, planet selection in clusters, aspect
 selection and its two-endpoint glow, house wedge selection including the
 crowded wedges, the headline placement, and the interpretation pager.
 
-### Later — Dashboard redesign slice
+### Slice 7 — Dashboard and the guidance loop — **DEVICE-APPROVED**
 
-Not sequenced here; it belongs to stage 9 propagation. Recorded now because it owns one deferred item: **replacing the Dashboard's decorative emoji** (`🌌` in the welcome heading; `☀️` / `🌙` in the "Your Signs" card) with standardized icons. The Sun and Moon rows specifically become the astrological glyphs `☉` and `☽`, matching what `ChartWheel` and `ChartCompass` already render.
+Scope: `DashboardScreen`, `TodayEnergyCard`, `WeeklyForecastCard`, and one
+addition to the shared `Icon` set. Presentation and accessibility only.
+
+Option A of the Slice 7 review packet. Options A and B named the same files:
+there is no `TodayEnergyScreen` or `WeeklyForecastScreen`, and `DashboardScreen`
+is the sole consumer of both guidance cards, so nothing could gate separately.
+
+Preserve: the guidance builders, transit and forecast calculations, chart lookup
+and validation, hydration, every fallback string, the reflection prompts, the
+Journal handoff payload, Supabase behaviour, route names and params.
+
+**Approved hierarchy.** Identity, signs, birth context, Today, the chart action,
+Weekly, four utilities. Today sits above the chart action deliberately: the
+Dashboard's recurring job is the current-guidance loop, so the first substantial
+content is today's reading, not the chart the reader already has.
+
+**Birth context replaces the birth-details card.** One quiet line —
+`10 Dec 1815 · 12:00 PM · London` — built from the stored profile with existing
+formatting. Email, raw timezone and coordinates leave the Dashboard entirely;
+the canonical record stays on Profile. Missing segments are dropped rather than
+rendered as a dash, so a separator never appears with nothing beside it.
+
+**Guidance cards.** Today takes the raised surface, Weekly the default one, so
+the distinction is elevation and order rather than a size difference that would
+make Weekly harder to read. Collapsed and expanded content, and its order, are
+unchanged.
+
+**Accessibility.** Each card's toggle was the whole card: TalkBack announced the
+title, the transit line and the entire collapsed summary as one button label,
+and that copy was not otherwise in the reading order. The toggle is now the
+header row alone. The fixed 38-point weekday column and the single-line clamps
+in the weekly rhythm are gone — both clipped under Android font scaling — while
+the deliberate two-line clamp of a collapsed summary stays, because that is the
+compact state rather than an accident.
+
+**Actions.** Six grid buttons become four quiet destinations. Edit Details
+folds into Profile. Sign Out leaves ordinary navigation but is kept as the
+secondary action of the fatal error state, where it is a recovery path out of a
+broken session — and it is now wrapped, so a failed sign-out reports itself
+instead of surfacing as an unhandled rejection.
+
+**Revised after the first device review.** Two structural changes, both
+presentation only and neither adding a route:
+
+1. The four destinations moved from the foot of the screen to a quick-
+   navigation strip directly under the identity block, so the places a reader
+   might go no longer sit behind the content they came for. Four equal columns
+   sized by `flex`, unbordered, secondary ink.
+2. Today and This Week became **tabs** rather than a stack. On device the
+   raised/default elevation step was not carrying the distinction — both cards
+   read as equal weight — and the screen ran to roughly two viewports. They are
+   two views of one thing, so they are peers on a selector.
+
+Only the selected card is rendered. The inactive one is not hidden, it is
+absent: it occupies no layout and TalkBack cannot reach it. That makes card-
+local `useState` the wrong home for the expanded flag, so both booleans are
+held by the screen — a reader who expands Today, looks at This Week and comes
+back finds it as they left it. Guidance computation and every other piece of
+business state stayed where it was; switching tabs triggers no rebuild, no
+chart work and no I/O.
+
+The birth chart joined the strip as a fifth destination in a second device
+pass. The full-width gold button read as an isolated slab wherever it sat, so
+hierarchy moved from geometry to ink: the chart destination is gold, the other
+four are secondary, and it is still the only gold thing on the screen. That
+put every actionable surface above the guidance and removed the last
+interruption between the tabs and the content.
+
+Two names collided once the chart joined — "Chart" for the reader's own and
+"Charts" for the saved collection — so the saved destination reads **Saved**
+and takes its own glyph, `library`. `charts` (Orbit) now means the reader's
+chart, which is what the wheel actually depicts. Spoken labels stay explicit
+about what pressing does: "View birth chart", "Open my charts".
+
+When the profile is incomplete the chart destination is disabled, says why,
+and cannot navigate — asserted directly rather than through a branch that
+could pass without ever reaching the disabled state.
+
+Gate: the stage 8 validation gate, on device — **passed 2026-09-05**, over
+three Android rounds. The first confirmed the identity block, the signs line
+and the birth context, and rejected the stacked guidance cards and the
+bottom-placed utilities. The second moved navigation to the top and made the
+guidance a tab selector. The third moved the chart into the strip and settled
+the gold treatment.
+
+### Later — Dashboard redesign slice — **CLOSED BY SLICE 7**
+
+This existed to own one deferred item: replacing the Dashboard's decorative
+emoji. Slice 7 delivered it. `🌌` was removed with the "Welcome to Naksha"
+heading rather than replaced — the reader's name is the headline now — and the
+`☀️` / `🌙` rows became the astrological glyphs `☉` and `☽` on one unboxed
+identity line, matching what `ChartWheel` and `ChartCompass` already render.
 
 ## Transition to Release Hardening
 
