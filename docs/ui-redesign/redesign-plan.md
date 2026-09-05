@@ -432,6 +432,55 @@ bottom-placed utilities. The second moved navigation to the top and made the
 guidance a tab selector. The third moved the chart into the strip and settled
 the gold treatment.
 
+### Slice 8 — Journal list and editor — **IMPLEMENTED, pending Android device review**
+
+Scope: `JournalListScreen`, `JournalEditorScreen`, their tests, and one
+additive prop on `ScreenHeaderAction`. One slice rather than two: the two
+screens are 532 lines between them, they are one sitting for a reader, and
+migrating either alone leaves the other visibly V1 mid-flow.
+
+Preserve: the schema, `lib/journals.ts`, route names and params, every
+navigation payload, `promptTemplateId` and the whole guidance payload, stored
+timestamps, the display-title fallback chain, and the focus reload.
+
+**Creation is one action per resolved state.** Empty list carries it on the
+`EmptyState`; a populated list carries it on the header. Loading and error
+carry none. Both route through one `openNewEntry`, so they cannot drift.
+
+**The row is two sibling regions.** An open region carrying the accessibility
+label, the long press and a `delete` accessibility action; and a trailing
+48 dp delete control beside it, never nested inside. Nesting is the defect
+MyCharts already had to unpick — the outer press wins the touch. All three
+routes into deletion call one confirmation.
+
+**Dates are written, not serialised.** `Created 15 Sep 2026 · 1:55 PM` in
+place of `toLocaleString()`, same local-time semantics, year always present
+because a journal outlives one, and an unparseable stamp omits the line rather
+than printing "Invalid Date" over someone's writing.
+
+**The editor has one Save.** F-16's bottom duplicate is gone. The header action
+already had the spinner, the disabled state, the 48 dp target and the label.
+An empty response now disables it with a hint beneath the field and the same
+reason as its `accessibilityHint`, replacing an Alert that scolded the reader
+only after they pressed.
+
+**Guidance context became an epigraph.** A gold rule down the side, no card, no
+border, no focusable control, grouped as one passage. It sat in a `Card`
+directly above two bordered inputs, which gave the prompt the same grammar as
+the things the reader types into. Quoted material gets a rule; editable
+material gets a box.
+
+**One guard for every way out.** `beforeRemove` covers header back, Android
+hardware back and programmatic removal, so there is no `BackHandler` racing a
+navigation listener. Dirty is measured against what the session opened with;
+the fixed context is not part of it. A completed save and a confirmed discard
+both stand the guard down, and a failed save keeps the editor and its changes.
+
+Gate: the stage 8 validation gate, on device. **Not yet run.** The open
+question is whether edge-to-edge plus `adjustResize` leaves the response field
+or the header Save obscured by the IME — deliberately not pre-empted with
+guessed inset compensation.
+
 ### Later — Dashboard redesign slice — **CLOSED BY SLICE 7**
 
 This existed to own one deferred item: replacing the Dashboard's decorative

@@ -20,6 +20,11 @@ export type ScreenHeaderAction = {
   disabled?: boolean
   /** Defaults to `label`. */
   accessibilityLabel?: string
+  /**
+   * Why the action is unavailable, when it is. A disabled control that does
+   * not say what would enable it is a dead end for a screen-reader user.
+   */
+  accessibilityHint?: string
 }
 
 type Props = {
@@ -88,6 +93,7 @@ export function ScreenHeader({
             accessibilityLabel={
               rightAction.accessibilityLabel ?? rightAction.label
             }
+            accessibilityHint={rightAction.accessibilityHint}
             accessibilityState={{
               disabled: !!rightAction.disabled || !!rightAction.loading,
               busy: !!rightAction.loading,

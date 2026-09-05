@@ -1,17 +1,59 @@
 import React from 'react'
-import {
-  Text,
-  TextInput,
-  TouchableOpacity,
-} from 'react-native'
+import { Alert, Text, TextInput } from 'react-native'
 import TestRenderer from 'react-test-renderer'
 
 import JournalEditorScreen from '../JournalEditorScreen'
 import { upsertJournal } from '../../lib/journals'
 
+let beforeRemoveListener: ((event: any) => void) | null = null
+
 const mockNavigation = {
   goBack: jest.fn(),
   setOptions: jest.fn(),
+  dispatch: jest.fn(),
+  addListener: jest.fn((event: string, callback: (e: any) => void) => {
+    if (event === 'beforeRemove') beforeRemoveListener = callback
+    return () => {
+      if (event === 'beforeRemove') beforeRemoveListener = null
+    }
+  }),
+}
+
+/** Fire the navigator's beforeRemove exactly as a back press would. */
+function fireBackAttempt() {
+  const action = { type: 'GO_BACK' }
+  const event = {
+    data: { action },
+    preventDefault: jest.fn(),
+  }
+
+  if (!beforeRemoveListener) throw new Error('no beforeRemove listener')
+  act(() => {
+    beforeRemoveListener?.(event)
+  })
+
+  return event
+}
+
+/** The most recent Alert, as [title, message, buttons]. */
+function lastAlert() {
+  const calls = (Alert.alert as jest.Mock).mock.calls
+  if (calls.length === 0) throw new Error('no Alert was shown')
+  return calls[calls.length - 1]
+}
+
+function pressAlertButton(label: string) {
+  const buttons = lastAlert()[2] as {
+    text: string
+    style?: string
+    onPress?: () => void
+  }[]
+  const button = buttons.find((b) => b.text === label)
+  if (!button) throw new Error(`no Alert button: ${label}`)
+  act(() => {
+    button.onPress?.()
+  })
+  return button
 }
 
 let mockRouteParams: Record<string, unknown> = {}
@@ -54,11 +96,11 @@ function expectNoText(root: TestRenderer.ReactTestRenderer, expected: string) {
 }
 
 function findSaveButton(root: TestRenderer.ReactTestRenderer) {
-  const button = root.root.findAllByType(TouchableOpacity).find((node) =>
-    node
-      .findAllByType(Text)
-      .some((text) => textValue(text.props.children) === 'Save')
-  )
+  const button = root.root.findAll(
+    (node) =>
+      typeof node.props.onPress === 'function' &&
+      node.props.testID === 'screen-header-action'
+  )[0]
 
   if (!button) throw new Error('Could not find journal Save button')
   return button
@@ -85,6 +127,8 @@ describe('JournalEditorScreen prompt prefill', () => {
     jest.clearAllMocks()
     mockRouteParams = {}
     mockedUpsertJournal().mockResolvedValue({ id: 1 } as any)
+    beforeRemoveListener = null
+    jest.spyOn(Alert, 'alert').mockImplementation(jest.fn())
     renderer = null
   })
 
@@ -113,7 +157,8 @@ describe('JournalEditorScreen prompt prefill', () => {
 
     expectText(screen, 'Reflect in your own words')
     expectText(screen, 'Today’s Energy')
-    expectText(screen, 'Prompt')
+    // The generic "Prompt" heading is gone: the source line names it.
+    expectNoText(screen, 'Prompt')
     expectText(screen, 'What needs attention?')
     expectText(screen, 'Grounding practice')
     expectText(screen, 'Pause and choose one grounded response.')
@@ -157,6 +202,196 @@ describe('JournalEditorScreen prompt prefill', () => {
       prompt_template: 'guidance.prompt.attention',
     })
     expect(mockNavigation.goBack).toHaveBeenCalled()
+  })
+
+it('carries exactly one Save control, and no bottom duplicate', async () => {
+    const screen = renderScreen({ id: undefined })
+    const saveControls = screen.root.findAll(
+      (node) =>
+        typeof node.props.onPress === 'function' &&
+        (node.props.accessibilityLabel === 'Save entry' ||
+          node.findAllByType(Text).some(
+            (text) => textValue(text.props.children) === 'Save'
+          ))
+    )
+    const ids = new Set(saveControls.map((node) => node.props.testID))
+
+    expect(ids).toEqual(new Set(['screen-header-action']))
+    expectNoText(screen, 'Saving…')
+  })
+
+  it('disables Save until the response says something', async () => {
+    const screen = renderScreen({ id: undefined })
+    const save = () => findSaveButton(screen)
+
+    expect(save().props.accessibilityState.disabled).toBe(true)
+    expect(save().props.accessibilityHint).toBe('Write something before saving.')
+    expectText(screen, 'Write something before saving.')
+
+    // A title alone is not an entry.
+    act(() => {
+      screen.root.findAllByType(TextInput)[0].props.onChangeText('Just a title')
+    })
+    expect(save().props.accessibilityState.disabled).toBe(true)
+
+    // Whitespace is not content either.
+    act(() => {
+      screen.root.findAllByType(TextInput)[1].props.onChangeText('   ')
+    })
+    expect(save().props.accessibilityState.disabled).toBe(true)
+
+    act(() => {
+      screen.root.findAllByType(TextInput)[1].props.onChangeText('Something real')
+    })
+    expect(save().props.accessibilityState.disabled).toBe(false)
+    expect(save().props.accessibilityHint).toBeUndefined()
+    expectNoText(screen, 'Write something before saving.')
+
+    // No alert is raised at any point; the state said it instead.
+    expect(Alert.alert).not.toHaveBeenCalled()
+  })
+
+  it('presents the guidance context as read-only quoted material', async () => {
+    const screen = renderScreen({
+      id: undefined,
+      promptSource: 'Today’s Energy',
+      promptText: 'What needs attention?',
+      practiceSummary: 'Pause and choose one grounded response.',
+      practiceSteps: ['Name what is present.'],
+    })
+
+    const context = screen.root.find(
+      (node) => node.props?.testID === 'journal-guidance-context'
+    )
+
+    // One passage to assistive technology, with nothing to focus inside it.
+    expect(context.props.accessible).toBe(true)
+    expect(
+      context.findAll((node) => typeof node.props.onPress === 'function')
+    ).toHaveLength(0)
+    expect(context.findAllByType(TextInput)).toHaveLength(0)
+
+    // The subsection label stays; the generic field-style heading does not.
+    expectText(screen, 'Grounding practice')
+    expectNoText(screen, 'Prompt')
+  })
+
+  it('leaves an unchanged entry without asking anything', async () => {
+    renderScreen({ id: 7, title: 'Kept', content: 'Body' })
+
+    const event = fireBackAttempt()
+
+    expect(event.preventDefault).not.toHaveBeenCalled()
+    expect(Alert.alert).not.toHaveBeenCalled()
+  })
+
+  it('leaves an untouched new entry without asking anything', async () => {
+    renderScreen({ id: undefined })
+
+    const event = fireBackAttempt()
+
+    expect(event.preventDefault).not.toHaveBeenCalled()
+    expect(Alert.alert).not.toHaveBeenCalled()
+  })
+
+  it('guards a dirty title and a dirty body alike', async () => {
+    for (const field of [0, 1]) {
+      jest.clearAllMocks()
+      const screen = renderScreen({ id: 7, title: 'Kept', content: 'Body' })
+
+      act(() => {
+        screen.root.findAllByType(TextInput)[field].props.onChangeText('changed')
+      })
+
+      const event = fireBackAttempt()
+      expect(event.preventDefault).toHaveBeenCalled()
+      expect(lastAlert()[0]).toBe('Discard changes?')
+      expect(lastAlert()[1]).toBe('Your unsaved journal changes will be lost.')
+
+      act(() => {
+        renderer?.unmount()
+      })
+      renderer = null
+    }
+  })
+
+  it('keeps editing on cancel, and discards exactly once on confirm', async () => {
+    const screen = renderScreen({ id: 7, title: 'Kept', content: 'Body' })
+    act(() => {
+      screen.root.findAllByType(TextInput)[1].props.onChangeText('changed')
+    })
+
+    fireBackAttempt()
+    pressAlertButton('Keep editing')
+    expect(mockNavigation.dispatch).not.toHaveBeenCalled()
+
+    // A second attempt still asks -- cancelling did not disarm the guard.
+    fireBackAttempt()
+    const discard = pressAlertButton('Discard')
+    expect(discard.style).toBe('destructive')
+    expect(mockNavigation.dispatch).toHaveBeenCalledTimes(1)
+
+    // And once discarded, leaving is not challenged again.
+    const event = fireBackAttempt()
+    expect(event.preventDefault).not.toHaveBeenCalled()
+  })
+
+  it('raises one confirmation however many times back is pressed', async () => {
+    const screen = renderScreen({ id: 7, title: 'Kept', content: 'Body' })
+    act(() => {
+      screen.root.findAllByType(TextInput)[1].props.onChangeText('changed')
+    })
+
+    fireBackAttempt()
+    fireBackAttempt()
+    fireBackAttempt()
+
+    expect((Alert.alert as jest.Mock).mock.calls).toHaveLength(1)
+  })
+
+  it('lets a successful save leave without a prompt', async () => {
+    const screen = renderScreen({ id: 7, title: 'Kept', content: 'Body' })
+    act(() => {
+      screen.root.findAllByType(TextInput)[1].props.onChangeText('changed')
+    })
+
+    await act(async () => {
+      await findSaveButton(screen).props.onPress()
+    })
+
+    expect(mockNavigation.goBack).toHaveBeenCalled()
+    const event = fireBackAttempt()
+    expect(event.preventDefault).not.toHaveBeenCalled()
+  })
+
+  it('keeps the editor and its changes when saving fails', async () => {
+    mockedUpsertJournal().mockRejectedValueOnce(new Error('offline'))
+    const screen = renderScreen({ id: 7, title: 'Kept', content: 'Body' })
+
+    act(() => {
+      screen.root.findAllByType(TextInput)[1].props.onChangeText('changed')
+    })
+    await act(async () => {
+      await findSaveButton(screen).props.onPress()
+    })
+
+    expect(lastAlert()[0]).toBe('Save failed')
+    expect(mockNavigation.goBack).not.toHaveBeenCalled()
+    expect(screen.root.findAllByType(TextInput)[1].props.value).toBe('changed')
+
+    // Still dirty, so leaving is still challenged.
+    const event = fireBackAttempt()
+    expect(event.preventDefault).toHaveBeenCalled()
+  })
+
+  it('uses one lifecycle for header back and hardware back', async () => {
+    renderScreen({ id: 7, title: 'Kept', content: 'Body' })
+
+    // beforeRemove covers both, so there is no competing BackHandler.
+    expect(mockNavigation.addListener).toHaveBeenCalledWith(
+      'beforeRemove',
+      expect.any(Function)
+    )
   })
 
   it('uses saved entry fields over guidance prefill in edit mode', async () => {

@@ -1,15 +1,12 @@
 // screens/JournalEditorScreen.tsx
-import React, { useLayoutEffect, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   View,
-  Text,
   StyleSheet,
-  TextInput,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  TouchableOpacity,
 } from 'react-native'
 import {
   useRoute,
@@ -21,14 +18,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { upsertJournal } from '../lib/journals'
 import { AppText, MutedText } from '../components/ui/AppText'
-import { Card } from '../components/ui/Card'
+import FormField from '../components/ui/FormField'
 import { ScreenHeader } from '../components/ui/ScreenHeader'
+import TextField from '../components/ui/TextField'
 import { theme } from '../components/ui/theme'
-import { uiStyles } from '../components/ui/uiStyles'
 import type {
   JournalEditorParams,
   RootStackParamList,
 } from '../navigation/types'
+
+/** Shown as a hint, never as an error: nothing has gone wrong yet. */
+const EMPTY_RESPONSE_HINT = 'Write something before saving.'
 
 type GuidanceContext = {
   source: string | null
@@ -97,14 +97,31 @@ export default function JournalEditorScreen() {
     createGuidanceContext(route.params, isEditMode)
   )
 
+  /*
+   * Only the response counts. A title alone is not something to save -- it
+   * names an entry that does not exist yet.
+   */
+  const canSave = content.trim().length > 0
+
+  /*
+   * Dirty is measured against what this editor session opened with, so
+   * reopening an entry and changing nothing exits without a prompt. The fixed
+   * guidance context is not part of it: the reader cannot edit it, so it can
+   * never be unsaved work.
+   */
+  const isDirty = title !== initialTitle || content !== initialContent
+
+  // Set when leaving is legitimate -- a completed save, or a confirmed
+  // discard -- so the guard stands aside instead of asking twice.
+  const bypassGuard = useRef(false)
+  // A second back press while the Alert is open must not stack another one.
+  const confirming = useRef(false)
+
   const onSave = async () => {
     const trimmedContent = content.trim()
     const trimmedTitle = title.trim()
 
-    if (!trimmedContent) {
-      Alert.alert('Empty', 'Write something first.')
-      return
-    }
+    if (!trimmedContent) return
 
     try {
       setSaving(true)
@@ -114,13 +131,58 @@ export default function JournalEditorScreen() {
         content: trimmedContent,
         prompt_template: promptTemplateId,
       })
+      bypassGuard.current = true
       nav.goBack()
     } catch (e: any) {
+      // The editor stays, and stays dirty: the writing is not lost because a
+      // save failed.
       Alert.alert('Save failed', e?.message ?? 'Unknown error')
     } finally {
       setSaving(false)
     }
   }
+
+  /*
+   * One guard for every way out.
+   *
+   * `beforeRemove` covers the header back, the Android hardware back and any
+   * programmatic removal, so there is a single implementation rather than a
+   * BackHandler racing a navigation listener.
+   */
+  useEffect(() => {
+    const unsubscribe = nav.addListener('beforeRemove', (event) => {
+      if (bypassGuard.current || !isDirty) return
+
+      event.preventDefault()
+      if (confirming.current) return
+      confirming.current = true
+
+      Alert.alert(
+        'Discard changes?',
+        'Your unsaved journal changes will be lost.',
+        [
+          {
+            text: 'Keep editing',
+            style: 'cancel',
+            onPress: () => {
+              confirming.current = false
+            },
+          },
+          {
+            text: 'Discard',
+            style: 'destructive',
+            onPress: () => {
+              confirming.current = false
+              bypassGuard.current = true
+              nav.dispatch(event.data.action)
+            },
+          },
+        ]
+      )
+    })
+
+    return unsubscribe
+  }, [nav, isDirty])
 
   const headerTitle = isEditMode ? 'Edit entry' : 'New entry'
 
@@ -138,7 +200,9 @@ export default function JournalEditorScreen() {
             label: 'Save',
             onPress: onSave,
             loading: saving,
+            disabled: !canSave,
             accessibilityLabel: 'Save entry',
+            accessibilityHint: canSave ? undefined : EMPTY_RESPONSE_HINT,
           }}
           style={[
             styles.header,
@@ -148,100 +212,98 @@ export default function JournalEditorScreen() {
 
         <ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{
-            padding: theme.spacing.screen,
-            paddingBottom: insets.bottom + 28,
-            gap: 12,
-          }}
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: insets.bottom + theme.space.xxl },
+          ]}
         >
-          <Text style={styles.h1}>
+          <AppText variant="title" style={styles.heading}>
             {isEditMode
               ? 'Something to add?'
               : guidanceContext
               ? 'Reflect in your own words'
               : 'Share your thoughts'}
-          </Text>
+          </AppText>
 
+          {/*
+            Quoted material, not a field.
+
+            The context used to sit in a Card directly above two bordered
+            inputs, which gave the prompt the same grammar as the things the
+            reader is meant to type into. A gold rule down the side says the
+            same thing a block quote does: this is here to be answered, not
+            filled in. It holds no focusable control, and reads to assistive
+            technology as one passage.
+          */}
           {guidanceContext ? (
-            <Card>
+            <View
+              accessible
+              testID="journal-guidance-context"
+              style={styles.epigraph}
+            >
               {guidanceContext.source ? (
-                <MutedText style={styles.contextSource}>
+                <MutedText variant="eyebrow" style={styles.epigraphSource}>
                   {guidanceContext.source}
                 </MutedText>
               ) : null}
+
               {guidanceContext.promptText ? (
-                <View>
-                  <AppText style={uiStyles.cardTitle}>Prompt</AppText>
-                  <MutedText style={styles.contextBody}>
-                    {guidanceContext.promptText}
-                  </MutedText>
-                </View>
+                <AppText variant="bodyLarge" style={styles.epigraphPrompt}>
+                  {guidanceContext.promptText}
+                </AppText>
               ) : null}
+
               {guidanceContext.practiceSummary ||
               guidanceContext.practiceSteps.length > 0 ? (
-                <View style={styles.contextPractice}>
-                  <AppText style={uiStyles.cardTitle}>
+                <View style={styles.epigraphPractice}>
+                  <AppText variant="subheading" style={styles.epigraphLabel}>
                     Grounding practice
                   </AppText>
                   {guidanceContext.practiceSummary ? (
-                    <MutedText style={styles.contextBody}>
+                    <MutedText variant="bodySmall" style={styles.epigraphBody}>
                       {guidanceContext.practiceSummary}
                     </MutedText>
                   ) : null}
                   {guidanceContext.practiceSteps.map((step, index) => (
                     <MutedText
+                      variant="bodySmall"
                       key={`${index}:${step}`}
-                      style={styles.contextStep}
+                      style={styles.epigraphStep}
                     >
                       {index + 1}. {step}
                     </MutedText>
                   ))}
                 </View>
               ) : null}
-            </Card>
+            </View>
           ) : null}
 
-          {/* Title */}
-          <View style={styles.fieldWrap}>
-            <Text style={styles.label}>Title</Text>
-            <TextInput
-              style={styles.input}
+          <FormField label="Title">
+            <TextField
               placeholder="Title (optional)"
-              placeholderTextColor={theme.colors.muted}
               value={title}
               onChangeText={setTitle}
               returnKeyType="next"
             />
-          </View>
+          </FormField>
 
-          {/* Content */}
-          <View style={styles.fieldWrap}>
-            <Text style={styles.label}>
-              {guidanceContext ? 'Your reflection' : 'Entry'}
-            </Text>
-            <TextInput
-              style={[styles.input, styles.textarea]}
+          <FormField
+            label={guidanceContext ? 'Your reflection' : 'Entry'}
+            hint={canSave ? undefined : EMPTY_RESPONSE_HINT}
+          >
+            <TextField
               placeholder={
                 guidanceContext
                   ? 'Write your reflection…'
                   : 'Write your thoughts…'
               }
-              placeholderTextColor={theme.colors.muted}
               multiline
               value={content}
               onChangeText={setContent}
               textAlignVertical="top"
+              style={styles.response}
             />
-          </View>
-
-          {/* Bottom Save (extra) */}
-          <TouchableOpacity
-            onPress={onSave}
-            disabled={saving}
-            style={[styles.bigSaveBtn, saving && { opacity: 0.7 }]}
-          >
-            <Text style={styles.bigSaveText}>{saving ? 'Saving…' : 'Save'}</Text>
-          </TouchableOpacity>
+          </FormField>
         </ScrollView>
       </View>
     </KeyboardAvoidingView>
@@ -250,75 +312,45 @@ export default function JournalEditorScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    paddingHorizontal: theme.spacing.screen,
+    paddingHorizontal: theme.space.xl,
   },
-
-  h1: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: theme.colors.text,
-    marginBottom: 4,
-    textAlign: 'left',
+  content: {
+    paddingHorizontal: theme.space.xl,
+    paddingTop: theme.space.sm,
   },
-
-  contextSource: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginBottom: 10,
+  heading: {
+    color: theme.text.primary,
+    marginBottom: theme.space.lg,
   },
-  contextBody: {
-    fontSize: 13,
-    lineHeight: 19,
+  /* A block quote, not a card: a rule down the side, no fill, no border. */
+  epigraph: {
+    borderLeftColor: theme.accent.base,
+    borderLeftWidth: 2,
+    marginBottom: theme.space.xl,
+    paddingLeft: theme.space.lg,
   },
-  contextPractice: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: theme.colors.border,
-    marginTop: 10,
-    paddingTop: 10,
+  epigraphSource: {
+    color: theme.accent.base,
   },
-  contextStep: {
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: 4,
+  epigraphPrompt: {
+    color: theme.text.primary,
+    marginTop: theme.space.sm,
   },
-
-  fieldWrap: {
-    gap: 6,
+  epigraphPractice: {
+    marginTop: theme.space.lg,
   },
-  label: {
-    color: theme.colors.sub,
-    fontWeight: '700',
+  epigraphLabel: {
+    color: theme.text.primary,
+    marginBottom: theme.space.xs,
   },
-
-  input: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.card,
-    backgroundColor: theme.colors.cardBg,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    color: theme.colors.text,
-    fontSize: 15,
+  epigraphBody: {
+    color: theme.text.secondary,
   },
-  textarea: {
+  epigraphStep: {
+    color: theme.text.secondary,
+    marginTop: theme.space.xs,
+  },
+  response: {
     minHeight: 220,
-    lineHeight: 20,
-  },
-
-  bigSaveBtn: {
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.card,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: theme.colors.cardBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bigSaveText: {
-    color: theme.colors.text,
-    fontWeight: '800',
-    fontSize: 16,
   },
 })
