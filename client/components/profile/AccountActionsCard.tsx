@@ -1,6 +1,8 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 
-import { uiStyles } from '../ui/uiStyles'
+import { AppText } from '../ui/AppText'
+import { Button } from '../ui/Button'
+import { Card } from '../ui/Card'
 import { theme } from '../ui/theme'
 import DataPrivacyCard from './DataPrivacyCard'
 
@@ -25,21 +27,33 @@ export default function AccountActionsCard({
         deletingAccount={deletingAccount}
       />
 
-      <View style={uiStyles.card}>
-        <Text style={uiStyles.cardTitle}>Account</Text>
-        <TouchableOpacity style={styles.actionRow} onPress={onSignOut}>
-          <Text style={[styles.link, { color: theme.colors.danger }]}>
-            Sign out
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <Card>
+        <AppText variant="heading" style={styles.title}>
+          Account
+        </AppText>
+
+        {/*
+          Tertiary, not destructive. Signing out is reversible -- it is a door,
+          not a demolition -- and giving it the same weight as account deletion
+          two cards above would blunt the one that matters.
+        */}
+        <Button
+          title="Sign out"
+          variant="tertiary"
+          onPress={onSignOut}
+          style={styles.action}
+        />
+      </Card>
     </>
   )
 }
 
 const styles = StyleSheet.create({
-  link: { fontWeight: '700', color: '#007AFF' },
-  actionRow: {
-    paddingVertical: 8,
+  title: {
+    color: theme.text.primary,
+    marginBottom: theme.space.sm,
+  },
+  action: {
+    marginTop: theme.space.sm,
   },
 })

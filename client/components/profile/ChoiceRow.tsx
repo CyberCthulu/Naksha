@@ -1,6 +1,6 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 
-import { uiStyles } from '../ui/uiStyles'
+import { AppText, MutedText } from '../ui/AppText'
 import { theme } from '../ui/theme'
 
 type Props = {
@@ -11,6 +11,19 @@ type Props = {
   disabled?: boolean
 }
 
+/**
+ * One option in a preference group.
+ *
+ * Announced as a radio rather than a button, with its selected and disabled
+ * state carried in `accessibilityState`. Previously it was an unlabelled
+ * TouchableOpacity whose only selection cue was the colour of a 14pt dot --
+ * invisible to a screen reader, and roughly a 26dp target against the 48dp
+ * minimum. The row is the control now, and it is full height whatever the
+ * label wraps to.
+ *
+ * "Coming soon" options stay disabled and unselectable. They are shown because
+ * they say where the chart engine is going, not because they can be chosen.
+ */
 export default function ChoiceRow({
   label,
   note,
@@ -19,49 +32,84 @@ export default function ChoiceRow({
   disabled = false,
 }: Props) {
   return (
-    <TouchableOpacity
-      style={[styles.choiceRow, disabled && styles.choiceRowDisabled]}
+    <Pressable
+      accessibilityRole="radio"
+      accessibilityLabel={note ? `${label}, ${note}` : label}
+      accessibilityState={{ selected, disabled }}
+      disabled={disabled || !onPress}
       onPress={onPress}
-      disabled={disabled}
+      style={({ pressed }) => [
+        styles.row,
+        pressed && !disabled && styles.pressed,
+        disabled && styles.disabled,
+      ]}
     >
-      <View style={[styles.choiceDot, selected && styles.choiceDotSelected]} />
-      <View style={{ flex: 1 }}>
-        <Text style={[uiStyles.text, disabled && styles.disabledText]}>
-          {label}
-        </Text>
-        {note ? <Text style={styles.choiceHint}>{note}</Text> : null}
+      {/* Selection is a filled gold disc inside a ring -- shape as well as
+          colour, so it survives both a monochrome view and a colour-blind one. */}
+      <View style={[styles.dot, selected && styles.dotSelected]}>
+        {selected ? <View style={styles.dotCore} /> : null}
       </View>
-    </TouchableOpacity>
+
+      <View style={styles.text}>
+        <AppText
+          variant="body"
+          style={[styles.label, disabled && styles.disabledText]}
+        >
+          {label}
+        </AppText>
+        {note ? (
+          <MutedText variant="caption" style={styles.note}>
+            {note}
+          </MutedText>
+        ) : null}
+      </View>
+    </Pressable>
   )
 }
 
 const styles = StyleSheet.create({
-  choiceRow: {
-    flexDirection: 'row',
+  row: {
     alignItems: 'center',
-    paddingVertical: 6,
+    columnGap: theme.space.md,
+    flexDirection: 'row',
+    minHeight: theme.touchTarget.min,
+    paddingVertical: theme.space.sm,
   },
-  choiceRowDisabled: {
-    opacity: 0.65,
+  pressed: {
+    opacity: 0.7,
   },
-  choiceDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginRight: 10,
+  disabled: {
+    opacity: 0.6,
   },
-  choiceDotSelected: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+  dot: {
+    alignItems: 'center',
+    borderColor: theme.border.base,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    height: 18,
+    justifyContent: 'center',
+    width: 18,
   },
-  choiceHint: {
-    fontSize: 12,
-    color: theme.colors.muted,
-    marginTop: 1,
+  dotSelected: {
+    borderColor: theme.accent.base,
+  },
+  dotCore: {
+    backgroundColor: theme.accent.base,
+    borderRadius: 4,
+    height: 8,
+    width: 8,
+  },
+  text: {
+    flex: 1,
+  },
+  label: {
+    color: theme.text.primary,
   },
   disabledText: {
-    color: theme.colors.muted,
+    color: theme.text.tertiary,
+  },
+  note: {
+    color: theme.text.tertiary,
+    marginTop: theme.space.hair,
   },
 })

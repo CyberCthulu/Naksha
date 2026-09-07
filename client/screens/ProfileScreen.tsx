@@ -1,13 +1,6 @@
 // screens/ProfileScreen.tsx
 import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from 'react-native'
+import { ScrollView, Alert } from 'react-native'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -15,7 +8,7 @@ import supabase from '../lib/supabase'
 import { signOut } from '../lib/auth'
 import { deleteAccount } from '../lib/accountDeletion'
 
-import { uiStyles } from '../components/ui/uiStyles'
+import { ErrorState } from '../components/ui/ErrorState'
 import { theme } from '../components/ui/theme'
 import { formatShortTimeFromHHMM } from '../lib/time'
 import type { PurchaseRow, SubscriptionRow, UserRow } from '../lib/domainTypes'
@@ -277,12 +270,12 @@ export default function ProfileScreen() {
 
   if (error) {
     return (
-      <View style={uiStyles.center}>
-        <Text style={uiStyles.errorText}>{error}</Text>
-        <TouchableOpacity onPress={load}>
-          <Text style={styles.link}>Retry</Text>
-        </TouchableOpacity>
-      </View>
+      <ErrorState
+        testID="profile-error"
+        title="Could not load your profile"
+        description={error}
+        action={{ label: 'Retry', onPress: load }}
+      />
     )
   }
 
@@ -290,9 +283,9 @@ export default function ProfileScreen() {
     <ScrollView
       style={{ flex: 1 }}
       contentContainerStyle={{
-        padding: theme.spacing.screen,
+        paddingHorizontal: theme.space.xl,
         paddingTop: insets.top + theme.space.xs,
-        paddingBottom: insets.bottom + 32,
+        paddingBottom: insets.bottom + theme.space.xxl,
       }}
     >
       <ProfileHeader
@@ -330,7 +323,3 @@ export default function ProfileScreen() {
     </ScrollView>
   )
 }
-
-const styles = StyleSheet.create({
-  link: { fontWeight: '700', color: '#007AFF' },
-})

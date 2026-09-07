@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
+import { AppText, MutedText } from '../ui/AppText'
 import { theme } from '../ui/theme'
 
 type Props = {
@@ -7,29 +8,37 @@ type Props = {
   value: string
 }
 
+/**
+ * A labelled fact.
+ *
+ * Stacked rather than columned. The label used to sit in a fixed 110pt column
+ * with the value right-aligned against it, which design-system 13.2 rules out:
+ * at a large font scale the label clips and the value is squeezed into a
+ * ragged sliver. Stacking has no width to run out of, and no `numberOfLines`
+ * cap -- a birth location is not something to truncate.
+ */
 export default function InfoRow({ label, value }: Props) {
   return (
     <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue} numberOfLines={2}>
+      <MutedText variant="caption" style={styles.label}>
+        {label}
+      </MutedText>
+      <AppText variant="body" style={styles.value}>
         {value}
-      </Text>
+      </AppText>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-    gap: 12,
+    marginTop: theme.space.md,
   },
-  rowLabel: { color: theme.colors.muted, flexShrink: 0, width: 110 },
-  rowValue: {
-    color: theme.colors.text,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'right',
+  label: {
+    color: theme.text.tertiary,
+  },
+  value: {
+    color: theme.text.primary,
+    marginTop: theme.space.hair,
   },
 })
