@@ -1,20 +1,12 @@
 //screens/MyCharts.tsx
 import React, {
   useCallback,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useState,
 } from 'react'
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  Alert,
-  StyleSheet,
-} from 'react-native'
-import { useNavigation } from '@react-navigation/native'
+import { View, FlatList, Pressable, Alert, StyleSheet } from 'react-native'
+import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -25,13 +17,21 @@ import {
   validateChartData,
   type ChartDataValidationResult,
 } from '../lib/chartDataValidation'
+import { formatBirthMoment } from '../lib/time'
 
-import { uiStyles } from '../components/ui/uiStyles'
-import { theme } from '../components/ui/theme'
-import { Button } from '../components/ui/Button'
-import { ScreenHeader } from '../components/ui/ScreenHeader'
+import { AppText, MutedText } from '../components/ui/AppText'
+import { Card } from '../components/ui/Card'
+import ChartWheel from '../components/charts/ChartWheel'
+import { EmptyState } from '../components/ui/EmptyState'
+import { ErrorState } from '../components/ui/ErrorState'
+import { Icon } from '../components/ui/Icon'
 import { LoadingState } from '../components/ui/LoadingState'
+import { ScreenHeader } from '../components/ui/ScreenHeader'
+import { theme } from '../components/ui/theme'
 import type { RootStackParamList } from '../navigation/types'
+
+/** Small enough to read as a mark, large enough to show the aspect pattern. */
+const THUMBNAIL_SIZE = 64
 
 type ChartListItem = {
   row: ChartRow
@@ -39,6 +39,12 @@ type ChartListItem = {
   summary: string
 }
 
+/**
+ * Validation happens once, here, when the rows arrive.
+ *
+ * The thumbnail below reads `validation.data` straight from this result. A
+ * saved chart is parsed and checked exactly once per load, never per frame.
+ */
 function toChartListItem(row: ChartRow): ChartListItem {
   const validation = validateChartData(row.chart_data)
   const meta = validation.status === 'valid' ? validation.data.meta : null
@@ -48,18 +54,21 @@ function toChartListItem(row: ChartRow): ChartListItem {
       ? 'Update Naksha to view this chart'
       : 'Chart data unavailable'
 
-  const base = meta
-    ? [meta.birth_date, meta.birth_time, meta.time_zone]
-        .filter(Boolean)
-        .join(' · ')
-    : unavailableSummary
-
-  const coords =
-    meta?.birth_lat != null && meta.birth_lon != null
-      ? ` · (${meta.birth_lat.toFixed(2)}, ${meta.birth_lon.toFixed(2)})`
-      : ''
-
-  return { row, validation, summary: `${base}${coords}` }
+  /*
+   * Birth moment only.
+   *
+   * This line used to read "1997-09-15 · 13:55:00 · America/Los_Angeles ·
+   * (37.49, -122.23)" -- a database row wearing a card. The zone and the
+   * coordinates are still stored and still drive every calculation; they are
+   * simply not what a reader needs to tell one saved chart from another.
+   */
+  return {
+    row,
+    validation,
+    summary: meta
+      ? formatBirthMoment(meta.birth_date, meta.birth_time) ?? unavailableSummary
+      : unavailableSummary,
+  }
 }
 
 export default function MyChartsScreen() {
@@ -97,11 +106,25 @@ export default function MyChartsScreen() {
     }
   }, [])
 
-  useEffect(() => {
-    load()
-  }, [load])
+  /*
+   * Focus is the only trigger.
+   *
+   * It fires on first mount as well as on every return, so pairing it with a
+   * mount effect would fetch the list twice on the way in. Saving a chart
+   * elsewhere and coming back now refreshes, which the mount-only version
+   * never did.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      load()
+    }, [load])
+  )
 
   const items = useMemo(() => rows.map(toChartListItem), [rows])
+
+  const openNewChart = useCallback(() => {
+    nav.navigate('CreateGuestChart')
+  }, [nav])
 
   const openChart = useCallback(
     ({ row, validation }: ChartListItem) => {
@@ -139,29 +162,36 @@ export default function MyChartsScreen() {
     [nav]
   )
 
-  const remove = async (row: ChartRow) => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+  /**
+   * The single confirmation path, shared by the icon, the long press and the
+   * accessibility action -- the same arrangement the Journal list uses.
+   */
+  const confirmDelete = useCallback(
+    (row: ChartRow) => {
+      Alert.alert('Delete chart?', row.name, [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const {
+                data: { user },
+              } = await supabase.auth.getUser()
 
-    if (!user) return
+              if (!user) return
 
-    Alert.alert('Delete chart?', row.name, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteChart(row.id, user.id)
-            load()
-          } catch (e: any) {
-            Alert.alert('Delete failed', e?.message ?? 'Unknown error')
-          }
+              await deleteChart(row.id, user.id)
+              load()
+            } catch (e: any) {
+              Alert.alert('Delete failed', e?.message ?? 'Unknown error')
+            }
+          },
         },
-      },
-    ])
-  }
+      ])
+    },
+    [load]
+  )
 
   if (loading) {
     return <LoadingState label="Loading charts" size="large" />
@@ -169,89 +199,204 @@ export default function MyChartsScreen() {
 
   if (error) {
     return (
-      <View style={uiStyles.center}>
-        <Text style={uiStyles.errorText}>{error}</Text>
-        <Button title="Retry" onPress={load} />
-        <View style={{ height: 8 }} />
-        <Button title="Go Back" variant="ghost" onPress={() => nav.goBack()} />
-      </View>
+      <ErrorState
+        testID="my-charts-error"
+        title="Could not load your charts"
+        description={error}
+        action={{ label: 'Retry', onPress: load }}
+        secondaryAction={{ label: 'Go back', onPress: () => nav.goBack() }}
+      />
     )
   }
 
+  const isEmpty = items.length === 0
+
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.screen}>
+      {/* One creation action at a time -- see the note on the Journal list. */}
       <ScreenHeader
         title="My Charts"
         onBack={() => nav.goBack()}
+        rightAction={
+          isEmpty
+            ? undefined
+            : {
+                label: 'New',
+                onPress: openNewChart,
+                accessibilityLabel: 'Create a new chart',
+              }
+        }
         style={[styles.header, { paddingTop: insets.top + theme.space.xs }]}
       />
 
-      {items.length === 0 ? (
-        <View style={uiStyles.center}>
-          <Text style={uiStyles.muted}>No charts yet.</Text>
-          <Text style={uiStyles.muted}>Save one from the chart screen to get started.</Text>
-        </View>
-      ) : (
-        <FlatList
-          contentContainerStyle={{
-            padding: theme.spacing.screen,
-            paddingBottom: insets.bottom + 24,
-          }}
-          data={items}
-          keyExtractor={(item) => String(item.row.id)}
-          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-          renderItem={({ item }) => (
-            <View style={uiStyles.card}>
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityLabel={`Open ${item.row.name}`}
-                onPress={() => openChart(item)}
-                style={styles.openRegion}
-              >
-                <Text style={styles.title}>{item.row.name}</Text>
-                <Text style={styles.sub}>{item.summary}</Text>
-              </TouchableOpacity>
+      <FlatList
+        data={items}
+        keyExtractor={(item) => String(item.row.id)}
+        contentContainerStyle={[
+          styles.list,
+          isEmpty && styles.listEmpty,
+          { paddingBottom: insets.bottom + theme.space.xxl },
+        ]}
+        /*
+         * Each row draws a whole chart, so the list is told to keep fewer of
+         * them alive than the default. Windowing is the entire mitigation --
+         * the thumbnail itself is static, so nothing is lost by recycling it.
+         */
+        initialNumToRender={6}
+        maxToRenderPerBatch={6}
+        windowSize={5}
+        removeClippedSubviews
+        ListEmptyComponent={
+          <EmptyState
+            testID="my-charts-empty"
+            title="No charts saved yet"
+            description="Charts you save appear here, ready to open again."
+            action={{ label: 'Create a chart', onPress: openNewChart }}
+          />
+        }
+        renderItem={({ item }) => {
+          const chart =
+            item.validation.status === 'valid' ? item.validation.data : null
 
-              <TouchableOpacity
+          return (
+            <Card style={styles.row} testID={`chart-row-${item.row.id}`}>
+              <Pressable
+                testID={`chart-open-${item.row.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${item.row.name}, ${item.summary}`}
+                accessibilityActions={[
+                  { name: 'delete', label: 'Delete chart' },
+                ]}
+                onAccessibilityAction={(event) => {
+                  if (event.nativeEvent.actionName === 'delete') {
+                    confirmDelete(item.row)
+                  }
+                }}
+                onPress={() => openChart(item)}
+                onLongPress={() => confirmDelete(item.row)}
+                style={({ pressed }) => [
+                  styles.rowMain,
+                  pressed && styles.rowPressed,
+                ]}
+              >
+                {/*
+                  Decorative only.
+
+                  It is the same drawing the Chart route uses, rendered from
+                  the chart data already validated above. Omitting
+                  onSelectPlanet is what makes it inert: ChartWheel returns the
+                  bare SVG and never mounts a single touch target. With no
+                  selection and no focused planet it starts no animation
+                  either, so a screen of these costs nothing per frame.
+
+                  Hidden from assistive technology because it carries no
+                  information the row's label does not already speak.
+                */}
+                {chart ? (
+                  <View
+                    accessible={false}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                    style={styles.thumbnail}
+                  >
+                    <ChartWheel
+                      size={THUMBNAIL_SIZE}
+                      planets={chart.planets}
+                      aspects={chart.aspects}
+                      houses={chart.houses}
+                    />
+                  </View>
+                ) : (
+                  <View style={[styles.thumbnail, styles.thumbnailMissing]}>
+                    <Icon name="charts" size="sm" color={theme.text.disabled} />
+                  </View>
+                )}
+
+                <View style={styles.rowText}>
+                  <AppText variant="subheading" numberOfLines={2} style={styles.name}>
+                    {item.row.name}
+                  </AppText>
+                  <MutedText variant="bodySmall" style={styles.summary}>
+                    {item.summary}
+                  </MutedText>
+                </View>
+              </Pressable>
+
+              <Pressable
+                testID={`chart-delete-${item.row.id}`}
                 accessibilityRole="button"
                 accessibilityLabel={`Delete ${item.row.name}`}
-                onPress={() => remove(item.row)}
-                style={styles.deleteButton}
+                onPress={() => confirmDelete(item.row)}
+                style={({ pressed }) => [
+                  styles.rowDelete,
+                  pressed && styles.rowPressed,
+                ]}
               >
-                <Text style={styles.delete}>Delete</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        />
-      )}
+                <Icon name="delete" size="sm" color={theme.state.danger} />
+              </Pressable>
+            </Card>
+          )
+        }}
+      />
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: theme.spacing.screen,
-  },
-  title: {
-    color: theme.colors.text,
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  sub: {
-    color: theme.colors.muted,
-    marginTop: 4,
-    fontSize: 13,
-  },
-  openRegion: {
+  screen: {
     flex: 1,
   },
-  deleteButton: {
-    alignSelf: 'flex-start',
-    justifyContent: 'center',
-    minHeight: 48,
+  header: {
+    paddingHorizontal: theme.space.xl,
   },
-  delete: {
-    color: theme.colors.danger,
-    fontWeight: '600',
+  list: {
+    paddingHorizontal: theme.space.xl,
+    paddingTop: theme.space.sm,
+    rowGap: theme.space.md,
+  },
+  listEmpty: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  row: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    columnGap: theme.space.md,
+  },
+  rowMain: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    columnGap: theme.space.md,
+  },
+  rowPressed: {
+    opacity: 0.7,
+  },
+  rowText: {
+    flex: 1,
+  },
+  thumbnail: {
+    height: THUMBNAIL_SIZE,
+    width: THUMBNAIL_SIZE,
+  },
+  thumbnailMissing: {
+    alignItems: 'center',
+    borderColor: theme.border.base,
+    borderRadius: THUMBNAIL_SIZE / 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    justifyContent: 'center',
+  },
+  name: {
+    color: theme.text.primary,
+  },
+  summary: {
+    color: theme.text.secondary,
+    marginTop: theme.space.hair,
+  },
+  rowDelete: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: theme.touchTarget.min,
+    minWidth: theme.touchTarget.min,
   },
 })
