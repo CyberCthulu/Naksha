@@ -168,6 +168,26 @@ cd ..
 git diff --check
 ```
 
+**One dependency is deliberately pinned ahead of the SDK.**
+`@react-native-picker/picker` is held at **2.11.3** while Expo SDK 54 expects
+2.11.1, and it is listed in `expo.install.exclude` so the check passes rather
+than reporting a finding everyone learns to ignore.
+
+2.11.1 compiles its Android native code with hardcoded C++ flags. React Native
+0.80 changed those flags, so on 0.81.5 the picker's library and
+`libreactnative.so` disagreed about C++ types crossing their boundary --
+`ShadowNode`, `Props`, `ContextContainer`. Memory allocated under one set of
+assumptions was freed under another, and Android's pointer tagging caught it:
+`free()` aborted the process with "Pointer tag was truncated", on Hermes' GC
+thread, while tearing down the 351-item time-zone picker. It killed the app
+outright on Guest Chart and was reachable from Complete Profile too. 2.11.3
+switches to React Native's own `target_compile_reactnative_options()` for
+RN >= 0.80, which is exactly that mismatch.
+
+**Do not run `npx expo install --fix` against this package.** It would revert
+2.11.3 and reintroduce a process-killing crash. The exclusion exists to prevent
+that; remove it only once Expo's expected version is 2.11.3 or newer.
+
 The test gate is only meaningful once Slice 0 lands. Until then, `npm test` can fail with 5000 ms timeouts on a cold cache while the product is healthy — see `baseline.md` §3. Do not read a cold-cache timeout as a regression, and do not raise the global timeout to hide it.
 
 Also perform focused Android visual/manual QA for every changed state. Automated tests protect behavior; they do not approve visual quality.
