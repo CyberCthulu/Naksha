@@ -168,7 +168,7 @@ cd ..
 git diff --check
 ```
 
-**One dependency is deliberately pinned ahead of the SDK.**
+**One dependency is deliberately pinned ahead of the SDK — DEVICE-APPROVED 2026-09-07.**
 `@react-native-picker/picker` is held at **2.11.3** while Expo SDK 54 expects
 2.11.1, and it is listed in `expo.install.exclude` so the check passes rather
 than reporting a finding everyone learns to ignore.
@@ -183,6 +183,13 @@ thread, while tearing down the 351-item time-zone picker. It killed the app
 outright on Guest Chart and was reachable from Complete Profile too. 2.11.3
 switches to React Native's own `target_compile_reactnative_options()` for
 RN >= 0.80, which is exactly that mismatch.
+
+Verified on a physical Android development build: the time-zone picker was
+opened and dismissed repeatedly, guest charts were created, and Complete
+Profile was exercised, with no recurrence of the SIGABRT. The duplicate-linking
+warning did not return after a clean launch either. Since the crash was
+GC-timed and intermittent, that is strong evidence rather than proof -- but the
+mechanism is understood and the fix addresses it directly.
 
 **Do not run `npx expo install --fix` against this package.** It would revert
 2.11.3 and reintroduce a process-killing crash. The exclusion exists to prevent
