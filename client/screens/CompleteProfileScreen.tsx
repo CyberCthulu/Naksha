@@ -193,7 +193,7 @@ export default function CompleteProfileScreen() {
   if (loading) {
     return (
       <AuthContainer>
-        <LoadingState />
+        <LoadingState label="Loading your details" />
       </AuthContainer>
     )
   }

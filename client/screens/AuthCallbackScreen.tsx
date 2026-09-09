@@ -1,12 +1,13 @@
 // screens/AuthCallbackScreen.tsx
 import { useEffect, useRef } from 'react'
-import { View, ActivityIndicator, StyleSheet, Alert } from 'react-native'
+import { View, StyleSheet, Alert } from 'react-native'
 import * as ExpoLinking from 'expo-linking'
 import type { RouteProp } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import supabase from '../lib/supabase'
 import { theme } from '../components/ui/theme'
 import { AppText } from '../components/ui/AppText'
+import { CelestialLoader } from '../components/ui/CelestialLoader'
 import { consumePendingAuthCallbackUrl } from '../lib/authCallbackUrl'
 import type { RootStackParamList } from '../navigation/types'
 
@@ -204,8 +205,14 @@ export default function AuthCallbackScreen({
   }, [navigation, route?.params?.url])
 
   return (
-    <View style={styles.container}>
-      <ActivityIndicator size="large" color={theme.accent.base} />
+    <View
+      style={styles.container}
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel="Verifying your account…"
+      accessibilityState={{ busy: true }}
+    >
+      <CelestialLoader size={96} color={theme.accent.base} />
       <AppText variant="body" style={styles.label}>Verifying your account…</AppText>
     </View>
   )

@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react'
 import {
   View,
   TouchableOpacity,
-  ActivityIndicator,
   StyleSheet,
 } from 'react-native'
 
@@ -10,6 +9,7 @@ import { geocodePlace, type GeocodeResult } from '../../lib/geocode'
 import FormField from '../ui/FormField'
 import TextField from '../ui/TextField'
 import { AppText, MutedText } from '../ui/AppText'
+import { CelestialLoader } from '../ui/CelestialLoader'
 import { uiStyles } from '../ui/uiStyles'
 import { theme } from '../ui/theme'
 
@@ -112,8 +112,14 @@ export default function LocationAutocompleteField({
       />
 
       {loading && (
-        <View style={styles.loadingRow}>
-          <ActivityIndicator size="small" color={theme.accent.base} />
+        <View
+          style={styles.loadingRow}
+          accessible
+          accessibilityRole="progressbar"
+          accessibilityLabel="Searching locations…"
+          accessibilityState={{ busy: true }}
+        >
+          <CelestialLoader size={20} color={theme.accent.base} />
           <MutedText variant="bodySmall" style={styles.loadingText}>
             Searching locations…
           </MutedText>

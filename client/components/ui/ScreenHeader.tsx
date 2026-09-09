@@ -1,7 +1,6 @@
 // components/ui/ScreenHeader.tsx
 import React from 'react'
 import {
-  ActivityIndicator,
   Pressable,
   StyleSheet,
   View,
@@ -10,6 +9,7 @@ import {
 } from 'react-native'
 
 import { AppText } from './AppText'
+import { CelestialLoader } from './CelestialLoader'
 import { Icon } from './Icon'
 import { theme } from './theme'
 
@@ -108,9 +108,9 @@ export function ScreenHeader({
             ]}
           >
             {rightAction.loading ? (
-              <ActivityIndicator
+              <CelestialLoader
                 testID="screen-header-action-spinner"
-                size="small"
+                size={20}
                 color={theme.accent.base}
               />
             ) : (

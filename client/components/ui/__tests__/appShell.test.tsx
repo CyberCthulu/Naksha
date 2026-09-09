@@ -33,8 +33,8 @@ describe('root providers', () => {
 
 describe('route background mapping', () => {
   const mapping: Record<string, 'quiet' | 'atmospheric' | 'hero'> = {
-    Login: 'quiet',
-    Signup: 'quiet',
+    Login: 'atmospheric',
+    Signup: 'atmospheric',
     CheckEmail: 'quiet',
     ForgotPassword: 'quiet',
     ResetPassword: 'quiet',

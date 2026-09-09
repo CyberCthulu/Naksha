@@ -4,6 +4,9 @@ import TestRenderer from 'react-test-renderer'
 import { ScreenHeader } from '../ScreenHeader'
 import { theme } from '../theme'
 
+// Control tests exercise the loader's static presentation; motion has its own suite.
+jest.mock('../useReducedMotion', () => ({ useReducedMotion: () => true }))
+
 function flattenStyles(style: unknown): Record<string, unknown> {
   if (!style) return {}
   if (Array.isArray(style)) return Object.assign({}, ...style.map(flattenStyles))
@@ -146,7 +149,7 @@ describe('ScreenHeader right slot', () => {
     ).toBe('Save')
   })
 
-  it('shows a spinner and blocks presses while the action is loading', () => {
+  it('shows the celestial loader and blocks presses while the action is loading', () => {
     const onPress = jest.fn()
     const screen = render(
       <ScreenHeader

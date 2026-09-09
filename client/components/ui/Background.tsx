@@ -23,6 +23,7 @@ import { ShootingStar } from './ShootingStar'
 import { celestialConfig } from './celestialConfig'
 import { CosmicSky } from './CosmicSky'
 import { ConstellationField } from './ConstellationField'
+import { ScreenActivityProvider } from './ScreenActivity'
 
 export type BackgroundVariant = 'flat' | 'quiet' | 'atmospheric' | 'hero'
 
@@ -299,7 +300,9 @@ export function Background({
         </View>
       ) : null}
 
-      {children}
+      <ScreenActivityProvider active={motionEnabled}>
+        {children}
+      </ScreenActivityProvider>
 
       {/* System-bar protection.
           Under edge-to-edge the window extends beneath the system bars, so a

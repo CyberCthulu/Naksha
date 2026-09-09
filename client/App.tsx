@@ -1,6 +1,6 @@
 // App.tsx
 import React, { useEffect, useState, createContext } from 'react'
-import { View, ActivityIndicator, StyleSheet } from 'react-native'
+import { View, StyleSheet } from 'react-native'
 import {
   NavigationContainer,
   DefaultTheme,
@@ -16,6 +16,7 @@ import { useAppFonts } from './components/ui/useAppFonts'
 import { Background, type BackgroundVariant } from './components/ui/Background'
 import { ReducedMotionProvider } from './components/ui/useReducedMotion'
 import { theme } from './components/ui/theme'
+import { LoadingState } from './components/ui/LoadingState'
 
 import supabase from './lib/supabase'
 import { SpaceProvider } from './components/space/SpaceProvider'
@@ -64,16 +65,16 @@ function withBackground<P extends object>(
   return BackgroundScreen
 }
 
-// quiet: auth, recovery and profile forms.
-const LoginRoute = withBackground(LoginScreen, 'quiet')
-const SignupRoute = withBackground(SignupScreen, 'quiet')
+// quiet: verification, recovery and profile completion.
 const CheckEmailRoute = withBackground(CheckEmailScreen, 'quiet')
 const ForgotPasswordRoute = withBackground(ForgotPasswordScreen, 'quiet')
 const ResetPasswordRoute = withBackground(ResetPasswordScreen, 'quiet')
 const AuthCallbackRoute = withBackground(AuthCallbackScreen, 'quiet')
 const CompleteProfileRoute = withBackground(CompleteProfileScreen, 'quiet')
 
-// atmospheric: browsing, account surfaces, guest charts and journal screens.
+// atmospheric: login, signup, browsing, guest charts and journal screens.
+const LoginRoute = withBackground(LoginScreen, 'atmospheric')
+const SignupRoute = withBackground(SignupScreen, 'atmospheric')
 const CreateGuestChartRoute = withBackground(CreateGuestChartScreen, 'atmospheric')
 const JournalListRoute = withBackground(JournalListScreen, 'atmospheric')
 const JournalEditorRoute = withBackground(JournalEditorScreen, 'atmospheric')
@@ -176,7 +177,7 @@ export default function App() {
     return (
       <View style={styles.bootRoot}>
         <StatusBar style="light" />
-        <ActivityIndicator size="large" color={theme.accent.base} />
+        <LoadingState label="Preparing Naksha" size="large" />
       </View>
     )
   }

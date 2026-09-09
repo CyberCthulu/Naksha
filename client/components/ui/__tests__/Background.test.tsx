@@ -5,6 +5,7 @@ import { Circle, Rect } from 'react-native-svg'
 
 import { Background, type BackgroundVariant } from '../Background'
 import { CosmicSky } from '../CosmicSky'
+import { useScreenActivity } from '../ScreenActivity'
 import { theme } from '../theme'
 
 let mockInsets = { top: 24, right: 0, bottom: 48, left: 0 }
@@ -123,6 +124,28 @@ describe('Background', () => {
     expect(decoration(screen)).toHaveLength(0)
     expect(screen.root.findAllByType(Circle)).toHaveLength(0)
     expect(screen.root.findAllByType(Rect)).toHaveLength(0)
+  })
+
+  it('shares route visibility with loaders in its content', async () => {
+    function ActivityProbe() {
+      return <Text>{useScreenActivity() ? 'active' : 'inactive'}</Text>
+    }
+
+    for (const enabled of [true, false, true]) {
+      await act(async () => {
+        const tree = (
+          <Background motionEnabled={enabled}>
+            <ActivityProbe />
+          </Background>
+        )
+        if (renderer) renderer.update(tree)
+        else renderer = create(tree)
+      })
+
+      expect(renderer!.root.findByType(Text).props.children).toBe(
+        enabled ? 'active' : 'inactive'
+      )
+    }
   })
 
   it('keeps a contained static sky without window protection or star animations', async () => {

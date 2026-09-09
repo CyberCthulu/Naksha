@@ -265,7 +265,7 @@ export default function ProfileScreen() {
   }
 
   if (loading) {
-    return <LoadingState />
+    return <LoadingState label="Loading your profile" />
   }
 
   if (error) {

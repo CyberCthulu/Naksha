@@ -24,6 +24,12 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 24, right: 0, bottom: 48, left: 0 }),
 }))
 
+// Screen behavior is independent of motion preferences; animation lifecycle
+// and reduced-motion transitions have their own hook tests.
+jest.mock('../../ui/useReducedMotion', () => ({
+  useReducedMotion: () => true,
+}))
+
 const { act, create } = TestRenderer
 const mockedUseChartData = useChartData as unknown as jest.Mock
 

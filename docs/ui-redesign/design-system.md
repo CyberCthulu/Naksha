@@ -488,8 +488,8 @@ for stars. No new dependency is required.
 | Variant | Composition | Applied to |
 | --- | --- | --- |
 | **`flat`** | `background.base` solid. Nothing else. | Explicit fallback; any surface where decoration measurably costs frames |
-| **`quiet`** | `background.base` + upper vertical gradient and drifting cosmic colors at half intensity; no stars | Auth and profile forms |
-| **`atmospheric`** | Navy gradient through the upper 70 %, violet/blue washes and drifting cosmic colors, **180** fixed ambient stars, plus 15 catalog stars from Cassiopeia and central Orion, shown as standalone points and halos without connecting lines. The original 96 stars retain their positions and brightness; 84 smaller, dimmer stars add distance. Nine stars glimmer, and a single shooting star occasionally crosses the sky. | Dashboard, CreateGuestChart, JournalList, JournalEditor, MyCharts, Profile |
+| **`quiet`** | `background.base` + upper vertical gradient and drifting cosmic colors at half intensity; no stars | Email verification, password recovery, auth callback, profile completion |
+| **`atmospheric`** | Navy gradient through the upper 70 %, violet/blue washes and drifting cosmic colors, **180** fixed ambient stars, plus 15 catalog stars from Cassiopeia and central Orion, shown as standalone points and halos without connecting lines. The original 96 stars retain their positions and brightness; 84 smaller, dimmer stars add distance. Nine stars glimmer, and a single shooting star occasionally crosses the sky. | Login, Signup, Dashboard, CreateGuestChart, JournalList, JournalEditor, MyCharts, Profile |
 | **`hero`** | `atmospheric` + **one** soft radial glow behind the focal element, tinted by the active `planetGlow` color at **≤ 8 %** opacity, radius ≈ 45 % of screen width | Chart route and interpretation sheet **only** |
 
 2026-09-09 consistency correction: the former twelve faint stars occupied only
@@ -618,7 +618,7 @@ control is allowed — a compact touch target is not.
 | default | as specified |
 | pressed | `opacity: 0.88`; secondary/tertiary also brighten border to `border.accent` |
 | disabled | `opacity: 0.45`, no press feedback, `accessibilityState={{ disabled: true }}` |
-| loading | spinner in `accent` (or `text.onAccent` on a filled primary), label retained, control disabled |
+| loading | Compact solar loader in `accent` (or `text.onAccent` on a filled primary), label retained, control disabled |
 
 Loading replaces the five different in-progress presentations the audit found
 (italic text, link-text swap, opacity 0.7 + label swap, bare spinner, spinner
@@ -727,17 +727,32 @@ Field min height **48 dp**. Label is `subheading`; hint and error are
 
 | Context | Treatment |
 | --- | --- |
-| Full screen | `LoadingState`, **safe-area aware**, indicator in `accent` |
-| In-card | Inline spinner + `bodySmall` |
-| In-button | See §7.3 |
-| App boot | `flat` background + `accent` indicator |
+| Full screen | `LoadingState`: centered 96px solar/lunar emblem in `accent`, with a named status label; `large` uses 112px |
+| In-card / location search | Compact 20px solar emblem + existing status text |
+| In-button / header action | Compact 20px solar emblem using the control's foreground color; busy/disabled semantics retained |
+| App boot | Flat navy background + 112px solar/lunar emblem and “Preparing Naksha…” |
 
 Label convention: **`Loading <noun>`** — "Loading chart", "Loading charts",
-"Loading journals", "Loading profile". No bare "Loading...". Remove
-`LoadingState`'s `minWidth: 160` and 1-line clamp, which exist to stop the
-default label from reflowing.
+"Loading journals", "Loading your profile". Labels can wrap and follow the
+shared text scaling rules. Loading containers expose a named indeterminate
+progress bar and busy state; the emblem itself is decorative and silent.
 
-`ActivityIndicator` currently never receives a `color` anywhere in the app.
+`CelestialLoader` replaces the generic loading circle throughout the app.
+Its 12-second cycle starts immediately as a golden sun: twelve alternating
+rays rotate, a finer inner ring counter-rotates, and the halo gently breathes.
+After about five seconds, it crossfades through crescent, half and full moon
+shapes before returning to the sun. Compact versions retain the sun throughout
+and omit the halo/lunar layers so they remain legible in small controls. The
+moon sequence is a decorative motif, not the current Moon phase or progress.
+
+One native animated value drives only opacity and transforms of fixed SVG
+geometry. No per-frame React work, new dependency, artificial wait, or minimum
+loading duration is introduced. `ScreenActivityProvider` passes route focus
+from `Background` to loading descendants; AppState and reduced-motion settings
+also stop the loop. Reduced or unresolved motion shows the complete static sun.
+Standalone bootstrap loading uses the same app-state/preference checks without
+requiring navigation. Timing lives in `useCelestialLoadingMotion.ts` as
+`CELESTIAL_LOADING_CYCLE_MS`; shape and glow tuning live in `CelestialLoader.tsx`.
 
 ### 9.2 Error — new `ErrorState` primitive
 
@@ -1059,12 +1074,13 @@ hardware-back behavior.
 ## 12. Motion and Reduced Motion
 
 Motion is limited to chart selection, slow cosmic color drift, a subtle
-background glimmer, and occasional shooting stars. All
+background glimmer, occasional shooting stars, and the celestial loading cycle. All
 retain a static presentation when reduced motion is enabled or unresolved.
 
 | Rule | |
 | --- | --- |
 | Backgrounds | Fixed stars with a native opacity loop over nine highlights, an occasional native shooting-star flight, and two cloud textures sharing one slow native phase. |
+| Loading | One 12-second native phase rotates and fades static solar/lunar SVG layers; compact controls show only the sun. Runs only while an operation is pending and its screen/app is active. |
 | Transitions | Platform default stack animation. No custom transitions in this migration |
 | Modal | `animationType="slide"` — **unchanged**, part of the preserved interaction behavior |
 | Press feedback | Opacity only. No scale, no spring |

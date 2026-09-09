@@ -1,7 +1,6 @@
 // components/ui/Button.tsx
 import React from 'react'
 import {
-  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
@@ -9,6 +8,7 @@ import {
   type ViewStyle,
 } from 'react-native'
 import { theme } from './theme'
+import { CelestialLoader } from './CelestialLoader'
 
 export type ButtonVariant =
   | 'primary'
@@ -77,9 +77,9 @@ export function Button({
         ]}
       >
         {loading ? (
-          <ActivityIndicator
+          <CelestialLoader
             testID="button-spinner"
-            size="small"
+            size={20}
             color={labelStyles[resolved].color}
             style={styles.spinner}
           />

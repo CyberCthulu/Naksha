@@ -8,6 +8,7 @@ detail forms, charts, saved charts, journal, and profile screens.
 | Today's Energy used the raised card color while Weekly Forecast used the standard card color. | Both use the same `GuidanceCard` wrapper and standard surface, with shared title, metadata, and expand/collapse styles. |
 | Only twelve faint stars appeared, all in the upper half; cards obscured much of the decoration. | The shared atmospheric background now has 180 deterministic ambient stars, 15 catalog stars from Cassiopeia and central Orion shown as standalone points without connecting lines, violet/blue washes, and small halos on the brightest stars. |
 | Guest chart creation looked flat beside the dashboard. | Its route now uses the same atmospheric background, visible through the form's transparent containers. |
+| Log In and Sign Up lacked the shared starry atmosphere. | Both routes now use the atmospheric sky through their transparent form containers. Email verification, recovery, auth callback, and profile completion retain the quiet variant. |
 | Journal list and editor still used the quiet background without stars. | Both routes now use the full atmospheric sky. List cards retain the shared 30% fill, and the editor's large writing field uses that fill so stars remain visible while writing. |
 | Background colors felt static and the constellation fragments were invented. | All screen variants except the explicit flat fallback share slow violet/blue/teal cloud motion (softer on forms). Star groups retain verified catalog coordinates and uniform scaling, with halos but no connecting lines. Their independent placements are decorative, not a sky map. |
 | Reduced motion erased an entirely static background. | Static decoration remains visible without waiting for a motion preference. The explicit flat background is still available. |
@@ -15,6 +16,7 @@ detail forms, charts, saved charts, journal, and profile screens.
 | Date/time selectors, time-zone controls, location suggestions, and setup screens mixed legacy colors and system fonts with the current design. | They use the shared typography, navy input surfaces, semantic text/border colors, and existing form primitives. |
 | Login, signup, password recovery, email verification, and profile completion used competing primary-action treatments. | Primary actions consistently use the existing gold button; supporting navigation uses secondary or tertiary buttons. |
 | Navigation theme text and accents were hardcoded white. | They use the shared text, accent, and information colors. |
+| Generic loading circles did not match Naksha's atmosphere. | A shared solar loader now uses rotating rays, a breathing halo and a lunar interlude during longer waits. Loading screens, bootstrap and account verification use the full emblem; controls and location search use a compact sun. |
 
 Chart, journal, saved-chart, and profile content already predominantly used the
 semantic palette. Planet glyph colors, selection highlights, and raised sheets
@@ -45,6 +47,12 @@ Small sun and lunar-cycle marks accompany the guidance headings. Orbital,
 house-wheel, and connected-star marks accompany chart section headings. These
 fixed ornaments do not imply live moon phases or chart data and are hidden from
 screen readers. Sky tuning is centralized in `components/ui/celestialConfig.ts`.
+
+Loading labels remain readable and announce a named busy state. The emblem
+adds no delay to requests, and its single native animation stops for hidden
+routes, inactive apps and reduced motion. A complete still sun remains when
+animation is disabled. The crescent uses a local SVG mask, so its cutout reveals
+the actual surface behind it. Loading labels can wrap at larger font sizes.
 
 Validation includes component/screen tests, TypeScript, ESLint, and an offline
 Android bundle export. No Android device was connected for an on-device visual

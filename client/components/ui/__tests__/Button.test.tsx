@@ -4,6 +4,9 @@ import TestRenderer from 'react-test-renderer'
 import { Button, type ButtonVariant } from '../Button'
 import { theme } from '../theme'
 
+// Control tests exercise the loader's static presentation; motion has its own suite.
+jest.mock('../useReducedMotion', () => ({ useReducedMotion: () => true }))
+
 function flattenStyles(style: unknown): Record<string, unknown> {
   if (!style) return {}
   if (Array.isArray(style)) return Object.assign({}, ...style.map(flattenStyles))
@@ -178,7 +181,7 @@ describe('Button touch target and behavior', () => {
     expect(onPress).not.toHaveBeenCalled()
   })
 
-  it('shows a spinner while loading, keeps the label, and blocks presses', () => {
+  it('shows the celestial loader, keeps the label, and blocks presses', () => {
     const onPress = jest.fn()
     const screen = renderButton(
       <Button title="Saving" onPress={onPress} loading />
