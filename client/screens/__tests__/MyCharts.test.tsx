@@ -4,6 +4,9 @@ import TestRenderer from 'react-test-renderer'
 
 import MyChartsScreen from '../MyCharts'
 import ChartWheel from '../../components/charts/ChartWheel'
+import { ChartMark } from '../../components/charts/ChartMark'
+import { Circle as SvgCircle, Line as SvgLine } from 'react-native-svg'
+import { theme } from '../../components/ui/theme'
 import { Button } from '../../components/ui/Button'
 import { deleteChart, listCharts } from '../../lib/charts'
 import { validateChartData } from '../../lib/chartDataValidation'
@@ -420,7 +423,7 @@ describe('MyCharts row interactions', () => {
   })
 })
 
-describe('MyCharts thumbnails', () => {
+describe('MyCharts chart mark', () => {
   beforeEach(() => {
     ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
     jest.clearAllMocks()
@@ -443,45 +446,35 @@ describe('MyCharts thumbnails', () => {
     jest.restoreAllMocks()
   })
 
-  it('draws a wheel only for rows whose data is readable', async () => {
-    mockedListCharts.mockResolvedValue([
-      chartRow(1, 'Current', CURRENT_DATA),
-      chartRow(3, 'Future', FUTURE_DATA),
-      chartRow(4, 'Broken', MALFORMED_DATA),
-    ])
+  it('mounts no chart wheel at all, however many rows are saved', async () => {
+    const rows = Array.from({ length: 12 }, (_, i) =>
+      chartRow(i + 1, `Chart ${i + 1}`, CURRENT_DATA)
+    )
+    mockedListCharts.mockResolvedValue(rows)
 
     const screen = await renderScreen()
-    const wheels = screen.root.findAllByType(ChartWheel)
 
-    // One readable row, one wheel. Unsupported and malformed rows get the
-    // placeholder instead -- drawing them would mean trusting data the
-    // validator just rejected.
-    expect(wheels).toHaveLength(1)
-  })
+    // The whole point of the mark. A real wheel at this size destroyed its
+    // own detail, and twelve of them put twelve full charts in a scrolling
+    // list. Not fewer wheels -- none.
+    expect(screen.root.findAllByType(ChartWheel)).toHaveLength(0)
 
-  it('renders the thumbnail from the already-validated data', async () => {
-    const screen = await renderScreen()
-    const wheel = screen.root.findByType(ChartWheel)
+    // Every row the list actually rendered carries a mark. Counted against
+    // rendered rows, not saved rows, because FlatList windows the tail.
+    // Host nodes only: Card passes the testID down, so a composite match
+    // counts the same row three times.
+    const renderedRows = screen.root.findAll(
+      (node) =>
+        typeof node.type === 'string' &&
+        typeof node.props?.testID === 'string' &&
+        /^chart-row-\d+$/.test(node.props.testID)
+    )
+    expect(renderedRows.length).toBeGreaterThan(0)
+    expect(screen.root.findAllByType(ChartMark)).toHaveLength(
+      renderedRows.length
+    )
 
-    expect(wheel.props.planets).toBe(CHART_ROW.chart_data.planets)
-    expect(wheel.props.aspects).toBe(CHART_ROW.chart_data.aspects)
-    expect(wheel.props.houses).toBe(CHART_ROW.chart_data.houses)
-  })
-
-  it('leaves the thumbnail completely inert', async () => {
-    const screen = await renderScreen()
-    const wheel = screen.root.findByType(ChartWheel)
-
-    // Omitting these is what makes it inert: ChartWheel returns the bare SVG
-    // and mounts no touch target, and with nothing selected it starts no
-    // animation. Passing any of them would put an interactive, animating
-    // chart inside every row of a scrolling list.
-    expect(wheel.props.onSelectPlanet).toBeUndefined()
-    expect(wheel.props.onSelectAspect).toBeUndefined()
-    expect(wheel.props.selection).toBeUndefined()
-    expect(wheel.props.focusedPlanet).toBeUndefined()
-
-    // No planet control reached the list.
+    // And no wheel machinery reached the list by another route.
     expect(
       screen.root.findAll(
         (node) =>
@@ -491,10 +484,90 @@ describe('MyCharts thumbnails', () => {
     ).toHaveLength(0)
   })
 
-  it('hides the thumbnail from assistive technology', async () => {
+  it('marks only rows whose data is readable', async () => {
+    mockedListCharts.mockResolvedValue([
+      chartRow(1, 'Current', CURRENT_DATA),
+      chartRow(3, 'Future', FUTURE_DATA),
+      chartRow(4, 'Broken', MALFORMED_DATA),
+    ])
+
     const screen = await renderScreen()
-    const wheel = screen.root.findByType(ChartWheel)
-    const wrapper = wheel.parent
+
+    // Unsupported and malformed rows still get the plain placeholder. Showing
+    // them a natal emblem would claim a chart the validator just rejected.
+    expect(screen.root.findAllByType(ChartMark)).toHaveLength(1)
+  })
+
+  it('takes no chart data, so it cannot depend on one', async () => {
+    const screen = await renderScreen()
+    const mark = screen.root.findByType(ChartMark)
+
+    // Size is the only input. Nothing chart-specific, no Sun-sign tint --
+    // which is what lets a synastry or composite mark exist later without
+    // reworking the row.
+    expect(Object.keys(mark.props)).toEqual(['size'])
+
+    for (const forbidden of [
+      'planets',
+      'aspects',
+      'houses',
+      'chart',
+      'data',
+      'selection',
+      'focusedPlanet',
+      'onSelectPlanet',
+      'onSelectAspect',
+    ]) {
+      expect(mark.props).not.toHaveProperty(forbidden)
+    }
+  })
+
+  it('draws the emblem the design calls for', async () => {
+    const screen = await renderScreen()
+    const mark = screen.root.findByType(ChartMark)
+
+    const circles = mark.findAllByType(SvgCircle)
+    const lines = mark.findAllByType(SvgLine)
+
+    // Twelve readable ticks, and a centre point.
+    expect(lines).toHaveLength(12)
+    // Seated disc, outer ring, inner ring, core.
+    expect(circles).toHaveLength(4)
+  })
+
+  it('renders no chart-specific colour', async () => {
+    const screen = await renderScreen()
+    const mark = screen.root.findByType(ChartMark)
+
+    // Read the raw props off the Svg components, not the host nodes:
+    // react-native-svg processes a colour into {type, payload} on the way
+    // down, so a host node's `stroke` is no longer the string we passed.
+    const paint = [
+      ...mark.findAllByType(SvgCircle),
+      ...mark.findAllByType(SvgLine),
+    ]
+      .flatMap((node) => [node.props.stroke, node.props.fill])
+      .filter((value): value is string => typeof value === 'string')
+
+    expect(paint.length).toBeGreaterThan(0)
+
+    // Gold and navy only. A planet hue here would make the mark data-driven
+    // through the back door.
+    const planetHues = [
+      ...Object.values(theme.planet),
+      ...Object.values(theme.planetGlow),
+    ]
+    for (const value of paint) {
+      expect(planetHues).not.toContain(value)
+    }
+
+    // And it is positively drawn from the accent, not merely not-planetary.
+    expect(paint).toContain(theme.accent.base)
+  })
+
+  it('hides the mark from assistive technology', async () => {
+    const screen = await renderScreen()
+    const wrapper = screen.root.findByType(ChartMark).parent
 
     expect(wrapper?.props.accessible).toBe(false)
     expect(wrapper?.props.accessibilityElementsHidden).toBe(true)
@@ -503,18 +576,14 @@ describe('MyCharts thumbnails', () => {
     )
   })
 
-  it('validates once per load however many rows are drawn', async () => {
+  it('still validates once per load, and not again on re-render', async () => {
     const rows = Array.from({ length: 12 }, (_, i) =>
       chartRow(i + 1, `Chart ${i + 1}`, CURRENT_DATA)
     )
     mockedListCharts.mockResolvedValue(rows)
 
     const screen = await renderScreen()
-
-    // Twelve rows, twelve validations -- the thumbnails read the memoised
-    // result and never parse again, however often the list re-renders.
     expect(mockedValidate).toHaveBeenCalledTimes(rows.length)
-    expect(screen.root.findAllByType(ChartWheel).length).toBeGreaterThan(0)
 
     const after = mockedValidate.mock.calls.length
     act(() => {
@@ -789,16 +858,15 @@ describe('MyCharts list cost', () => {
   })
 
   /*
-   * Every row draws a whole chart, so the number of mounted wheels must not
-   * follow the number of saved charts. Windowing is the entire mitigation:
-   * measured across 1, 10, 50 and 100 rows the mounted count stays at six and
-   * render time stays flat -- 100 rows cost no more than 10.
+   * The mark removed the reason this bound existed.
    *
-   * Asserted structurally rather than by timing, which would be flaky, and by
-   * the count rather than the props, which would pass even if FlatList
-   * stopped honouring them.
+   * 9A rendered a real wheel per row and leaned on FlatList windowing to keep
+   * the mounted count at six. There is nothing to bound now: the emblem is a
+   * handful of static strokes with no chart data, so row count cannot
+   * introduce chart work. Asserted at 100 rows because that is where the old
+   * implementation would have shown it.
    */
-  it('keeps mounted wheels bounded however many charts are saved', async () => {
+  it('introduces no chart rendering however many charts are saved', async () => {
     for (const count of [10, 50, 100]) {
       mockedListCharts.mockResolvedValue(
         Array.from({ length: count }, (_, i) =>
@@ -807,10 +875,9 @@ describe('MyCharts list cost', () => {
       )
 
       const screen = await renderScreen()
-      const wheels = screen.root.findAllByType(ChartWheel).length
 
-      expect(wheels).toBeLessThanOrEqual(10)
-      expect(wheels).toBeGreaterThan(0)
+      expect(screen.root.findAllByType(ChartWheel)).toHaveLength(0)
+      expect(screen.root.findAllByType(ChartMark).length).toBeGreaterThan(0)
 
       act(() => {
         screen.unmount()

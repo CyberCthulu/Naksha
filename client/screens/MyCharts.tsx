@@ -21,7 +21,7 @@ import { formatBirthMoment } from '../lib/time'
 
 import { AppText, MutedText } from '../components/ui/AppText'
 import { Card } from '../components/ui/Card'
-import ChartWheel from '../components/charts/ChartWheel'
+import { ChartMark } from '../components/charts/ChartMark'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ErrorState } from '../components/ui/ErrorState'
 import { Icon } from '../components/ui/Icon'
@@ -30,8 +30,8 @@ import { ScreenHeader } from '../components/ui/ScreenHeader'
 import { theme } from '../components/ui/theme'
 import type { RootStackParamList } from '../navigation/types'
 
-/** Small enough to read as a mark, large enough to show the aspect pattern. */
-const THUMBNAIL_SIZE = 64
+/** The emblem's rendered size. See ChartMark for why it is drawn, not scaled. */
+const MARK_SIZE = 64
 
 type ChartListItem = {
   row: ChartRow
@@ -42,8 +42,10 @@ type ChartListItem = {
 /**
  * Validation happens once, here, when the rows arrive.
  *
- * The thumbnail below reads `validation.data` straight from this result. A
- * saved chart is parsed and checked exactly once per load, never per frame.
+ * Nothing below re-reads it: the row's emblem carries no chart data at all,
+ * and `validation` is consulted only to decide whether the row can be opened
+ * and which emblem state to show. A saved chart is parsed and checked exactly
+ * once per load, never per frame.
  */
 function toChartListItem(row: ChartRow): ChartListItem {
   const validation = validateChartData(row.chart_data)
@@ -237,15 +239,6 @@ export default function MyChartsScreen() {
           isEmpty && styles.listEmpty,
           { paddingBottom: insets.bottom + theme.space.xxl },
         ]}
-        /*
-         * Each row draws a whole chart, so the list is told to keep fewer of
-         * them alive than the default. Windowing is the entire mitigation --
-         * the thumbnail itself is static, so nothing is lost by recycling it.
-         */
-        initialNumToRender={6}
-        maxToRenderPerBatch={6}
-        windowSize={5}
-        removeClippedSubviews
         ListEmptyComponent={
           <EmptyState
             testID="my-charts-empty"
@@ -280,37 +273,22 @@ export default function MyChartsScreen() {
                 ]}
               >
                 {/*
-                  Decorative only.
-
-                  It is the same drawing the Chart route uses, rendered from
-                  the chart data already validated above. Omitting
-                  onSelectPlanet is what makes it inert: ChartWheel returns the
-                  bare SVG and never mounts a single touch target. With no
-                  selection and no focused planet it starts no animation
-                  either, so a screen of these costs nothing per frame.
-
-                  Hidden from assistive technology because it carries no
-                  information the row's label does not already speak.
+                  Decorative. The row's accessible label above carries every
+                  piece of meaning, so this is hidden rather than described --
+                  an emblem that announced itself would say "chart" twice.
                 */}
-                {chart ? (
-                  <View
-                    accessible={false}
-                    accessibilityElementsHidden
-                    importantForAccessibility="no-hide-descendants"
-                    style={styles.thumbnail}
-                  >
-                    <ChartWheel
-                      size={THUMBNAIL_SIZE}
-                      planets={chart.planets}
-                      aspects={chart.aspects}
-                      houses={chart.houses}
-                    />
-                  </View>
-                ) : (
-                  <View style={[styles.thumbnail, styles.thumbnailMissing]}>
+                <View
+                  accessible={false}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                  style={[styles.mark, !chart && styles.markUnreadable]}
+                >
+                  {chart ? (
+                    <ChartMark size={MARK_SIZE} />
+                  ) : (
                     <Icon name="charts" size="sm" color={theme.text.disabled} />
-                  </View>
-                )}
+                  )}
+                </View>
 
                 <View style={styles.rowText}>
                   <AppText variant="subheading" numberOfLines={2} style={styles.name}>
@@ -375,16 +353,17 @@ const styles = StyleSheet.create({
   rowText: {
     flex: 1,
   },
-  thumbnail: {
-    height: THUMBNAIL_SIZE,
-    width: THUMBNAIL_SIZE,
-  },
-  thumbnailMissing: {
+  mark: {
     alignItems: 'center',
-    borderColor: theme.border.base,
-    borderRadius: THUMBNAIL_SIZE / 2,
-    borderWidth: StyleSheet.hairlineWidth,
+    height: MARK_SIZE,
     justifyContent: 'center',
+    width: MARK_SIZE,
+  },
+  /* An unreadable chart gets a plain outline: present, but plainly not a chart. */
+  markUnreadable: {
+    borderColor: theme.border.base,
+    borderRadius: MARK_SIZE / 2,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   name: {
     color: theme.text.primary,

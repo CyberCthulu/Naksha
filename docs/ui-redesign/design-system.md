@@ -732,7 +732,35 @@ already do this correctly.
 | Planet / house rows | no role/label | `button` role, label reading placement and meaning |
 | Journal long-press delete | **no discoverable affordance** | Visible action or an accessibility action |
 
-### 10.3a Quick navigation and in-screen selectors
+### 10.4 Chart marks
+
+Added in Slice 9C, after device review rejected the alternative.
+
+A saved chart is identified by a **static emblem for its kind**, not by a
+miniature of its own data. The reference design and the first implementation
+both put a real `ChartWheel` on each My Charts row; on a device it failed. A
+64dp wheel renders twelve house divisions, twelve sign ticks, ten planet glyphs
+and every aspect line into roughly four thousand pixels, and the detail is not
+merely small -- it is destroyed. The row read as noise.
+
+| Rule | |
+| --- | --- |
+| Identifies the kind, not the instance | One natal mark, identical on every natal row. The name and birth moment already distinguish rows; the mark answers "what sort of chart is this". |
+| No chart data, no derived tint | Size is the only input. A Sun-sign tint was considered and rejected: it would make a static emblem data-driven through the back door, and staying data-free is what makes sibling marks possible later. |
+| Drawn for its size | A fixed 64-unit viewBox scaled to the rendered size -- a handful of strokes with real space between them, rather than a full chart squeezed down. Proportion and optical weight hold at any density. |
+| Navy and gold only | `background.base` disc, `accent.base` rings, ticks and core at descending opacity. No planet hue. |
+| Decorative | Hidden from assistive technology. The row's accessible label is the source of meaning; an emblem that announced itself would say "chart" twice. |
+| Unreadable data gets a placeholder | A malformed or unsupported-version chart shows a plain outline, never the natal mark. Showing the emblem would claim a chart the validator just rejected. |
+
+**Future kinds extend it rather than complicate it.** Synastry is not one wheel
+and could never be drawn as one -- two interlocking rings; a composite chart,
+one ring with a split core. Those are siblings of the natal mark, which is only
+possible because nothing in it is data-driven. Not built speculatively;
+recorded so the shape is obvious when they arrive.
+
+---
+
+### 10.5 Quick navigation and in-screen selectors
 
 Two patterns established on the Dashboard in Slice 7. Both are presentation
 only: neither adds a route, a param or a navigator.
@@ -748,7 +776,7 @@ distinction shows up as a stutter the first time a reader flicks between them.
 
 ---
 
-### 10.4 Direct manipulation on the chart wheel
+### 10.6 Direct manipulation on the chart wheel
 
 Added in Slice 6B and revised there after device review. The wheel is the one
 surface in the app with continuous direct manipulation, so its rules are

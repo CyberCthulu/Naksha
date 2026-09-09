@@ -330,7 +330,7 @@ including a gradient-stroke aspect design that was proposed and then overtaken:
 5. **Aspect geometry and calculations are unchanged.** Only the offset at which
    dashes fall along a fixed line animates.
 6. Pinch/pan, and the crowded-wedge hit-test arbitration that followed it,
-   behave as described in design-system.md §10.4 — including the tightened
+   behave as described in design-system.md §10.6 — including the tightened
    aspect corridor inside the house band and screen-space slop.
 
 Two flagship defects were closed in the same slice: the chart headline is laid
@@ -449,7 +449,7 @@ should assume:
 | Panel state | Expanded flags live on the screen, because an unmounted panel cannot keep its own. Today and This Week stay independent across switches. |
 | Cost of switching | None. No rebuild, no chart work, no I/O — a selector that recalculates is not a selector. |
 
-Later slices inherit the two patterns as documented in design-system.md §10.3a
+Later slices inherit the two patterns as documented in design-system.md §10.5
 rather than re-deriving them per screen.
 
 Gate: the stage 8 validation gate, on device — **passed 2026-09-05**, over
@@ -507,6 +507,54 @@ Gate: the stage 8 validation gate, on device. **Not yet run.** The open
 question is whether edge-to-edge plus `adjustResize` leaves the response field
 or the header Save obscured by the IME — deliberately not pre-empted with
 guessed inset compensation.
+
+### Slice 9 — My Charts and Profile — **IMPLEMENTED, pending Android device review**
+
+Three separately reviewable commits: **9A** My Charts, **9B** Profile, **9C**
+the chart mark. Together the last significant `uiStyles` consumers outside
+auth — 1,072 lines across 11 files.
+
+Preserve throughout: `lib/charts.ts`, `lib/accountDeletion.ts`, chart
+validation and hydration, the `chart_preferences` contract, every route and
+param, and all account, export, sign-out and deletion behaviour. Coordinates
+and the IANA zone are still stored and still drive every calculation; they
+simply stopped being presentation.
+
+**9A — My Charts.** `Card` rows, `EmptyState`, `ErrorState`. Creation is one
+action per resolved state, as on the Journal list. The row is two sibling
+regions with a trailing 48 dp delete icon, and the icon, the long press and the
+accessibility action share one confirmation. Loading moved from a mount effect
+to `useFocusEffect` alone — pairing the two fetched twice on the way in, and
+mount-only never refreshed after saving a chart elsewhere.
+
+Row summaries stopped being database rows. `1997-09-15 · 13:55:00 ·
+America/Los_Angeles · (37.49, -122.23)` became `15 Sep 1997 · 1:55 PM`.
+
+**Birth dates are calendar fields, not instants.** `formatBirthDate` parses
+`YYYY-MM-DD` field by field rather than through `new Date()`, which reads the
+string as midnight UTC and renders the 14th for anyone west of Greenwich. This
+is why it is not the Journal's timestamp formatter: journal entries *are*
+instants and should localise; a birth date must never move.
+
+**9B — Profile.** Every card on the shared `Card`. `InfoRow`'s fixed 110pt
+label column is gone (§13.2). `ChoiceRow` is a real 48 dp `radio` with
+`selected` and `disabled` semantics and a gold selection state. Export and
+Sign out became `tertiary` buttons; **Delete account became `destructive`** —
+it was a `#007AFF` text link at roughly a 34 dp target, which is to say an
+irreversible action styled as a hyperlink. Six of the app's seven remaining
+`#007AFF` instances went with it. No "Coming soon" preference was activated,
+removed, or made to look selectable.
+
+**9C — the chart mark.** Device review rejected 9A's miniature `ChartWheel`:
+at 64dp a real wheel destroys its own detail and the row reads as noise. It
+was replaced by one static natal emblem, drawn for that size and carrying no
+chart data. The rule and the reasoning are in design-system.md §10.4,
+including why a Sun-sign tint was considered and rejected, and how synastry and
+composite marks extend it later. The windowing 9A needed went with the wheels —
+there is no longer any chart work for row count to multiply.
+
+Gate: the stage 8 validation gate, on device. **Not yet run.** To be reviewed
+in one combined pass with Slice 8.
 
 ### Later — Dashboard redesign slice — **CLOSED BY SLICE 7**
 
