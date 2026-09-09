@@ -8,9 +8,10 @@ detail forms, charts, saved charts, journal, and profile screens.
 | Today's Energy used the raised card color while Weekly Forecast used the standard card color. | Both use the same `GuidanceCard` wrapper and standard surface, with shared title, metadata, and expand/collapse styles. |
 | Only twelve faint stars appeared, all in the upper half; cards obscured much of the decoration. | The shared atmospheric background now has 180 deterministic ambient stars, 15 catalog stars from Cassiopeia and central Orion shown as standalone points without connecting lines, violet/blue washes, and small halos on the brightest stars. |
 | Guest chart creation looked flat beside the dashboard. | Its route now uses the same atmospheric background, visible through the form's transparent containers. |
-| Log In and Sign Up lacked the shared starry atmosphere. | Both routes now use the atmospheric sky through their transparent form containers. Email verification, recovery, auth callback, and profile completion retain the quiet variant. |
+| Log In and Sign Up lacked the shared starry atmosphere. | Both routes now use the atmospheric sky through their transparent form containers. |
+| Email verification, password recovery/reset, auth callback and profile completion still used the quiet sky. | All five now use the full atmospheric sky, completing the treatment across every registered route. |
 | Journal list and editor still used the quiet background without stars. | Both routes now use the full atmospheric sky. List cards retain the shared 30% fill, and the editor's large writing field uses that fill so stars remain visible while writing. |
-| Background colors felt static and the constellation fragments were invented. | All screen variants except the explicit flat fallback share slow violet/blue/teal cloud motion (softer on forms). Star groups retain verified catalog coordinates and uniform scaling, with halos but no connecting lines. Their independent placements are decorative, not a sky map. |
+| Background colors felt static and the constellation fragments were invented. | All screen variants except the explicit flat fallback share slow violet/blue/teal cloud motion. Every registered route now uses the full atmospheric or hero treatment. Star groups retain verified catalog coordinates and uniform scaling, with halos but no connecting lines. Their independent placements are decorative, not a sky map. |
 | Reduced motion erased an entirely static background. | Static decoration remains visible without waiting for a motion preference. The explicit flat background is still available. |
 | `MutedText` with a typography variant still defaulted to legacy translucent white. | It now uses the shared secondary text color. |
 | Date/time selectors, time-zone controls, location suggestions, and setup screens mixed legacy colors and system fonts with the current design. | They use the shared typography, navy input surfaces, semantic text/border colors, and existing form primitives. |
@@ -33,8 +34,8 @@ over a static SVG layer. Occasional shooting stars cross the sky using one small
 native-animated sprite, with long pauses between flights. Two static cloud
 textures share another native phase to move and crossfade over 48 seconds.
 All effects stop on hidden routes, app inactivity, reduced motion, and unmount.
-The base sky remains visible in every motion mode. Quiet form backgrounds use
-half-strength cloud motion; contained popup skies remain static. No runtime
+The base sky remains visible in every motion mode. The optional quiet variant
+uses half-strength cloud motion; contained popup skies remain static. No runtime
 assets, blur effects, or dependencies were added.
 
 Cloud intensity is capped by the chosen default of 0.75 (0.375 for quiet
@@ -55,5 +56,6 @@ animation is disabled. The crescent uses a local SVG mask, so its cutout reveals
 the actual surface behind it. Loading labels can wrap at larger font sizes.
 
 Validation includes component/screen tests, TypeScript, ESLint, and an offline
-Android bundle export. No Android device was connected for an on-device visual
-review; SVG previews validate decoration geometry and colors only.
+Android bundle export. SVG previews validate decoration geometry and colors.
+The user completed a device walkthrough and reported smooth animation before
+the final five routes were switched to the same shared atmospheric treatment.

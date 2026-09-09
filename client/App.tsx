@@ -65,14 +65,12 @@ function withBackground<P extends object>(
   return BackgroundScreen
 }
 
-// quiet: verification, recovery and profile completion.
-const CheckEmailRoute = withBackground(CheckEmailScreen, 'quiet')
-const ForgotPasswordRoute = withBackground(ForgotPasswordScreen, 'quiet')
-const ResetPasswordRoute = withBackground(ResetPasswordScreen, 'quiet')
-const AuthCallbackRoute = withBackground(AuthCallbackScreen, 'quiet')
-const CompleteProfileRoute = withBackground(CompleteProfileScreen, 'quiet')
-
-// atmospheric: login, signup, browsing, guest charts and journal screens.
+// All routes share the atmospheric sky; the chart adds its hero glow below.
+const CheckEmailRoute = withBackground(CheckEmailScreen, 'atmospheric')
+const ForgotPasswordRoute = withBackground(ForgotPasswordScreen, 'atmospheric')
+const ResetPasswordRoute = withBackground(ResetPasswordScreen, 'atmospheric')
+const AuthCallbackRoute = withBackground(AuthCallbackScreen, 'atmospheric')
+const CompleteProfileRoute = withBackground(CompleteProfileScreen, 'atmospheric')
 const LoginRoute = withBackground(LoginScreen, 'atmospheric')
 const SignupRoute = withBackground(SignupScreen, 'atmospheric')
 const CreateGuestChartRoute = withBackground(CreateGuestChartScreen, 'atmospheric')

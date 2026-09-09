@@ -488,8 +488,8 @@ for stars. No new dependency is required.
 | Variant | Composition | Applied to |
 | --- | --- | --- |
 | **`flat`** | `background.base` solid. Nothing else. | Explicit fallback; any surface where decoration measurably costs frames |
-| **`quiet`** | `background.base` + upper vertical gradient and drifting cosmic colors at half intensity; no stars | Email verification, password recovery, auth callback, profile completion |
-| **`atmospheric`** | Navy gradient through the upper 70 %, violet/blue washes and drifting cosmic colors, **180** fixed ambient stars, plus 15 catalog stars from Cassiopeia and central Orion, shown as standalone points and halos without connecting lines. The original 96 stars retain their positions and brightness; 84 smaller, dimmer stars add distance. Nine stars glimmer, and a single shooting star occasionally crosses the sky. | Login, Signup, Dashboard, CreateGuestChart, JournalList, JournalEditor, MyCharts, Profile |
+| **`quiet`** | `background.base` + upper vertical gradient and drifting cosmic colors at half intensity; no stars | Available fallback; no registered route currently uses it |
+| **`atmospheric`** | Navy gradient through the upper 70 %, violet/blue washes and drifting cosmic colors, **180** fixed ambient stars, plus 15 catalog stars from Cassiopeia and central Orion, shown as standalone points and halos without connecting lines. The original 96 stars retain their positions and brightness; 84 smaller, dimmer stars add distance. Nine stars glimmer, and a single shooting star occasionally crosses the sky. | Every registered route except Chart, which uses the hero variant |
 | **`hero`** | `atmospheric` + **one** soft radial glow behind the focal element, tinted by the active `planetGlow` color at **≤ 8 %** opacity, radius ≈ 45 % of screen width | Chart route and interpretation sheet **only** |
 
 2026-09-09 consistency correction: the former twelve faint stars occupied only
