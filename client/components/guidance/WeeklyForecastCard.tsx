@@ -102,6 +102,7 @@ export function WeeklyForecastCard({
   return (
     <GuidanceCard
       title="Weekly Forecast"
+      motif="cycle"
       metadata={`${formatDate(forecast.startDate)} - ${formatDate(forecast.endDate)}`}
       expanded={expanded}
       onExpandedChange={onExpandedChange}

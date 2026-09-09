@@ -352,5 +352,6 @@ const styles = StyleSheet.create({
   },
   response: {
     minHeight: 220,
+    backgroundColor: theme.cardSurface.base,
   },
 })

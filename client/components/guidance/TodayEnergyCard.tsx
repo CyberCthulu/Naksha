@@ -62,6 +62,7 @@ export function TodayEnergyCard({
   return (
     <GuidanceCard
       title="Today’s Energy"
+      motif="sun"
       metadata={`Moon in ${guidance.transitMoonSign ?? 'Unknown'} | Sun in ${guidance.transitSunSign ?? 'Unknown'}`}
       expanded={expanded}
       onExpandedChange={onExpandedChange}

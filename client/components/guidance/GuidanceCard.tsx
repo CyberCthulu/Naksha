@@ -1,14 +1,16 @@
 import type { ReactNode } from 'react'
-import { Pressable, StyleSheet } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 
 import { AppText, MutedText } from '../ui/AppText'
 import { Card } from '../ui/Card'
+import { CelestialMark, type CelestialMotif } from '../ui/CelestialMark'
 import { Icon } from '../ui/Icon'
 import { theme } from '../ui/theme'
 
 /** Shared surface and typography for the Dashboard's two guidance views. */
 export function GuidanceCard({
   title,
+  motif,
   metadata,
   expanded,
   onExpandedChange,
@@ -16,6 +18,7 @@ export function GuidanceCard({
   children,
 }: {
   title: string
+  motif: CelestialMotif
   metadata: string
   expanded: boolean
   onExpandedChange: (next: boolean) => void
@@ -34,9 +37,12 @@ export function GuidanceCard({
         testID={`${testID}-toggle`}
         style={({ pressed }) => [styles.header, pressed && styles.togglePressed]}
       >
-        <AppText variant="heading" style={styles.title}>
-          {title}
-        </AppText>
+        <View style={styles.titleRow}>
+          <CelestialMark motif={motif} />
+          <AppText variant="heading" style={styles.title}>
+            {title}
+          </AppText>
+        </View>
         <Icon
           name={expanded ? 'collapse' : 'expand'}
           size="sm"
@@ -81,6 +87,12 @@ const styles = StyleSheet.create({
   },
   title: {
     flexShrink: 1,
+  },
+  titleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    columnGap: theme.space.sm,
+    flex: 1,
   },
   togglePressed: {
     opacity: 0.75,

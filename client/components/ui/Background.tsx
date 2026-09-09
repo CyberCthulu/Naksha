@@ -19,6 +19,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { theme, type PlanetAccent } from './theme'
 import { BackgroundGlimmer } from './BackgroundGlimmer'
+import { ShootingStar } from './ShootingStar'
+import { celestialConfig } from './celestialConfig'
+import { CosmicSky } from './CosmicSky'
+import { ConstellationField } from './ConstellationField'
 
 export type BackgroundVariant = 'flat' | 'quiet' | 'atmospheric' | 'hero'
 
@@ -35,7 +39,7 @@ const STARS = (() => {
     return seed / 0x100000000
   }
 
-  return Array.from({ length: 96 }, (_, index) => {
+  const foreground = Array.from({ length: 96 }, (_, index) => {
     const column = index % 8
     const row = Math.floor(index / 8)
     const x =
@@ -56,6 +60,19 @@ const STARS = (() => {
       bright,
     }
   })
+
+  // Distant stars add depth without increasing the number of bright lights or
+  // animated highlights behind reading text. Keep the original field stable.
+  const distantCount = Math.max(0, celestialConfig.starCount - foreground.length)
+  const distant = Array.from({ length: distantCount }, (_, index) => ({
+    x: ((index % 12) + next()) / 12,
+    y: (Math.floor(index / 12) + next()) / Math.ceil(distantCount / 12),
+    r: 0.35 + next() * 0.3,
+    opacity: 0.18 + next() * 0.16,
+    bright: false,
+  }))
+
+  return [...foreground, ...distant]
 })()
 
 const GLIMMER_STARS = STARS.filter((star) => star.bright)
@@ -68,7 +85,7 @@ type Props = {
   variant?: BackgroundVariant
   /** Hero tint source. At most one planet accent is ever active. */
   planet?: PlanetAccent | null
-  /** Disable glimmer for hidden routes. The static sky remains visible. */
+  /** Disable sky motion for hidden routes. The static sky remains visible. */
   motionEnabled?: boolean
   /** Screen backgrounds protect system bars; contained panel skies do not. */
   protectSystemBars?: boolean
@@ -96,7 +113,7 @@ export function Background({
     null
   )
 
-  // The sky always renders immediately. Only the optional glimmer waits for
+  // The sky always renders immediately. Only the optional motion waits for
   // motion preferences and app/route activity; the base never disappears.
   const starry = showsStars(variant)
 
@@ -131,7 +148,7 @@ export function Background({
           accessible={false}
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
-          style={StyleSheet.absoluteFill}
+          style={[StyleSheet.absoluteFill, styles.decoration]}
         >
           <Svg
             width={size.width}
@@ -154,19 +171,14 @@ export function Background({
                 />
               </LinearGradient>
               <RadialGradient id={`${gradientId}-nebula`}>
-                <Stop offset="0" stopColor={theme.atmosphere.nebula} stopOpacity="0.24" />
+                <Stop offset="0" stopColor={theme.atmosphere.nebula} stopOpacity={celestialConfig.nebulaOpacity} />
                 <Stop offset="0.45" stopColor={theme.atmosphere.nebula} stopOpacity="0.10" />
                 <Stop offset="1" stopColor={theme.atmosphere.nebula} stopOpacity="0" />
               </RadialGradient>
               <RadialGradient id={`${gradientId}-haze`}>
-                <Stop offset="0" stopColor={theme.atmosphere.haze} stopOpacity="0.20" />
+                <Stop offset="0" stopColor={theme.atmosphere.haze} stopOpacity={celestialConfig.hazeOpacity} />
                 <Stop offset="0.5" stopColor={theme.atmosphere.haze} stopOpacity="0.08" />
                 <Stop offset="1" stopColor={theme.atmosphere.haze} stopOpacity="0" />
-              </RadialGradient>
-              <RadialGradient id={`${gradientId}-starlight`}>
-                <Stop offset="0" stopColor={theme.atmosphere.star} stopOpacity="0.18" />
-                <Stop offset="0.3" stopColor={theme.atmosphere.star} stopOpacity="0.06" />
-                <Stop offset="1" stopColor={theme.atmosphere.star} stopOpacity="0" />
               </RadialGradient>
               <RadialGradient id={`${gradientId}-glow`} cx="0.5" cy="0.5" r="0.5">
                 <Stop
@@ -216,38 +228,73 @@ export function Background({
                 fill={`url(#${gradientId}-glow)`}
               />
             ) : null}
-
-            {starry
-              ? STARS.map((star, index) => (
-                  <React.Fragment key={`naksha-star-${index}`}>
-                    {star.bright ? (
-                      <Circle
-                        cx={star.x * size.width}
-                        cy={star.y * size.height}
-                        r={star.r * 5}
-                        fill={`url(#${gradientId}-starlight)`}
-                      />
-                    ) : null}
-                    <Circle
-                      testID="background-star"
-                      cx={star.x * size.width}
-                      cy={star.y * size.height}
-                      r={star.r}
-                      fill={star.bright ? theme.text.primary : theme.atmosphere.star}
-                      opacity={star.opacity}
-                    />
-                  </React.Fragment>
-                ))
-              : null}
           </Svg>
-          {starry && motionEnabled ? (
-            <BackgroundGlimmer
+          <CosmicSky
+            width={size.width}
+            height={size.height}
+            enabled={motionEnabled}
+            intensity={
+              starry
+                ? celestialConfig.cosmicSky.intensity
+                : celestialConfig.cosmicSky.quietIntensity
+            }
+            halfCycleMs={celestialConfig.cosmicSky.halfCycleMs}
+            driftDistance={celestialConfig.cosmicSky.driftDistance}
+          />
+          {starry ? (
+            <Svg
               width={size.width}
               height={size.height}
-              stars={GLIMMER_STARS}
-              gradientId={`${gradientId}-glimmer`}
-              enabled={motionEnabled}
-            />
+              pointerEvents="none"
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              style={StyleSheet.absoluteFill}
+            >
+              <Defs>
+                <RadialGradient id={`${gradientId}-starlight`}>
+                  <Stop offset="0" stopColor={theme.atmosphere.star} stopOpacity="0.18" />
+                  <Stop offset="0.3" stopColor={theme.atmosphere.star} stopOpacity="0.06" />
+                  <Stop offset="1" stopColor={theme.atmosphere.star} stopOpacity="0" />
+                </RadialGradient>
+              </Defs>
+              <ConstellationField width={size.width} height={size.height} />
+              {STARS.map((star, index) => (
+                <React.Fragment key={`naksha-star-${index}`}>
+                  {star.bright ? (
+                    <Circle
+                      cx={star.x * size.width}
+                      cy={star.y * size.height}
+                      r={star.r * 5}
+                      fill={`url(#${gradientId}-starlight)`}
+                    />
+                  ) : null}
+                  <Circle
+                    testID="background-star"
+                    cx={star.x * size.width}
+                    cy={star.y * size.height}
+                    r={star.r}
+                    fill={star.bright ? theme.text.primary : theme.atmosphere.star}
+                    opacity={star.opacity}
+                  />
+                </React.Fragment>
+              ))}
+            </Svg>
+          ) : null}
+          {starry && motionEnabled ? (
+            <>
+              <BackgroundGlimmer
+                width={size.width}
+                height={size.height}
+                stars={GLIMMER_STARS}
+                gradientId={`${gradientId}-glimmer`}
+                enabled={motionEnabled}
+              />
+              <ShootingStar
+                width={size.width}
+                height={size.height}
+                enabled={motionEnabled}
+              />
+            </>
           ) : null}
         </View>
       ) : null}
@@ -311,6 +358,9 @@ export function Background({
 }
 
 const styles = StyleSheet.create({
+  decoration: {
+    overflow: 'hidden',
+  },
   statusBarProtection: {
     position: 'absolute',
     top: 0,

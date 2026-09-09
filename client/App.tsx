@@ -64,7 +64,7 @@ function withBackground<P extends object>(
   return BackgroundScreen
 }
 
-// quiet: forms, auth, recovery, lists and the journal editor.
+// quiet: auth, recovery and profile forms.
 const LoginRoute = withBackground(LoginScreen, 'quiet')
 const SignupRoute = withBackground(SignupScreen, 'quiet')
 const CheckEmailRoute = withBackground(CheckEmailScreen, 'quiet')
@@ -72,11 +72,11 @@ const ForgotPasswordRoute = withBackground(ForgotPasswordScreen, 'quiet')
 const ResetPasswordRoute = withBackground(ResetPasswordScreen, 'quiet')
 const AuthCallbackRoute = withBackground(AuthCallbackScreen, 'quiet')
 const CompleteProfileRoute = withBackground(CompleteProfileScreen, 'quiet')
-const CreateGuestChartRoute = withBackground(CreateGuestChartScreen, 'quiet')
-const JournalListRoute = withBackground(JournalListScreen, 'quiet')
-const JournalEditorRoute = withBackground(JournalEditorScreen, 'quiet')
 
-// atmospheric: the browsing and account surfaces.
+// atmospheric: browsing, account surfaces, guest charts and journal screens.
+const CreateGuestChartRoute = withBackground(CreateGuestChartScreen, 'atmospheric')
+const JournalListRoute = withBackground(JournalListScreen, 'atmospheric')
+const JournalEditorRoute = withBackground(JournalEditorScreen, 'atmospheric')
 const DashboardRoute = withBackground(DashboardScreen, 'atmospheric')
 const MyChartsRoute = withBackground(MyChartsScreen, 'atmospheric')
 const ProfileRoute = withBackground(ProfileScreen, 'atmospheric')

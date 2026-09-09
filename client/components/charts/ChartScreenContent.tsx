@@ -441,6 +441,7 @@ export default function ChartScreenContent({
             testID="chart-section-positions"
             eyebrow="Placements"
             title="Planets"
+            motif="orbits"
             style={styles.tabContent}
           >
             <PlanetPositionsList
@@ -457,6 +458,7 @@ export default function ChartScreenContent({
             testID="chart-section-houses"
             eyebrow="Life areas"
             title="Houses"
+            motif="houses"
             note="Whole Sign"
             style={styles.tabContent}
           >
@@ -473,6 +475,7 @@ export default function ChartScreenContent({
             testID="chart-section-aspects"
             eyebrow="Planetary dynamics"
             title="Aspects"
+            motif="aspects"
             style={styles.tabContent}
           >
             <AspectsList aspects={aspects} />

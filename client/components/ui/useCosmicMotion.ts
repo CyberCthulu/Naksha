@@ -2,14 +2,13 @@ import { useEffect, useRef } from 'react'
 import { Animated, AppState, Easing, type AppStateStatus } from 'react-native'
 
 import { useReducedMotion } from './useReducedMotion'
-import { celestialConfig } from './celestialConfig'
 
-/**
- * Fades a small decorative layer on the native thread. Hidden screens,
- * backgrounded apps, and unresolved accessibility settings stay still.
- */
-export function useBackgroundMotion(enabled: boolean): Animated.Value {
-  const opacity = useRef(new Animated.Value(0)).current
+/** A slow native phase shared by the sky's fixed cloud textures. */
+export function useCosmicMotion(
+  enabled: boolean,
+  halfCycleMs: number
+): Animated.Value {
+  const phase = useRef(new Animated.Value(0)).current
   const reduceMotion = useReducedMotion()
 
   useEffect(() => {
@@ -21,8 +20,9 @@ export function useBackgroundMotion(enabled: boolean): Animated.Value {
     const stop = () => {
       animation?.stop()
       animation = undefined
-      opacity.stopAnimation()
-      opacity.setValue(0)
+      phase.stopAnimation()
+      // Phase zero is a composed, visible sky, including when motion is off.
+      phase.setValue(0)
     }
 
     const update = (state: AppStateStatus | null) => {
@@ -31,19 +31,18 @@ export function useBackgroundMotion(enabled: boolean): Animated.Value {
         stop()
         return
       }
-      // Repeated active events must not create concurrent loops.
       if (animation) return
 
       const options = {
-        duration: celestialConfig.glimmerHalfCycleMs,
-        easing: Easing.inOut(Easing.quad),
+        duration: halfCycleMs,
+        easing: Easing.inOut(Easing.sin),
         useNativeDriver: true,
         isInteraction: false,
       }
       animation = Animated.loop(
         Animated.sequence([
-          Animated.timing(opacity, { ...options, toValue: 1 }),
-          Animated.timing(opacity, { ...options, toValue: 0 }),
+          Animated.timing(phase, { ...options, toValue: 1 }),
+          Animated.timing(phase, { ...options, toValue: 0 }),
         ])
       )
       animation.start()
@@ -57,7 +56,7 @@ export function useBackgroundMotion(enabled: boolean): Animated.Value {
       subscription.remove()
       stop()
     }
-  }, [enabled, opacity, reduceMotion])
+  }, [enabled, halfCycleMs, phase, reduceMotion])
 
-  return opacity
+  return phase
 }

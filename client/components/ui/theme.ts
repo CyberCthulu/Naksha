@@ -33,6 +33,7 @@ const background = {
 const atmosphere = {
   nebula: '#75629F',
   haze: '#416996',
+  aurora: '#3F7B80',
   star: '#D9E3F5',
 } as const
 
@@ -66,8 +67,8 @@ const text = {
   primary: '#F4EFE6',
   /** Muted slate-lavender. 8.9:1 / 8.2:1. */
   secondary: '#A9B2CC',
-  /** Dim slate. 5.5:1 / 5.0:1. */
-  tertiary: '#7F8AA8',
+  /** Soft slate, lifted so small metadata stays readable over cosmic light. */
+  tertiary: '#929FBD',
   /** Inert controls only. Deliberately below AA; never for content. */
   disabled: '#4E566E',
   /** On an accent fill. 7.9:1 on accent.base. */

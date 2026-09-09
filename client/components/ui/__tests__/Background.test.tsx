@@ -4,6 +4,7 @@ import TestRenderer from 'react-test-renderer'
 import { Circle, Rect } from 'react-native-svg'
 
 import { Background, type BackgroundVariant } from '../Background'
+import { CosmicSky } from '../CosmicSky'
 import { theme } from '../theme'
 
 let mockInsets = { top: 24, right: 0, bottom: 48, left: 0 }
@@ -124,17 +125,19 @@ describe('Background', () => {
     expect(screen.root.findAllByType(Rect)).toHaveLength(0)
   })
 
-  it('keeps a contained static sky without window protection or glimmer', async () => {
+  it('keeps a contained static sky without window protection or star animations', async () => {
     const screen = await renderBackground('atmospheric', {
       protectSystemBars: false,
       motionEnabled: false,
     })
 
     expect(stars(screen).length).toBeGreaterThan(12)
+    expect(screen.root.findByType(CosmicSky).props.enabled).toBe(false)
     for (const testID of [
       'background-status-bar-protection',
       'background-navigation-bar-protection',
       'background-glimmer',
+      'background-shooting-star',
     ]) {
       expect(screen.root.findAll((node) => node.props?.testID === testID)).toHaveLength(0)
     }
@@ -152,8 +155,8 @@ describe('Background', () => {
 
     expect(screen.root.findAllByType(Rect)).toHaveLength(1)
     const field = stars(screen)
-    expect(field.length).toBeGreaterThan(12)
-    expect(field.length).toBeLessThanOrEqual(100)
+    expect(field.length).toBeGreaterThan(96)
+    expect(field.length).toBeLessThanOrEqual(240)
     for (let quarter = 0; quarter < 4; quarter++) {
       const region = field.filter(
         ({ props }) => props.cy >= quarter * 200 && props.cy < (quarter + 1) * 200
@@ -246,19 +249,21 @@ describe('Background reduced-motion behavior', () => {
     expect(stars(screen).length).toBeGreaterThan(12)
   })
 
-  it('does not subscribe to motion preferences for the quiet background', async () => {
+  it('checks motion preferences for the quiet background color drift', async () => {
     const { isEnabled, addListener } = mockReducedMotion(false)
     const screen = await renderBackground('quiet')
 
-    expect(isEnabled).not.toHaveBeenCalled()
-    expect(addListener).not.toHaveBeenCalled()
+    expect(isEnabled).toHaveBeenCalled()
+    expect(addListener).toHaveBeenCalled()
+    expect(screen.root.findByType(CosmicSky).props.enabled).toBe(true)
+    expect(stars(screen)).toHaveLength(0)
 
     act(() => {
       screen.unmount()
     })
     renderer = null
 
-    expect(removeListener).not.toHaveBeenCalled()
+    expect(removeListener).toHaveBeenCalled()
   })
 
   it('treats an unavailable platform setting as no preference', async () => {

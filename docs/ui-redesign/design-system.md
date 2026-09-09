@@ -45,7 +45,7 @@ no secondary-text color, and no state semantics.
 | --- | --- | --- |
 | `surface` | `#131A2C` | Opaque controls and input states. |
 | `surface.raised` | `#1A2238` | Opaque dropdowns and non-celestial sheets. |
-| `cardSurface.base` | `rgba(19,26,44,0.60)` | Standard reading cards, including both guidance tabs. |
+| `cardSurface.base` | `rgba(19,26,44,0.30)` | Standard reading cards, including both guidance tabs; reader-tuned opacity. |
 | `cardSurface.raised` | `rgba(26,34,56,0.72)` | Raised cards. |
 | `cardSurface.selected` | `rgba(37,40,49,0.72)` | Selected cards with a navy/gold tint and accent border. |
 | `surface.selected` | `rgba(201,164,92,0.10)` | Selected list row. Replaces `rgba(255,255,255,0.06)`. |
@@ -74,7 +74,7 @@ surface should be doing. Opaque surfaces let the border recede.
 | --- | --- | --- | --- | --- |
 | `text.primary` | `#F4EFE6` — ivory | **16.2:1** | 14.9:1 | Headings, body, values |
 | `text.secondary` | `#A9B2CC` — muted slate-lavender | **8.9:1** | 8.2:1 | Supporting copy, guidance body |
-| `text.tertiary` | `#7F8AA8` — dim slate | **5.5:1** | **5.0:1** | Meta, captions, hints |
+| `text.tertiary` | `#929FBD` — soft slate | **7.4:1** | **6.5:1** | Meta, captions, hints; lifted for readability over moving sky colors |
 | `text.disabled` | `#4E566E` | 2.4:1 | — | Disabled only. **Never for content.** |
 | `text.onAccent` | `#0A0E1A` | — | 7.9:1 on `accent` | Text on a gold fill |
 
@@ -113,6 +113,10 @@ Each state color also gets a `.muted` fill at 12 % alpha for banner backgrounds.
 3. Section eyebrow labels in the interpretation reading surface.
 4. Chart-wheel planet glyphs and the focal-planet halo.
 5. The active page indicator in the interpretation pager — using `accent`, **not** `accent.bright`.
+6. Small decorative celestial marks beside guidance and chart section headings:
+   sun for daily guidance, a lunar-cycle motif for weekly guidance, and orbital,
+   house-wheel, and connected-star motifs for the chart tabs. These supplement
+   readable labels and are hidden from assistive technology.
 
 Gold is **prohibited** for: body copy, more than one primary action per screen,
 card backgrounds, borders on non-interactive surfaces, decorative dividers, and
@@ -471,8 +475,9 @@ Rules:
 
 ## 6. Backgrounds — Quiet, Atmospheric, Hero
 
-The background uses a deep navy base, static gradients and fixed SVG stars,
-with a restrained opacity glimmer on nine bright stars. There are three
+The background uses a deep navy base, slowly drifting violet/blue/teal clouds,
+and fixed SVG stars, with a restrained opacity glimmer on nine bright stars
+and occasional shooting stars. There are three
 intensity variants and a flat navy fallback. No `three`, `expo-gl`, particle
 system, or blur effect is involved.
 
@@ -483,40 +488,75 @@ for stars. No new dependency is required.
 | Variant | Composition | Applied to |
 | --- | --- | --- |
 | **`flat`** | `background.base` solid. Nothing else. | Explicit fallback; any surface where decoration measurably costs frames |
-| **`quiet`** | `background.base` + one vertical linear gradient, `background.raised` → `background.base`, top 40 % only | Auth, forms, journal, lists — content-dense reading and input surfaces |
-| **`atmospheric`** | Navy gradient through the upper 70 %, two soft violet/blue radial washes, and **96** static stars across the entire viewport, including the card gutters. Radius 0.45–1.15; opacity 0.24 / 0.44 / 0.72. The brightest stars have small soft halos. | Dashboard, MyCharts, Profile |
+| **`quiet`** | `background.base` + upper vertical gradient and drifting cosmic colors at half intensity; no stars | Auth and profile forms |
+| **`atmospheric`** | Navy gradient through the upper 70 %, violet/blue washes and drifting cosmic colors, **180** fixed ambient stars, plus 15 catalog stars from Cassiopeia and central Orion, shown as standalone points and halos without connecting lines. The original 96 stars retain their positions and brightness; 84 smaller, dimmer stars add distance. Nine stars glimmer, and a single shooting star occasionally crosses the sky. | Dashboard, CreateGuestChart, JournalList, JournalEditor, MyCharts, Profile |
 | **`hero`** | `atmospheric` + **one** soft radial glow behind the focal element, tinted by the active `planetGlow` color at **≤ 8 %** opacity, radius ≈ 45 % of screen width | Chart route and interpretation sheet **only** |
 
 2026-09-09 consistency correction: the former twelve faint stars occupied only
 the top half of the screen and largely disappeared behind opaque cards. The
 full-height field and washes restore the requested starry atmosphere. Decorative
 colors live in `theme.atmosphere`. Following the request for more visible stars
-behind cards, card fills use `theme.cardSurface` at 60% opacity (72% for raised
+behind cards, card fills use the reader's `theme.cardSurface` setting of 30%
+opacity (72% for raised
 and selected cards), with fully opaque foreground content. Today and This Week
 use exactly the same fill. `SkySurface` gives chart interpretation and legend
 popups their own static starry sky over a solid base, clipped to the panel.
 
 Hard constraints:
 
-1. The base sky and all geometry stay static. One native-driver `Animated.Value`
-   fades a separate cached SVG highlight layer in and out over twelve seconds;
-   no React updates, layout changes, or geometry updates occur per frame.
+1. The star field and catalog star groups stay fixed. One native-driver value
+   fades the cached highlight layer; another moves and fades a small shooting
+   star during its occasional flight. A third slowly moves and crossfades two
+   static cloud textures beneath the stars. There are no per-frame React
+   updates, animated SVG paint values, or layout changes.
 2. Star positions are **deterministic constants**, not random per mount — a
    background that reshuffles on re-render reads as noise.
-3. Star count is capped at 100 (currently 96), generated once with a fixed seed.
-   The disabled GL background used 5,000.
+3. Stars are generated once with a fixed seed, currently 180. Keep the count
+   within the tested 240-star budget when tuning. Additional stars are dim and
+   do not increase the number of animated highlights.
 4. `pointerEvents="none"` on every background layer.
 5. The background never carries information. Removing it entirely must leave the
    screen fully usable and fully legible — this is what makes `flat` a genuine
    fallback rather than a degraded mode.
 6. Exactly one `hero` glow per screen, driven by the existing
    `SpaceProvider.focusedPlanet`.
-7. The glimmer runs only while its route is focused, AppState is active, and
-   reduced motion is explicitly off. It stops and resets on blur, inactivity,
+7. Sky animations run only while their route is focused, AppState is active, and
+   reduced motion is explicitly off. They stop and reset on blur, inactivity,
    preference changes, and unmount. An unresolved preference leaves the static
-   sky visible. Quiet and flat variants never mount the glimmer.
+   sky visible. Quiet screens have softer cloud motion; flat has no decoration.
 8. Contained panel skies disable system-bar protection, since their safe-area
-   spacing belongs to the panel layout. They use a static sky without glimmer.
+   spacing belongs to the panel layout. They use a static sky without cloud
+   drift, glimmer, or shooting stars.
+
+The standalone star groups use J2000 star coordinates rounded to 0.01 degrees
+from SIMBAD, projected locally with north up and east left. A uniform scale
+preserves each group's proportions on every viewport. Stars retain their
+positions and halos, with no connecting lines.
+Cassiopeia sits toward the upper right and Orion toward the lower left. Their
+independent placements are decorative, not a representation of the current
+sky or a birth chart. The coordinates and source references live in
+`client/components/ui/constellations.ts`.
+
+### Visual tuning
+
+`client/components/ui/celestialConfig.ts` collects sky settings: `starCount`,
+`nebulaOpacity`, `hazeOpacity`, `glimmerHalfCycleMs`, and
+`shootingStar`, plus `cosmicSky`. Cloud motion has a 24-second half-cycle
+(48 seconds there and back), up to 24 layout pixels of travel, and separate
+full/quiet intensity controls. Its violet, blue and teal colors live in
+`theme.atmosphere`. Set the cosmic intensity to zero to remove the added clouds.
+Defaults are 0.75 for atmospheric/hero screens and 0.375 for quiet screens.
+Small metadata uses a slightly brighter slate so the additional light does
+not compromise reading contrast; card opacity remains at the reader's 30%.
+Shooting stars first appear after 7 seconds of active viewing,
+travel for 1.4 seconds, then wait 18 / 26 / 22 seconds between flights. Paths
+rotate through three fixed diagonals. Only one shooting star is ever scheduled
+or in flight; every timer and animation is cancelled on inactivity or cleanup.
+
+Card fill opacity remains independent in `theme.ts` → `cardSurface`.
+Journal entry cards and the editor's multiline writing field use the same
+`cardSurface.base` fill. The short title input retains the standard input well;
+typing, focus borders, keyboard handling and save/discard behavior are unchanged.
 
 ### Relationship to the dormant GL stack
 
@@ -1018,23 +1058,35 @@ hardware-back behavior.
 
 ## 12. Motion and Reduced Motion
 
-Motion is limited to chart selection and a subtle background glimmer. Both
+Motion is limited to chart selection, slow cosmic color drift, a subtle
+background glimmer, and occasional shooting stars. All
 retain a static presentation when reduced motion is enabled or unresolved.
 
 | Rule | |
 | --- | --- |
-| Backgrounds | Static sky plus one native opacity loop over nine star highlights; six seconds brighter, six seconds dimmer. |
+| Backgrounds | Fixed stars with a native opacity loop over nine highlights, an occasional native shooting-star flight, and two cloud textures sharing one slow native phase. |
 | Transitions | Platform default stack animation. No custom transitions in this migration |
 | Modal | `animationType="slide"` — **unchanged**, part of the preserved interaction behavior |
 | Press feedback | Opacity only. No scale, no spring |
 | Chart wheel selection | Two scoped animated values — see below |
 | Duration budget | If any motion is later approved: 150 ms enter, 120 ms exit |
 
-Background glimmer uses `useNativeDriver: true` and `isInteraction: false`.
+Background glimmer, cosmic drift and shooting-star flights use `useNativeDriver: true` and
+`isInteraction: false`.
 Its two timing animations advance through a JavaScript sequence callback every
 six seconds; animation frames run natively. Hidden routes and inactive apps stop
 the loop. This bounds the work; frame rate and battery impact still require
 device profiling.
+
+Shooting stars use a single timeout while idle and a completion callback to
+schedule the next flight. Their opacity and translation run natively, and stale
+callbacks cannot restart them after a route, app-state, or preference change.
+
+Cloud drift shares one phase between two textures. Each cloud occupies about
+0.92 viewport areas; focus-gated raster caching avoids changing SVG geometry
+on frames. The phase reverses through a sequence callback every 24 seconds.
+Static colors remain visible when motion is disabled. Device profiling is
+still needed to assess native compositing and texture memory.
 
 ### Chart wheel selection
 
