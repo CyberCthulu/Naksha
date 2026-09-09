@@ -45,20 +45,20 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
   return (
     <AuthContainer centered>
-      <AppText style={uiStyles.h1}>Log In</AppText>
+      <AppText variant="title" style={uiStyles.h1}>Log In</AppText>
 
       <EmailField value={email} onChange={setEmail} />
       <PasswordField value={password} onChange={setPassword} />
 
       {error !== '' && (
-        <AppText style={[uiStyles.errorText, { marginBottom: 10 }]}>
+        <AppText variant="bodySmall" style={[uiStyles.errorText, { marginBottom: 10 }]}>
           {error}
         </AppText>
       )}
 
       <Button
         title={submitting ? 'Logging in...' : 'Login'}
-        variant="ghost"
+        variant="primary"
         onPress={handleLogin}
         disabled={submitting}
       />
@@ -67,7 +67,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
       <Button
         title="Forgot password?"
-        variant="ghost"
+        variant="tertiary"
         onPress={() => navigation.navigate('ForgotPassword')}
         disabled={submitting}
       />
@@ -76,7 +76,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
       <Button
         title="Don't have an account? Sign Up"
-        variant="ghost"
+        variant="tertiary"
         onPress={() => navigation.navigate('Signup')}
         style={{ marginTop: 8 }}
         disabled={submitting}

@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import type {
   WeeklyForecast,
@@ -10,9 +10,8 @@ import type {
 } from '../../lib/lexicon/guidance'
 import { AppText, MutedText } from '../ui/AppText'
 import { Button } from '../ui/Button'
-import { Card } from '../ui/Card'
-import { Icon } from '../ui/Icon'
 import { theme } from '../ui/theme'
+import { GuidanceCard } from './GuidanceCard'
 
 const MONTHS = [
   'Jan',
@@ -101,33 +100,13 @@ export function WeeklyForecastCard({
   const reflectionPractice = forecast.representativePractice
 
   return (
-    <Card>
-      {/* Bounded toggle -- see the note on TodayEnergyCard. */}
-      <Pressable
-        accessibilityLabel={`${expanded ? 'Collapse' : 'Expand'} Weekly Forecast details`}
-        accessibilityRole="button"
-        accessibilityState={{ expanded }}
-        onPress={() => onExpandedChange(!expanded)}
-        testID="weekly-forecast-toggle"
-        style={({ pressed }) => [
-          styles.header,
-          pressed && styles.togglePressed,
-        ]}
-      >
-        <AppText variant="heading" style={styles.title}>
-          Weekly Forecast
-        </AppText>
-        <Icon
-          name={expanded ? 'collapse' : 'expand'}
-          size="sm"
-          color={theme.text.secondary}
-        />
-      </Pressable>
-
-      <MutedText variant="eyebrow" style={styles.dateRange}>
-        {formatDate(forecast.startDate)} - {formatDate(forecast.endDate)}
-      </MutedText>
-
+    <GuidanceCard
+      title="Weekly Forecast"
+      metadata={`${formatDate(forecast.startDate)} - ${formatDate(forecast.endDate)}`}
+      expanded={expanded}
+      onExpandedChange={onExpandedChange}
+      testID="weekly-forecast"
+    >
       {!expanded ? (
         <>
           <View style={styles.section}>
@@ -297,47 +276,13 @@ export function WeeklyForecastCard({
               ) : null}
             </View>
           ) : null}
-
-          <Pressable
-            accessibilityLabel="Collapse Weekly Forecast details"
-            accessibilityRole="button"
-            accessibilityState={{ expanded: true }}
-            onPress={() => onExpandedChange(false)}
-            style={({ pressed }) => [
-              styles.bottomToggle,
-              pressed && styles.togglePressed,
-            ]}
-            testID="weekly-forecast-bottom-collapse"
-          >
-            <MutedText variant="bodySmall" style={styles.bottomToggleText}>
-              Collapse
-            </MutedText>
-          </Pressable>
         </>
       ) : null}
-    </Card>
+    </GuidanceCard>
   )
 }
 
 const styles = StyleSheet.create({
-  header: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    columnGap: theme.space.md,
-    justifyContent: 'space-between',
-    minHeight: theme.touchTarget.min,
-  },
-  title: {
-    color: theme.text.primary,
-    flexShrink: 1,
-  },
-  togglePressed: {
-    opacity: 0.75,
-  },
-  dateRange: {
-    color: theme.accent.base,
-    marginTop: theme.space.hair,
-  },
   /* Spacing-led rhythm -- see the note on TodayEnergyCard. */
   section: {
     marginTop: theme.space.lg,
@@ -412,17 +357,5 @@ const styles = StyleSheet.create({
   journalButton: {
     marginTop: theme.space.md,
     alignSelf: 'flex-start',
-  },
-  bottomToggle: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: theme.border.base,
-    justifyContent: 'center',
-    marginTop: theme.space.lg,
-    minHeight: theme.touchTarget.min,
-    paddingTop: theme.space.md,
-    width: '100%',
-  },
-  bottomToggleText: {
-    color: theme.text.secondary,
   },
 })

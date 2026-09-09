@@ -113,13 +113,17 @@ export default function LocationAutocompleteField({
 
       {loading && (
         <View style={styles.loadingRow}>
-          <ActivityIndicator size="small" />
-          <MutedText style={styles.loadingText}>Searching locations…</MutedText>
+          <ActivityIndicator size="small" color={theme.accent.base} />
+          <MutedText variant="bodySmall" style={styles.loadingText}>
+            Searching locations…
+          </MutedText>
         </View>
       )}
 
       {!!error && (
-        <AppText style={[uiStyles.errorText, styles.errorText]}>{error}</AppText>
+        <AppText variant="bodySmall" style={[uiStyles.errorText, styles.errorText]}>
+          {error}
+        </AppText>
       )}
 
       {showResults && results.length > 0 && (
@@ -136,9 +140,11 @@ export default function LocationAutocompleteField({
                   index < results.length - 1 && styles.resultDivider,
                 ]}
               >
-                <AppText style={styles.resultTitle}>{item.name}</AppText>
+                <AppText variant="body">{item.name}</AppText>
                 {!!coords && (
-                  <MutedText style={styles.resultCoords}>{coords}</MutedText>
+                  <MutedText variant="caption" style={styles.resultCoords}>
+                    {coords}
+                  </MutedText>
                 )}
               </TouchableOpacity>
             )
@@ -166,9 +172,9 @@ const styles = StyleSheet.create({
   dropdown: {
     marginTop: 8,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.card,
-    backgroundColor: theme.colors.cardBg,
+    borderColor: theme.border.strong,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.surface.raised,
     overflow: 'hidden',
   },
   resultRow: {
@@ -177,14 +183,9 @@ const styles = StyleSheet.create({
   },
   resultDivider: {
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  resultTitle: {
-    color: theme.colors.text,
-    fontSize: 14,
+    borderBottomColor: theme.border.base,
   },
   resultCoords: {
     marginTop: 4,
-    fontSize: 12,
   },
 })

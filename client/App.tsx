@@ -124,9 +124,9 @@ const TransparentTheme = {
     background: 'transparent',
     card: 'transparent',
     border: 'transparent',
-    text: '#fff',
-    primary: '#fff',
-    notification: '#fff',
+    text: theme.text.primary,
+    primary: theme.accent.base,
+    notification: theme.state.info,
   },
 }
 

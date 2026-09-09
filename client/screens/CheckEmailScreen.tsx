@@ -1,13 +1,5 @@
 import React, { useLayoutEffect, useMemo, useState } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-  TouchableOpacity,
-  ActivityIndicator,
-  TextInput,
-} from 'react-native'
+import { StyleSheet, Alert } from 'react-native'
 import {
   useRoute,
   useNavigation,
@@ -24,7 +16,10 @@ import type { RootStackParamList } from '../navigation/types'
 
 import AuthContainer from '../components/auth/AuthContainer'
 import { ScreenHeader } from '../components/ui/ScreenHeader'
-import { uiStyles } from '../components/ui/uiStyles'
+import { AppText, MutedText } from '../components/ui/AppText'
+import { Button } from '../components/ui/Button'
+import { Card } from '../components/ui/Card'
+import TextField from '../components/ui/TextField'
 import { theme } from '../components/ui/theme'
 
 const PROFILE_SELECT =
@@ -197,15 +192,19 @@ export default function CheckEmailScreen() {
         backAccessibilityLabel="Back to login"
       />
 
-      <View style={uiStyles.card}>
-        <Text style={styles.title}>Enter your confirmation code</Text>
-        <Text style={styles.message}>{message}</Text>
+      <Card>
+        <AppText variant="heading" style={styles.title}>
+          Enter your confirmation code
+        </AppText>
+        <MutedText variant="body" style={styles.message}>
+          {message}
+        </MutedText>
 
-        <TextInput
+        <TextField
+          accessibilityLabel="Confirmation code"
           value={code}
           onChangeText={setCode}
           placeholder="123456"
-          placeholderTextColor={theme.colors.muted}
           keyboardType="number-pad"
           autoCapitalize="none"
           autoCorrect={false}
@@ -213,136 +212,46 @@ export default function CheckEmailScreen() {
           style={styles.codeInput}
         />
 
-        <TouchableOpacity
-          style={[styles.primaryBtn, verifying && { opacity: 0.7 }]}
+        <Button
+          title={verifying ? 'Verifying your code…' : 'Verify Code'}
           onPress={handleVerify}
-          disabled={verifying}
-        >
-          {verifying ? (
-             <Text style={styles.primaryBtnText}>Verifying your code…</Text>
-          ) : (
-             <Text style={styles.primaryBtnText}>Verify Code</Text>
-          )}
-        </TouchableOpacity>
-
-        <View style={{ height: 10 }} />
-
-        <TouchableOpacity
-          style={[styles.secondaryBtn, resending && { opacity: 0.7 }]}
+          loading={verifying}
+        />
+        <Button
+          title="Resend Email"
+          variant="secondary"
           onPress={handleResend}
-          disabled={resending}
-        >
-          {resending ? (
-            <ActivityIndicator />
-          ) : (
-            <Text style={styles.secondaryBtnText}>Resend Email</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.linkBtn}
+          loading={resending}
+          style={styles.secondaryAction}
+        />
+        <Button
+          title="Back to Login"
+          variant="tertiary"
           onPress={() => navigation.replace('Login')}
           disabled={verifying || resending}
-        >
-          <Text style={styles.linkBtnText}>Back to Login</Text>
-        </TouchableOpacity>
-      </View>
+          style={styles.secondaryAction}
+        />
+      </Card>
     </AuthContainer>
   )
 }
 
 const styles = StyleSheet.create({
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  iconBtn: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconText: {
-    fontSize: 30,
-    color: theme.colors.text,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '800',
-    color: theme.colors.text,
-  },
-
   title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: theme.colors.text,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: theme.space.sm,
   },
   message: {
-    fontSize: 14,
-    color: theme.colors.sub,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 14,
+    marginBottom: theme.space.lg,
   },
-
   codeInput: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.card,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-    color: theme.colors.text,
+    ...theme.typography.numeric,
     textAlign: 'center',
-    fontSize: 22,
     letterSpacing: 6,
-    backgroundColor: theme.colors.cardBg,
+    marginBottom: theme.space.md,
   },
-
-  primaryBtn: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.card,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: theme.colors.cardBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryBtnText: {
-    color: theme.colors.text,
-    fontWeight: '800',
-    fontSize: 16,
-  },
-
-  secondaryBtn: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.card,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryBtnText: {
-    color: theme.colors.text,
-    fontWeight: '800',
-    fontSize: 16,
-  },
-
-  linkBtn: {
-    marginTop: 10,
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  linkBtnText: {
-    color: theme.colors.sub,
-    fontWeight: '700',
+  secondaryAction: {
+    marginTop: theme.space.sm,
   },
 })

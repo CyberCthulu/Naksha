@@ -1,7 +1,8 @@
-import { View, Text, Platform } from 'react-native'
+import { View, Platform } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import { TIMEZONES } from '../../lib/timezones'
-import { uiStyles } from '../ui/uiStyles'
+import FormField from '../ui/FormField'
+import { formStyles } from '../ui/formStyles'
 import { theme } from '../ui/theme'
 
 export default function TimeZonePicker({
@@ -12,36 +13,33 @@ export default function TimeZonePicker({
   onChange: (s: string) => void
 }) {
   return (
-    <View>
-      <Text style={[uiStyles.text, { marginBottom: 8, fontWeight: '600' }]}>
-        Time Zone
-      </Text>
-
-      <View
-        style={{
-          borderWidth: 1,
-          borderColor: theme.colors.border,
-          borderRadius: theme.radius.card,
-          overflow: 'hidden',
-        }}
-      >
+    <FormField label="Time Zone">
+      <View style={formStyles.pickerWrap}>
         <Picker
+          accessibilityLabel="Time Zone"
           selectedValue={value}
           onValueChange={onChange}
           style={{
-            color: theme.colors.text,
+            ...theme.typography.body,
+            color: theme.text.primary,
             ...(Platform.OS === 'android'
               ? { backgroundColor: 'transparent' }
               : null),
           }}
-          itemStyle={Platform.OS === 'ios' ? { color: theme.colors.text } : undefined}
-          dropdownIconColor={Platform.OS === 'android' ? theme.colors.text : undefined}
+          itemStyle={
+            Platform.OS === 'ios'
+              ? { ...theme.typography.body, color: theme.text.primary }
+              : undefined
+          }
+          dropdownIconColor={
+            Platform.OS === 'android' ? theme.text.secondary : undefined
+          }
         >
           {TIMEZONES.map((tz) => (
             <Picker.Item key={tz} label={tz} value={tz} />
           ))}
         </Picker>
       </View>
-    </View>
+    </FormField>
   )
 }

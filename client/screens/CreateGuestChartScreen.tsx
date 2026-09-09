@@ -84,7 +84,7 @@ export default function CreateGuestChartScreen() {
         onBack={() => navigation.goBack()}
       />
 
-      <MutedText style={styles.subtitle}>
+      <MutedText variant="body" style={styles.subtitle}>
         Enter another person{"'"}s birth details to view their chart.
       </MutedText>
 
@@ -127,7 +127,7 @@ export default function CreateGuestChartScreen() {
       />
 
       {birthLat != null && birthLon != null && (
-        <AppText style={[uiStyles.muted, styles.resolvedText]}>
+        <AppText variant="bodySmall" style={[uiStyles.muted, styles.resolvedText]}>
           Resolved: {birthLocation} ({birthLat.toFixed(4)}, {birthLon.toFixed(4)})
         </AppText>
       )}

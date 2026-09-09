@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { View, Text, Platform, Pressable } from 'react-native'
+import { Platform, Pressable } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
-import { uiStyles } from '../ui/uiStyles'
+import { AppText } from '../ui/AppText'
+import FormField from '../ui/FormField'
+import { formStyles } from '../ui/formStyles'
 import { theme } from '../ui/theme'
 
 export default function TimeField({
@@ -14,32 +16,31 @@ export default function TimeField({
   onChange: (d: Date) => void
 }) {
   const [open, setOpen] = useState(false)
+  const displayValue = value ? value.toLocaleTimeString() : 'Select Time'
 
   return (
-    <View>
-      <Text style={[uiStyles.text, { marginBottom: 8, fontWeight: '600' }]}>
-        {label}
-      </Text>
-
+    <FormField label={label}>
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityValue={{ text: displayValue }}
         onPress={() => setOpen(true)}
-        style={{
-          borderWidth: 1,
-          borderColor: theme.colors.border,
-          borderRadius: theme.radius.card,
-          paddingVertical: 14,
-          paddingHorizontal: 12,
-        }}
+        style={formStyles.input}
       >
-        <Text style={value ? [uiStyles.text, { fontSize: 16 }] : [uiStyles.muted, { fontSize: 16 }]}>
-          {value ? value.toLocaleTimeString() : 'Select Time'}
-        </Text>
+        <AppText
+          variant="body"
+          style={{ color: value ? theme.text.primary : theme.text.tertiary }}
+        >
+          {displayValue}
+        </AppText>
       </Pressable>
 
       {open && (
         <DateTimePicker
           value={value || new Date()}
           mode="time"
+          themeVariant="dark"
+          accentColor={theme.accent.base}
           display={Platform.OS === 'ios' ? 'spinner' : 'clock'}
           onChange={(_, d) => {
             setOpen(false)
@@ -47,6 +48,6 @@ export default function TimeField({
           }}
         />
       )}
-    </View>
+    </FormField>
   )
 }

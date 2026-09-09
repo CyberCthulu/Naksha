@@ -95,7 +95,7 @@ export default function ProfileFields({
       />
 
       {birthLat != null && birthLon != null && (
-        <AppText style={[uiStyles.muted, { marginBottom: 16 }]}>
+        <AppText variant="bodySmall" style={[uiStyles.muted, { marginBottom: 16 }]}>
           Resolved: {birthLocation} ({birthLat.toFixed(4)}, {birthLon.toFixed(4)})
         </AppText>
       )}

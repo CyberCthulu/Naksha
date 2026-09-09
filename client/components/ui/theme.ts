@@ -10,8 +10,8 @@ import type { TextStyle } from 'react-native'
 //      migration is designed to avoid. They are removed per-screen as each
 //      surface migrates.
 //
-//   2. V2 SEMANTIC ROLES — everything else. Nothing consumes these yet beyond
-//      the Background primitive; screens adopt them in later slices.
+//   2. SEMANTIC ROLES — the shared palette and typography used by screens and
+//      primitives. New UI uses these roles, including decorative atmosphere.
 //
 // See docs/ui-redesign/design-system.md for the approved values and the rules
 // governing accent and planet usage.
@@ -27,6 +27,13 @@ const background = {
   raised: '#0E1322',
   /** Input wells; the recessed area behind a field. */
   sunken: '#05070E',
+} as const
+
+/** Decorative light only; card surfaces and text keep their own opaque colors. */
+const atmosphere = {
+  nebula: '#75629F',
+  haze: '#416996',
+  star: '#D9E3F5',
 } as const
 
 const surface = {
@@ -282,6 +289,7 @@ export const theme = {
 
   // === V2 SEMANTIC ROLES ===
   background,
+  atmosphere,
   surface,
   border,
   text,

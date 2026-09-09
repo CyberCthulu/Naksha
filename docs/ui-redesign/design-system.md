@@ -475,10 +475,17 @@ for stars. No new dependency is required.
 
 | Variant | Composition | Applied to |
 | --- | --- | --- |
-| **`flat`** | `background.base` solid. Nothing else. | Fallback; low-end devices; reduced-motion; any surface where the gradient measurably costs frames |
+| **`flat`** | `background.base` solid. Nothing else. | Explicit fallback; any surface where decoration measurably costs frames |
 | **`quiet`** | `background.base` + one vertical linear gradient, `background.raised` → `background.base`, top 40 % only | Auth, forms, journal, lists — content-dense reading and input surfaces |
-| **`atmospheric`** | `quiet` + up to **12** static stars: fixed positions, radius 0.5–1.5, three opacity tiers (0.10 / 0.18 / 0.28), `text.primary` fill | Dashboard, MyCharts, Profile |
-| **`hero`** | `atmospheric` + **one** soft radial glow behind the focal element, tinted by the active planet accent at **≤ 8 %** opacity, radius ≈ 45 % of screen width | Chart route and interpretation sheet **only** |
+| **`atmospheric`** | Navy gradient through the upper 70 %, two soft violet/blue radial washes, and **96** static stars across the entire viewport, including the card gutters. Radius 0.45–1.15; opacity 0.24 / 0.44 / 0.72. The brightest stars have small soft halos. | Dashboard, MyCharts, Profile |
+| **`hero`** | `atmospheric` + **one** soft radial glow behind the focal element, tinted by the active `planetGlow` color at **≤ 8 %** opacity, radius ≈ 45 % of screen width | Chart route and interpretation sheet **only** |
+
+2026-09-09 consistency correction: the former twelve faint stars occupied only
+the top half of the screen and largely disappeared behind opaque cards. The
+full-height field and washes restore the requested starry atmosphere. Decorative
+colors live in `theme.atmosphere`; cards retain the opaque `surface.base` so the
+sky cannot change their perceived fill or interfere with reading. Today and
+This Week are peer cards and both use this standard surface.
 
 Hard constraints:
 
@@ -486,13 +493,17 @@ Hard constraints:
    `Animated` driver, no timers. The background renders once per layout.
 2. Star positions are **deterministic constants**, not random per mount — a
    background that reshuffles on re-render reads as noise.
-3. Star count is capped at 12. The disabled GL background used 5,000.
+3. Star count is capped at 100 (currently 96), generated once with a fixed seed.
+   The disabled GL background used 5,000.
 4. `pointerEvents="none"` on every background layer.
 5. The background never carries information. Removing it entirely must leave the
    screen fully usable and fully legible — this is what makes `flat` a genuine
    fallback rather than a degraded mode.
 6. Exactly one `hero` glow per screen, driven by the existing
    `SpaceProvider.focusedPlanet`.
+7. Reduced motion retains these static decorations. Backgrounds have no motion
+   or motion-preference subscription; the explicit `flat` variant remains
+   available when decoration needs to be removed.
 
 ### Relationship to the dormant GL stack
 

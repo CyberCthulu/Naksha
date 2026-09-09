@@ -1,11 +1,12 @@
 // screens/AuthCallbackScreen.tsx
 import { useEffect, useRef } from 'react'
-import { View, Text, ActivityIndicator, StyleSheet, Alert } from 'react-native'
+import { View, ActivityIndicator, StyleSheet, Alert } from 'react-native'
 import * as ExpoLinking from 'expo-linking'
 import type { RouteProp } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import supabase from '../lib/supabase'
 import { theme } from '../components/ui/theme'
+import { AppText } from '../components/ui/AppText'
 import { consumePendingAuthCallbackUrl } from '../lib/authCallbackUrl'
 import type { RootStackParamList } from '../navigation/types'
 
@@ -204,13 +205,13 @@ export default function AuthCallbackScreen({
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" />
-      <Text style={styles.label}>Verifying your account…</Text>
+      <ActivityIndicator size="large" color={theme.accent.base} />
+      <AppText variant="body" style={styles.label}>Verifying your account…</AppText>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  label: { color: theme.colors.text },
+  label: { color: theme.text.secondary, marginTop: theme.space.md },
 })

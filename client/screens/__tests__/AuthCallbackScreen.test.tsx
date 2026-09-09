@@ -4,6 +4,7 @@ import * as ExpoLinking from 'expo-linking'
 import TestRenderer from 'react-test-renderer'
 
 import AuthCallbackScreen from '../AuthCallbackScreen'
+import { theme } from '../../components/ui/theme'
 import supabase from '../../lib/supabase'
 import {
   consumePendingAuthCallbackUrl,
@@ -378,6 +379,6 @@ describe('AuthCallbackScreen', () => {
     // React Native's default black against the app's black background.
     const style = flattenStyles(label.props.style)
     expect(style.color).toBeDefined()
-    expect(style.color).toBe('#fff')
+    expect(style.color).toBe(theme.text.secondary)
   })
 })

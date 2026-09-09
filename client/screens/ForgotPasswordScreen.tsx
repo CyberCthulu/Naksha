@@ -56,28 +56,28 @@ export default function ForgotPasswordScreen({
 
   return (
     <AuthContainer centered>
-      <AppText style={uiStyles.h1}>Forgot Password</AppText>
-      <AppText style={[uiStyles.sub, { marginBottom: 14 }]}>
+      <AppText variant="title" style={uiStyles.h1}>Forgot Password</AppText>
+      <AppText variant="body" style={[uiStyles.sub, { marginBottom: 14 }]}>
         Enter your email and we will send reset instructions.
       </AppText>
 
       <EmailField value={email} onChange={setEmail} />
 
       {message !== '' && (
-        <AppText style={[uiStyles.text, { marginBottom: 10 }]}>
+        <AppText variant="body" style={[uiStyles.text, { marginBottom: 10 }]}>
           {message}
         </AppText>
       )}
 
       {error !== '' && (
-        <AppText style={[uiStyles.errorText, { marginBottom: 10 }]}>
+        <AppText variant="bodySmall" style={[uiStyles.errorText, { marginBottom: 10 }]}>
           {error}
         </AppText>
       )}
 
       <Button
         title={submitting ? 'Sending…' : 'Send Reset Email'}
-        variant="ghost"
+        variant="primary"
         onPress={handleSendReset}
         disabled={submitting}
       />
@@ -86,7 +86,7 @@ export default function ForgotPasswordScreen({
 
       <Button
         title="Back to Login"
-        variant="ghost"
+        variant="tertiary"
         onPress={() => navigation.replace('Login')}
         disabled={submitting}
       />

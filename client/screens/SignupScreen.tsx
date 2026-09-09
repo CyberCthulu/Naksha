@@ -100,8 +100,8 @@ export default function SignupScreen() {
   return (
     <AuthContainer>
       <View style={{ marginBottom: 18 }}>
-        <AppText style={uiStyles.h1}>Create your account</AppText>
-        <AppText style={[uiStyles.sub, { marginBottom: 0 }]}>
+        <AppText variant="title" style={uiStyles.h1}>Create your account</AppText>
+        <AppText variant="body" style={[uiStyles.sub, { marginBottom: 0 }]}>
           Add your birth details to generate your natal chart.
         </AppText>
       </View>
@@ -129,7 +129,7 @@ export default function SignupScreen() {
       />
 
       {error !== '' && (
-        <AppText style={[uiStyles.errorText, { marginTop: 4, marginBottom: 4 }]}>
+        <AppText variant="bodySmall" style={[uiStyles.errorText, { marginTop: 4, marginBottom: 4 }]}>
           {error}
         </AppText>
       )}
@@ -138,7 +138,7 @@ export default function SignupScreen() {
 
       <Button
         title={submitting ? 'Signing Up…' : 'Sign Up'}
-        variant="ghost"
+        variant="primary"
         onPress={handleSignup}
         disabled={submitting}
       />
@@ -147,7 +147,7 @@ export default function SignupScreen() {
 
       <Button
         title="Already have an account? Log In"
-        variant="ghost"
+        variant="tertiary"
         onPress={() => navigation.replace('Login')}
         disabled={submitting}
       />

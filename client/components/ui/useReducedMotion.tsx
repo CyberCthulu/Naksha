@@ -10,9 +10,8 @@ import { AccessibilityInfo } from 'react-native'
 /**
  * Reduced-motion foundation.
  *
- * Naksha has no motion system: backgrounds are static and nothing animates.
- * This exists so the one documented consequence — decorative background layers
- * fall back to `flat` — is observed safely rather than retrofitted later.
+ * Animated chart effects use this preference to show a static state. The
+ * background is always static and does not need to subscribe or disappear.
  *
  * The value is tri-state on purpose:
  *
@@ -20,11 +19,8 @@ import { AccessibilityInfo } from 'react-native'
  *   false  reduced motion is off
  *   true   reduced motion is on
  *
- * Callers treat `null` as "render the calm thing". Because the platform read is
- * async, assuming `false` up front would show decoration and then snatch it
- * away from exactly the users who asked for less; assuming `true` would flash
- * decoration in for everyone else. Holding decoration until the answer arrives
- * costs one quiet frame and avoids both.
+ * Animated callers treat `null` as a request for their static state, so motion
+ * never starts before the platform preference has resolved.
  */
 const ReducedMotionContext = createContext<boolean | null | undefined>(
   undefined

@@ -1,8 +1,9 @@
 import React from 'react'
-import { Alert, Text, TextInput, TouchableOpacity } from 'react-native'
+import { Alert, Text, TextInput } from 'react-native'
 import TestRenderer from 'react-test-renderer'
 
 import CheckEmailScreen from '../CheckEmailScreen'
+import { Button } from '../../components/ui/Button'
 import supabase from '../../lib/supabase'
 import { resendSignupEmail, verifySignupOtp } from '../../lib/auth'
 import type { UserProfileFields } from '../../lib/domainTypes'
@@ -102,10 +103,8 @@ function textValue(value: unknown): string {
 }
 
 function findButtonByText(root: TestRenderer.ReactTestRenderer, label: string) {
-  const button = root.root.findAllByType(TouchableOpacity).find((node) =>
-    node.findAllByType(Text).some((textNode) =>
-      textValue(textNode.props.children).includes(label)
-    )
+  const button = root.root.findAllByType(Button).find((node) =>
+    node.props.title.includes(label)
   )
 
   if (!button) throw new Error(`Could not find button: ${label}`)

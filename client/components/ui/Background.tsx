@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useId, useState } from 'react'
 import {
   StyleSheet,
   View,
@@ -9,6 +9,7 @@ import {
 import Svg, {
   Circle,
   Defs,
+  Ellipse,
   LinearGradient,
   RadialGradient,
   Rect,
@@ -17,33 +18,45 @@ import Svg, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { theme, type PlanetAccent } from './theme'
-import { useReducedMotion } from './useReducedMotion'
 
 export type BackgroundVariant = 'flat' | 'quiet' | 'atmospheric' | 'hero'
 
 /**
- * Deterministic star field. Fractional coordinates so the field scales with the
- * container, fixed so it never reshuffles between renders — a background that
- * rearranges itself reads as noise rather than atmosphere.
- *
- * Twelve stars, three opacity tiers. The dormant GL background used 5,000.
+ * A fixed, lightly scattered field across the whole viewport. The outer
+ * columns stay in the gutters so opaque reading cards do not hide every star.
+ * Sizes are in layout pixels; fractional positions adapt to the container.
+ * Built once, with a fixed seed, so renders and route changes never reshuffle it.
  */
-const STARS = [
-  { x: 0.08, y: 0.07, r: 1.0, opacity: 0.18 },
-  { x: 0.21, y: 0.16, r: 0.5, opacity: 0.1 },
-  { x: 0.34, y: 0.05, r: 1.5, opacity: 0.28 },
-  { x: 0.47, y: 0.21, r: 0.5, opacity: 0.1 },
-  { x: 0.62, y: 0.09, r: 1.0, opacity: 0.18 },
-  { x: 0.76, y: 0.18, r: 0.5, opacity: 0.1 },
-  { x: 0.88, y: 0.06, r: 1.5, opacity: 0.28 },
-  { x: 0.14, y: 0.33, r: 0.5, opacity: 0.1 },
-  { x: 0.55, y: 0.36, r: 1.0, opacity: 0.18 },
-  { x: 0.93, y: 0.29, r: 0.5, opacity: 0.1 },
-  { x: 0.29, y: 0.44, r: 0.5, opacity: 0.1 },
-  { x: 0.71, y: 0.48, r: 1.0, opacity: 0.18 },
-] as const
+const STARS = (() => {
+  let seed = 7391
+  const next = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0
+    return seed / 0x100000000
+  }
 
-const GRADIENT_HEIGHT_RATIO = 0.4
+  return Array.from({ length: 96 }, (_, index) => {
+    const column = index % 8
+    const row = Math.floor(index / 8)
+    const x =
+      column === 0
+        ? 0.014 + next() * 0.025
+        : column === 7
+          ? 0.961 + next() * 0.025
+          : (column + 0.15 + next() * 0.7) / 8
+    const y = (row + 0.12 + next() * 0.76) / 12
+    const brightness = next()
+    const bright = brightness > 0.88
+
+    return {
+      x,
+      y,
+      r: bright ? 1.15 : brightness > 0.5 ? 0.75 : 0.45,
+      opacity: bright ? 0.72 : brightness > 0.5 ? 0.44 : 0.24,
+      bright,
+    }
+  })
+})()
+
 const HERO_GLOW_RADIUS_RATIO = 0.45
 const HERO_GLOW_CENTER_Y_RATIO = 0.3
 const HERO_GLOW_OPACITY = 0.08
@@ -57,10 +70,6 @@ type Props = {
   testID?: string
 }
 
-function showsGradient(variant: BackgroundVariant) {
-  return variant !== 'flat'
-}
-
 function showsStars(variant: BackgroundVariant) {
   return variant === 'atmospheric' || variant === 'hero'
 }
@@ -72,17 +81,15 @@ export function Background({
   children,
   testID,
 }: Props) {
-  const reduceMotion = useReducedMotion()
   const insets = useSafeAreaInsets()
+  const gradientId = `naksha-bg-${useId().replace(/:/g, '')}`
   const [size, setSize] = useState<{ width: number; height: number } | null>(
     null
   )
 
-  // Reduced motion, and the window before the preference resolves, both render
-  // the flat base. The base color is painted by the container either way, so
-  // this is a decoration decision only -- never a legibility one.
-  const effectiveVariant: BackgroundVariant =
-    reduceMotion === null || reduceMotion === true ? 'flat' : variant
+  // Every decoration is static. Reduced motion does not need to erase the sky
+  // or delay its appearance while the platform preference resolves.
+  const starry = showsStars(variant)
 
   const onLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout
@@ -95,12 +102,12 @@ export function Background({
   }
 
   const canDecorate =
-    effectiveVariant !== 'flat' &&
+    variant !== 'flat' &&
     size != null &&
     size.width > 0 &&
     size.height > 0
 
-  const glowColor = planet ? theme.planet[planet] : theme.accent.base
+  const glowColor = planet ? theme.planetGlow[planet] : theme.accent.base
 
   return (
     <View
@@ -125,7 +132,7 @@ export function Background({
             importantForAccessibility="no-hide-descendants"
           >
             <Defs>
-              <LinearGradient id="naksha-bg-lift" x1="0" y1="0" x2="0" y2="1">
+              <LinearGradient id={`${gradientId}-lift`} x1="0" y1="0" x2="0" y2="1">
                 <Stop
                   offset="0"
                   stopColor={theme.background.raised}
@@ -137,7 +144,22 @@ export function Background({
                   stopOpacity="1"
                 />
               </LinearGradient>
-              <RadialGradient id="naksha-bg-glow" cx="0.5" cy="0.5" r="0.5">
+              <RadialGradient id={`${gradientId}-nebula`}>
+                <Stop offset="0" stopColor={theme.atmosphere.nebula} stopOpacity="0.24" />
+                <Stop offset="0.45" stopColor={theme.atmosphere.nebula} stopOpacity="0.10" />
+                <Stop offset="1" stopColor={theme.atmosphere.nebula} stopOpacity="0" />
+              </RadialGradient>
+              <RadialGradient id={`${gradientId}-haze`}>
+                <Stop offset="0" stopColor={theme.atmosphere.haze} stopOpacity="0.20" />
+                <Stop offset="0.5" stopColor={theme.atmosphere.haze} stopOpacity="0.08" />
+                <Stop offset="1" stopColor={theme.atmosphere.haze} stopOpacity="0" />
+              </RadialGradient>
+              <RadialGradient id={`${gradientId}-starlight`}>
+                <Stop offset="0" stopColor={theme.atmosphere.star} stopOpacity="0.18" />
+                <Stop offset="0.3" stopColor={theme.atmosphere.star} stopOpacity="0.06" />
+                <Stop offset="1" stopColor={theme.atmosphere.star} stopOpacity="0" />
+              </RadialGradient>
+              <RadialGradient id={`${gradientId}-glow`} cx="0.5" cy="0.5" r="0.5">
                 <Stop
                   offset="0"
                   stopColor={glowColor}
@@ -147,37 +169,65 @@ export function Background({
               </RadialGradient>
             </Defs>
 
-            {showsGradient(effectiveVariant) ? (
-              <Rect
-                x="0"
-                y="0"
-                width={size.width}
-                height={size.height * GRADIENT_HEIGHT_RATIO}
-                fill="url(#naksha-bg-lift)"
-              />
+            <Rect
+              x="0"
+              y="0"
+              width={size.width}
+              height={size.height * (starry ? 0.7 : 0.4)}
+              fill={`url(#${gradientId}-lift)`}
+            />
+
+            {starry ? (
+              <>
+                <Ellipse
+                  testID="background-nebula"
+                  cx={size.width * 0.9}
+                  cy={size.height * 0.28}
+                  rx={size.width * 0.85}
+                  ry={size.height * 0.28}
+                  fill={`url(#${gradientId}-nebula)`}
+                />
+                <Ellipse
+                  testID="background-haze"
+                  cx={size.width * 0.05}
+                  cy={size.height * 0.65}
+                  rx={size.width * 0.9}
+                  ry={size.height * 0.32}
+                  fill={`url(#${gradientId}-haze)`}
+                />
+              </>
             ) : null}
 
-            {effectiveVariant === 'hero' ? (
+            {variant === 'hero' ? (
               <Circle
                 testID="background-hero-glow"
                 cx={size.width / 2}
                 cy={size.height * HERO_GLOW_CENTER_Y_RATIO}
                 r={size.width * HERO_GLOW_RADIUS_RATIO}
-                fill="url(#naksha-bg-glow)"
+                fill={`url(#${gradientId}-glow)`}
               />
             ) : null}
 
-            {showsStars(effectiveVariant)
+            {starry
               ? STARS.map((star, index) => (
-                  <Circle
-                    key={`naksha-star-${index}`}
-                    testID="background-star"
-                    cx={star.x * size.width}
-                    cy={star.y * size.height}
-                    r={star.r}
-                    fill={theme.text.primary}
-                    opacity={star.opacity}
-                  />
+                  <React.Fragment key={`naksha-star-${index}`}>
+                    {star.bright ? (
+                      <Circle
+                        cx={star.x * size.width}
+                        cy={star.y * size.height}
+                        r={star.r * 5}
+                        fill={`url(#${gradientId}-starlight)`}
+                      />
+                    ) : null}
+                    <Circle
+                      testID="background-star"
+                      cx={star.x * size.width}
+                      cy={star.y * size.height}
+                      r={star.r}
+                      fill={star.bright ? theme.text.primary : theme.atmosphere.star}
+                      opacity={star.opacity}
+                    />
+                  </React.Fragment>
                 ))
               : null}
           </Svg>
@@ -210,7 +260,7 @@ export function Background({
               // decorated variants, the flat environment otherwise. A base-
               // coloured strip over the gradient would read as a dark band.
               backgroundColor:
-                effectiveVariant === 'flat'
+                variant === 'flat'
                   ? theme.background.base
                   : theme.background.raised,
             },

@@ -3,29 +3,28 @@ import { theme } from './theme'
 
 export const formStyles = StyleSheet.create({
   section: {
-    marginBottom: 16,
+    marginBottom: theme.space.lg,
   },
   label: {
-    color: theme.colors.text,
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 8,
+    ...theme.typography.subheading,
+    color: theme.text.primary,
+    marginBottom: theme.space.sm,
   },
   input: {
+    minHeight: theme.touchTarget.min,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.card,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    color: theme.colors.text,
-    fontSize: 16,
-    backgroundColor: 'transparent',
+    borderColor: theme.border.base,
+    borderRadius: theme.radius.sm,
+    paddingVertical: theme.space.md,
+    paddingHorizontal: theme.space.md,
+    backgroundColor: theme.background.sunken,
   },
   pickerWrap: {
+    minHeight: theme.touchTarget.min,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.card,
+    borderColor: theme.border.base,
+    borderRadius: theme.radius.sm,
     overflow: 'hidden',
-    backgroundColor: 'transparent',
+    backgroundColor: theme.background.sunken,
   },
 })

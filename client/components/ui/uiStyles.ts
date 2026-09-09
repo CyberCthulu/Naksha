@@ -7,53 +7,54 @@ export const uiStyles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: theme.spacing.screen,
+    padding: theme.space.xl,
   },
 
   screen: {
     flex: 1,
-    padding: theme.spacing.screen,
-    paddingTop: theme.spacing.top,
+    padding: theme.space.xl,
+    paddingTop: theme.space.xxxxl,
   },
 
   text: {
-    color: theme.colors.text,
+    ...theme.typography.body,
+    color: theme.text.primary,
   },
 
   muted: {
-    color: theme.colors.muted,
+    ...theme.typography.bodySmall,
+    color: theme.text.secondary,
   },
 
   errorText: {
-    color: theme.colors.danger,
-    marginBottom: 12,
+    ...theme.typography.bodySmall,
+    color: theme.state.danger,
+    marginBottom: theme.space.md,
     textAlign: 'center',
   },
 
   h1: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: theme.colors.text,
+    ...theme.typography.title,
+    color: theme.text.primary,
   },
 
   sub: {
+    ...theme.typography.body,
     marginTop: 6,
     marginBottom: 16,
-    color: theme.colors.sub,
+    color: theme.text.secondary,
   },
 
   card: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.card,
-    padding: theme.spacing.card,
-    backgroundColor: theme.colors.cardBg,
-    marginBottom: 12,
+    ...theme.elevation.level1,
+    borderRadius: theme.radius.md,
+    padding: theme.space.lg,
+    marginBottom: theme.space.md,
   },
 
   cardTitle: {
-    fontWeight: '700',
+    ...theme.typography.heading,
     marginBottom: 6,
-    color: theme.colors.text,
+    color: theme.text.primary,
   },
 })

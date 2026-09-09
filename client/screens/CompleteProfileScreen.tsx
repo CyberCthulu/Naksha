@@ -1,12 +1,6 @@
 // client/screens/CompleteProfileScreen.tsx
 import React, { useEffect, useLayoutEffect, useState } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-  TouchableOpacity,
-} from 'react-native'
+import { View, StyleSheet, Alert } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
@@ -22,6 +16,8 @@ import ProfileFields from '../components/auth/ProfileFields'
 
 // Shared UI theme
 import { theme } from '../components/ui/theme'
+import { AppText } from '../components/ui/AppText'
+import { Button } from '../components/ui/Button'
 import { ScreenHeader } from '../components/ui/ScreenHeader'
 import { uiStyles } from '../components/ui/uiStyles'
 import { LoadingState } from '../components/ui/LoadingState'
@@ -216,7 +212,7 @@ export default function CompleteProfileScreen() {
         }}
       />
 
-      {error && <Text style={[uiStyles.errorText, { marginBottom: 10 }]}>{error}</Text>}
+      {error && <AppText variant="bodySmall" style={uiStyles.errorText}>{error}</AppText>}
 
       <ProfileFields
         firstName={firstName}
@@ -240,83 +236,24 @@ export default function CompleteProfileScreen() {
       <View style={{ height: 12 }} />
 
       {/* Footer actions */}
-      <TouchableOpacity
+      <Button
+        title={saving ? 'Saving…' : 'Save & Continue'}
         onPress={onSave}
+        loading={saving}
+      />
+      <Button
+        title="Skip for now"
+        variant="tertiary"
+        onPress={onSkip}
         disabled={saving}
-        style={[styles.primaryBtn, saving && { opacity: 0.7 }]}
-      >
-        <Text style={styles.primaryBtnText}>{saving ? 'Saving…' : 'Save & Continue'}</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={onSkip} disabled={saving} style={styles.secondaryBtn}>
-        <Text style={styles.secondaryBtnText}>Skip for now</Text>
-      </TouchableOpacity>
+        style={styles.secondaryAction}
+      />
     </AuthContainer>
   )
 }
 
 const styles = StyleSheet.create({
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  iconBtn: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconText: {
-    fontSize: 30,
-    color: theme.colors.text,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '800',
-    color: theme.colors.text,
-  },
-  savePill: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 999,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    backgroundColor: theme.colors.cardBg,
-    minWidth: 72,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveText: {
-    color: theme.colors.text,
-    fontWeight: '800',
-  },
-
-  primaryBtn: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.card,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: theme.colors.cardBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryBtnText: {
-    color: theme.colors.text,
-    fontWeight: '800',
-    fontSize: 16,
-  },
-
-  secondaryBtn: {
-    marginTop: 10,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  secondaryBtnText: {
-    color: theme.colors.sub,
-    fontWeight: '700',
+  secondaryAction: {
+    marginTop: theme.space.sm,
   },
 })
