@@ -10,8 +10,8 @@ import { AccessibilityInfo } from 'react-native'
 /**
  * Reduced-motion foundation.
  *
- * Animated chart effects use this preference to show a static state. The
- * background is always static and does not need to subscribe or disappear.
+ * Animated chart effects and background glimmer use this preference to show
+ * a static state. The background's base sky stays visible in every mode.
  *
  * The value is tri-state on purpose:
  *

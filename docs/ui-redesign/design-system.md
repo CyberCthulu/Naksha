@@ -43,14 +43,19 @@ no secondary-text color, and no state semantics.
 
 | Role | Value | Use |
 | --- | --- | --- |
-| `surface` | `#131A2C` | Default card. **Opaque** — replaces `rgba(0,0,0,0.35)`. |
-| `surface.raised` | `#1A2238` | Sheets, modals, pressed cards, dropdowns. |
+| `surface` | `#131A2C` | Opaque controls and input states. |
+| `surface.raised` | `#1A2238` | Opaque dropdowns and non-celestial sheets. |
+| `cardSurface.base` | `rgba(19,26,44,0.60)` | Standard reading cards, including both guidance tabs. |
+| `cardSurface.raised` | `rgba(26,34,56,0.72)` | Raised cards. |
+| `cardSurface.selected` | `rgba(37,40,49,0.72)` | Selected cards with a navy/gold tint and accent border. |
 | `surface.selected` | `rgba(201,164,92,0.10)` | Selected list row. Replaces `rgba(255,255,255,0.06)`. |
 | `scrim` | `rgba(4,6,12,0.72)` | Modal backdrop. Replaces `rgba(0,0,0,0.55)`. |
 
-The current card is a 35 %-opacity black rectangle on pure black — effectively
-invisible, defined only by its border. Opaque surfaces are also cheaper on
-Android: they avoid the overdraw that stacked translucency causes.
+Cards use dedicated translucent fills so stars show through them. Opacity
+belongs to the background color, never the entire card: text and controls
+retain their full opacity. Inputs and dropdowns stay opaque. Chart popups use
+their own contained starry sky over an opaque navy base, so underlying chart
+text cannot bleed through. No blur effect or extra card layer is needed.
 
 #### Borders
 
@@ -440,8 +445,9 @@ lightness steps plus a hairline border.
 | Level | Background | Border | Use |
 | --- | --- | --- | --- |
 | 0 — environment | `background.base` | none | Screen root |
-| 1 — surface | `surface` | `border` | Cards, list rows |
-| 2 — raised | `surface.raised` | `border.strong` | Sheets, modals, dropdowns |
+| 1 — card | `cardSurface.base` | `border` | Cards and card-based list rows |
+| 2 — raised | `cardSurface.raised` or opaque `surface.raised` | `border.strong` | Raised cards or opaque dropdowns |
+| Celestial sheet | Opaque `background.base` + contained sky | `border.strong` | Chart interpretation and legend popups |
 | 3 — selected | `surface.selected` | `border.accent` | Selected row, focused field |
 
 Rules:
@@ -465,9 +471,10 @@ Rules:
 
 ## 6. Backgrounds — Quiet, Atmospheric, Hero
 
-Approved V1 approach: deep navy base, lightweight **static** gradients, sparse
-**static** SVG celestial detail, three intensity variants, flat navy fallback.
-**No `three`, no `expo-gl`, no particle system, no continuous GPU effect.**
+The background uses a deep navy base, static gradients and fixed SVG stars,
+with a restrained opacity glimmer on nine bright stars. There are three
+intensity variants and a flat navy fallback. No `three`, `expo-gl`, particle
+system, or blur effect is involved.
 
 Implementation uses **`react-native-svg` 15.12.1, already a dependency** —
 `<Defs>` with `<LinearGradient>` / `<RadialGradient>`, and `<Circle>` elements
@@ -483,14 +490,17 @@ for stars. No new dependency is required.
 2026-09-09 consistency correction: the former twelve faint stars occupied only
 the top half of the screen and largely disappeared behind opaque cards. The
 full-height field and washes restore the requested starry atmosphere. Decorative
-colors live in `theme.atmosphere`; cards retain the opaque `surface.base` so the
-sky cannot change their perceived fill or interfere with reading. Today and
-This Week are peer cards and both use this standard surface.
+colors live in `theme.atmosphere`. Following the request for more visible stars
+behind cards, card fills use `theme.cardSurface` at 60% opacity (72% for raised
+and selected cards), with fully opaque foreground content. Today and This Week
+use exactly the same fill. `SkySurface` gives chart interpretation and legend
+popups their own static starry sky over a solid base, clipped to the panel.
 
 Hard constraints:
 
-1. **Everything is static.** No animation loop, no `requestAnimationFrame`, no
-   `Animated` driver, no timers. The background renders once per layout.
+1. The base sky and all geometry stay static. One native-driver `Animated.Value`
+   fades a separate cached SVG highlight layer in and out over twelve seconds;
+   no React updates, layout changes, or geometry updates occur per frame.
 2. Star positions are **deterministic constants**, not random per mount — a
    background that reshuffles on re-render reads as noise.
 3. Star count is capped at 100 (currently 96), generated once with a fixed seed.
@@ -501,9 +511,12 @@ Hard constraints:
    fallback rather than a degraded mode.
 6. Exactly one `hero` glow per screen, driven by the existing
    `SpaceProvider.focusedPlanet`.
-7. Reduced motion retains these static decorations. Backgrounds have no motion
-   or motion-preference subscription; the explicit `flat` variant remains
-   available when decoration needs to be removed.
+7. The glimmer runs only while its route is focused, AppState is active, and
+   reduced motion is explicitly off. It stops and resets on blur, inactivity,
+   preference changes, and unmount. An unresolved preference leaves the static
+   sky visible. Quiet and flat variants never mount the glimmer.
+8. Contained panel skies disable system-bar protection, since their safe-area
+   spacing belongs to the panel layout. They use a static sky without glimmer.
 
 ### Relationship to the dormant GL stack
 
@@ -605,6 +618,19 @@ go, and it is wrapped so a failed sign-out reports itself.
 | `JournalListScreen` `newBtn` | → `Button` secondary |
 | Profile card `#007AFF` text links | → `Button` tertiary; destructive ones → `destructive` |
 | RN core `Button` in `ChartScreen`, `ChartScreenContent` | → shared `Button`. **Part of the Slice 6 flagship** |
+
+### 7.6 Section tabs
+
+`SectionTabs` owns the shared Dashboard and chart selector: equal-width,
+48 dp minimum targets, wrapping Inter subheadings, and a gold selection rule.
+The group and controls expose tab-list and selected-tab accessibility semantics.
+
+The Dashboard uses Today / This Week. The chart uses Planets / Houses / Aspects
+below the wheel and current reading, with Planets initially selected. Only the
+active list is mounted; missing houses and empty aspects retain their existing
+explanations inside their tabs. Selecting a planet, house, or aspect on the wheel
+opens the corresponding tab. Manual tab changes preserve the wheel selection
+and interpretation state.
 
 ---
 
@@ -992,20 +1018,25 @@ hardware-back behavior.
 
 ## 12. Motion and Reduced Motion
 
-V1 has **no motion system and no continuous animation**, and the approved
-background approach is entirely static. This section therefore constrains rather
-than introduces.
+Motion is limited to chart selection and a subtle background glimmer. Both
+retain a static presentation when reduced motion is enabled or unresolved.
 
 | Rule | |
 | --- | --- |
-| Backgrounds | Static. No loop, no timer, no `Animated` driver |
+| Backgrounds | Static sky plus one native opacity loop over nine star highlights; six seconds brighter, six seconds dimmer. |
 | Transitions | Platform default stack animation. No custom transitions in this migration |
 | Modal | `animationType="slide"` — **unchanged**, part of the preserved interaction behavior |
 | Press feedback | Opacity only. No scale, no spring |
-| Chart wheel selection | The single approved exception — see below |
+| Chart wheel selection | Two scoped animated values — see below |
 | Duration budget | If any motion is later approved: 150 ms enter, 120 ms exit |
 
-### The one exception: chart wheel selection
+Background glimmer uses `useNativeDriver: true` and `isInteraction: false`.
+Its two timing animations advance through a JavaScript sequence callback every
+six seconds; animation frames run natively. Hidden routes and inactive apps stop
+the loop. This bounds the work; frame rate and battery impact still require
+device profiling.
+
+### Chart wheel selection
 
 Approved after Slice 6B device review, and revised there. The chart wheel may
 run **two** continuously animating values, and only under all of these
@@ -1013,7 +1044,7 @@ conditions.
 
 | Condition | |
 | --- | --- |
-| Scope | The selected planet's outer halo; a selected aspect's stroke and bloom, plus the halos on **both** of its endpoint planets. Nothing else on the wheel, and nothing anywhere else in the app. |
+| Scope | The selected planet's outer halo; a selected aspect's stroke and bloom, plus the halos on **both** of its endpoint planets. The background glimmer is independent. |
 | Count | Two shared values for the whole wheel: `glow` drives opacity, `trace` drives `strokeDashoffset`. Both are shared by every animated element, so the count does not grow with the number of planets or aspects. |
 | Geometry | Never animated. Coordinates, radii, aspect endpoints and house boundaries are computed once and do not move. `strokeDashoffset` shifts where the dashes fall along a fixed line; it does not move the line. |
 | Character — glow | A slow breath: `GLOW_MAX` 0.7 to `GLOW_MIN` 0.3 over 1800 ms, eased in-out, reversing. It never reaches zero — a selection that fades to invisible reads as a bug. |

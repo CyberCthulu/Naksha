@@ -45,7 +45,7 @@ beforeEach(() => {
 })
 
 describe('Card', () => {
-  it('uses the opaque default surface with a hairline border', () => {
+  it('uses a translucent fill without fading card content', () => {
     const style = flattenStyles(
       hostByTestID(render(
         <Card testID="c">
@@ -54,10 +54,11 @@ describe('Card', () => {
       ), 'c').props.style
     )
 
-    expect(style.backgroundColor).toBe(theme.surface.base)
+    expect(style.backgroundColor).toBe(theme.cardSurface.base)
     expect(style.borderColor).toBe(theme.border.base)
     expect(style.borderRadius).toBe(theme.radius.md)
-    expect(String(style.backgroundColor)).not.toContain('rgba')
+    expect(String(style.backgroundColor)).toContain('rgba')
+    expect(style.opacity).toBeUndefined()
   })
 
   it('supports the raised and selected variants', () => {
@@ -68,8 +69,9 @@ describe('Card', () => {
         </Card>
       ), 'c').props.style
     )
-    expect(raised.backgroundColor).toBe(theme.surface.raised)
+    expect(raised.backgroundColor).toBe(theme.cardSurface.raised)
     expect(raised.borderColor).toBe(theme.border.strong)
+    expect(raised.opacity).toBeUndefined()
 
     const selected = flattenStyles(
       hostByTestID(render(
@@ -78,7 +80,9 @@ describe('Card', () => {
         </Card>
       ), 'c').props.style
     )
+    expect(selected.backgroundColor).toBe(theme.cardSurface.selected)
     expect(selected.borderColor).toBe(theme.border.accent)
+    expect(selected.opacity).toBeUndefined()
   })
 
   it('renders children and honours a style override', () => {

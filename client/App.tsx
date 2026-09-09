@@ -4,6 +4,7 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native'
 import {
   NavigationContainer,
   DefaultTheme,
+  useIsFocused,
   type LinkingOptions,
 } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
@@ -47,8 +48,10 @@ function withBackground<P extends object>(
   variant: BackgroundVariant
 ) {
   function BackgroundScreen(props: P) {
+    const isFocused = useIsFocused()
+
     return (
-      <Background variant={variant}>
+      <Background variant={variant} motionEnabled={isFocused}>
         <Screen {...props} />
       </Background>
     )

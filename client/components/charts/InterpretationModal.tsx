@@ -11,6 +11,7 @@ import PagerView from 'react-native-pager-view'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { AppText } from '../ui/AppText'
 import { Icon } from '../ui/Icon'
+import { SkySurface } from '../ui/SkySurface'
 import { theme } from '../ui/theme'
 import InterpretationCard from './InterpretationCard'
 import { Interpretation } from '../../lib/lexicon'
@@ -232,7 +233,7 @@ export default function InterpretationModal({
 
       {/* Reading sheet — absolutely positioned so its height is never
           derived from a fragile percentage calculation */}
-      <View
+      <SkySurface
         testID="interpretation-sheet"
         style={[styles.sheet, { top: sheetTop }]}
       >
@@ -344,7 +345,7 @@ export default function InterpretationModal({
             </PagerView>
           )}
         </View>
-      </View>
+      </SkySurface>
     </Modal>
   )
 }
@@ -359,7 +360,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: theme.surface.raised,
+    backgroundColor: theme.background.base,
+    overflow: 'hidden',
     borderTopLeftRadius: theme.radius.xl,
     borderTopRightRadius: theme.radius.xl,
     borderTopWidth: 1,

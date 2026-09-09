@@ -3,6 +3,7 @@ import { BackHandler, Dimensions, Modal, ScrollView } from 'react-native'
 import TestRenderer from 'react-test-renderer'
 
 import { GlyphCompass, GLYPH_COMPASS_TRIGGER_CLEARANCE } from '../GlyphCompass'
+import { Background } from '../../ui/Background'
 import { theme } from '../../ui/theme'
 
 jest.mock('react-native-safe-area-context', () => ({
@@ -171,6 +172,21 @@ describe('Glyph Compass trigger', () => {
 })
 
 describe('Glyph Compass panel', () => {
+  it('uses an opaque clipped sky that cannot intercept legend controls', () => {
+    const screen = openPanel()
+    const panel = flatten(node(screen, 'glyph-compass-panel')[0].props.style)
+    const decoration = node(screen, 'sky-surface-decoration')[0]
+
+    expect(panel.backgroundColor).toBe(theme.background.base)
+    expect(panel.overflow).toBe('hidden')
+    expect(decoration.props.pointerEvents).toBe('none')
+    expect(decoration.props.accessibilityElementsHidden).toBe(true)
+    expect(decoration.props.importantForAccessibility).toBe('no-hide-descendants')
+    expect(screen.root.findByType(Background).props.motionEnabled).toBe(false)
+    expect(node(screen, 'background-status-bar-protection')).toHaveLength(0)
+    expect(node(screen, 'background-navigation-bar-protection')).toHaveLength(0)
+  })
+
   it('keeps every existing glyph definition', () => {
     const screen = openPanel()
     const texts = hostTexts(screen)

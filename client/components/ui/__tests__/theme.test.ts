@@ -49,6 +49,11 @@ describe('V2 semantic tokens', () => {
       raised: '#1A2238',
       selected: 'rgba(201,164,92,0.10)',
     })
+    expect(theme.cardSurface).toEqual({
+      base: 'rgba(19,26,44,0.60)',
+      raised: 'rgba(26,34,56,0.72)',
+      selected: 'rgba(37,40,49,0.72)',
+    })
     expect(theme.scrim).toBe('rgba(4,6,12,0.72)')
   })
 

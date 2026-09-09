@@ -1,6 +1,10 @@
 import React from 'react'
 import { ScrollView, Text } from 'react-native'
 import TestRenderer from 'react-test-renderer'
+import { Circle } from 'react-native-svg'
+
+import { Background } from '../../ui/Background'
+import { theme } from '../../ui/theme'
 
 import InterpretationModal, {
   type InterpretationPage,
@@ -334,6 +338,35 @@ describe('InterpretationModal', () => {
     // With mocked insets.bottom=24: max(24,16)+8=32.
     expect(scrollContentStyle?.paddingBottom).toBe(32)
     expect(scrollContentStyle?.paddingBottom as number).toBeLessThan(64)
+  })
+
+  it('paints its own clipped sky without exposing chart content or system-bar strips', async () => {
+    const { renderer: screen } = renderModal()
+    const sheetStyle = flattenStyles(
+      findByTestID(screen, 'interpretation-sheet').props.style
+    )
+
+    expect(sheetStyle.backgroundColor).toBe(theme.background.base)
+    expect(sheetStyle.overflow).toBe('hidden')
+
+    const sky = screen.root.findByType(Background)
+    expect(sky.props.motionEnabled).toBe(false)
+    await act(async () => {
+      sky.find((node) => String(node.type) === 'View' && !!node.props.onLayout)
+        .props.onLayout({
+          nativeEvent: { layout: { width: 360, height: 600 } },
+        })
+    })
+
+    const stars = sky.findAllByType(Circle).filter(
+      (node) => node.props.testID === 'background-star'
+    )
+    expect(stars.length).toBeGreaterThan(0)
+    expect(screen.root.findAll((node) =>
+      node.props.testID === 'background-status-bar-protection' ||
+      node.props.testID === 'background-navigation-bar-protection'
+    )).toHaveLength(0)
+    expect(hasText(screen, 'The long Sun interpretation.')).toBe(true)
   })
 
   it('calls onChangeIndex from next and previous controls', async () => {

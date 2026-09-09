@@ -4,6 +4,8 @@ import TestRenderer from 'react-test-renderer'
 
 import ChartScreenContent from '../ChartScreenContent'
 import ChartWheel from '../ChartWheel'
+import { InteractiveChartWheel } from '../InteractiveChartWheel'
+import InterpretationModal from '../InterpretationModal'
 import { GLYPH_COMPASS_TRIGGER_CLEARANCE } from '../GlyphCompass'
 import { theme } from '../../ui/theme'
 import { SpaceProvider } from '../../space/SpaceProvider'
@@ -114,6 +116,29 @@ function byTestID(screen: ReturnType<typeof create>, testID: string) {
   return screen.root.findAll((n) => n.props?.testID === testID)
 }
 
+type ChartTab = 'planets' | 'houses' | 'aspects'
+
+function press(screen: ReturnType<typeof create>, testID: string) {
+  const control = byTestID(screen, testID).find(
+    (node) => typeof node.props.onPress === 'function'
+  )
+  if (!control) throw new Error(`Missing control: ${testID}`)
+  act(() => control.props.onPress())
+}
+
+function expectActiveTab(screen: ReturnType<typeof create>, activeTab: ChartTab) {
+  for (const tab of ['planets', 'houses', 'aspects'] as const) {
+    const control = byTestID(screen, `chart-tab-${tab}`)[0]
+    expect(control.props.accessibilityRole).toBe('tab')
+    expect(control.props.accessibilityState.selected).toBe(tab === activeTab)
+
+    const section = tab === 'planets' ? 'positions' : tab
+    expect(byTestID(screen, `chart-section-${section}`).length > 0).toBe(
+      tab === activeTab
+    )
+  }
+}
+
 describe('Chart section hierarchy', () => {
   beforeEach(() => {
     ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
@@ -130,17 +155,60 @@ describe('Chart section hierarchy', () => {
     renderer = null
   })
 
-  it('renders the sections in the approved order', () => {
+  it('opens on Planets with all three tabs available and only its panel mounted', () => {
     const screen = renderChart()
-    const order = ['positions', 'houses', 'aspects']
 
-    const indexes = order.map((name) => {
-      const nodes = byTestID(screen, `chart-section-${name}`)
-      expect(nodes.length).toBeGreaterThan(0)
-      return JSON.stringify(screen.toJSON()).indexOf(`chart-section-${name}`)
-    })
+    expectActiveTab(screen, 'planets')
+    expect(hostTexts(screen)).toEqual(
+      expect.arrayContaining(['Planets', 'Houses', 'Aspects'])
+    )
+    expect(byTestID(screen, 'house-row-1')).toHaveLength(0)
+    expect(byTestID(screen, 'aspect-row-Sun-Moon')).toHaveLength(0)
+  })
 
-    expect(indexes).toEqual([...indexes].sort((a, b) => a - b))
+  it('switches between panels while keeping the wheel and selected placement', () => {
+    const screen = renderChart()
+    const wheel = () => screen.root.findByType(InteractiveChartWheel)
+
+    act(() => wheel().props.onSelectPlanet('Moon'))
+
+    for (const tab of ['houses', 'aspects', 'planets'] as const) {
+      press(screen, `chart-tab-${tab}`)
+      expectActiveTab(screen, tab)
+      expect(wheel().props.selection).toEqual({ kind: 'planet', planet: 'Moon' })
+      expect(wheel().props.focusedPlanet).toBe('Moon')
+      expect(hostTexts(screen)).toContain('Moon in Pisces')
+    }
+  })
+
+  it('shows the matching panel when a planet, house, or aspect is selected on the wheel', () => {
+    const screen = renderChart()
+    const wheel = () => screen.root.findByType(InteractiveChartWheel)
+
+    act(() => wheel().props.onSelectHouse(4))
+    expectActiveTab(screen, 'houses')
+    expect(byTestID(screen, 'chart-house-detail').length).toBeGreaterThan(0)
+
+    act(() => wheel().props.onSelectAspect(0))
+    expectActiveTab(screen, 'aspects')
+    expect(byTestID(screen, 'chart-aspect-detail').length).toBeGreaterThan(0)
+
+    act(() => wheel().props.onSelectPlanet('Mercury'))
+    expectActiveTab(screen, 'planets')
+    expect(wheel().props.selection).toEqual({ kind: 'planet', planet: 'Mercury' })
+    expect(screen.root.findByType(InterpretationModal).props.visible).toBe(false)
+  })
+
+  it('clears an empty wheel tap without changing the open tab', () => {
+    const screen = renderChart()
+    const wheel = () => screen.root.findByType(InteractiveChartWheel)
+
+    act(() => wheel().props.onSelectHouse(4))
+    act(() => wheel().props.onSelectAspect(null))
+
+    expectActiveTab(screen, 'houses')
+    expect(wheel().props.selection).toBeNull()
+    expect(byTestID(screen, 'chart-house-detail')).toHaveLength(0)
   })
 
   it('keeps the chart identity data intact', () => {
@@ -389,6 +457,7 @@ describe('Chart content coverage', () => {
 
   it('keeps all twelve houses represented', () => {
     const screen = renderChart()
+    press(screen, 'chart-tab-houses')
 
     for (let house = 1; house <= 12; house += 1) {
       expect(byTestID(screen, `house-row-${house}`).length).toBeGreaterThan(0)
@@ -397,6 +466,7 @@ describe('Chart content coverage', () => {
 
   it('keeps planet pair, aspect type and orb for every aspect', () => {
     const screen = renderChart()
+    press(screen, 'chart-tab-aspects')
     const texts = hostTexts(screen).join(' ')
 
     expect(byTestID(screen, 'aspect-row-Sun-Moon').length).toBeGreaterThan(0)
@@ -409,17 +479,51 @@ describe('Chart content coverage', () => {
 
   it('falls back safely when there are no aspects', () => {
     mockedUseChartData.mockReturnValue(chartState({ aspects: [] }))
-    expect(hostTexts(renderChart())).toContain('None (within default orbs)')
+    const screen = renderChart()
+    press(screen, 'chart-tab-aspects')
+
+    expectActiveTab(screen, 'aspects')
+    expect(hostTexts(screen)).toContain('None (within default orbs)')
   })
 
   it('falls back safely when houses are missing', () => {
     mockedUseChartData.mockReturnValue(
       chartState({ houses: null, planetHouses: null })
     )
-    const texts = hostTexts(renderChart()).join(' ')
+    const screen = renderChart()
+    press(screen, 'chart-tab-houses')
+    const texts = hostTexts(screen).join(' ')
 
+    expectActiveTab(screen, 'houses')
     expect(texts).toContain('Houses require a birth location')
     expect(texts).not.toContain('House 1')
+  })
+
+  it('keeps planet and house interpretations reachable after changing tabs', () => {
+    const screen = renderChart()
+    const modal = () => screen.root.findByType(InterpretationModal)
+
+    press(screen, 'chart-tab-houses')
+    press(screen, 'house-row-4')
+    expect(modal().props.visible).toBe(true)
+    expect(modal().props.headerTitle).toBe('House Interpretation')
+    expect(modal().props.pages[modal().props.currentIndex].key).toBe('house-4')
+    act(() => modal().props.onClose())
+
+    press(screen, 'chart-tab-planets')
+    press(screen, 'position-row-Moon')
+    expect(modal().props.visible).toBe(true)
+    expect(modal().props.headerTitle).toBe('Planet Interpretation')
+    expect(modal().props.pages[modal().props.currentIndex].key).toBe('Moon')
+    act(() => modal().props.onClose())
+
+    press(screen, 'chart-tab-aspects')
+    press(screen, 'chart-tab-planets')
+    expect(screen.root.findByType(ChartWheel).props.focusedPlanet).toBe('Moon')
+    expect(modal().props.visible).toBe(false)
+    expect(modal().props.pages[modal().props.currentIndex].key).toBe('Moon')
+    press(screen, 'position-row-Moon')
+    expect(modal().props.visible).toBe(true)
   })
 })
 
@@ -514,7 +618,9 @@ describe('Chart typography and accent rules', () => {
   })
 
   it('labels the aspects section without implying synastry', () => {
-    const texts = hostTexts(renderChart())
+    const screen = renderChart()
+    press(screen, 'chart-tab-aspects')
+    const texts = hostTexts(screen)
 
     expect(texts).toContain('Planetary dynamics')
     expect(texts).toContain('Aspects')

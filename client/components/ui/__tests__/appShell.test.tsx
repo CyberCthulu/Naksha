@@ -69,7 +69,9 @@ describe('route background mapping', () => {
   })
 
   it('wraps each route exactly once, so backgrounds never nest', () => {
-    expect(appSource.match(/<Background variant=\{variant\}>/g)).toHaveLength(1)
+    expect(
+      appSource.match(/<Background variant=\{variant\} motionEnabled=\{isFocused\}>/g)
+    ).toHaveLength(1)
   })
 
   it('defines the wrappers at module scope so screens are not remounted', () => {

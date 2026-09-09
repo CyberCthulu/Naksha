@@ -13,9 +13,9 @@ type Props = {
 }
 
 /**
- * The single card implementation. Depth comes from a background-lightness step
- * plus a hairline border -- never a shadow, which is invisible on a near-black
- * environment and costs Android overdraw.
+ * The single card implementation. Translucency belongs to the background fill,
+ * leaving text and controls fully opaque. Depth comes from lightness and a
+ * hairline border, with no blur or shadow layers.
  */
 export function Card({
   children,
@@ -40,7 +40,16 @@ const styles = StyleSheet.create({
 })
 
 const variantStyles = StyleSheet.create({
-  default: theme.elevation.level1,
-  raised: theme.elevation.level2,
-  selected: theme.elevation.level3,
+  default: {
+    ...theme.elevation.level1,
+    backgroundColor: theme.cardSurface.base,
+  },
+  raised: {
+    ...theme.elevation.level2,
+    backgroundColor: theme.cardSurface.raised,
+  },
+  selected: {
+    ...theme.elevation.level3,
+    backgroundColor: theme.cardSurface.selected,
+  },
 })

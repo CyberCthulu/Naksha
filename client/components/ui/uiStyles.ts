@@ -47,6 +47,7 @@ export const uiStyles = StyleSheet.create({
 
   card: {
     ...theme.elevation.level1,
+    backgroundColor: theme.cardSurface.base,
     borderRadius: theme.radius.md,
     padding: theme.space.lg,
     marginBottom: theme.space.md,

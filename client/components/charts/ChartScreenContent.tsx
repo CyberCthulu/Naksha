@@ -28,6 +28,7 @@ import { Button } from '../ui/Button'
 import { Icon } from '../ui/Icon'
 import { theme } from '../ui/theme'
 import { LoadingState } from '../ui/LoadingState'
+import { SectionTabs } from '../ui/SectionTabs'
 import AspectsList from './AspectsList'
 import ChartHeader from './ChartHeader'
 import { ChartAspectDetail } from './ChartAspectDetail'
@@ -61,6 +62,14 @@ const ASPECT_LABELS: Record<AspectType, string> = {
   trine: 'Trine',
   sextile: 'Sextile',
 }
+
+const CHART_TABS = [
+  { value: 'planets', label: 'Planets', testID: 'chart-tab-planets' },
+  { value: 'houses', label: 'Houses', testID: 'chart-tab-houses' },
+  { value: 'aspects', label: 'Aspects', testID: 'chart-tab-aspects' },
+] as const
+
+type ChartTab = (typeof CHART_TABS)[number]['value']
 
 type Props = {
   profile: ChartProfile
@@ -127,9 +136,11 @@ export default function ChartScreenContent({
   const size = Math.min(Math.max(240, width - theme.space.xl * 2), 380)
 
   const [selection, setSelection] = useState<ChartSelection>(null)
+  const [activeTab, setActiveTab] = useState<ChartTab>('planets')
 
   const selectAspect = useCallback((index: number | null) => {
     setSelection(index == null ? null : { kind: 'aspect', index })
+    if (index != null) setActiveTab('aspects')
   }, [])
 
 
@@ -189,6 +200,7 @@ export default function ChartScreenContent({
     (planet: PlanetKey, options?: { openInterpretation?: boolean }) => {
       focusPlanet(planet)
       setSelection({ kind: 'planet', planet })
+      setActiveTab('planets')
 
       if (options?.openInterpretation) {
         openPlanetInterpretation(planet)
@@ -217,6 +229,7 @@ export default function ChartScreenContent({
   const selectHouse = useCallback(
     (house: number, options?: { openInterpretation?: boolean }) => {
       setSelection({ kind: 'house', house })
+      setActiveTab('houses')
 
       const houseNumber = asHouseNumber(house)
       if (houseNumber && options?.openInterpretation) {
@@ -411,39 +424,60 @@ export default function ChartScreenContent({
           />
         ) : null}
 
-        <ChartSection
-          testID="chart-section-positions"
-          eyebrow="Placements"
-          title="Positions"
-        >
-          <PlanetPositionsList
-            planets={planets}
-            planetHouses={planetHouses}
-            focusedPlanet={focusedPlanet}
-            onFocusPlanet={selectPlanetAndRead}
-          />
-        </ChartSection>
+        <SectionTabs
+          options={CHART_TABS}
+          value={activeTab}
+          onChange={setActiveTab}
+          accessibilityLabel="Chart details"
+          testID="chart-tabs"
+          style={styles.tabs}
+        />
 
-        <ChartSection
-          testID="chart-section-houses"
-          eyebrow="Life areas"
-          title="Houses"
-          note="Whole Sign"
-        >
-          <HousesList
-            houses={houses}
-            focusedHouse={focusedHouse}
-            onFocusHouse={selectHouseAndRead}
-          />
-        </ChartSection>
+        {/* Only the active list mounts, keeping inactive rows out of the
+            layout and screen-reader order. Wheel and reading state live above
+            the tabs, so browsing sections never resets the current selection. */}
+        {activeTab === 'planets' ? (
+          <ChartSection
+            testID="chart-section-positions"
+            eyebrow="Placements"
+            title="Planets"
+            style={styles.tabContent}
+          >
+            <PlanetPositionsList
+              planets={planets}
+              planetHouses={planetHouses}
+              focusedPlanet={focusedPlanet}
+              onFocusPlanet={selectPlanetAndRead}
+            />
+          </ChartSection>
+        ) : null}
 
-        <ChartSection
-          testID="chart-section-aspects"
-          eyebrow="Planetary dynamics"
-          title="Aspects"
-        >
-          <AspectsList aspects={aspects} />
-        </ChartSection>
+        {activeTab === 'houses' ? (
+          <ChartSection
+            testID="chart-section-houses"
+            eyebrow="Life areas"
+            title="Houses"
+            note="Whole Sign"
+            style={styles.tabContent}
+          >
+            <HousesList
+              houses={houses}
+              focusedHouse={focusedHouse}
+              onFocusHouse={selectHouseAndRead}
+            />
+          </ChartSection>
+        ) : null}
+
+        {activeTab === 'aspects' ? (
+          <ChartSection
+            testID="chart-section-aspects"
+            eyebrow="Planetary dynamics"
+            title="Aspects"
+            style={styles.tabContent}
+          >
+            <AspectsList aspects={aspects} />
+          </ChartSection>
+        ) : null}
       </ScrollView>
 
       <GlyphCompass hidden={interpretationVisible} />
@@ -499,5 +533,10 @@ const styles = StyleSheet.create({
   wheelFrame: {
     marginTop: theme.space.lg,
   },
-
+  tabs: {
+    marginTop: theme.space.xxl,
+  },
+  tabContent: {
+    marginTop: theme.space.sm,
+  },
 })

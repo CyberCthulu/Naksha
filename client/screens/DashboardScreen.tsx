@@ -43,6 +43,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { ErrorState } from '../components/ui/ErrorState'
 import { Icon, type IconName } from '../components/ui/Icon'
 import { LoadingState } from '../components/ui/LoadingState'
+import { SectionTabs } from '../components/ui/SectionTabs'
 import { formatShortTimeFromHHMM } from '../lib/time'
 import { theme } from '../components/ui/theme'
 import { TodayEnergyCard } from '../components/guidance/TodayEnergyCard'
@@ -133,6 +134,11 @@ function signsLine(sun: string | null, moon: string | null): string | null {
 
 type GuidanceTab = 'today' | 'week'
 
+const GUIDANCE_TABS = [
+  { value: 'today', label: 'Today', testID: 'dashboard-tab-today' },
+  { value: 'week', label: 'This Week', testID: 'dashboard-tab-week' },
+] as const
+
 type QuickDestinationProps = {
   icon: IconName
   label: string
@@ -192,52 +198,6 @@ function QuickDestination({
       >
         {label}
       </AppText>
-    </Pressable>
-  )
-}
-
-type GuidanceTabButtonProps = {
-  label: string
-  selected: boolean
-  onPress: () => void
-  testID: string
-}
-
-/**
- * One guidance tab.
- *
- * A presentation selector, not navigation: it adds no route and changes no
- * param. Selection is carried by an indicator rule and a surface step as well
- * as by ink, so it survives being read without colour.
- */
-function GuidanceTabButton({
-  label,
-  selected,
-  onPress,
-  testID,
-}: GuidanceTabButtonProps) {
-  return (
-    <Pressable
-      accessibilityRole="tab"
-      accessibilityLabel={label}
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      testID={testID}
-      style={({ pressed }) => [
-        styles.tab,
-        selected && styles.tabSelected,
-        pressed && styles.tabPressed,
-      ]}
-    >
-      <AppText
-        variant="subheading"
-        style={[styles.tabLabel, selected && styles.tabLabelSelected]}
-      >
-        {label}
-      </AppText>
-      <View
-        style={[styles.tabIndicator, selected && styles.tabIndicatorSelected]}
-      />
     </Pressable>
   )
 }
@@ -732,20 +692,12 @@ export default function DashboardScreen() {
       */}
       {todayEnergy || weeklyForecast ? (
         <>
-          <View style={styles.tabs} accessibilityRole="tablist">
-            <GuidanceTabButton
-              label="Today"
-              selected={guidanceTab === 'today'}
-              onPress={() => setGuidanceTab('today')}
-              testID="dashboard-tab-today"
-            />
-            <GuidanceTabButton
-              label="This Week"
-              selected={guidanceTab === 'week'}
-              onPress={() => setGuidanceTab('week')}
-              testID="dashboard-tab-week"
-            />
-          </View>
+          <SectionTabs
+            options={GUIDANCE_TABS}
+            value={guidanceTab}
+            onChange={setGuidanceTab}
+            accessibilityLabel="Guidance"
+          />
 
           {guidanceTab === 'today' && todayEnergy ? (
             <TodayEnergyCard
@@ -828,39 +780,6 @@ const styles = StyleSheet.create({
   destinationLabel: {
     color: theme.text.secondary,
     textAlign: 'center',
-  },
-  tabs: {
-    flexDirection: 'row',
-    columnGap: theme.space.sm,
-    marginBottom: theme.space.md,
-  },
-  tab: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    minHeight: theme.touchTarget.min,
-    paddingTop: theme.space.sm,
-    rowGap: theme.space.sm,
-  },
-  /* Selection is a surface step and an indicator rule, never colour alone. */
-  tabSelected: {},
-  tabPressed: {
-    opacity: 0.7,
-  },
-  tabLabel: {
-    color: theme.text.tertiary,
-    textAlign: 'center',
-  },
-  tabLabelSelected: {
-    color: theme.text.primary,
-  },
-  tabIndicator: {
-    backgroundColor: 'transparent',
-    borderRadius: theme.radius.xs,
-    height: 2,
-    width: '100%',
-  },
-  tabIndicatorSelected: {
-    backgroundColor: theme.accent.base,
   },
   actionReason: {
     color: theme.text.secondary,

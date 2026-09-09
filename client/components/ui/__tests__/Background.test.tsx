@@ -29,6 +29,9 @@ function mockReducedMotion(enabled: boolean, resolve = true) {
     .spyOn(AccessibilityInfo, 'addEventListener')
     .mockReturnValue({ remove: removeListener } as never)
 
+  isEnabled.mockClear()
+  addListener.mockClear()
+
   return { isEnabled, addListener }
 }
 
@@ -119,6 +122,22 @@ describe('Background', () => {
     expect(decoration(screen)).toHaveLength(0)
     expect(screen.root.findAllByType(Circle)).toHaveLength(0)
     expect(screen.root.findAllByType(Rect)).toHaveLength(0)
+  })
+
+  it('keeps a contained static sky without window protection or glimmer', async () => {
+    const screen = await renderBackground('atmospheric', {
+      protectSystemBars: false,
+      motionEnabled: false,
+    })
+
+    expect(stars(screen).length).toBeGreaterThan(12)
+    for (const testID of [
+      'background-status-bar-protection',
+      'background-navigation-bar-protection',
+      'background-glimmer',
+    ]) {
+      expect(screen.root.findAll((node) => node.props?.testID === testID)).toHaveLength(0)
+    }
   })
 
   it('renders the gradient but no stars for the quiet variant', async () => {
@@ -227,7 +246,7 @@ describe('Background reduced-motion behavior', () => {
     expect(stars(screen).length).toBeGreaterThan(12)
   })
 
-  it('does not subscribe to motion preferences for a static background', async () => {
+  it('does not subscribe to motion preferences for the quiet background', async () => {
     const { isEnabled, addListener } = mockReducedMotion(false)
     const screen = await renderBackground('quiet')
 

@@ -29,7 +29,7 @@ const background = {
   sunken: '#05070E',
 } as const
 
-/** Decorative light only; card surfaces and text keep their own opaque colors. */
+/** Decorative light only; translucent cards keep the sky visible behind text. */
 const atmosphere = {
   nebula: '#75629F',
   haze: '#416996',
@@ -37,12 +37,22 @@ const atmosphere = {
 } as const
 
 const surface = {
-  /** Default card. Opaque, unlike the translucent V1 cardBg. */
+  /** Opaque controls and input fields. */
   base: '#131A2C',
-  /** Sheets, modals, pressed cards, dropdowns. */
+  /** Opaque sheets, modals and dropdowns. */
   raised: '#1A2238',
   /** Selected list row. */
   selected: 'rgba(201,164,92,0.10)',
+} as const
+
+/** Alpha belongs to the fill, so card content always retains its full opacity. */
+const cardSurface = {
+  /** The shared reading card: enough sky shows through without washing out text. */
+  base: 'rgba(19,26,44,0.30)',
+  /** A little denser for the raised card's additional depth. */
+  raised: 'rgba(26,34,56,0.72)',
+  /** Warm gold mixed into navy; a selected card still has a protective dark fill. */
+  selected: 'rgba(37,40,49,0.72)',
 } as const
 
 const border = {
@@ -291,6 +301,7 @@ export const theme = {
   background,
   atmosphere,
   surface,
+  cardSurface,
   border,
   text,
   accent,
@@ -379,9 +390,8 @@ export const theme = {
   },
 
   /**
-   * Budget only. V1 has no motion system and the backgrounds are static;
-   * nothing currently animates. These exist so that any future approved
-   * transition has a single source of truth rather than inventing one.
+   * Short transition budgets. The background glimmer has a separate slow
+   * cycle in useBackgroundMotion; chart selection owns its own timing.
    */
   motion: {
     enter: 150,

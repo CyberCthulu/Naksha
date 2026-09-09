@@ -18,12 +18,13 @@ import Svg, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { theme, type PlanetAccent } from './theme'
+import { BackgroundGlimmer } from './BackgroundGlimmer'
 
 export type BackgroundVariant = 'flat' | 'quiet' | 'atmospheric' | 'hero'
 
 /**
  * A fixed, lightly scattered field across the whole viewport. The outer
- * columns stay in the gutters so opaque reading cards do not hide every star.
+ * columns stay in the gutters, with stars also visible through reading cards.
  * Sizes are in layout pixels; fractional positions adapt to the container.
  * Built once, with a fixed seed, so renders and route changes never reshuffle it.
  */
@@ -57,6 +58,8 @@ const STARS = (() => {
   })
 })()
 
+const GLIMMER_STARS = STARS.filter((star) => star.bright)
+
 const HERO_GLOW_RADIUS_RATIO = 0.45
 const HERO_GLOW_CENTER_Y_RATIO = 0.3
 const HERO_GLOW_OPACITY = 0.08
@@ -65,6 +68,10 @@ type Props = {
   variant?: BackgroundVariant
   /** Hero tint source. At most one planet accent is ever active. */
   planet?: PlanetAccent | null
+  /** Disable glimmer for hidden routes. The static sky remains visible. */
+  motionEnabled?: boolean
+  /** Screen backgrounds protect system bars; contained panel skies do not. */
+  protectSystemBars?: boolean
   style?: StyleProp<ViewStyle>
   children?: React.ReactNode
   testID?: string
@@ -77,6 +84,8 @@ function showsStars(variant: BackgroundVariant) {
 export function Background({
   variant = 'quiet',
   planet = null,
+  motionEnabled = true,
+  protectSystemBars = true,
   style,
   children,
   testID,
@@ -87,8 +96,8 @@ export function Background({
     null
   )
 
-  // Every decoration is static. Reduced motion does not need to erase the sky
-  // or delay its appearance while the platform preference resolves.
+  // The sky always renders immediately. Only the optional glimmer waits for
+  // motion preferences and app/route activity; the base never disappears.
   const starry = showsStars(variant)
 
   const onLayout = (event: LayoutChangeEvent) => {
@@ -231,6 +240,15 @@ export function Background({
                 ))
               : null}
           </Svg>
+          {starry && motionEnabled ? (
+            <BackgroundGlimmer
+              width={size.width}
+              height={size.height}
+              stars={GLIMMER_STARS}
+              gradientId={`${gradientId}-glimmer`}
+              enabled={motionEnabled}
+            />
+          ) : null}
         </View>
       ) : null}
 
@@ -245,7 +263,7 @@ export function Background({
           It is absolutely positioned and rendered after children, so it
           occludes scrolled content without contributing any layout -- there is
           no second inset and no header is pushed down twice. */}
-      {insets.top > 0 ? (
+      {protectSystemBars && insets.top > 0 ? (
         <View
           testID="background-status-bar-protection"
           pointerEvents="none"
@@ -272,7 +290,7 @@ export function Background({
           the back/home/recents buttons and stays visible there. The gradient
           has faded out well before the bottom, so this strip is always the
           flat environment colour. */}
-      {insets.bottom > 0 ? (
+      {protectSystemBars && insets.bottom > 0 ? (
         <View
           testID="background-navigation-bar-protection"
           pointerEvents="none"
