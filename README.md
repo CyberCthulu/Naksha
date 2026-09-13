@@ -41,16 +41,14 @@ Core product goals:
 
 ## Current Status
 
-This project is actively in development and already includes a functioning mobile app with:
+Reviewed 12 September 2026 at `ab9c16c1`. Core free V1 and the active celestial UI are implemented; release hardening and native candidate acceptance remain.
 
-- Email/password auth flow
-- Profile completion (birth details + timezone + location geocoding)
-- Natal chart generation and display
-- Saved charts list with delete/open
-- Journal list and editor
-- Profile settings and preferences scaffolding
+- Accounts/profile, natal and guest charts, saved charts, daily/weekly guidance, and journaling.
+- Interactive chart wheel, chart tabs, shared starry backgrounds, translucent cards, and celestial loading.
+- Sky Now above the dashboard tabs with current positions and authored aspect-pair readings.
+- Verification: 58 Jest suites / 737 tests, typecheck, lint, and Android/iOS Hermes exports pass. These do not qualify a signed store release.
 
-Some modules are intentionally still in-progress or placeholder-only.
+Start with the [release-hardening plan](docs/release-hardening-plan.md), [feature list](docs/Feature-List.md), and [engineering handoff](docs/naksha-codebase-handoff.md). AI chat, subscriptions, compatibility, notifications, and extra astrology systems are future work.
 
 ---
 
@@ -217,19 +215,8 @@ Some profile preferences are UI-first scaffolding and may be expanded in later c
 Ensure deep-link scheme in Expo config and Supabase redirect URLs match your auth flow.
 
 Roadmap
-Potential near-term improvements:
 
-Commit Supabase migrations + RLS policies into repo
-
-Fully typed navigation params across all screens
-
-Remove duplicate helper logic and centralize in shared libs
-
-Add test coverage (unit + integration)
-
-Add CI checks (lint/typecheck/tests)
-
-Expand chat/subscription modules from scaffold to production
+The active sequence is correctness/data integrity, auth/journal/geocoder reliability, privacy/support, native identity/signing and dependency triage, then signed-candidate QA and store testing. See the [current plan and acceptance gates](docs/release-hardening-plan.md). Migrations, typed navigation, and substantial automated tests already exist; AI and subscriptions are not release-hardening tasks.
 
 License
 This project is currently closed-source.

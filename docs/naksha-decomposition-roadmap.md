@@ -1,7 +1,8 @@
 # Naksha Architecture and Release Roadmap
 
-Last updated: 2026-08-29
-Status: D0-D6.3 V1 depth and architecture pass complete; Android UI/UX redesign and release hardening are next.
+Last updated: 2026-09-12
+Status: D0-D6.3, active UI migration, and Sky Now are implemented; release hardening and native acceptance are next.
+Current execution plan: [release-hardening-plan.md](release-hardening-plan.md).
 Canonical engineering status: `docs/naksha-codebase-handoff.md`
 Canonical product scope: `docs/Feature-List.md`
 
@@ -22,8 +23,9 @@ Naksha is an Expo/React Native/TypeScript application backed by Supabase. The ac
 - Transit-through-natal-house context calculated from the current moving planet longitude and natal Whole Sign cusps.
 - Guided reflection handoff into JournalEditor plus journal create/edit/list/delete behavior.
 - Shared saved-chart hydration, typed active navigation, and explicit persisted ChartData compatibility/version semantics.
+- Sky Now with all ten current bodies, independently checked planetary positions, explicit aspect rules, and reflective pair meanings.
 
-The current automated baseline is 25 Jest suites / 183 tests, with typecheck, lint, and `git diff --check` passing.
+The current automated baseline is 58 Jest suites / 737 tests, with typecheck, lint, and `git diff --check` passing.
 
 ## 3. Completed Stabilization Foundation
 
@@ -74,66 +76,23 @@ Local typecheck/test/lint coverage is strong, but CI, automated Supabase reset/d
 
 ### Content and Feature Boundaries
 
-The current deterministic guidance system is coherent and should be stabilized through on-device UX review. It does not include AI, saved forecast history, notifications, retrogrades, lunar phases, applying/separating timing, or outer planets as moving transit candidates. Those are post-V1 decisions.
+The current deterministic guidance system is coherent and should be stabilized through on-device UX review. It does not include AI, saved forecast history, notifications, retrogrades, lunar phases, applying/separating timing, or outer planets as personalized forecast candidates. Those additions remain post-V1 decisions. Sky Now separately displays all ten current bodies.
 
 ## 6. Immediate Android V1 Roadmap
 
-### 1. Controlled UI/UX Redesign
+The detailed [release-hardening plan](release-hardening-plan.md) supersedes the earlier redesign-first sequence. Work in reviewable packages:
 
-Type: product polish
-Goal: establish and propagate an approved premium/celestial/editorial Android visual direction without changing tested behavior.
-Primary document: `docs/ui-redesign/redesign-plan.md`
+1. **Data integrity:** same-owner relationships, migration integration tests, deletion retries.
+2. **Input and calculation correctness:** calendar-date serialization, DST gaps/folds, independent planetary/Ascendant fixtures, saved-data version policy.
+3. **Product reliability:** auth/startup/recovery failures, journal discard and direct-edit-link handling, protected geocoding, public email verification.
+4. **Final experience acceptance:** accessible Sky Now aspect selection, guidance day/week freshness, native lifecycle, large text and keyboards.
+5. **Privacy and product presentation:** real data requests/export, policy/support/deletion URLs, approved identity and assets, honest free-V1 controls.
+6. **Production build and operations:** dependency disposition, native configuration/signing, repeatable CI checks, redacted diagnostics, restore/hotfix ownership.
+7. **Signed candidate and store delivery:** device acceptance, Play test-track installation, final listing/disclosures, submission after gates pass.
 
-Preserve:
+Owner/account/service decisions and tester preparation can proceed alongside code work. Android remains first. iOS requires its own bundle identity, SDK/signing, picker review, TestFlight and supported-device acceptance; shared JS export success is not iOS qualification.
 
-- auth/profile completion and invalid-timezone correction;
-- chart save/open/delete and self/guest save rules;
-- DailyGuidance/WeeklyForecast semantics and collapse behavior;
-- fixed-context journal handoff and edit precedence;
-- account deletion contract;
-- legacy/current/unsupported chart compatibility behavior.
-
-### 2. Android Production Configuration
-
-Type: release hardening
-Goal: finalize product identity, Android package/application configuration, production environment handling, and repeatable release signing.
-
-Avoid mixing feature work into native/release configuration. Generated Android files should change only when the release task explicitly requires them.
-
-### 3. Signed Release Candidate and QA
-
-Type: release hardening
-Goal: prove the production build on representative Android devices and exercise the complete V1 loop.
-
-Minimum release-candidate coverage:
-
-- signup, OTP/callback verification, login, session restore, password recovery;
-- profile completion/edit, geocoding, and invalid-timezone correction;
-- self chart, guest chart, saved chart open/delete, missing-coordinate view-only behavior;
-- chart wheel, positions, houses, aspects, and interpretation modal;
-- collapsed/expanded daily and weekly guidance, house context, reflection handoff;
-- journal create/edit/list/delete;
-- legacy chart hydration, malformed-chart fallback, unsupported-future-version refusal;
-- sign-out and account deletion.
-
-### 4. Privacy, Support, and Store Package
-
-Type: release hardening
-Goal: document actual data handling and provide an operational support path before public submission.
-
-Resolve:
-
-- privacy policy and store data-use disclosures;
-- retention/deletion semantics and the current availability of export;
-- support contact/process and required public URLs;
-- store listing copy, screenshots, and release notes.
-
-### 5. Google Play Testing and Submission
-
-Type: release delivery
-Goal: distribute the signed candidate through the appropriate Play testing track, address review/device findings, and submit the approved Android V1.
-
-iOS is intentionally later.
+Preserve self/guest save rules, missing-coordinate handling, original journal context, deterministic guidance, and legacy/current/future chart compatibility. The reproduced birth-date and DST issues require explicit correction policies, not silent changes to saved charts.
 
 ## 7. Post-V1 Feature Tracks
 
@@ -179,6 +138,6 @@ cd ..
 git diff --check
 ```
 
-Current recorded result: 25 suites / 183 tests pass, with typecheck, lint, and diff-check passing.
+Current recorded result: 58 suites / 737 tests pass, with typecheck, lint, and diff-check passing.
 
 For documentation-only work, verify `git status --short`, `git diff --stat`, `git diff`, and `git diff --check`, and confirm no application/source files changed.

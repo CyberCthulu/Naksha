@@ -1,9 +1,17 @@
 # Naksha Codebase Handoff
 
 Generated: 2026-05-07
-Last updated: 2026-08-29 — V1 Architecture Pass D0–D6.3 complete. Navigation typing hardened, ChartData versioning implemented, transit-house semantics integrated, guidance content expanded, and deterministic daily/weekly composition finalized.
+Last updated: 2026-09-12 — active UI implemented; Sky Now and pair-specific aspect readings implemented; release-hardening review completed at `ab9c16c1`. The current execution plan is [release-hardening-plan.md](release-hardening-plan.md).
 Scope: canonical source-of-truth repository handoff and current engineering status. `docs/Feature-List.md` owns product scope; dated audits and implementation plans are historical evidence.
-Last recorded verification: `cd client && npm run typecheck`, `cd client && npm test` (25 suites / 183 tests), `cd client && npm run lint`, and `git diff --check` pass. Full D0–D6.3 depth pass complete with all invariants preserved.
+Last recorded verification: typecheck, lint, 58 Jest suites / 737 tests, and Android/iOS Hermes exports pass. Fresh production-dependency audit: 41 affected entries (1 critical, 19 high, 20 moderate, 1 low), pending reachability/patch disposition. Native release QA and deployed-backend verification remain open.
+
+## Current release status — 12 September 2026
+
+The visual migration and core free V1 are substantially implemented. Release approval is pending the [hardening findings and gates](release-hardening-plan.md). This update supersedes older phase/test-count statements; dated implementation history below is retained as history.
+
+Newly verified priorities include birth-calendar serialization shifting the saved day, silent DST-gap adjustment, related-record ownership checks, auth failure/recovery routes, journal native discard protection and direct-edit-link hydration, geocoder protection/races, accessible Sky Now aspect selection, and production identity/privacy/support. No fixes or deployments were performed during this review.
+
+Sky Now sits above the dashboard tabs, computes all ten current bodies, pauses its minute refresh when inactive, and uses a separate current-sky lexicon with 45 pair themes across five aspect dynamics. JPL fixtures cover one instant; birth-input and Ascendant coverage still need expansion. The latest interpretation and calculation details are documented in [current-sky-compass.md](ui-redesign/current-sky-compass.md).
 
 ## 1. Executive Summary
 
@@ -47,7 +55,7 @@ What already works:
 - Journal create-mode payloads omit `id` when no id exists, while update-mode payloads preserve `id`.
 - InterpretationCard long text clipping has been fixed by paragraph/sentence splitting; focused coverage verifies final words are not dropped.
 - InterpretationModal circular swipe/infinite pager behavior has been restored and manually verified; current per-page scroll-position preservation is intentional and is not a bug or release blocker.
-- Jest is configured with 25 suites and 183 tests. Coverage includes guidance primitive integrity, deterministic DailyGuidance with timezone-aware local-date selection, deterministic WeeklyForecast with local-week/DST/deduplication/transit-house behavior, transit-house resolution, Dashboard TodayEnergyCard/WeeklyForecastCard rendering and fallbacks, chart versioning (legacy/current/unsupported/malformed), chart hydration, and the existing auth, account deletion, chart, profile, guest-chart, interpretation, journal, and transit coverage. TypeScript typecheck is the compile-time enforcement for active navigation contracts.
+- The latest Jest run passes 58 suites and 737 tests. Coverage includes guidance primitive integrity, deterministic DailyGuidance with timezone-aware local-date selection, deterministic WeeklyForecast with local-week/DST/deduplication/transit-house behavior, transit-house resolution, Dashboard TodayEnergyCard/WeeklyForecastCard rendering and fallbacks, chart versioning (legacy/current/unsupported/malformed), chart hydration, and the existing auth, account deletion, chart, profile, guest-chart, interpretation, journal, and transit coverage. TypeScript typecheck is the compile-time enforcement for active navigation contracts.
 - ESLint is configured through Expo's flat config; `npm run lint` passes cleanly after the targeted warning cleanup.
 - Supabase generated types live in `client/lib/database.types.ts`; the Supabase client is typed with `Database`, and shared DB row aliases in `domainTypes.ts` derive from the generated schema.
 - `CompleteProfileScreen` top spacing was tightened by removing duplicate safe-area padding from its in-screen header.
@@ -55,11 +63,11 @@ What already works:
 
 What is incomplete or unstable:
 
-- **UI/UX Redesign and Android Polish**: The application is feature-complete for V1 but requires visual redesign and Android production hardening before release. Design system, typography, and component refinement are in progress.
-- `server/` is empty, and several service files are placeholders: `conversations.ts`, `notifications.ts`, `reports.ts`, `subscriptions.ts`, `usage.ts`.
+- **Release hardening and final native acceptance**: the active UI and V1 feature loop are implemented; correctness, data integrity, accessibility, service readiness, and signed-candidate gates remain. See [the current plan](release-hardening-plan.md).
+- No separate application server is implemented; several service files are placeholders: `conversations.ts`, `notifications.ts`, `reports.ts`, `subscriptions.ts`, `usage.ts`.
 - `ChatScreen.tsx` and `SubscriptionScreen.tsx` are empty stub files and are not registered in `App.tsx` navigation or linking config.
 - Additional chart systems remain disabled/coming soon. The calculation path accepts the current supported preference defaults only: Whole Sign, Tropical, and medium orbs.
-- Guest chart persistence/profile management is not implemented yet; there is no `birth_profiles` table or reusable guest birth-profile library.
+- Reusable guest profile management is not implemented; one-off guest charts can be manually saved; there is no `birth_profiles` table or reusable guest birth-profile library.
 - Synastry, compatibility, composite charts, reports, and premium gating are not implemented yet.
 - AI chat and saved AI conversation/readings flows are not implemented.
 - Push notifications and notification preferences are not implemented.
@@ -561,12 +569,14 @@ Component size/coupling concerns:
 
 ## 9. Known Bugs / Inconsistencies
 
+The complete current release finding register is [RH-01 through RH-12](release-hardening-plan.md#findings-and-acceptance-criteria). The table below retains architectural limitations and historical context; it is not the release blocker list.
+
 | Issue | Files involved | Symptom | Likely cause |
 | --- | --- | --- | --- |
 | Additional chart modes are not implemented | `ProfileScreen.tsx`, `lib/astro.ts`, `lib/charts.ts`, `chart_preferences` migration | Users can see unsupported modes as coming soon, but charts remain Whole Sign/Tropical with medium aspect orbs. | Preference plumbing now reads/passes the supported defaults, but math, DB constraints, UI, and tests for additional systems do not exist yet. |
 | Stub screens and service modules exist | `ChatScreen.tsx`, `SubscriptionScreen.tsx`, `lib/conversations.ts`, `lib/subscriptions.ts`, `lib/reports.ts`, `lib/notifications.ts`, `lib/usage.ts` | Future features have placeholder files but no implementation; the empty screens are not registered in `App.tsx`. | Scaffolding exists ahead of feature work. |
 | Signup metadata can become stale after bootstrap | `SignupScreen.tsx`, `lib/auth.ts`, `DashboardScreen.tsx`, `handle_new_user` migration | Auth metadata may not match later edits in `public.users`. | Auth metadata is intentionally retained as signup/bootstrap handoff and Dashboard repair input, not as durable profile storage. |
-| Guest chart persistence/profile management is not implemented | `CreateGuestChartScreen.tsx`, `ChartScreen.tsx`, `useChartData.ts`, schema | Users can create and view a one-off guest chart, but there is no reusable guest birth-profile library, relationship metadata, or `birth_profiles` table. | Guest Chart UI v1 intentionally avoided schema and profile-management scope. |
+| Reusable guest profile management is not implemented | `CreateGuestChartScreen.tsx`, `ChartScreen.tsx`, `useChartData.ts`, schema | Users can create and view a one-off guest chart, but there is no reusable guest birth-profile library, relationship metadata, or `birth_profiles` table. | Guest Chart UI v1 intentionally avoided schema and profile-management scope. |
 | Migration history starts from a remote schema dump | `supabase/migrations/20260508015720_remote_schema.sql`, later migrations | The schema is now reproducible, but history before the dump is not incremental. | The remote project schema was pulled into the repo after initial development. |
 | Schema/migration validation is not automated | `supabase/migrations/`, CI/not configured | App tests cover high-risk client flows, but migration reset/diff validation is still a manual local step. | No CI-backed Supabase validation command exists yet. |
 
@@ -611,54 +621,27 @@ Naming and consistency issues:
 
 Testing baseline:
 
-- `npm test` runs 25 suites (183 tests), including guidance primitive coverage, timezone-aware deterministic DailyGuidance, deterministic WeeklyForecast with DST/deduplication/transit-house behavior, transit-house resolution, chart versioning (legacy/current/unsupported/malformed), chart hydration, password reset, account deletion, profile completion, chart data validation, journals, charts, daily transits, `useChartData`, auth callback, CheckEmail, Dashboard, CreateGuestChart, CompleteProfile, Profile, InterpretationCard, and InterpretationModal coverage.
+- `npm test` runs 58 suites (737 tests), including guidance primitive coverage, timezone-aware deterministic DailyGuidance, deterministic WeeklyForecast with DST/deduplication/transit-house behavior, transit-house resolution, chart versioning (legacy/current/unsupported/malformed), chart hydration, password reset, account deletion, profile completion, chart data validation, journals, charts, daily transits, `useChartData`, auth callback, CheckEmail, Dashboard, CreateGuestChart, CompleteProfile, Profile, InterpretationCard, and InterpretationModal coverage.
 - Dashboard profile repair/chart summary, TodayEnergyCard and WeeklyForecastCard populated/fallback rendering with transit-house context, password reset, account deletion confirmation/helper behavior, CompleteProfile save/geocode lifecycle, InterpretationCard clipping, InterpretationModal pager behavior, unsupported/malformed chart handling, and hydration version semantics are covered.
 - No schema tests or automated Supabase migration validation commands are configured.
 
-## 11. Immediate Next Phase: UI/UX Redesign and Android Production Hardening
+## 11. Immediate Next Phase: Release Hardening
 
-Note: D0–D6.3 architecture pass is complete. All core guidance, journaling, navigation, versioning, and hydration work is finished. The application is feature-complete for V1 but requires visual redesign and Android production hardening before release.
+Follow [release-hardening-plan.md](release-hardening-plan.md) for current priorities, owners, estimates, and acceptance criteria. Preserve the existing visual direction and free V1 scope, including Sky Now.
 
-**Immediate priorities (Android-first)**:
+1. Enforce related-record ownership and verify account deletion with disposable accounts.
+2. Fix birth date/time input correctness and expand independent calculation fixtures.
+3. Repair auth/recovery/journal/deep-link failure paths.
+4. Protect geocoding, verify public email delivery, and complete privacy/support/data-request behavior.
+5. Finish accessible aspect exploration, guidance freshness, and native lifecycle checks.
+6. Triage dependencies, finalize owned app identity/signing, add repeatable checks and production diagnostics.
+7. Qualify the signed candidate on devices and through Play testing; qualify iOS separately if scheduled.
 
-1. **UI/UX Redesign** (controlled visual migration)
-   - Visual direction: premium/celestial/editorial
-   - Android-first, with iOS intentionally later
-   - Core product loops must remain architecturally intact
-   - See `docs/ui-redesign/` for detailed migration plan
-
-2. **Android Release Readiness**
-   - Production build configuration and app signing
-   - Release-candidate QA and device testing
-   - Play Store requirements and submission
-   - Production observability decision and implementation appropriate to the release scope
-
-3. **Privacy and Compliance**
-   - Privacy policy and data handling documentation
-   - Support/help content
-   - Target-market privacy/store review
-
-**Post-V1 opportunities** (not blockers):
-
-- Synastry and relationship foundations
-- AI chat and conversation storage
-- Push notifications
-- Analytics
-- Multi-system astrology (Vedic, Chinese)
-- Outer planets as moving transit candidates, retrogrades, lunar phases, and exact transit windows
+The review changed documentation only. Hosted state, credentials, listings, and final native artifacts remain unverified. Future feature expansion is outside this release sequence.
 
 ## 12. Next Vertical Program
 
-The next program is a controlled Android-first visual and release migration, not another V1 feature slice. Follow `docs/ui-redesign/redesign-plan.md` and preserve the current tested behavior while progressing through:
-
-1. Capture the current Android UI baseline and audit every active V1 screen/state.
-2. Approve design tokens, typography, and shared primitives before broad screen changes.
-3. Validate the visual direction on one flagship screen, then propagate it screen by screen.
-4. Finalize Android production identity/configuration and signing.
-5. Produce a signed release candidate and run end-to-end device QA across auth, profile, charts, guidance, journaling, account deletion, legacy chart hydration, and unsupported-version handling.
-6. Complete privacy, retention, support, store metadata, and Google Play testing/submission requirements.
-
-Keep iOS and post-V1 features outside this sequence. Dashboard remains orchestration-heavy; further decomposition should be attached to a real redesign or release defect rather than pursued as an open-ended rewrite.
+Execute the prioritized packages in [release-hardening-plan.md](release-hardening-plan.md#execution-sequence). UI implementation is complete enough to freeze its direction. Fix the reproduced input/date and confirmed ownership problems first; run native candidate acceptance after the relevant fixes and configuration work. Keep iOS qualification explicit and separate from Android.
 
 ## 13. Agent Instructions Going Forward
 

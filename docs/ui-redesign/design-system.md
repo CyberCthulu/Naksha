@@ -1,6 +1,6 @@
-# Naksha Design System — Proposal
+# Naksha Design System
 
-Status: **proposed, not approved, not implemented**
+Status: **implemented foundation with subsequent refinements**; final native acceptance pending. Reviewed 2026-09-12.
 Date: 2026-09-02
 Platform focus: Android first
 Direction: premium celestial editorial
@@ -10,8 +10,7 @@ for atmosphere, surfaces, typography, spacing, and information hierarchy only
 
 ## How to read this document
 
-Every value here is a **proposal for review**. Nothing is approved until it is
-signed off, and nothing is implemented until Slice 2.
+This document retains the original design specification and subsequent notes. The shared theme/components are now implemented. Current code, `consistency-review.md`, and later user-approved tuning supersede initial proposal values; remaining release work is tracked in [release-hardening-plan.md](../release-hardening-plan.md).
 
 This system **extends the existing `client/components/ui/theme.ts` and
 `uiStyles.ts` and the existing shared components**. It does not create a parallel
@@ -19,8 +18,7 @@ V2 component library. The audit found 38 of 46 UI files already import `theme`
 and 33 import `uiStyles` — that adoption is the migration vehicle. Every section
 below ends with an explicit mapping onto files that already exist.
 
-**No dependency is installed by this document.** Font packages are proposed in
-§4.4 and must be approved separately.
+**This review installs no dependencies.** The four font families are already installed in the app; §4.4 records the original selection rationale.
 
 ---
 

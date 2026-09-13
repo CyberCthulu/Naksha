@@ -1,5 +1,7 @@
 # Naksha release-readiness review and plan
 
+> Historical review. Superseded for execution/status by [release-hardening-plan.md](release-hardening-plan.md), reviewed later on 12 September at `ab9c16c1`. The wheel-test mismatch is resolved; 58 suites / 737 tests and both JS exports now pass; Sky Now has JPL reference checks and pair readings. The new review also reproduces birth-date serialization/DST problems and identifies journal direct-edit-link risk. Its revised gates and estimates supersede the ranges below. Findings here remain evidence of the earlier baseline, not a current sign-off.
+
 Review date: **12 September 2026**  
 Reviewed baseline: **06ad5378**, branch **ui/v2-redesign**, plus the observed uncommitted Sky Now work.  
 Scope: existing free V1; Google Play and Apple App Store assessed separately.

@@ -2,7 +2,7 @@
 
 Personalized astrology, deterministic forecasts, journaling, and guided reflection. Naksha is a functioning V1 application with comprehensive natal charts, daily and weekly transit guidance with transit-house personalization, and journaling.
 
-This document separates implemented V1 functionality from planned roadmap features. It should not be read as a list of completed features unless an item is marked **DONE**. Last reviewed for accuracy: 2026-08-29 (V1 Architecture Pass D0–D6.3 complete, feature freeze for UI/UX redesign and Android production hardening).
+This document separates implemented V1 functionality from planned roadmap features. It should not be read as a list of completed features unless an item is marked **DONE**. Last reviewed for accuracy: 2026-09-12 at `ab9c16c1`. Active UI and Sky Now are implemented; [release hardening](release-hardening-plan.md) is the current phase. Implemented does not mean production-qualified.
 
 ## Status Overview
 
@@ -19,13 +19,14 @@ A quick index of every section below, grouped into four buckets. Each section st
 * Deterministic Guidance Primitives (transit planets, natal targets, aspects, signs, houses)
 * Daily Guidance / Today's Energy (timezone-aware, deterministic, with transit-house personalization)
 * Weekly Forecast (Monday–Sunday local weeks, seven snapshots, DST-aware, with transit-house context)
+* Sky Now above the dashboard tabs: current planetary positions, five calculated aspect types, and pair-specific reflective readings
 * Typed Navigation and Chart Versioning (backward-compatible schema with legacy support)
-* Comprehensive Test Suite (25 suites, 183 tests covering all core flows)
+* Regression Test Suite (58 suites / 737 tests; backend integration and native release QA remain open)
 
-**Current Phase: UI/UX Redesign & Android Production Hardening**
+**Current Phase: Release Hardening & Final Native Acceptance**
 
-* Visual Design System (premium/celestial direction, Android-first)
-* Screen Refinement and Component Polish
+* Active visual design is implemented; remaining UI work is accessibility and candidate acceptance
+* Correctness, database ownership, authentication, journal, and geocoding hardening
 * Android Release Configuration and Production Build
 * Privacy Policy and Support Documentation
 * Post-Redesign: iOS and Post-V1 Features
@@ -118,7 +119,7 @@ Status: **DONE / PARTIAL**
 
 Implemented:
 
-* Visual SVG astrology chart wheel
+* Visual SVG astrology chart wheel with tap selection, pinch zoom, pan, and reset
 * Zodiac signs, houses, planets, and aspect lines
 * Placement list
 * House list
@@ -133,9 +134,7 @@ Implemented:
 
 Partial / future:
 
-* Direct wheel tap/selection behavior
-* Dedicated aspect interpretation pages by planet pair
-* Zoom or advanced wheel interaction
+* Dedicated natal aspect interpretation pages by planet pair (Sky Now has its own current-sky pair readings)
 * Custom chart themes / skins
 
 ### Saved Charts & Guest Charts
@@ -261,6 +260,20 @@ Current limitations:
 * No saved weekly forecast history
 * No AI-generated longform weekly synthesis
 * No multi-week or monthly forecasting yet
+
+## Sky Now
+
+Status: **IMPLEMENTED; native accessibility and release acceptance remain open**
+
+* Current Sun, Moon, and eight other chart bodies above the dashboard's Today/This Week tabs.
+* Local geocentric Tropical longitude calculation, with current-to-current aspects and no natal houses.
+* One-minute refresh only while the app/dashboard is active; immediate resume/manual refresh and stale-snapshot error handling.
+* Shared rules with unrounded classification; JPL regression reference for all ten positions at one timestamp.
+* Forty-five authored planet-pair themes combined with five aspect dynamics; distinct Moon–Saturn readings for each type.
+* Pair meaning, practical suggestion, reflection, and a secondary calculation-details disclosure.
+* Accessible planet list exists; equivalent aspect-reading selection is still a release task.
+
+These shared-sky interpretations do not replace personalized daily/weekly guidance. See [Sky Now behavior](ui-redesign/current-sky-compass.md) and [release gates](release-hardening-plan.md).
 
 ## AI Features
 
@@ -515,7 +528,7 @@ Status: **ACTIVE**
 Current verified baseline:
 
 * Typecheck passes
-* Jest passes: 25 suites / 183 tests
+* Jest passes: 58 suites / 737 tests at the reviewed commit
 * Lint passes
 * `git diff --check` passes
 * Focused regression coverage includes auth, chart persistence and hydration, ChartData compatibility, typed navigation flows, journals, account deletion, guidance primitives, daily guidance, weekly forecast, transit-house resolution, and Dashboard rendering/error behavior
@@ -528,7 +541,7 @@ Not yet done:
 
 * CI workflow
 * Automated schema reset/diff validation
-* Release checklist
+* Signed-candidate execution of the [release acceptance checklist](release-hardening-plan.md#candidate-acceptance-record)
 * Production build QA record
 * Store metadata
 * Privacy policy and support URLs
@@ -562,7 +575,7 @@ Naksha V1 is currently best described as:
 
 **A functioning Western/Tropical astrology application with authenticated profiles, natal chart generation, local interpretations, saved and guest charts, deterministic daily and weekly transit guidance, transit-house personalization, guided reflection, and journaling.**
 
-The D0–D6.3 V1 depth and architecture pass is complete. The application is entering final UI/UX redesign and Android production hardening; it is not yet production-ready or released.
+The D0–D6.3 V1 depth and architecture pass is complete. The active UI and Sky Now are implemented. The application is entering release hardening; it is not yet production-ready or released.
 
 Naksha is not yet:
 
@@ -579,10 +592,10 @@ Those are roadmap tracks.
 
 The remaining V1 work is release work, not another major feature program:
 
-1. Controlled UI/UX redesign while preserving the tested product loops
+1. Correctness, ownership, auth/journal/geocoder fixes and final accessibility acceptance; see [the execution plan](release-hardening-plan.md#execution-sequence)
 2. Android production identity, configuration, and signing
 3. Signed release build and release-candidate QA on representative devices
 4. Privacy, retention, support, and store-listing requirements
 5. Google Play testing tracks and submission
 
-iOS is intentionally later. Synastry, AI chat, notifications, additional astrology systems, outer planets as moving transit candidates, retrogrades, and lunar phases are post-V1 possibilities rather than Android V1 blockers.
+iOS is intentionally later. Synastry, AI chat, notifications, additional astrology systems, outer planets in personalized forecast selection, retrogrades, and lunar phases are post-V1 possibilities rather than Android V1 blockers.
