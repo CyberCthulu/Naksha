@@ -204,6 +204,7 @@ const GLYPH: Record<string, string> = {
 }
 
 type Props = {
+  motionEnabled?: boolean
   size: number
   planets: PlanetPos[]
   aspects: Aspect[]
@@ -228,6 +229,7 @@ type Props = {
 export const PLANET_HIT_SIZE = 48
 
 export default function ChartWheel({
+  motionEnabled = true,
   size,
   planets,
   aspects,
@@ -239,7 +241,7 @@ export default function ChartWheel({
 }: Props) {
   const reduceMotion = useReducedMotion()
   // Static unless the platform has positively told us motion is welcome.
-  const animateGlow = reduceMotion === false
+  const animateGlow = motionEnabled && reduceMotion === false
   const glow = useSharedValue(GLOW_MAX)
   const trace = useSharedValue(0)
 

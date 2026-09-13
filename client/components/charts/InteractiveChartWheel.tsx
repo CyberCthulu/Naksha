@@ -30,6 +30,7 @@ import {
 type PlanetAccentName = keyof typeof theme.planet
 
 type Props = {
+  motionEnabled?: boolean
   size: number
   planets: PlanetPos[]
   aspects: Aspect[]
@@ -65,6 +66,7 @@ export const TAP_MAX_DURATION = 260
  *   - the tap gesture is exclusive with pinch, so pinching cannot select.
  */
 export function InteractiveChartWheel({
+  motionEnabled = true,
   size,
   planets,
   aspects,
@@ -351,12 +353,13 @@ export function InteractiveChartWheel({
         <View testID="chart-wheel-gesture-surface" style={styles.surface}>
           <Animated.View testID="chart-wheel-transform" style={wheelStyle}>
             <ChartWheel
-            size={size}
-            planets={planets}
-            aspects={aspects}
-            houses={houses}
-            focusedPlanet={focusedPlanet}
-            selection={selection}
+              motionEnabled={motionEnabled}
+              size={size}
+              planets={planets}
+              aspects={aspects}
+              houses={houses}
+              focusedPlanet={focusedPlanet}
+              selection={selection}
               onSelectPlanet={onSelectPlanet}
               onSelectAspect={onSelectAspect}
             />

@@ -35,6 +35,13 @@ const mockNavigation = {
   navigate: jest.fn(),
 }
 
+jest.mock('../../components/charts/CurrentSkyCompass', () => ({
+  CurrentSkyCompass: () => {
+    const { Text } = require('react-native')
+    return <Text>Sky Now</Text>
+  },
+}))
+
 jest.mock('@react-navigation/native', () => {
   const React = require('react')
 
@@ -649,7 +656,7 @@ describe('DashboardScreen', () => {
     expect(context.props.numberOfLines).toBeUndefined()
   })
 
-  it('orders the screen identity, quick nav, tabs, guidance', async () => {
+  it('orders the screen identity, quick nav, current sky, tabs, guidance', async () => {
     const screen = await renderScreen()
     const visibleText = screenText(screen)
     const at = (needle: string) =>
@@ -659,6 +666,7 @@ describe('DashboardScreen', () => {
     const signs = at('☉')
     const birthContext = at('10 Dec 1815')
     const chart = at('Chart')
+    const sky = at('Sky Now')
     const tab = at('This Week')
     const guidance = at('Today’s Energy')
 
@@ -669,7 +677,8 @@ describe('DashboardScreen', () => {
     // Everything a reader might go to sits above the guidance, including the
     // chart -- there is no gold slab further down the screen.
     expect(chart).toBeGreaterThan(birthContext)
-    expect(tab).toBeGreaterThan(chart)
+    expect(sky).toBeGreaterThan(chart)
+    expect(tab).toBeGreaterThan(sky)
     expect(guidance).toBeGreaterThan(tab)
   })
 

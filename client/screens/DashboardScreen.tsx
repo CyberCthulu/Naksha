@@ -48,6 +48,7 @@ import { formatShortTimeFromHHMM } from '../lib/time'
 import { theme } from '../components/ui/theme'
 import { TodayEnergyCard } from '../components/guidance/TodayEnergyCard'
 import { WeeklyForecastCard } from '../components/guidance/WeeklyForecastCard'
+import { CurrentSkyCompass } from '../components/charts/CurrentSkyCompass'
 import type {
   ReflectionPrompt,
   SuggestedPractice,
@@ -679,6 +680,8 @@ export default function DashboardScreen() {
           }}
         />
       ) : null}
+
+      <CurrentSkyCompass />
 
       {/*
         Today and This Week are two views of one thing -- current guidance --
