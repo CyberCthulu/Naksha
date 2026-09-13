@@ -1,9 +1,5 @@
-import {
-  computeTransitPlanets,
-  findAspects,
-  type Aspect,
-  type PlanetPos,
-} from './astro'
+import { computeTransitPlanets, type Aspect, type PlanetPos } from './astro'
+import { calculateAspects } from './aspects'
 import { zodiacNameFromLongitude } from './lexicon'
 
 export type CurrentSky = {
@@ -28,11 +24,12 @@ export function buildCurrentSky(at: Date): CurrentSky {
   ) {
     throw new Error('Planetary positions are unavailable')
   }
-  return { evaluatedAt, planets, aspects: findAspects(planets) }
+  return { evaluatedAt, planets, aspects: calculateAspects(planets) }
 }
 
 /** Truncate to arcminutes so 29°59′ never appears in the wrong sign. */
 export function formatSkyPosition(longitude: number) {
+  if (!Number.isFinite(longitude)) throw new Error('Invalid sky longitude')
   const normalized = ((longitude % 360) + 360) % 360
   const minutes = Math.floor((normalized % 30) * 60)
   return `${Math.floor(minutes / 60)}°${String(minutes % 60).padStart(2, '0')}′ ${zodiacNameFromLongitude(normalized)}`

@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native'
 
 import { useCurrentSky } from '../../hooks/useCurrentSky'
 import { formatSkyPosition, skyAspectKey } from '../../lib/currentSky'
-import type { Aspect } from '../../lib/astro'
+import { angularSeparation, ASPECT_RULES } from '../../lib/aspects'
 import { AppText } from '../ui/AppText'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
@@ -14,14 +14,6 @@ import { theme, type PlanetAccent } from '../ui/theme'
 import { PLANET_GLYPH } from './ChartCompass'
 import type { ChartSelection } from './ChartWheel'
 import { InteractiveChartWheel } from './InteractiveChartWheel'
-
-const ASPECT_LABEL: Record<Aspect['type'], string> = {
-  conj: 'Conjunction',
-  opp: 'Opposition',
-  trine: 'Trine',
-  square: 'Square',
-  sextile: 'Sextile',
-}
 
 type SkySelection =
   | { kind: 'planet'; planet: PlanetAccent }
@@ -38,6 +30,7 @@ export function CurrentSkyCompass() {
     planet: 'Sun',
   })
   const [showPositions, setShowPositions] = useState(false)
+  const [showRules, setShowRules] = useState(false)
   const wheelSize = Math.min(
     measuredWidth || Math.max(1, width - 2 * (theme.space.xl + theme.space.lg)),
     400
@@ -60,6 +53,17 @@ export function CurrentSkyCompass() {
       : undefined
   const selectedAspect =
     aspectIndex >= 0 ? sky?.aspects[aspectIndex] : undefined
+  const selectedRule = ASPECT_RULES.find(
+    (rule) => rule.type === selectedAspect?.type
+  )
+  const aspectA = sky?.planets.find(
+    (planet) => planet.name === selectedAspect?.a
+  )
+  const aspectB = sky?.planets.find(
+    (planet) => planet.name === selectedAspect?.b
+  )
+  const separation =
+    aspectA && aspectB ? angularSeparation(aspectA.lon, aspectB.lon) : undefined
 
   return (
     <Card testID="current-sky-compass">
@@ -85,6 +89,7 @@ export function CurrentSkyCompass() {
               year: 'numeric',
               hour: 'numeric',
               minute: '2-digit',
+              second: '2-digit',
               timeZoneName: 'short',
             })}`}
           </AppText>
@@ -121,13 +126,19 @@ export function CurrentSkyCompass() {
               <AppText variant="body" style={styles.selectedText}>
                 {`${PLANET_GLYPH[selectedPlanet.name]} ${selectedPlanet.name} · ${formatSkyPosition(selectedPlanet.lon)}`}
               </AppText>
-            ) : selectedAspect ? (
+            ) : selectedAspect && selectedRule && separation != null ? (
               <>
                 <AppText variant="body" style={styles.selectedText}>
                   {`${selectedAspect.a} · ${selectedAspect.b}`}
                 </AppText>
                 <AppText variant="bodySmall" style={styles.selectedText}>
-                  {`${ASPECT_LABEL[selectedAspect.type]} · ${selectedAspect.orb.toFixed(2)}° orb`}
+                  {`${selectedRule.label} · within ${selectedRule.orb}° orb`}
+                </AppText>
+                <AppText variant="bodySmall" style={styles.selectedText}>
+                  {`${separation.toFixed(2)}° zodiac separation`}
+                </AppText>
+                <AppText variant="caption" style={styles.hint}>
+                  {`${selectedAspect.orb > 0 && selectedAspect.orb < 0.005 ? '<0.01' : selectedAspect.orb.toFixed(2)}° from exact ${selectedRule.angle}°`}
                 </AppText>
               </>
             ) : (
@@ -139,6 +150,52 @@ export function CurrentSkyCompass() {
           <AppText variant="caption" style={styles.hint}>
             Tropical zodiac · Earth-centered view. Pinch to zoom.
           </AppText>
+          <Pressable
+            testID="current-sky-rules-toggle"
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showRules }}
+            onPress={() => setShowRules((current) => !current)}
+            style={({ pressed }) => [styles.toggle, pressed && styles.pressed]}
+          >
+            <AppText variant="bodySmall" style={styles.toggleText}>
+              {showRules
+                ? 'Hide calculation rules'
+                : 'How aspects are calculated'}
+            </AppText>
+          </Pressable>
+          {showRules ? (
+            <View style={styles.rules} testID="current-sky-rules">
+              <AppText variant="bodySmall" style={styles.description}>
+                Aspects compare two bodies’ positions around the zodiac. An orb
+                is the allowed distance from an exact angle. Naksha uses these
+                limits for every pair:
+              </AppText>
+              {ASPECT_RULES.map((rule) => (
+                <AppText
+                  key={rule.type}
+                  variant="bodySmall"
+                  style={styles.description}
+                >
+                  {`${rule.label}: ${rule.angle}° · up to ${rule.orb}° orb`}
+                </AppText>
+              ))}
+              <AppText variant="bodySmall" style={styles.description}>
+                A pair qualifies when its distance from the exact angle is at or
+                below the limit, using unrounded positions. These are
+                astrological conventions; other charts may use different orbs.
+              </AppText>
+              <AppText variant="caption" style={styles.description}>
+                Positions use Astronomy Engine’s tropical zodiac calculations
+                from Earth’s center, with a stated accuracy target of about 1
+                arcminute (1/60°). Displayed decimals do not imply greater
+                accuracy. This is zodiac longitude separation, not the full
+                angle between two objects in the sky.
+              </AppText>
+              <AppText variant="caption" style={styles.description}>
+                {`Calculated at ${sky.evaluatedAt.toISOString()} (UTC), using your device’s clock. Updates every minute while active.`}
+              </AppText>
+            </View>
+          ) : null}
           <Pressable
             testID="current-sky-positions-toggle"
             accessibilityRole="button"
@@ -235,6 +292,7 @@ const styles = StyleSheet.create({
     marginTop: theme.space.sm,
   },
   toggleText: { color: theme.accent.base, textAlign: 'center' },
+  rules: { gap: theme.space.sm, paddingVertical: theme.space.sm },
   pressed: { opacity: 0.7 },
   position: {
     flexDirection: 'row',

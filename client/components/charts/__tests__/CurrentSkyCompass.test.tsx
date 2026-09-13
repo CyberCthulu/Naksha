@@ -5,6 +5,7 @@ import { InteractiveChartWheel } from '../InteractiveChartWheel'
 import { useCurrentSky } from '../../../hooks/useCurrentSky'
 import { Button } from '../../ui/Button'
 import type { CurrentSky } from '../../../lib/currentSky'
+import { buildCurrentSky } from '../../../lib/currentSky'
 
 jest.mock('../../../hooks/useCurrentSky', () => ({ useCurrentSky: jest.fn() }))
 jest.mock('../InteractiveChartWheel', () => ({
@@ -81,6 +82,28 @@ it('preserves the selected aspect across refresh reordering and clears removed a
   act(() => renderer.update(<CurrentSkyCompass />))
   expect(wheel().props.selection).toBeNull()
   expect(text()).toContain('Tap a planet or aspect')
+})
+
+it('explains the measured Moon–Saturn opposition and discloses all rules', () => {
+  const realSky = buildCurrentSky(new Date('2026-09-13T01:13:00Z'))
+  hook = { ...hook, sky: realSky }
+  act(() => renderer.update(<CurrentSkyCompass />))
+  const index = realSky.aspects.findIndex(
+    (aspect) => aspect.a === 'Moon' && aspect.b === 'Saturn'
+  )
+  act(() => wheel().props.onSelectAspect(index))
+  expect(text()).toContain('Opposition · within 6° orb')
+  expect(text()).toContain('178.85° zodiac separation')
+  expect(text()).toContain('1.15° from exact 180°')
+  press('current-sky-rules-toggle')
+  expect(text()).toContain('Conjunction: 0° · up to 6° orb')
+  expect(text()).toContain('Opposition: 180° · up to 6° orb')
+  expect(text()).toContain('Trine: 120° · up to 5° orb')
+  expect(text()).toContain('Square: 90° · up to 5° orb')
+  expect(text()).toContain('Sextile: 60° · up to 4° orb')
+  expect(text()).toContain('2026-09-13T01:13:00.000Z')
+  press('current-sky-rules-toggle')
+  expect(text()).not.toContain('current-sky-rules\"')
 })
 
 it('keeps the snapshot visible if refresh fails and allows a retry', () => {

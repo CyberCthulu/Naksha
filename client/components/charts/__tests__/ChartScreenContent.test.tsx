@@ -643,6 +643,7 @@ describe('Chart typography and accent rules', () => {
         'aspects',
         'focusedPlanet',
         'houses',
+        'motionEnabled',
         'onSelectAspect',
         'onSelectPlanet',
         'planets',

@@ -1,5 +1,6 @@
 // lib/astro.ts
 import * as Astro from 'astronomy-engine'
+import { calculateAspects } from './aspects'
 
 // Normalize angle into 0..360
 const norm = (deg: number) => ((deg % 360) + 360) % 360
@@ -48,47 +49,18 @@ export type Aspect = {
 
 export type AspectOrbMode = 'medium'
 
-const ASPECTS = [
-  { type: 'conj',    angle: 0,   orb: 6 },
-  { type: 'opp',     angle: 180, orb: 6 },
-  { type: 'trine',   angle: 120, orb: 5 },
-  { type: 'square',  angle: 90,  orb: 5 },
-  { type: 'sextile', angle: 60,  orb: 4 },
-] as const
-
-function supportedAspectDefinitions(orbMode: AspectOrbMode) {
-  if (orbMode !== 'medium') {
-    throw new Error('Unsupported aspect orb mode. Only medium is implemented.')
-  }
-
-  return ASPECTS
-}
-
+/** Preserve the existing saved-chart representation; Sky Now uses full precision. */
 export function findAspects(
   planets: PlanetPos[],
   orbMode: AspectOrbMode = 'medium'
 ): Aspect[] {
-  const aspectDefinitions = supportedAspectDefinitions(orbMode)
-  const res: Aspect[] = []
-  for (let i = 0; i < planets.length; i++) {
-    for (let j = i + 1; j < planets.length; j++) {
-      const a = planets[i], b = planets[j]
-      // smallest angular distance 0..180
-      const sep = Math.abs(((a.lon - b.lon + 540) % 360) - 180)
-      for (const asp of aspectDefinitions) {
-        const diff = Math.abs(sep - asp.angle)
-        if (diff <= asp.orb) {
-          res.push({
-            a: a.name,
-            b: b.name,
-            type: asp.type,
-            orb: +diff.toFixed(2),
-          })
-        }
-      }
-    }
+  if (orbMode !== 'medium') {
+    throw new Error('Unsupported aspect orb mode. Only medium is implemented.')
   }
-  return res
+  return calculateAspects(planets).map(aspect => ({
+    ...aspect,
+    orb: +aspect.orb.toFixed(2),
+  }))
 }
 
 // -------- House cusps (Whole Sign) --------
