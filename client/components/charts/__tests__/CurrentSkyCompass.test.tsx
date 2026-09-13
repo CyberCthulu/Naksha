@@ -84,7 +84,7 @@ it('preserves the selected aspect across refresh reordering and clears removed a
   expect(text()).toContain('Tap a planet or aspect')
 })
 
-it('explains the measured Moon–Saturn opposition and discloses all rules', () => {
+it('leads with Moon–Saturn meaning and keeps calculations in a secondary disclosure', () => {
   const realSky = buildCurrentSky(new Date('2026-09-13T01:13:00Z'))
   hook = { ...hook, sky: realSky }
   act(() => renderer.update(<CurrentSkyCompass />))
@@ -92,10 +92,15 @@ it('explains the measured Moon–Saturn opposition and discloses all rules', () 
     (aspect) => aspect.a === 'Moon' && aspect.b === 'Saturn'
   )
   act(() => wheel().props.onSelectAspect(index))
-  expect(text()).toContain('Opposition · within 6° orb')
+  expect(text()).toContain('Care and responsibility')
+  expect(text()).toContain('wanting reassurance')
+  expect(text()).toContain('Work with it')
+  expect(text()).toContain('Reflect')
+  expect(text()).toContain('1.15° orb')
+  expect(text()).not.toContain('178.85° zodiac separation')
+  press('current-sky-rules-toggle')
   expect(text()).toContain('178.85° zodiac separation')
   expect(text()).toContain('1.15° from exact 180°')
-  press('current-sky-rules-toggle')
   expect(text()).toContain('Conjunction: 0° · up to 6° orb')
   expect(text()).toContain('Opposition: 180° · up to 6° orb')
   expect(text()).toContain('Trine: 120° · up to 5° orb')
@@ -104,6 +109,18 @@ it('explains the measured Moon–Saturn opposition and discloses all rules', () 
   expect(text()).toContain('2026-09-13T01:13:00.000Z')
   press('current-sky-rules-toggle')
   expect(text()).not.toContain('current-sky-rules\"')
+})
+
+it('changes the reading with the selected pairing and removes it when the aspect disappears', () => {
+  act(() => wheel().props.onSelectAspect(0))
+  expect(text()).toContain('Purpose and belonging')
+  act(() => wheel().props.onSelectAspect(1))
+  expect(text()).toContain('Purpose in motion')
+  expect(text()).not.toContain('Purpose and belonging')
+  hook = { ...hook, sky: { ...sky, aspects: [sky.aspects[0]] } }
+  act(() => renderer.update(<CurrentSkyCompass />))
+  expect(text()).not.toContain('Purpose in motion')
+  expect(text()).not.toContain('current-sky-interpretation')
 })
 
 it('keeps the snapshot visible if refresh fails and allows a retry', () => {

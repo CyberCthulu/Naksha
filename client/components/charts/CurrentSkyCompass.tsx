@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native'
 import { useCurrentSky } from '../../hooks/useCurrentSky'
 import { formatSkyPosition, skyAspectKey } from '../../lib/currentSky'
 import { angularSeparation, ASPECT_RULES } from '../../lib/aspects'
+import { getSkyAspectMeaning } from '../../lib/lexicon'
 import { AppText } from '../ui/AppText'
 import { Button } from '../ui/Button'
 import { Card } from '../ui/Card'
@@ -53,6 +54,13 @@ export function CurrentSkyCompass() {
       : undefined
   const selectedAspect =
     aspectIndex >= 0 ? sky?.aspects[aspectIndex] : undefined
+  const selectedMeaning = selectedAspect
+    ? getSkyAspectMeaning(
+        selectedAspect.a,
+        selectedAspect.b,
+        selectedAspect.type
+      )
+    : null
   const selectedRule = ASPECT_RULES.find(
     (rule) => rule.type === selectedAspect?.type
   )
@@ -132,14 +140,39 @@ export function CurrentSkyCompass() {
                   {`${selectedAspect.a} · ${selectedAspect.b}`}
                 </AppText>
                 <AppText variant="bodySmall" style={styles.selectedText}>
-                  {`${selectedRule.label} · within ${selectedRule.orb}° orb`}
-                </AppText>
-                <AppText variant="bodySmall" style={styles.selectedText}>
-                  {`${separation.toFixed(2)}° zodiac separation`}
+                  {selectedRule.label}
                 </AppText>
                 <AppText variant="caption" style={styles.hint}>
-                  {`${selectedAspect.orb > 0 && selectedAspect.orb < 0.005 ? '<0.01' : selectedAspect.orb.toFixed(2)}° from exact ${selectedRule.angle}°`}
+                  {`${selectedAspect.orb > 0 && selectedAspect.orb < 0.005 ? '<0.01' : selectedAspect.orb.toFixed(2)}° orb`}
                 </AppText>
+                {selectedMeaning ? (
+                  <View
+                    style={styles.interpretation}
+                    testID="current-sky-interpretation"
+                  >
+                    <AppText variant="subheading" accessibilityRole="header">
+                      {selectedMeaning.title}
+                    </AppText>
+                    <AppText variant="bodySmall" style={styles.description}>
+                      {selectedMeaning.dynamic}
+                    </AppText>
+                    <AppText variant="body" style={styles.description}>
+                      {selectedMeaning.meaning}
+                    </AppText>
+                    <AppText variant="subheading">Work with it</AppText>
+                    <AppText variant="bodySmall" style={styles.description}>
+                      {selectedMeaning.practice}
+                    </AppText>
+                    <AppText variant="subheading">Reflect</AppText>
+                    <AppText variant="bodySmall" style={styles.description}>
+                      {selectedMeaning.reflection}
+                    </AppText>
+                    <AppText variant="caption" style={styles.hint}>
+                      A symbolic reading of the shared sky. Take what resonates
+                      with your experience.
+                    </AppText>
+                  </View>
+                ) : null}
               </>
             ) : (
               <AppText variant="bodySmall" style={styles.selectedText}>
@@ -148,54 +181,11 @@ export function CurrentSkyCompass() {
             )}
           </View>
           <AppText variant="caption" style={styles.hint}>
+            Tap an aspect line to explore what it may mean.
+          </AppText>
+          <AppText variant="caption" style={styles.hint}>
             Tropical zodiac · Earth-centered view. Pinch to zoom.
           </AppText>
-          <Pressable
-            testID="current-sky-rules-toggle"
-            accessibilityRole="button"
-            accessibilityState={{ expanded: showRules }}
-            onPress={() => setShowRules((current) => !current)}
-            style={({ pressed }) => [styles.toggle, pressed && styles.pressed]}
-          >
-            <AppText variant="bodySmall" style={styles.toggleText}>
-              {showRules
-                ? 'Hide calculation rules'
-                : 'How aspects are calculated'}
-            </AppText>
-          </Pressable>
-          {showRules ? (
-            <View style={styles.rules} testID="current-sky-rules">
-              <AppText variant="bodySmall" style={styles.description}>
-                Aspects compare two bodies’ positions around the zodiac. An orb
-                is the allowed distance from an exact angle. Naksha uses these
-                limits for every pair:
-              </AppText>
-              {ASPECT_RULES.map((rule) => (
-                <AppText
-                  key={rule.type}
-                  variant="bodySmall"
-                  style={styles.description}
-                >
-                  {`${rule.label}: ${rule.angle}° · up to ${rule.orb}° orb`}
-                </AppText>
-              ))}
-              <AppText variant="bodySmall" style={styles.description}>
-                A pair qualifies when its distance from the exact angle is at or
-                below the limit, using unrounded positions. These are
-                astrological conventions; other charts may use different orbs.
-              </AppText>
-              <AppText variant="caption" style={styles.description}>
-                Positions use Astronomy Engine’s tropical zodiac calculations
-                from Earth’s center, with a stated accuracy target of about 1
-                arcminute (1/60°). Displayed decimals do not imply greater
-                accuracy. This is zodiac longitude separation, not the full
-                angle between two objects in the sky.
-              </AppText>
-              <AppText variant="caption" style={styles.description}>
-                {`Calculated at ${sky.evaluatedAt.toISOString()} (UTC), using your device’s clock. Updates every minute while active.`}
-              </AppText>
-            </View>
-          ) : null}
           <Pressable
             testID="current-sky-positions-toggle"
             accessibilityRole="button"
@@ -251,6 +241,55 @@ export function CurrentSkyCompass() {
             onPress={refresh}
             disabled={!active}
           />
+          <Pressable
+            testID="current-sky-rules-toggle"
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showRules }}
+            onPress={() => setShowRules((current) => !current)}
+            style={({ pressed }) => [styles.toggle, pressed && styles.pressed]}
+          >
+            <AppText variant="bodySmall" style={styles.toggleText}>
+              {showRules ? 'Hide calculation details' : 'Calculation details'}
+            </AppText>
+          </Pressable>
+          {showRules ? (
+            <View style={styles.rules} testID="current-sky-rules">
+              {selectedAspect && selectedRule && separation != null ? (
+                <AppText variant="bodySmall" style={styles.description}>
+                  {`${selectedAspect.a} · ${selectedAspect.b}: ${separation.toFixed(2)}° zodiac separation; ${selectedAspect.orb > 0 && selectedAspect.orb < 0.005 ? '<0.01' : selectedAspect.orb.toFixed(2)}° from exact ${selectedRule.angle}°, within a ${selectedRule.orb}° orb.`}
+                </AppText>
+              ) : null}
+              <AppText variant="bodySmall" style={styles.description}>
+                Aspects compare two bodies’ positions around the zodiac. An orb
+                is the allowed distance from an exact angle. Naksha uses these
+                limits for every pair:
+              </AppText>
+              {ASPECT_RULES.map((rule) => (
+                <AppText
+                  key={rule.type}
+                  variant="bodySmall"
+                  style={styles.description}
+                >
+                  {`${rule.label}: ${rule.angle}° · up to ${rule.orb}° orb`}
+                </AppText>
+              ))}
+              <AppText variant="bodySmall" style={styles.description}>
+                A pair qualifies when its distance from the exact angle is at or
+                below the limit, using unrounded positions. These are
+                astrological conventions; other charts may use different orbs.
+              </AppText>
+              <AppText variant="caption" style={styles.description}>
+                Positions use Astronomy Engine’s tropical zodiac calculations
+                from Earth’s center, with a stated accuracy target of about 1
+                arcminute (1/60°). Displayed decimals do not imply greater
+                accuracy. This is zodiac longitude separation, not the full
+                angle between two objects in the sky.
+              </AppText>
+              <AppText variant="caption" style={styles.description}>
+                {`Calculated at ${sky.evaluatedAt.toISOString()} (UTC), using your device’s clock. Updates every minute while active.`}
+              </AppText>
+            </View>
+          ) : null}
         </>
       ) : error ? (
         <>
@@ -284,6 +323,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: theme.space.sm,
   },
+  interpretation: { gap: theme.space.sm, marginTop: theme.space.md },
   selectedText: { textAlign: 'center' },
   hint: { color: theme.text.tertiary, textAlign: 'center' },
   toggle: {

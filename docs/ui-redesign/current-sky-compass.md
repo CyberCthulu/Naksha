@@ -26,7 +26,17 @@ For normalized longitudes `a` and `b`, calculate `difference = abs(a - b)` and `
 | Square | 90° | 5° |
 | Sextile | 60° | 4° |
 
-These are Naksha's astrological conventions, not universal astronomical thresholds. Being within an orb does not mean an aspect is exact. The selected-aspect readout shows the measured separation, distance from the exact angle, and allowed orb. The calculation disclosure lists every rule, the UTC calculation timestamp, and the device-clock dependency. Rounding is for presentation only; a positive orb below the display precision is shown as `<0.01°` rather than zero.
+These are Naksha's astrological conventions, not universal astronomical thresholds. Being within an orb does not mean an aspect is exact. The selected-aspect readout leads with interpretation and a small orb label. The secondary **Calculation details** disclosure shows the measured separation, distance from the exact angle, allowed orb, every rule, UTC calculation timestamp, and device-clock dependency. Rounding is for presentation only; a positive orb below the display precision is shown as `<0.01°` rather than zero.
+
+## Current-sky interpretations
+
+`client/lib/lexicon/aspects/currentSky.ts` contains authored themes, opportunities, tensions, practices, and reflection questions for all 45 unordered pairs among the ten displayed bodies. The five aspect dynamics provide distinct framing: conjunction concentrates, opposition contrasts, square invites adjustment, trine describes cooperation, and sextile suggests an opening that benefits from participation. Moon–Saturn additionally has a separate meaning and practice for each aspect type.
+
+`getSkyAspectMeaning` combines the pair with its calculated aspect deterministically. Reversing the two bodies returns the same reading. Unknown bodies, repeated bodies, and unsupported aspect types return no interpretation. The reading follows the stable selected aspect key as the snapshot updates and disappears if that aspect leaves the current sky.
+
+These readings extend Naksha's existing planetary and aspect symbolism as reflective editorial content. They do not forecast events or assign natal traits to everyone viewing the sky. Pairings between Jupiter and the slower bodies explicitly describe a longer background theme. Current positions and aspect eligibility remain calculated independently of the prose; no interpretation can create an aspect on the wheel.
+
+The app shows a pair theme, an explanation of the aspect, what the pairing may mean, a practical suggestion, and a reflection. Technical details remain collapsed at the bottom of the card. These entries are for Sky Now; birth-chart interpretations retain their separate context.
 
 Astronomy Engine's stated accuracy target is ±1 arcminute (1/60°); retaining floating-point precision does not imply infinitely precise physical positions. Positions update every minute while active, so they describe the displayed snapshot rather than a continuously changing instant. Values very close to a rule boundary can differ between ephemeris models within their accuracy limits.
 

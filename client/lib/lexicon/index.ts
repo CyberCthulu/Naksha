@@ -28,6 +28,8 @@ export {
   getAspectMeaning,
 } from './aspects'
 
+export { getSkyAspectMeaning, type SkyAspectMeaning } from './aspects/currentSky'
+
 // Helpers to map longitudes to sign labels
 export {
   SIGN_MEANINGS,
