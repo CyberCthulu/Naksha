@@ -1,5 +1,3 @@
-begin;
-
 -- Stop before changing constraints if historical rows are orphaned or point at
 -- a parent owned by another user. The migration is intentionally non-repairing:
 -- production data must be inspected and resolved through a separately reviewed
@@ -66,7 +64,8 @@ alter table public.charts
 alter table public.conversations
   add constraint conversations_id_user_id_key unique (id, user_id);
 
--- MATCH SIMPLE preserves optional parent references. PostgreSQL 17's column
+-- MATCH SIMPLE preserves optional parent references. Its ownership guarantee
+-- depends on every child.user_id remaining NOT NULL. PostgreSQL 17's column
 -- list on SET NULL is deliberate: deleting a chart clears only chart_id and
 -- never attempts to clear a child row's non-null user_id.
 alter table public.conversations
@@ -119,8 +118,25 @@ drop policy if exists "Delete own messages" on public.messages;
 
 drop policy if exists "Insert own reports" on public.reports;
 
-revoke insert, update, delete, truncate, references, trigger
+revoke insert, update, delete
   on table public.conversations, public.messages, public.reports
+  from anon, authenticated;
+
+-- Client roles need ordinary table CRUD as allowed by each table's RLS
+-- policies, but they do not need privileges that can bypass or alter those
+-- protections. In particular, RLS does not protect TRUNCATE.
+revoke truncate, references, trigger
+  on table public.chart_preferences,
+           public.charts,
+           public.conversations,
+           public.journals,
+           public.messages,
+           public.notifications,
+           public.purchases,
+           public.reports,
+           public.subscriptions,
+           public.usage_events,
+           public.users
   from anon, authenticated;
 
 revoke usage, select, update
@@ -140,5 +156,3 @@ comment on constraint reports_chart_owner_fkey on public.reports
 
 comment on constraint messages_conversation_owner_fkey on public.messages
   is 'A message may reference only a conversation owned by the same user.';
-
-commit;

@@ -68,29 +68,122 @@ values
   (91005, '10000000-0000-0000-0000-000000000001', 'A conversation delete', '{}'::jsonb, '2000-01-05', '05:00', 'UTC', 5, 5),
   (91006, '10000000-0000-0000-0000-000000000001', 'A report delete', '{}'::jsonb, '2000-01-06', '06:00', 'UTC', 6, 6);
 
-select has_constraint(
-  'public',
-  'conversations',
-  'conversations_chart_owner_fkey',
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.conversations'::regclass
+      and conname = 'conversations_chart_owner_fkey'
+  ),
   'conversation-to-chart ownership constraint exists'
 );
-select has_constraint(
-  'public',
-  'journals',
-  'journals_chart_owner_fkey',
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.journals'::regclass
+      and conname = 'journals_chart_owner_fkey'
+  ),
   'journal-to-chart ownership constraint exists'
 );
-select has_constraint(
-  'public',
-  'reports',
-  'reports_chart_owner_fkey',
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.reports'::regclass
+      and conname = 'reports_chart_owner_fkey'
+  ),
   'report-to-chart ownership constraint exists'
 );
-select has_constraint(
-  'public',
-  'messages',
-  'messages_conversation_owner_fkey',
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.messages'::regclass
+      and conname = 'messages_conversation_owner_fkey'
+  ),
   'message-to-conversation ownership constraint exists'
+);
+
+-- Neither client role needs elevated table privileges. Check the complete
+-- current application-table set so partial privilege hardening is visible.
+select ok(
+  not exists (
+    select 1
+    from unnest(array[
+      'public.chart_preferences', 'public.charts', 'public.conversations',
+      'public.journals', 'public.messages', 'public.notifications',
+      'public.purchases', 'public.reports', 'public.subscriptions',
+      'public.usage_events', 'public.users'
+    ]) as application_table(name)
+    where has_table_privilege('anon', name, 'TRUNCATE')
+  ),
+  'anon has no TRUNCATE privilege on application tables'
+);
+select ok(
+  not exists (
+    select 1
+    from unnest(array[
+      'public.chart_preferences', 'public.charts', 'public.conversations',
+      'public.journals', 'public.messages', 'public.notifications',
+      'public.purchases', 'public.reports', 'public.subscriptions',
+      'public.usage_events', 'public.users'
+    ]) as application_table(name)
+    where has_table_privilege('authenticated', name, 'TRUNCATE')
+  ),
+  'authenticated has no TRUNCATE privilege on application tables'
+);
+select ok(
+  not exists (
+    select 1
+    from unnest(array[
+      'public.chart_preferences', 'public.charts', 'public.conversations',
+      'public.journals', 'public.messages', 'public.notifications',
+      'public.purchases', 'public.reports', 'public.subscriptions',
+      'public.usage_events', 'public.users'
+    ]) as application_table(name)
+    where has_table_privilege('anon', name, 'REFERENCES')
+  ),
+  'anon has no REFERENCES privilege on application tables'
+);
+select ok(
+  not exists (
+    select 1
+    from unnest(array[
+      'public.chart_preferences', 'public.charts', 'public.conversations',
+      'public.journals', 'public.messages', 'public.notifications',
+      'public.purchases', 'public.reports', 'public.subscriptions',
+      'public.usage_events', 'public.users'
+    ]) as application_table(name)
+    where has_table_privilege('authenticated', name, 'REFERENCES')
+  ),
+  'authenticated has no REFERENCES privilege on application tables'
+);
+select ok(
+  not exists (
+    select 1
+    from unnest(array[
+      'public.chart_preferences', 'public.charts', 'public.conversations',
+      'public.journals', 'public.messages', 'public.notifications',
+      'public.purchases', 'public.reports', 'public.subscriptions',
+      'public.usage_events', 'public.users'
+    ]) as application_table(name)
+    where has_table_privilege('anon', name, 'TRIGGER')
+  ),
+  'anon has no TRIGGER privilege on application tables'
+);
+select ok(
+  not exists (
+    select 1
+    from unnest(array[
+      'public.chart_preferences', 'public.charts', 'public.conversations',
+      'public.journals', 'public.messages', 'public.notifications',
+      'public.purchases', 'public.reports', 'public.subscriptions',
+      'public.usage_events', 'public.users'
+    ]) as application_table(name)
+    where has_table_privilege('authenticated', name, 'TRIGGER')
+  ),
+  'authenticated has no TRIGGER privilege on application tables'
 );
 
 -- conversations(chart_id, user_id) -> charts(id, user_id)
@@ -335,7 +428,7 @@ select lives_ok(
   'failed cross-owner chart references cannot block user B chart deletion'
 );
 select is(
-  (select title from public.conversations where id = 92001),
+  (select title::text from public.conversations where id = 92001),
   'A valid update'::text,
   'deleting user B chart leaves user A conversation untouched'
 );
@@ -349,6 +442,15 @@ select set_config(
   true
 );
 select ok(
+  pg_temp.fk_rejected($$insert into public.journals (id, user_id, chart_id, content)
+    values (93901, '10000000-0000-0000-0000-000000000001', 91002, 'blocked')$$),
+  'authenticated user A cannot insert an A-owned journal referencing user B chart'
+);
+select ok(
+  pg_temp.write_rejected('truncate table public.journals'),
+  'authenticated cannot TRUNCATE journals'
+);
+select ok(
   pg_temp.write_rejected($$update public.journals
     set user_id = '20000000-0000-0000-0000-000000000002', chart_id = 91002
     where id = 93001$$),
@@ -360,8 +462,8 @@ select lives_ok(
 );
 select ok(
   pg_temp.write_rejected($$insert into public.conversations (id, user_id, chart_id)
-    values (92901, '10000000-0000-0000-0000-000000000001', 91001)$$),
-  'authenticated client cannot write dormant conversations'
+    values (92901, '10000000-0000-0000-0000-000000000001', 91002)$$),
+  'authenticated user A cannot create a dormant conversation referencing user B chart'
 );
 select ok(
   pg_temp.write_rejected($$insert into public.messages (id, user_id, conversation_id, sender, content)
@@ -432,7 +534,7 @@ select is(
      join public.conversations as parent on parent.id = child.conversation_id
     where child.user_id is distinct from parent.user_id),
   0::bigint,
-  'no cross-owner message relationship remains possible'
+  'no cross-owner message relationships exist after account deletion'
 );
 
 select * from finish();
