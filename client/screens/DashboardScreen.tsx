@@ -402,18 +402,32 @@ export default function DashboardScreen() {
       const birthLon = u.birth_lon
       const hasChartCoordinates = birthLat != null && birthLon != null
 
-      const { data: existing, error: chartLookupError } = hasChartCoordinates
-        ? await supabase
-            .from('charts')
-            .select('chart_data')
-            .eq('user_id', user.id)
-            .eq('birth_date', u.birth_date)
-            .eq('birth_time', u.birth_time)
-            .eq('time_zone', tz)
-            .eq('birth_lat', birthLat)
-            .eq('birth_lon', birthLon)
-            .maybeSingle()
-        : { data: null, error: null }
+      let existing: { chart_data: unknown } | null = null
+      let chartLookupError: unknown = null
+
+      if (hasChartCoordinates) {
+        let existingQuery = supabase
+          .from('charts')
+          .select('chart_data')
+          .eq('user_id', user.id)
+          .eq('birth_date', u.birth_date)
+          .eq('birth_time', u.birth_time)
+          .eq('time_zone', tz)
+          .eq('birth_lat', birthLat)
+          .eq('birth_lon', birthLon)
+
+        existingQuery =
+          u.birth_utc_offset_minutes == null
+            ? existingQuery.is('birth_utc_offset_minutes', null)
+            : existingQuery.eq(
+                'birth_utc_offset_minutes',
+                u.birth_utc_offset_minutes
+              )
+
+        const result = await existingQuery.maybeSingle()
+        existing = result.data
+        chartLookupError = result.error
+      }
 
       if (chartLookupError) {
         throw new Error(
@@ -446,6 +460,7 @@ export default function DashboardScreen() {
             name: `${u.first_name ?? 'My'} Natal Chart`,
             birth_date: u.birth_date,
             birth_time: u.birth_time,
+            birth_utc_offset_minutes: u.birth_utc_offset_minutes,
             time_zone: tz,
             birth_lat: u.birth_lat ?? null,
             birth_lon: u.birth_lon ?? null,
@@ -459,6 +474,8 @@ export default function DashboardScreen() {
               name: chartData.meta.name,
               birth_date: chartData.meta.birth_date,
               birth_time: chartData.meta.birth_time,
+              birth_utc_offset_minutes:
+                chartData.meta.birth_utc_offset_minutes,
               time_zone: chartData.meta.time_zone,
               birth_lat: chartData.meta.birth_lat,
               birth_lon: chartData.meta.birth_lon,
@@ -474,6 +491,7 @@ export default function DashboardScreen() {
         chartData,
         birthDate: u.birth_date,
         birthTime: u.birth_time,
+        birthUtcOffsetMinutes: u.birth_utc_offset_minutes,
         timeZone: tz,
         birthLat,
         birthLon,

@@ -3,12 +3,13 @@ import {
   computeWholeSignHouses,
 } from './astro'
 import type { ChartData } from './charts'
-import { birthToUTC } from './time'
+import { resolveStoredBirthMoment } from './time'
 
 export type ChartHydrationInput = {
   chartData: ChartData
   birthDate: string
   birthTime: string
+  birthUtcOffsetMinutes: number | null
   timeZone: string
   birthLat: number | null
   birthLon: number | null
@@ -18,6 +19,7 @@ export function hydrateChartData({
   chartData,
   birthDate,
   birthTime,
+  birthUtcOffsetMinutes,
   timeZone,
   birthLat,
   birthLon,
@@ -35,7 +37,18 @@ export function hydrateChartData({
     }
 
     try {
-      const { jsDate } = birthToUTC(birthDate, birthTime, timeZone)
+      const persistedInstant = chartData.meta.instant_utc
+        ? new Date(chartData.meta.instant_utc)
+        : null
+      const jsDate =
+        persistedInstant && !Number.isNaN(persistedInstant.getTime())
+          ? persistedInstant
+          : resolveStoredBirthMoment(
+              birthDate,
+              birthTime,
+              timeZone,
+              birthUtcOffsetMinutes
+            ).instant.utc
       houses = computeWholeSignHouses(jsDate, birthLat, birthLon)
     } catch {
       return chartData

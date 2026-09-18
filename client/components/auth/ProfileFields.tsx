@@ -9,16 +9,20 @@ import TextField from '../ui/TextField'
 import { AppText } from '../ui/AppText'
 import { uiStyles } from '../ui/uiStyles'
 import { normalizeZone } from '../../lib/timezones'
+import type { CivilDate, CivilTime } from '../../lib/time'
+import BirthTimeResolutionField from './BirthTimeResolutionField'
 
 type Props = {
   firstName: string
   setFirstName: (v: string) => void
   lastName: string
   setLastName: (v: string) => void
-  birthDate: Date | null
-  setBirthDate: (d: Date | null) => void
-  birthTime: Date | null
-  setBirthTime: (d: Date | null) => void
+  birthDate: CivilDate | null
+  setBirthDate: (d: CivilDate | null) => void
+  birthTime: CivilTime | null
+  setBirthTime: (d: CivilTime | null) => void
+  birthUtcOffsetMinutes: number | null
+  setBirthUtcOffsetMinutes: (value: number | null) => void
   birthLocation: string
   setBirthLocation: (v: string) => void
   timeZone: string
@@ -38,6 +42,8 @@ export default function ProfileFields({
   setBirthDate,
   birthTime,
   setBirthTime,
+  birthUtcOffsetMinutes,
+  setBirthUtcOffsetMinutes,
   birthLocation,
   setBirthLocation,
   timeZone,
@@ -68,13 +74,27 @@ export default function ProfileFields({
       <DateField
         label="Birth Date"
         value={birthDate}
-        onChange={(d) => setBirthDate(d)}
+        onChange={(d) => {
+          setBirthDate(d)
+          setBirthUtcOffsetMinutes(null)
+        }}
       />
 
       <TimeField
         label="Birth Time"
         value={birthTime}
-        onChange={(d) => setBirthTime(d)}
+        onChange={(d) => {
+          setBirthTime(d)
+          setBirthUtcOffsetMinutes(null)
+        }}
+      />
+
+      <BirthTimeResolutionField
+        birthDate={birthDate}
+        birthTime={birthTime}
+        timeZone={timeZone}
+        selectedOffsetMinutes={birthUtcOffsetMinutes}
+        onSelectOffsetMinutes={setBirthUtcOffsetMinutes}
       />
 
       <LocationAutocompleteField
@@ -83,6 +103,7 @@ export default function ProfileFields({
           setBirthLocation(next)
           setBirthLat?.(null)
           setBirthLon?.(null)
+          setBirthUtcOffsetMinutes(null)
         }}
         onSelectLocation={(result) => {
           setBirthLocation(result.name)
@@ -90,7 +111,10 @@ export default function ProfileFields({
           setBirthLon?.(result.lon)
 
           const normalized = normalizeZone(result.timeZone)
-          if (normalized) setTimeZone(normalized)
+          if (normalized) {
+            setTimeZone(normalized)
+            setBirthUtcOffsetMinutes(null)
+          }
         }}
       />
 
@@ -100,7 +124,13 @@ export default function ProfileFields({
         </AppText>
       )}
 
-      <TimeZonePicker value={timeZone} onChange={setTimeZone} />
+      <TimeZonePicker
+        value={timeZone}
+        onChange={(value) => {
+          setTimeZone(value)
+          setBirthUtcOffsetMinutes(null)
+        }}
+      />
     </View>
   )
 }

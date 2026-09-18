@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import AuthContainer from '../components/auth/AuthContainer'
+import BirthTimeResolutionField from '../components/auth/BirthTimeResolutionField'
 import DateField from '../components/auth/DateField'
 import LocationAutocompleteField from '../components/auth/LocationAutocompleteField'
 import TimeField from '../components/auth/TimeField'
@@ -14,7 +15,11 @@ import FormField from '../components/ui/FormField'
 import TextField from '../components/ui/TextField'
 import { ScreenHeader } from '../components/ui/ScreenHeader'
 import { uiStyles } from '../components/ui/uiStyles'
-import { formatDateForDb, formatTimeForDb } from '../lib/time'
+import {
+  prepareBirthMoment,
+  type CivilDate,
+  type CivilTime,
+} from '../lib/time'
 import { getDeviceTimeZoneNormalized, normalizeZone } from '../lib/timezones'
 import type { ChartProfile } from '../lib/domainTypes'
 import type { RootStackParamList } from '../navigation/types'
@@ -30,8 +35,11 @@ export default function CreateGuestChartScreen() {
   }, [navigation])
 
   const [name, setName] = useState('')
-  const [birthDate, setBirthDate] = useState<Date | null>(null)
-  const [birthTime, setBirthTime] = useState<Date | null>(null)
+  const [birthDate, setBirthDate] = useState<CivilDate | null>(null)
+  const [birthTime, setBirthTime] = useState<CivilTime | null>(null)
+  const [birthUtcOffsetMinutes, setBirthUtcOffsetMinutes] = useState<number | null>(
+    null
+  )
   const [birthLocation, setBirthLocation] = useState('')
   const [timeZone, setTimeZone] = useState('Etc/UTC')
   const [birthLat, setBirthLat] = useState<number | null>(null)
@@ -58,11 +66,28 @@ export default function CreateGuestChartScreen() {
       return
     }
 
+    let birthMoment
+    try {
+      birthMoment = prepareBirthMoment(
+        birthDate,
+        birthTime,
+        normalizedZone,
+        birthUtcOffsetMinutes
+      )
+    } catch (e: any) {
+      Alert.alert(
+        'Birth time needs attention',
+        e?.message ?? 'Enter a valid birth date and time.'
+      )
+      return
+    }
+
     const profile: ChartProfile = {
       first_name: name.trim(),
       last_name: null,
-      birth_date: formatDateForDb(birthDate),
-      birth_time: formatTimeForDb(birthTime),
+      birth_date: birthMoment.birthDate,
+      birth_time: birthMoment.birthTime,
+      birth_utc_offset_minutes: birthMoment.birthUtcOffsetMinutes,
       birth_location: birthLocation.trim(),
       time_zone: normalizedZone,
       birth_lat: birthLat,
@@ -100,13 +125,27 @@ export default function CreateGuestChartScreen() {
       <DateField
         label="Birth Date"
         value={birthDate}
-        onChange={setBirthDate}
+        onChange={(value) => {
+          setBirthDate(value)
+          setBirthUtcOffsetMinutes(null)
+        }}
       />
 
       <TimeField
         label="Birth Time"
         value={birthTime}
-        onChange={setBirthTime}
+        onChange={(value) => {
+          setBirthTime(value)
+          setBirthUtcOffsetMinutes(null)
+        }}
+      />
+
+      <BirthTimeResolutionField
+        birthDate={birthDate}
+        birthTime={birthTime}
+        timeZone={timeZone}
+        selectedOffsetMinutes={birthUtcOffsetMinutes}
+        onSelectOffsetMinutes={setBirthUtcOffsetMinutes}
       />
 
       <LocationAutocompleteField
@@ -115,6 +154,7 @@ export default function CreateGuestChartScreen() {
           setBirthLocation(next)
           setBirthLat(null)
           setBirthLon(null)
+          setBirthUtcOffsetMinutes(null)
         }}
         onSelectLocation={(result) => {
           setBirthLocation(result.name)
@@ -122,7 +162,10 @@ export default function CreateGuestChartScreen() {
           setBirthLon(result.lon)
 
           const normalized = normalizeZone(result.timeZone)
-          if (normalized) setTimeZone(normalized)
+          if (normalized) {
+            setTimeZone(normalized)
+            setBirthUtcOffsetMinutes(null)
+          }
         }}
       />
 
@@ -132,7 +175,13 @@ export default function CreateGuestChartScreen() {
         </AppText>
       )}
 
-      <TimeZonePicker value={timeZone} onChange={setTimeZone} />
+      <TimeZonePicker
+        value={timeZone}
+        onChange={(value) => {
+          setTimeZone(value)
+          setBirthUtcOffsetMinutes(null)
+        }}
+      />
 
       <View style={styles.actions}>
         <Button title="Create Chart" onPress={onCreateChart} />

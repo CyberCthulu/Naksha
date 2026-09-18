@@ -11,7 +11,7 @@ import {
   PlanetHousePlacement,
 } from './astro'
 
-import { birthToUTC } from './time'
+import { resolveStoredBirthMoment } from './time'
 import { normalizeZone } from './timezones'
 import {
   CURRENT_CHART_CALCULATION_VERSION,
@@ -29,6 +29,7 @@ export type ChartMeta = {
   name: string
   birth_date: string
   birth_time: string
+  birth_utc_offset_minutes: number | null
   time_zone: string
   birth_lat: number | null
   birth_lon: number | null
@@ -52,6 +53,7 @@ export type ChartRow = {
   name: string
   birth_date: string | null
   birth_time: string | null
+  birth_utc_offset_minutes: number | null
   time_zone: string | null
   birth_lat: number | null
   birth_lon: number | null
@@ -64,6 +66,7 @@ export type BuildChartInput = {
   name: string
   birth_date: string
   birth_time: string
+  birth_utc_offset_minutes: number | null
   time_zone: string
   birth_lat?: number | null
   birth_lon?: number | null
@@ -107,14 +110,23 @@ export function buildChartData(
   const tz = normalizeZone(input.time_zone)
   if (!tz) throw new Error('Invalid time zone')
 
-  const { jsDate, dtUTC } = birthToUTC(input.birth_date, input.birth_time, tz)
-  const planets = computeNatalPlanets(jsDate)
+  const birthMoment = resolveStoredBirthMoment(
+    input.birth_date,
+    input.birth_time,
+    tz,
+    input.birth_utc_offset_minutes ?? null
+  )
+  const planets = computeNatalPlanets(birthMoment.instant.utc)
   const aspects = findAspects(planets, preferences.orb_mode)
 
   const hasLocation = input.birth_lat != null && input.birth_lon != null
 
   const houses = hasLocation
-    ? computeWholeSignHouses(jsDate, input.birth_lat!, input.birth_lon!)
+    ? computeWholeSignHouses(
+        birthMoment.instant.utc,
+        input.birth_lat!,
+        input.birth_lon!
+      )
     : null
   
   const planet_houses =
@@ -125,13 +137,14 @@ export function buildChartData(
     calculation_version: CURRENT_CHART_CALCULATION_VERSION,
     meta: {
       name: input.name,
-      birth_date: input.birth_date,
-      birth_time: input.birth_time,
+      birth_date: birthMoment.birthDate,
+      birth_time: birthMoment.birthTime,
+      birth_utc_offset_minutes: birthMoment.birthUtcOffsetMinutes,
       time_zone: tz,
       birth_lat: hasLocation ? input.birth_lat ?? null : null,
       birth_lon: hasLocation ? input.birth_lon ?? null : null,
       computed_at: new Date().toISOString(),
-      instant_utc: dtUTC.toISO(),
+      instant_utc: birthMoment.instant.utcIso,
     },
     planets,
     aspects,
@@ -144,6 +157,7 @@ export type SaveChartInput = {
   name: string
   birth_date: string
   birth_time: string
+  birth_utc_offset_minutes: number | null
   time_zone: string
   birth_lat?: number | null
   birth_lon?: number | null
@@ -151,7 +165,7 @@ export type SaveChartInput = {
 }
 
 const CHART_IDENTITY_CONFLICT_TARGET =
-  'user_id,birth_date,birth_time,time_zone,birth_lat,birth_lon'
+  'user_id,birth_date,birth_time,time_zone,birth_utc_offset_minutes,birth_lat,birth_lon'
 
 export function hasChartIdentityCoordinates(input: {
   birth_lat?: number | null
@@ -177,7 +191,7 @@ export async function saveChart(userId: string, input: SaveChartInput) {
       }
     )
     .select(
-      'id,user_id,name,chart_data,birth_date,birth_time,time_zone,birth_lat,birth_lon,created_at,updated_at'
+      'id,user_id,name,chart_data,birth_date,birth_time,birth_utc_offset_minutes,time_zone,birth_lat,birth_lon,created_at,updated_at'
     )
     .single()
 
@@ -189,7 +203,7 @@ export async function listCharts(userId: string) {
   const { data, error } = await supabase
     .from('charts')
     .select(
-      'id,user_id,name,chart_data,birth_date,birth_time,time_zone,birth_lat,birth_lon,created_at,updated_at'
+      'id,user_id,name,chart_data,birth_date,birth_time,birth_utc_offset_minutes,time_zone,birth_lat,birth_lon,created_at,updated_at'
     )
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
@@ -202,7 +216,7 @@ export async function getChart(id: number, userId: string) {
   const { data, error } = await supabase
     .from('charts')
     .select(
-      'id,user_id,name,chart_data,birth_date,birth_time,time_zone,birth_lat,birth_lon,created_at,updated_at'
+      'id,user_id,name,chart_data,birth_date,birth_time,birth_utc_offset_minutes,time_zone,birth_lat,birth_lon,created_at,updated_at'
     )
     .eq('id', id)
     .eq('user_id', userId)

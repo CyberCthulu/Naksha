@@ -51,6 +51,7 @@ const completeProfile: UserProfileFields = {
   last_name: 'Lovelace',
   birth_date: '1815-12-10',
   birth_time: '12:00:00',
+  birth_utc_offset_minutes: null,
   birth_location: 'London, UK',
   time_zone: 'Europe/London',
   birth_lat: 51.5072,
@@ -58,7 +59,7 @@ const completeProfile: UserProfileFields = {
 }
 
 const PROFILE_SELECT =
-  'first_name,last_name,birth_date,birth_time,birth_location,time_zone'
+  'first_name,last_name,birth_date,birth_time,birth_utc_offset_minutes,birth_location,time_zone'
 
 async function settleAsyncWork() {
   for (let i = 0; i < 10; i += 1) {
@@ -264,6 +265,7 @@ describe('CheckEmailScreen', () => {
         last_name: completeProfile.last_name,
         birth_date: completeProfile.birth_date,
         birth_time: completeProfile.birth_time,
+        birth_utc_offset_minutes: completeProfile.birth_utc_offset_minutes,
         birth_location: completeProfile.birth_location,
         time_zone: completeProfile.time_zone,
         birth_lat: completeProfile.birth_lat,

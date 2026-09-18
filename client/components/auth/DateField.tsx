@@ -5,6 +5,11 @@ import { AppText } from '../ui/AppText'
 import FormField from '../ui/FormField'
 import { formStyles } from '../ui/formStyles'
 import { theme } from '../ui/theme'
+import {
+  civilDateFromPicker,
+  civilDateToPicker,
+  type CivilDate,
+} from '../../lib/time'
 
 export default function DateField({
   label,
@@ -12,11 +17,13 @@ export default function DateField({
   onChange,
 }: {
   label: string
-  value: Date | null
-  onChange: (d: Date) => void
+  value: CivilDate | null
+  onChange: (d: CivilDate) => void
 }) {
   const [open, setOpen] = useState(false)
-  const displayValue = value ? value.toDateString() : 'Select Date'
+  const displayValue = value
+    ? `${String(value.year).padStart(4, '0')}-${String(value.month).padStart(2, '0')}-${String(value.day).padStart(2, '0')}`
+    : 'Select Date'
 
   return (
     <FormField label={label}>
@@ -37,14 +44,14 @@ export default function DateField({
 
       {open && (
         <DateTimePicker
-          value={value || new Date()}
+          value={value ? civilDateToPicker(value) : new Date()}
           mode="date"
           themeVariant="dark"
           accentColor={theme.accent.base}
           display={Platform.OS === 'ios' ? 'compact' : 'calendar'}
           onChange={(_, d) => {
             setOpen(false)
-            if (d) onChange(d)
+            if (d) onChange(civilDateFromPicker(d))
           }}
         />
       )}

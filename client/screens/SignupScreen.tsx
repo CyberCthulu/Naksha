@@ -5,7 +5,11 @@ import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { signUpWithEmail } from '../lib/auth'
 import { normalizeZone, getDeviceTimeZoneNormalized } from '../lib/timezones'
-import { formatDateForDb, formatTimeForDb } from '../lib/time'
+import {
+  prepareBirthMoment,
+  type CivilDate,
+  type CivilTime,
+} from '../lib/time'
 
 import AuthContainer from '../components/auth/AuthContainer'
 import EmailField from '../components/auth/EmailField'
@@ -28,8 +32,11 @@ export default function SignupScreen() {
 
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  const [birthDate, setBirthDate] = useState<Date | null>(null)
-  const [birthTime, setBirthTime] = useState<Date | null>(null)
+  const [birthDate, setBirthDate] = useState<CivilDate | null>(null)
+  const [birthTime, setBirthTime] = useState<CivilTime | null>(null)
+  const [birthUtcOffsetMinutes, setBirthUtcOffsetMinutes] = useState<number | null>(
+    null
+  )
   const [birthLocation, setBirthLocation] = useState('')
   const [timeZone, setTimeZone] = useState('Etc/UTC')
   const [birthLat, setBirthLat] = useState<number | null>(null)
@@ -58,17 +65,28 @@ export default function SignupScreen() {
       return
     }
 
+    let birthMoment
+    try {
+      birthMoment = prepareBirthMoment(
+        birthDate,
+        birthTime,
+        normalized,
+        birthUtcOffsetMinutes
+      )
+    } catch (e: any) {
+      setError(e?.message ?? 'Enter a valid birth date and time.')
+      return
+    }
+
     setError('')
     setSubmitting(true)
-
-    const formattedDate = formatDateForDb(birthDate)
-    const formattedTime = formatTimeForDb(birthTime)
 
     const { error } = await signUpWithEmail(email.trim(), password, {
       first_name: firstName || undefined,
       last_name: lastName || undefined,
-      birth_date: formattedDate,
-      birth_time: formattedTime,
+      birth_date: birthMoment.birthDate,
+      birth_time: birthMoment.birthTime,
+      birth_utc_offset_minutes: birthMoment.birthUtcOffsetMinutes ?? undefined,
       birth_location: birthLocation || undefined,
       time_zone: normalized,
       birth_lat: birthLat ?? undefined,
@@ -87,8 +105,9 @@ export default function SignupScreen() {
       profile: {
         first_name: firstName || null,
         last_name: lastName || null,
-        birth_date: formattedDate,
-        birth_time: formattedTime,
+        birth_date: birthMoment.birthDate,
+        birth_time: birthMoment.birthTime,
+        birth_utc_offset_minutes: birthMoment.birthUtcOffsetMinutes,
         birth_location: birthLocation || null,
         time_zone: normalized,
         birth_lat: birthLat ?? null,
@@ -118,6 +137,8 @@ export default function SignupScreen() {
         setBirthDate={setBirthDate}
         birthTime={birthTime}
         setBirthTime={setBirthTime}
+        birthUtcOffsetMinutes={birthUtcOffsetMinutes}
+        setBirthUtcOffsetMinutes={setBirthUtcOffsetMinutes}
         birthLocation={birthLocation}
         setBirthLocation={setBirthLocation}
         timeZone={timeZone}

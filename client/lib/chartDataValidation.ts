@@ -43,6 +43,13 @@ function isNullableNumber(value: unknown): value is number | null {
   return value === null || isNumber(value)
 }
 
+function isNullableOffset(value: unknown): value is number | null {
+  return (
+    value === null ||
+    (isNumber(value) && Number.isInteger(value) && value >= -840 && value <= 840)
+  )
+}
+
 function isVersionNumber(value: unknown): value is number {
   return isNumber(value) && Number.isInteger(value) && value > 0
 }
@@ -132,10 +139,12 @@ export function validateChartData(value: unknown): ChartDataValidationResult {
   }
 
   const meta = value.meta
+  const birthUtcOffsetMinutes = meta.birth_utc_offset_minutes ?? null
   if (
     !isString(meta.birth_date) ||
     !isString(meta.birth_time) ||
     !isString(meta.time_zone) ||
+    !isNullableOffset(birthUtcOffsetMinutes) ||
     !isNullableNumber(meta.birth_lat) ||
     !isNullableNumber(meta.birth_lon)
   ) {
@@ -167,6 +176,7 @@ export function validateChartData(value: unknown): ChartDataValidationResult {
     name: isString(meta.name) ? meta.name : 'Natal Chart',
     birth_date: meta.birth_date,
     birth_time: meta.birth_time,
+    birth_utc_offset_minutes: birthUtcOffsetMinutes,
     time_zone: meta.time_zone,
     birth_lat: meta.birth_lat,
     birth_lon: meta.birth_lon,

@@ -50,6 +50,7 @@ const validProfile: ChartProfile = {
   last_name: 'Lovelace',
   birth_date: '1815-12-10',
   birth_time: '12:00:00',
+  birth_utc_offset_minutes: null,
   birth_location: 'London, UK',
   time_zone: 'Europe/London',
   birth_lat: 51.5072,
@@ -62,6 +63,7 @@ function makeChartData(overrides: Partial<ChartData> = {}): ChartData {
       name: 'Ada Natal Chart',
       birth_date: '1815-12-10',
       birth_time: '12:00:00',
+      birth_utc_offset_minutes: null,
       time_zone: 'Europe/London',
       birth_lat: 51.5072,
       birth_lon: -0.1276,
@@ -139,6 +141,7 @@ function mockChartLookup(data: unknown = null, error: unknown = null) {
   const query: any = {
     select: jest.fn(() => query),
     eq: jest.fn(() => query),
+    is: jest.fn(() => query),
     maybeSingle,
   }
 
@@ -309,6 +312,7 @@ describe('useChartData', () => {
         name: 'Ada Natal Chart',
         birth_date: '1815-12-10',
         birth_time: '12:00:00',
+        birth_utc_offset_minutes: null,
         time_zone: 'Europe/London',
         birth_lat: null,
         birth_lon: null,

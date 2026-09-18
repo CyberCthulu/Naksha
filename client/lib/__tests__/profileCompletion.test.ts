@@ -46,11 +46,13 @@ describe('profileCompletion', () => {
         ...completeProfile,
         birth_lat: 51.5072,
         birth_lon: -0.1276,
+        birth_utc_offset_minutes: -480,
       })
     ).toEqual({
       ...completeProfile,
       birth_lat: 51.5072,
       birth_lon: -0.1276,
+      birth_utc_offset_minutes: -480,
     })
   })
 })

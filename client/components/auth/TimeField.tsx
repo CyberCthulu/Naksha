@@ -5,6 +5,11 @@ import { AppText } from '../ui/AppText'
 import FormField from '../ui/FormField'
 import { formStyles } from '../ui/formStyles'
 import { theme } from '../ui/theme'
+import {
+  civilTimeFromPicker,
+  civilTimeToPicker,
+  type CivilTime,
+} from '../../lib/time'
 
 export default function TimeField({
   label,
@@ -12,11 +17,13 @@ export default function TimeField({
   onChange,
 }: {
   label: string
-  value: Date | null
-  onChange: (d: Date) => void
+  value: CivilTime | null
+  onChange: (d: CivilTime) => void
 }) {
   const [open, setOpen] = useState(false)
-  const displayValue = value ? value.toLocaleTimeString() : 'Select Time'
+  const displayValue = value
+    ? `${value.hour % 12 || 12}:${String(value.minute).padStart(2, '0')} ${value.hour >= 12 ? 'PM' : 'AM'}`
+    : 'Select Time'
 
   return (
     <FormField label={label}>
@@ -37,14 +44,14 @@ export default function TimeField({
 
       {open && (
         <DateTimePicker
-          value={value || new Date()}
+          value={value ? civilTimeToPicker(value) : new Date()}
           mode="time"
           themeVariant="dark"
           accentColor={theme.accent.base}
           display={Platform.OS === 'ios' ? 'spinner' : 'clock'}
           onChange={(_, d) => {
             setOpen(false)
-            if (d) onChange(d)
+            if (d) onChange(civilTimeFromPicker(d))
           }}
         />
       )}

@@ -8,11 +8,12 @@ import {
   CURRENT_CHART_CALCULATION_VERSION,
   CURRENT_CHART_SCHEMA_VERSION,
 } from '../chartDataVersions'
-import { birthToUTC } from '../time'
+import { resolveStoredBirthMoment } from '../time'
 
 const CONTEXT = {
   birthDate: '1815-12-10',
   birthTime: '12:00:00',
+  birthUtcOffsetMinutes: null,
   timeZone: 'Europe/London',
   birthLat: 51.5072,
   birthLon: -0.1276,
@@ -21,13 +22,14 @@ const CONTEXT = {
 function makeChartData(
   overrides: Partial<ChartData> = {}
 ): ChartData {
-  const { jsDate } = birthToUTC(
+  const { instant } = resolveStoredBirthMoment(
     CONTEXT.birthDate,
     CONTEXT.birthTime,
-    CONTEXT.timeZone
+    CONTEXT.timeZone,
+    CONTEXT.birthUtcOffsetMinutes
   )
   const houses = computeWholeSignHouses(
-    jsDate,
+    instant.utc,
     CONTEXT.birthLat,
     CONTEXT.birthLon
   )
@@ -41,6 +43,7 @@ function makeChartData(
       name: 'Ada Natal Chart',
       birth_date: CONTEXT.birthDate,
       birth_time: CONTEXT.birthTime,
+      birth_utc_offset_minutes: CONTEXT.birthUtcOffsetMinutes,
       time_zone: CONTEXT.timeZone,
       birth_lat: CONTEXT.birthLat,
       birth_lon: CONTEXT.birthLon,
@@ -67,13 +70,14 @@ describe('hydrateChartData', () => {
       houses: null,
       planet_houses: null,
     })
-    const { jsDate } = birthToUTC(
+    const { instant } = resolveStoredBirthMoment(
       CONTEXT.birthDate,
       CONTEXT.birthTime,
-      CONTEXT.timeZone
+      CONTEXT.timeZone,
+      CONTEXT.birthUtcOffsetMinutes
     )
     const expectedHouses = computeWholeSignHouses(
-      jsDate,
+      instant.utc,
       CONTEXT.birthLat,
       CONTEXT.birthLon
     )
@@ -86,6 +90,40 @@ describe('hydrateChartData', () => {
     )
     expect(hydrated).not.toHaveProperty('schema_version')
     expect(hydrated).not.toHaveProperty('calculation_version')
+  })
+
+  it('uses a persisted instant when a legacy fold chart has no offset choice', () => {
+    const instantUtc = '2025-11-02T09:30:00.000Z'
+    const chartData = makeChartData({
+      meta: {
+        ...makeChartData().meta,
+        birth_date: '2025-11-02',
+        birth_time: '01:30:00',
+        birth_utc_offset_minutes: null,
+        time_zone: 'America/Los_Angeles',
+        instant_utc: instantUtc,
+      },
+      houses: null,
+      planet_houses: null,
+    })
+
+    const hydrated = hydrateChartData({
+      chartData,
+      birthDate: '2025-11-02',
+      birthTime: '01:30:00',
+      birthUtcOffsetMinutes: null,
+      timeZone: 'America/Los_Angeles',
+      birthLat: CONTEXT.birthLat,
+      birthLon: CONTEXT.birthLon,
+    })
+
+    expect(hydrated.houses).toEqual(
+      computeWholeSignHouses(
+        new Date(instantUtc),
+        CONTEXT.birthLat,
+        CONTEXT.birthLon
+      )
+    )
   })
 
   it('preserves explicit version metadata while hydrating houses', () => {

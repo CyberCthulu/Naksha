@@ -32,6 +32,10 @@ export function profileFromAuthMetadata(md: any): UserProfileFields {
     last_name: md?.last_name ?? null,
     birth_date: md?.birth_date ?? null,
     birth_time: md?.birth_time ?? null,
+    birth_utc_offset_minutes:
+      typeof md?.birth_utc_offset_minutes === 'number'
+        ? md.birth_utc_offset_minutes
+        : null,
     birth_location: md?.birth_location ?? null,
     time_zone: md?.time_zone ?? null,
     birth_lat: typeof md?.birth_lat === 'number' ? md.birth_lat : null,

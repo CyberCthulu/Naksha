@@ -58,6 +58,7 @@ export type Database = {
           birth_lat: number | null
           birth_lon: number | null
           birth_time: string | null
+          birth_utc_offset_minutes: number | null
           chart_data: Json
           created_at: string | null
           id: number
@@ -71,6 +72,7 @@ export type Database = {
           birth_lat?: number | null
           birth_lon?: number | null
           birth_time?: string | null
+          birth_utc_offset_minutes?: number | null
           chart_data: Json
           created_at?: string | null
           id?: number
@@ -84,6 +86,7 @@ export type Database = {
           birth_lat?: number | null
           birth_lon?: number | null
           birth_time?: string | null
+          birth_utc_offset_minutes?: number | null
           chart_data?: Json
           created_at?: string | null
           id?: number
@@ -438,6 +441,7 @@ export type Database = {
           birth_location: string | null
           birth_lon: number | null
           birth_time: string | null
+          birth_utc_offset_minutes: number | null
           created_at: string | null
           email: string
           first_name: string | null
@@ -452,6 +456,7 @@ export type Database = {
           birth_location?: string | null
           birth_lon?: number | null
           birth_time?: string | null
+          birth_utc_offset_minutes?: number | null
           created_at?: string | null
           email: string
           first_name?: string | null
@@ -466,6 +471,7 @@ export type Database = {
           birth_location?: string | null
           birth_lon?: number | null
           birth_time?: string | null
+          birth_utc_offset_minutes?: number | null
           created_at?: string | null
           email?: string
           first_name?: string | null

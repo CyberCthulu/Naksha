@@ -12,6 +12,7 @@ const validChartData = {
     name: 'Ada Natal Chart',
     birth_date: '1815-12-10',
     birth_time: '12:00:00',
+    birth_utc_offset_minutes: null,
     time_zone: 'Europe/London',
     birth_lat: 51.5072,
     birth_lon: -0.1276,

@@ -7,6 +7,7 @@ import {
   type SaveChartInput,
 } from '../charts'
 import { DEFAULT_CHART_CALCULATION_PREFERENCES } from '../domainTypes'
+import { computeNatalPlanets } from '../astro'
 import {
   CURRENT_CHART_CALCULATION_VERSION,
   CURRENT_CHART_SCHEMA_VERSION,
@@ -20,10 +21,10 @@ jest.mock('../supabase', () => ({
 }))
 
 const CANONICAL_CHART_IDENTITY =
-  'user_id,birth_date,birth_time,time_zone,birth_lat,birth_lon'
+  'user_id,birth_date,birth_time,time_zone,birth_utc_offset_minutes,birth_lat,birth_lon'
 
 const CHART_SELECT =
-  'id,user_id,name,chart_data,birth_date,birth_time,time_zone,birth_lat,birth_lon,created_at,updated_at'
+  'id,user_id,name,chart_data,birth_date,birth_time,birth_utc_offset_minutes,time_zone,birth_lat,birth_lon,created_at,updated_at'
 
 function makeChartData(): ChartData {
   return {
@@ -31,6 +32,7 @@ function makeChartData(): ChartData {
       name: 'Test Natal Chart',
       birth_date: '1990-01-01',
       birth_time: '12:34:00',
+      birth_utc_offset_minutes: null,
       time_zone: 'America/Los_Angeles',
       birth_lat: 37.7749,
       birth_lon: -122.4194,
@@ -53,6 +55,7 @@ function makeSaveInput(
     name: chartData.meta.name,
     birth_date: chartData.meta.birth_date,
     birth_time: chartData.meta.birth_time,
+    birth_utc_offset_minutes: chartData.meta.birth_utc_offset_minutes,
     time_zone: chartData.meta.time_zone,
     birth_lat: chartData.meta.birth_lat,
     birth_lon: chartData.meta.birth_lon,
@@ -114,6 +117,7 @@ describe('buildChartData', () => {
       name: 'Test Natal Chart',
       birth_date: '1990-01-01',
       birth_time: '12:34:00',
+      birth_utc_offset_minutes: null,
       time_zone: 'America/Los_Angeles',
       birth_lat: 37.7749,
       birth_lon: -122.4194,
@@ -124,6 +128,7 @@ describe('buildChartData', () => {
         name: 'Test Natal Chart',
         birth_date: '1990-01-01',
         birth_time: '12:34:00',
+        birth_utc_offset_minutes: null,
         time_zone: 'America/Los_Angeles',
         birth_lat: 37.7749,
         birth_lon: -122.4194,
@@ -146,6 +151,7 @@ describe('buildChartData', () => {
       name: 'Test Natal Chart',
       birth_date: '1990-01-01',
       birth_time: '12:34:00',
+      birth_utc_offset_minutes: null,
       time_zone: 'America/Los_Angeles',
       birth_lat: 37.7749,
       birth_lon: -122.4194,
@@ -162,6 +168,7 @@ describe('buildChartData', () => {
       name: 'Test Natal Chart',
       birth_date: '1990-01-01',
       birth_time: '12:34:00',
+      birth_utc_offset_minutes: null,
       time_zone: 'America/Los_Angeles',
       birth_lat: 37.7749,
       birth_lon: -122.4194,
@@ -184,6 +191,7 @@ describe('buildChartData', () => {
       name: 'Test Natal Chart',
       birth_date: '1990-01-01',
       birth_time: '12:34:00',
+      birth_utc_offset_minutes: null,
       time_zone: 'America/Los_Angeles',
     })
 
@@ -198,6 +206,7 @@ describe('buildChartData', () => {
       name: 'Test Natal Chart',
       birth_date: '1990-01-01',
       birth_time: '12:34:00',
+      birth_utc_offset_minutes: null,
       time_zone: 'America/Los_Angeles',
       birth_lat: 37.7749,
       birth_lon: -122.4194,
@@ -226,6 +235,47 @@ describe('buildChartData', () => {
     )
   })
 
+  it.each([
+    ['America/Los_Angeles', '1997-09-15T20:55:00.000Z'],
+    ['Europe/London', '1997-09-15T12:55:00.000Z'],
+    ['Asia/Kolkata', '1997-09-15T08:25:00.000Z'],
+    ['Pacific/Kiritimati', '1997-09-14T23:55:00.000Z'],
+  ])(
+    'passes the exact resolved instant to astronomy for %s',
+    (timeZone, expectedUtc) => {
+      const chart = buildChartData({
+        name: 'Zone test',
+        birth_date: '1997-09-15',
+        birth_time: '13:55:00',
+        birth_utc_offset_minutes: null,
+        time_zone: timeZone,
+      })
+
+      expect(chart.meta.instant_utc).toBe(expectedUtc)
+      expect(chart.planets).toEqual(computeNatalPlanets(new Date(expectedUtc)))
+    }
+  )
+
+  it.each([
+    [-420, '2025-11-02T08:30:00.000Z'],
+    [-480, '2025-11-02T09:30:00.000Z'],
+  ])(
+    'passes the selected fold occurrence at offset %i to astronomy',
+    (birthUtcOffsetMinutes, expectedUtc) => {
+      const chart = buildChartData({
+        name: 'Fold test',
+        birth_date: '2025-11-02',
+        birth_time: '01:30:00',
+        birth_utc_offset_minutes: birthUtcOffsetMinutes,
+        time_zone: 'America/Los_Angeles',
+      })
+
+      expect(chart.meta.birth_utc_offset_minutes).toBe(birthUtcOffsetMinutes)
+      expect(chart.meta.instant_utc).toBe(expectedUtc)
+      expect(chart.planets).toEqual(computeNatalPlanets(new Date(expectedUtc)))
+    }
+  )
+
   it('rejects unsupported explicit calculation preferences', () => {
     expect(() =>
       buildChartData(
@@ -233,6 +283,7 @@ describe('buildChartData', () => {
           name: 'Test Natal Chart',
           birth_date: '1990-01-01',
           birth_time: '12:34:00',
+          birth_utc_offset_minutes: null,
           time_zone: 'America/Los_Angeles',
           birth_lat: 37.7749,
           birth_lon: -122.4194,
@@ -327,6 +378,7 @@ describe('saveChart', () => {
         name: input.name,
         birth_date: input.birth_date,
         birth_time: input.birth_time,
+        birth_utc_offset_minutes: input.birth_utc_offset_minutes,
         time_zone: input.time_zone,
         birth_lat: input.birth_lat,
         birth_lon: input.birth_lon,

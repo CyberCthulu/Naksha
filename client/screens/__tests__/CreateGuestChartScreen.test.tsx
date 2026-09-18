@@ -21,14 +21,18 @@ jest.mock('../../components/auth/AuthContainer', () => ({
 
 jest.mock('../../components/auth/DateField', () => ({
   __esModule: true,
-  default: ({ onChange }: { onChange: (date: Date) => void }) => {
+  default: ({
+    onChange,
+  }: {
+    onChange: (date: { year: number; month: number; day: number }) => void
+  }) => {
     const React = require('react')
     const { Pressable, Text } = require('react-native')
 
     return React.createElement(
       Pressable,
       {
-        onPress: () => onChange(new Date('2001-02-03T12:00:00.000Z')),
+        onPress: () => onChange({ year: 2001, month: 2, day: 3 }),
       },
       React.createElement(Text, null, 'Pick Date')
     )
@@ -37,14 +41,18 @@ jest.mock('../../components/auth/DateField', () => ({
 
 jest.mock('../../components/auth/TimeField', () => ({
   __esModule: true,
-  default: ({ onChange }: { onChange: (date: Date) => void }) => {
+  default: ({
+    onChange,
+  }: {
+    onChange: (time: { hour: number; minute: number }) => void
+  }) => {
     const React = require('react')
     const { Pressable, Text } = require('react-native')
 
     return React.createElement(
       Pressable,
       {
-        onPress: () => onChange(new Date(2001, 1, 3, 14, 45, 0)),
+        onPress: () => onChange({ hour: 14, minute: 45 }),
       },
       React.createElement(Text, null, 'Pick Time')
     )
@@ -245,6 +253,7 @@ describe('CreateGuestChartScreen', () => {
         last_name: null,
         birth_date: '2001-02-03',
         birth_time: '14:45:00',
+        birth_utc_offset_minutes: null,
         birth_location: 'London, UK',
         time_zone: 'Europe/London',
         birth_lat: 51.5072,
@@ -279,6 +288,7 @@ describe('CreateGuestChartScreen', () => {
         last_name: null,
         birth_date: '2001-02-03',
         birth_time: '14:45:00',
+        birth_utc_offset_minutes: null,
         birth_location: 'Unknown Place',
         time_zone: 'Europe/London',
         birth_lat: null,

@@ -23,7 +23,7 @@ import TextField from '../components/ui/TextField'
 import { theme } from '../components/ui/theme'
 
 const PROFILE_SELECT =
-  'first_name,last_name,birth_date,birth_time,birth_location,time_zone'
+  'first_name,last_name,birth_date,birth_time,birth_utc_offset_minutes,birth_location,time_zone'
 
 export default function CheckEmailScreen() {
   const navigation =
@@ -137,6 +137,7 @@ export default function CheckEmailScreen() {
               last_name: profile.last_name,
               birth_date: profile.birth_date,
               birth_time: profile.birth_time,
+              birth_utc_offset_minutes: profile.birth_utc_offset_minutes,
               birth_location: profile.birth_location,
               time_zone: profile.time_zone,
               birth_lat: profile.birth_lat,

@@ -6,7 +6,13 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import supabase from '../lib/supabase'
 import { normalizeZone, getDeviceTimeZoneNormalized } from '../lib/timezones'
-import { formatDateForDb, formatTimeForDb } from '../lib/time'
+import {
+  parseCivilDate,
+  parseCivilTime,
+  prepareBirthMoment,
+  type CivilDate,
+  type CivilTime,
+} from '../lib/time'
 import { geocodePlace } from '../lib/geocode'
 import type { UserRow } from '../lib/domainTypes'
 
@@ -35,8 +41,11 @@ export default function CompleteProfileScreen() {
 
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  const [birthDate, setBirthDate] = useState<Date | null>(null)
-  const [birthTime, setBirthTime] = useState<Date | null>(null)
+  const [birthDate, setBirthDate] = useState<CivilDate | null>(null)
+  const [birthTime, setBirthTime] = useState<CivilTime | null>(null)
+  const [birthUtcOffsetMinutes, setBirthUtcOffsetMinutes] = useState<number | null>(
+    null
+  )
   const [birthLocation, setBirthLocation] = useState('')
   const [timeZone, setTimeZone] = useState('Etc/UTC')
   const [birthLat, setBirthLat] = useState<number | null>(null)
@@ -92,16 +101,12 @@ export default function CompleteProfileScreen() {
           setBirthLon(data.birth_lon ?? null)
 
           if (data.birth_date) {
-            setBirthDate(new Date(`${data.birth_date}T12:00:00`))
+            setBirthDate(parseCivilDate(data.birth_date))
           }
           if (data.birth_time) {
-            const [h, m, s] = String(data.birth_time)
-              .split(':')
-              .map((v) => parseInt(v || '0', 10))
-            const t = new Date()
-            t.setHours(h || 0, m || 0, s || 0, 0)
-            setBirthTime(t)
+            setBirthTime(parseCivilTime(data.birth_time))
           }
+          setBirthUtcOffsetMinutes(data.birth_utc_offset_minutes ?? null)
         }
       } catch (e: any) {
         setError(e?.message ?? 'Failed to load profile.')
@@ -134,9 +139,6 @@ export default function CompleteProfileScreen() {
 
     setSaving(true)
     try {
-      const formattedDate = formatDateForDb(birthDate)
-      const formattedTime = formatTimeForDb(birthTime)
-
       const {
         data: { user },
       } = await supabase.auth.getUser()
@@ -165,13 +167,30 @@ export default function CompleteProfileScreen() {
         }
       }
 
+      let birthMoment
+      try {
+        birthMoment = prepareBirthMoment(
+          birthDate,
+          birthTime,
+          normalized,
+          birthUtcOffsetMinutes
+        )
+      } catch (e: any) {
+        Alert.alert(
+          'Birth time needs attention',
+          e?.message ?? 'Enter a valid birth date and time.'
+        )
+        return
+      }
+
       const { error: upErr } = await supabase
         .from('users')
         .update({
           first_name: firstName.trim(),
           last_name: lastName.trim(),
-          birth_date: formattedDate,
-          birth_time: formattedTime,
+          birth_date: birthMoment.birthDate,
+          birth_time: birthMoment.birthTime,
+          birth_utc_offset_minutes: birthMoment.birthUtcOffsetMinutes,
           birth_location: birthLocation.trim(),
           time_zone: normalized,
           birth_lat: lat,
@@ -223,6 +242,8 @@ export default function CompleteProfileScreen() {
         setBirthDate={setBirthDate}
         birthTime={birthTime}
         setBirthTime={setBirthTime}
+        birthUtcOffsetMinutes={birthUtcOffsetMinutes}
+        setBirthUtcOffsetMinutes={setBirthUtcOffsetMinutes}
         birthLocation={birthLocation}
         setBirthLocation={setBirthLocation}
         timeZone={timeZone}

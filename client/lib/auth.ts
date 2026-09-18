@@ -11,6 +11,7 @@ export type ProfileMeta = {
   last_name?: string
   birth_date?: string
   birth_time?: string
+  birth_utc_offset_minutes?: number
   birth_location?: string
   time_zone?: string
   birth_lat?: number

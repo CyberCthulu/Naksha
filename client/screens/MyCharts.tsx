@@ -152,6 +152,10 @@ export default function MyChartsScreen() {
         profile: {
           birth_date: meta.birth_date ?? row.birth_date ?? null,
           birth_time: meta.birth_time ?? row.birth_time ?? null,
+          birth_utc_offset_minutes:
+            meta.birth_utc_offset_minutes ??
+            row.birth_utc_offset_minutes ??
+            null,
           time_zone: meta.time_zone ?? row.time_zone ?? null,
           first_name: row.name ?? null,
           last_name: null,
