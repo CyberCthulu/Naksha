@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Platform, Pressable } from 'react-native'
+import { Alert, Platform, Pressable } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { AppText } from '../ui/AppText'
 import FormField from '../ui/FormField'
@@ -25,13 +25,31 @@ export default function DateField({
     ? `${String(value.year).padStart(4, '0')}-${String(value.month).padStart(2, '0')}-${String(value.day).padStart(2, '0')}`
     : 'Select Date'
 
+  const openPicker = () => {
+    if (value) {
+      try {
+        civilDateToPicker(value)
+      } catch (error) {
+        Alert.alert(
+          'Date picker unavailable',
+          error instanceof Error
+            ? error.message
+            : 'This date cannot be shown by the device date picker.'
+        )
+        return
+      }
+    }
+
+    setOpen(true)
+  }
+
   return (
     <FormField label={label}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
         accessibilityValue={{ text: displayValue }}
-        onPress={() => setOpen(true)}
+        onPress={openPicker}
         style={formStyles.input}
       >
         <AppText

@@ -39,6 +39,7 @@ export type BirthTimeResolutionErrorCode =
   | 'nonexistent'
   | 'ambiguous'
   | 'invalid-offset'
+  | 'unrepresentable-picker-date'
 
 export class BirthTimeResolutionError extends Error {
   constructor(
@@ -165,6 +166,19 @@ export function civilDateToPicker(value: CivilDate): Date {
 
   const pickerValue = new Date(2000, value.month - 1, value.day, 12, 0, 0, 0)
   pickerValue.setFullYear(value.year)
+
+  const roundTrip = civilDateFromPicker(pickerValue)
+  if (
+    roundTrip.year !== value.year ||
+    roundTrip.month !== value.month ||
+    roundTrip.day !== value.day
+  ) {
+    throw new BirthTimeResolutionError(
+      'unrepresentable-picker-date',
+      "This date cannot be represented by the device date picker in its current time zone."
+    )
+  }
+
   return pickerValue
 }
 
