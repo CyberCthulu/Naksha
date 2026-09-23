@@ -1,5 +1,11 @@
 // screens/JournalEditorScreen.tsx
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import {
   View,
   StyleSheet,
@@ -16,11 +22,17 @@ import {
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { upsertJournal } from '../lib/journals'
+import {
+  getOwnedJournal,
+  insertJournal,
+  updateJournal,
+} from '../lib/journals'
 import { AppText, MutedText } from '../components/ui/AppText'
 import FormField from '../components/ui/FormField'
 import { ScreenHeader } from '../components/ui/ScreenHeader'
 import TextField from '../components/ui/TextField'
+import { ErrorState } from '../components/ui/ErrorState'
+import { LoadingState } from '../components/ui/LoadingState'
 import { theme } from '../components/ui/theme'
 import type {
   JournalEditorParams,
@@ -29,6 +41,9 @@ import type {
 
 /** Shown as a hint, never as an error: nothing has gone wrong yet. */
 const EMPTY_RESPONSE_HINT = 'Write something before saving.'
+const UNCHANGED_HINT = 'Make a change before saving.'
+
+type EditorState = 'loading' | 'ready' | 'unavailable'
 
 type GuidanceContext = {
   source: string | null
@@ -39,6 +54,16 @@ type GuidanceContext = {
 
 function optionalString(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value : null
+}
+
+function parseJournalRouteId(value: unknown): number | null {
+  if (typeof value === 'number') {
+    return Number.isSafeInteger(value) && value > 0 ? value : null
+  }
+
+  if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value)) return null
+  const parsed = Number(value)
+  return Number.isSafeInteger(parsed) ? parsed : null
 }
 
 function createGuidanceContext(
@@ -79,37 +104,88 @@ export default function JournalEditorScreen() {
     nav.setOptions({ headerShown: false })
   }, [nav])
 
-  const initialId: number | undefined = route.params?.id
-  const isEditMode = initialId != null
-  const initialTitle: string = isEditMode
-    ? route.params?.title ?? ''
-    : route.params?.initialTitle ?? route.params?.title ?? ''
-  const initialContent: string = isEditMode
-    ? route.params?.content ?? ''
-    : route.params?.initialContent ?? route.params?.content ?? ''
+  const routeId = route.params?.id
+  const isEditMode = routeId != null
+  const initialId = isEditMode ? parseJournalRouteId(routeId) : null
+  const initialTitle = isEditMode ? '' : route.params?.initialTitle ?? ''
+  const initialContent = isEditMode ? '' : route.params?.initialContent ?? ''
   const promptTemplateId: string | null =
     route.params?.promptTemplateId ?? null
 
   const [saving, setSaving] = useState(false)
   const [title, setTitle] = useState(initialTitle)
   const [content, setContent] = useState(initialContent)
+  const [baseline, setBaseline] = useState({
+    title: initialTitle,
+    content: initialContent,
+  })
+  const [editorState, setEditorState] = useState<EditorState>(
+    isEditMode ? (initialId == null ? 'unavailable' : 'loading') : 'ready'
+  )
   const [guidanceContext] = useState<GuidanceContext | null>(() =>
     createGuidanceContext(route.params, isEditMode)
   )
+
+  const loadAttempt = useRef(0)
+  const loadExistingJournal = useCallback(async () => {
+    if (!isEditMode || initialId == null) return
+
+    const attempt = loadAttempt.current + 1
+    loadAttempt.current = attempt
+    setEditorState('loading')
+
+    try {
+      const row = await getOwnedJournal(initialId)
+      if (loadAttempt.current !== attempt) return
+
+      if (!row) {
+        setEditorState('unavailable')
+        return
+      }
+
+      const loaded = {
+        title: row.title ?? '',
+        content: row.content,
+      }
+      setTitle(loaded.title)
+      setContent(loaded.content)
+      setBaseline(loaded)
+      setEditorState('ready')
+    } catch {
+      if (loadAttempt.current === attempt) {
+        setEditorState('unavailable')
+      }
+    }
+  }, [initialId, isEditMode])
+
+  useEffect(() => {
+    void loadExistingJournal()
+    return () => {
+      loadAttempt.current += 1
+    }
+  }, [loadExistingJournal])
 
   /*
    * Only the response counts. A title alone is not something to save -- it
    * names an entry that does not exist yet.
    */
-  const canSave = content.trim().length > 0
-
   /*
    * Dirty is measured against what this editor session opened with, so
    * reopening an entry and changing nothing exits without a prompt. The fixed
    * guidance context is not part of it: the reader cannot edit it, so it can
    * never be unsaved work.
    */
-  const isDirty = title !== initialTitle || content !== initialContent
+  const isDirty = title !== baseline.title || content !== baseline.content
+  const canSave =
+    editorState === 'ready' &&
+    content.trim().length > 0 &&
+    (!isEditMode || isDirty)
+  const saveHint =
+    content.trim().length === 0
+      ? EMPTY_RESPONSE_HINT
+      : isEditMode && !isDirty
+        ? UNCHANGED_HINT
+        : undefined
 
   // Set when leaving is legitimate -- a completed save, or a confirmed
   // discard -- so the guard stands aside instead of asking twice.
@@ -118,6 +194,8 @@ export default function JournalEditorScreen() {
   const confirming = useRef(false)
 
   const onSave = async () => {
+    if (editorState !== 'ready') return
+
     const trimmedContent = content.trim()
     const trimmedTitle = title.trim()
 
@@ -125,11 +203,24 @@ export default function JournalEditorScreen() {
 
     try {
       setSaving(true)
-      await upsertJournal({
-        id: initialId,
-        title: trimmedTitle || null,
-        content: trimmedContent,
-        prompt_template: promptTemplateId,
+      const saved =
+        isEditMode && initialId != null
+          ? await updateJournal(initialId, {
+              ...(title !== baseline.title
+                ? { title: trimmedTitle || null }
+                : {}),
+              ...(content !== baseline.content
+                ? { content: trimmedContent }
+                : {}),
+            })
+          : await insertJournal({
+              title: trimmedTitle || null,
+              content: trimmedContent,
+              prompt_template: promptTemplateId,
+            })
+      setBaseline({
+        title: saved.title ?? '',
+        content: saved.content,
       })
       bypassGuard.current = true
       nav.goBack()
@@ -186,6 +277,46 @@ export default function JournalEditorScreen() {
 
   const headerTitle = isEditMode ? 'Edit entry' : 'New entry'
 
+  if (editorState === 'loading') {
+    return (
+      <View style={styles.screenState}>
+        <ScreenHeader
+          title={headerTitle}
+          onBack={() => nav.goBack()}
+          style={[styles.header, { paddingTop: insets.top + theme.space.xs }]}
+        />
+        <LoadingState label="Loading journal" />
+      </View>
+    )
+  }
+
+  if (editorState === 'unavailable') {
+    return (
+      <View style={styles.screenState}>
+        <ScreenHeader
+          title={headerTitle}
+          onBack={() => nav.goBack()}
+          style={[styles.header, { paddingTop: insets.top + theme.space.xs }]}
+        />
+        <ErrorState
+          testID="journal-editor-unavailable"
+          title="Journal entry unavailable"
+          description="This entry could not be loaded. It may be unavailable or you may not have access to it."
+          action={
+            initialId == null
+              ? { label: 'Back to journal', onPress: () => nav.goBack() }
+              : { label: 'Retry', onPress: loadExistingJournal }
+          }
+          secondaryAction={
+            initialId == null
+              ? undefined
+              : { label: 'Back to journal', onPress: () => nav.goBack() }
+          }
+        />
+      </View>
+    )
+  }
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -202,7 +333,7 @@ export default function JournalEditorScreen() {
             loading: saving,
             disabled: !canSave,
             accessibilityLabel: 'Save entry',
-            accessibilityHint: canSave ? undefined : EMPTY_RESPONSE_HINT,
+            accessibilityHint: saveHint,
           }}
           style={[
             styles.header,
@@ -289,7 +420,7 @@ export default function JournalEditorScreen() {
 
           <FormField
             label={guidanceContext ? 'Your reflection' : 'Entry'}
-            hint={canSave ? undefined : EMPTY_RESPONSE_HINT}
+            hint={saveHint}
           >
             <TextField
               placeholder={
@@ -311,6 +442,9 @@ export default function JournalEditorScreen() {
 }
 
 const styles = StyleSheet.create({
+  screenState: {
+    flex: 1,
+  },
   header: {
     paddingHorizontal: theme.space.xl,
   },

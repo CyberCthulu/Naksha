@@ -119,20 +119,13 @@ export default function JournalListScreen() {
    * header action can never drift into navigating differently.
    */
   const openNewEntry = useCallback(() => {
-    nav.navigate('JournalEditor', {
-      id: undefined,
-      title: '',
-      content: '',
-    })
+    nav.navigate('JournalEditor', undefined)
   }, [nav])
 
   const openEntry = useCallback(
     (row: JournalRow) => {
       nav.navigate('JournalEditor', {
         id: row.id,
-        title: row.title ?? '',
-        content: row.content,
-        promptTemplateId: row.prompt_template,
       })
     },
     [nav]

@@ -275,7 +275,7 @@ describe('JournalListScreen', () => {
     expect(mockNavigation.navigate.mock.calls.at(-1)).toEqual(fromEmpty)
     expect(fromEmpty).toEqual([
       'JournalEditor',
-      { id: undefined, title: '', content: '' },
+      undefined,
     ])
   })
 
@@ -305,9 +305,6 @@ describe('JournalListScreen', () => {
 
     expect(mockNavigation.navigate).toHaveBeenCalledWith('JournalEditor', {
       id: 1,
-      title: 'A settled morning',
-      content: 'First line of the entry.\nSecond line.',
-      promptTemplateId: 'guidance.prompt.attention',
     })
   })
 
