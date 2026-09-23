@@ -442,8 +442,8 @@ select set_config(
   true
 );
 select ok(
-  pg_temp.fk_rejected($$insert into public.journals (id, user_id, chart_id, content)
-    values (93901, '10000000-0000-0000-0000-000000000001', 91002, 'blocked')$$),
+  pg_temp.fk_rejected($$insert into public.journals (user_id, chart_id, content)
+    values ('10000000-0000-0000-0000-000000000001', 91002, 'blocked')$$),
   'authenticated user A cannot insert an A-owned journal referencing user B chart'
 );
 select ok(
