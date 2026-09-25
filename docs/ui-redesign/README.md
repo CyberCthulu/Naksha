@@ -1,8 +1,8 @@
 # Naksha UI/UX Redesign
 
-Status: active-screen visual migration implemented; final native/accessibility acceptance remains. Reviewed 2026-09-12.
+Status: implemented visual reference; final native/accessibility acceptance remains. Reviewed against current repository 2026-09-25.
 Platform priority: Android first
-Product baseline: `ab9c16c1`; 58 suites / 737 tests passing. Current release work: [release hardening](../release-hardening-plan.md).
+Implementation checkpoint: `ab9c16c1`, 58 suites / 737 tests. Current post-R3 baseline: 62 suites / 793 tests plus 131 combined pgTAP assertions. Current release work: [release hardening](../release-hardening-plan.md).
 Visual reference: `reference/naksha-ui-north-star.png`
 
 ## Purpose

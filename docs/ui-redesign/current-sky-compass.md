@@ -1,5 +1,7 @@
 # Current-sky compass
 
+> **Current implementation reference.** Reviewed against the repository on 2026-09-25. Remaining Sky Now accessibility, motion, and independent-reference release gates are tracked in [../release-hardening-plan.md](../release-hardening-plan.md).
+
 The dashboard's **Sky Now** card sits above the Today / This Week tabs. It shares the birth chart's interactive zodiac wheel and translucent card surface. Tap a planet or aspect for its readout, pinch to zoom, or expand the planet list for accessible position selection.
 
 Positions are calculated locally for the current instant using Astronomy Engine through `computeTransitPlanets`. The Sun, Moon, and eight planets use geocentric tropical longitudes, matching the birth chart. Aspects compare these current positions to each other. This view requires neither birth details nor location and has no houses or Ascendant.

@@ -1,6 +1,6 @@
 # Naksha V1 Product Gap Audit - Codex
 
-> **Historical product audit snapshot.** This audit was last substantively evaluated on 2026-06-29, before the D0-D6.3 depth and architecture pass. Its classifications and recommendations are retained as decision history and should not be used as current implementation status. See `docs/naksha-codebase-handoff.md` for the canonical engineering state, `docs/Feature-List.md` for current product scope, and `docs/naksha-decomposition-roadmap.md` for the Android release sequence. The current recorded baseline is 25 suites / 183 tests.
+> **Historical product audit snapshot.** This audit was last substantively evaluated on 2026-06-29, before D0-D6.3 and release hardening R1–R3. Its classifications, baselines, and recommendations are decision history rather than current status. See [naksha-codebase-handoff.md](naksha-codebase-handoff.md) for current engineering state, [Feature-List.md](Feature-List.md) for current scope, and [release-hardening-plan.md](release-hardening-plan.md) for the Android release sequence. The post-R3 repository baseline is 62 suites / 793 tests plus 131 combined R1–R3 pgTAP assertions.
 
 Generated: 2026-06-20
 Last updated: 2026-06-29 — deterministic DailyGuidance and WeeklyForecast supersede stale forecast findings.

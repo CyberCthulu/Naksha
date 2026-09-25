@@ -1,10 +1,9 @@
 # Naksha Architecture and Release Roadmap
 
-Last updated: 2026-09-12
-Status: D0-D6.3, active UI migration, and Sky Now are implemented; release hardening and native acceptance are next.
-Current execution plan: [release-hardening-plan.md](release-hardening-plan.md).
-Canonical engineering status: `docs/naksha-codebase-handoff.md`
-Canonical product scope: `docs/Feature-List.md`
+> **Historical architecture roadmap.** This records the decomposition sequence through 2026-09-12. R1–R3 have since completed and its baseline and remaining-release sequence are superseded. Use [release-hardening-plan.md](release-hardening-plan.md) for current execution, [naksha-codebase-handoff.md](naksha-codebase-handoff.md) for current engineering state, and [Feature-List.md](Feature-List.md) for product scope.
+
+Last substantively updated: 2026-09-12
+Status at that checkpoint: D0-D6.3, the active UI migration, and Sky Now were implemented.
 
 ## 1. Purpose
 
@@ -12,7 +11,7 @@ This document records the completed architecture work and the remaining sequence
 
 The governing rule remains conservative: decompose a large surface only when a concrete product or release task benefits from it. Naksha does not need a broad rewrite before Android release.
 
-## 2. Current Architecture
+## 2. Architecture at the 2026-09-12 checkpoint
 
 Naksha is an Expo/React Native/TypeScript application backed by Supabase. The active V1 consists of:
 
@@ -25,7 +24,7 @@ Naksha is an Expo/React Native/TypeScript application backed by Supabase. The ac
 - Shared saved-chart hydration, typed active navigation, and explicit persisted ChartData compatibility/version semantics.
 - Sky Now with all ten current bodies, independently checked planetary positions, explicit aspect rules, and reflective pair meanings.
 
-The current automated baseline is 58 Jest suites / 737 tests, with typecheck, lint, and `git diff --check` passing.
+The checkpoint automated baseline was 58 Jest suites / 737 tests, with typecheck, lint, and `git diff --check` passing.
 
 ## 3. Completed Stabilization Foundation
 
@@ -78,7 +77,7 @@ Local typecheck/test/lint coverage is strong, but CI, automated Supabase reset/d
 
 The current deterministic guidance system is coherent and should be stabilized through on-device UX review. It does not include AI, saved forecast history, notifications, retrogrades, lunar phases, applying/separating timing, or outer planets as personalized forecast candidates. Those additions remain post-V1 decisions. Sky Now separately displays all ten current bodies.
 
-## 6. Immediate Android V1 Roadmap
+## 6. Historical Android V1 Roadmap
 
 The detailed [release-hardening plan](release-hardening-plan.md) supersedes the earlier redesign-first sequence. Work in reviewable packages:
 
@@ -125,7 +124,7 @@ Before synastry, define reusable birth-profile identity and relationship metadat
 - Keep active routes governed by `RootStackParamList`; preserve component callback boundaries rather than passing navigation objects downward.
 - Create incremental migrations for future schema changes; never edit the pulled remote-schema baseline.
 
-## 9. Verification Baseline
+## 9. Checkpoint Verification Baseline
 
 For application slices:
 
@@ -138,6 +137,6 @@ cd ..
 git diff --check
 ```
 
-Current recorded result: 58 suites / 737 tests pass, with typecheck, lint, and diff-check passing.
+Recorded checkpoint result: 58 suites / 737 tests passed, with typecheck, lint, and diff-check passing.
 
 For documentation-only work, verify `git status --short`, `git diff --stat`, `git diff`, and `git diff --check`, and confirm no application/source files changed.

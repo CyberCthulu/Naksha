@@ -1,180 +1,237 @@
 # Naksha release-hardening plan
 
-Reviewed **12 September 2026 (Pacific)**, at commit **`ab9c16c1`**, branch **`ui/v2-redesign`**. This is the current execution plan; [the earlier review](release-readiness-2026-09-12.md) remains historical evidence. Review and documentation only: no application fixes, dependency updates, migrations, deployments, store submissions, or live-user operations were performed.
+Updated **25 September 2026 (Pacific)** at commit **`7027373504035be1fad5e0665231527854f64ab2`**, branch **`ui/v2-redesign`**. This is the canonical current roadmap. The [12 September readiness review](release-readiness-2026-09-12.md) remains a historical snapshot.
 
 ## Release decision and scope
 
-**Core free V1 and its visual design are substantially implemented. Public release is not approved.** Proceed with targeted correctness, data integrity, reliability, accessibility, and production-delivery work. Android remains first; iOS needs its own native qualification.
+Naksha's free V1 feature loop and primary visual design are substantially implemented. Public Android release is not yet approved. Android remains the launch platform; iOS follows after Android launch unless requirements change.
 
-Include existing auth/profile flows, Tropical/Whole Sign natal and guest charts, saved charts, daily/weekly guidance, Sky Now with authored aspect readings, and journaling. Preserve the shared atmosphere, translucent surfaces, reduced-motion behavior, and user-approved chart interactions. AI, synastry, notifications, subscriptions, reports, extra astrology systems, and a new redesign are outside this hardening plan.
+R1–R3 are **repository complete**: their implementation, local database verification, application regression gates, and independent reviews are complete. This does not by itself establish that every reviewed migration is deployed to production or that a store candidate has passed real-device acceptance. Production versions and behavior must be verified during release-candidate work.
 
-### Fresh verification
+The V1 scope remains accounts/profile, Tropical/Whole Sign natal and guest charts, saved charts, daily and weekly guidance, Sky Now, and private journaling. AI, synastry, social features, subscriptions, reports, extra astrology systems, and another UI redesign are outside release hardening.
 
-| Check | Current result | Scope of evidence |
+## Roadmap status
+
+| Slice | Status | Scope |
 | --- | --- | --- |
-| `cd client && npm run typecheck` | Passed | Current TypeScript source |
-| `cd client && npm run lint` | Passed | Current ESLint checks |
-| `cd client && npm test -- --runInBand` | **58 suites / 737 tests passed** | Includes Sky Now, all 45 pair lookups across five aspects, reference positions, and orb boundaries; not backend integration or native QA |
-| `CI=1 EXPO_OFFLINE=1 EXPO_NO_DOTENV=1 npx expo export --platform all` | Android and iOS Hermes bundles passed | JavaScript/assets only; no native compilation, signing, store install, or production environment proof |
-| Offline `expo install --check` | Passed with limitations | Offline validation is unreliable; picker 2.11.3 deliberately excluded and must be preserved |
-| `npm audit --omit=dev --json` | **41 affected package entries: 1 critical, 19 high, 20 moderate, 1 low** | Current npm advisory response, not 41 demonstrated app exploits; build tools appear in this graph |
-| Birth date serialization reproduction | **Failed correctness check** | Called current `formatDateForDb` under two device time zones; examples below |
-| Nonexistent local birth time reproduction | **Silently shifted by one hour** | Current `birthToUTC`, installed Luxon, Los Angeles DST gap |
+| R1 | ✅ **COMPLETE** | Relational ownership and database integrity |
+| R2 | ✅ **COMPLETE** | Civil birth date/time correctness |
+| R3 | ✅ **COMPLETE** | Journal and client write-surface integrity |
+| R4 | 🔵 **NEXT** | Authentication recovery and Android security/identity |
+| R5 | ⏳ **PENDING** | Astrology calculation correctness |
+| R6 | ⏳ **PENDING** | Remaining engineering release readiness |
 
-The npm query initially failed under restricted networking; a read-only retry succeeded. Review logs are in `/tmp/naksha-release-tests.log`, `/tmp/naksha-release-audit.json`, and `/tmp/naksha-release-export.log`; exports are in `/tmp/naksha-release-review-export`. These are temporary review artifacts, not release records. CI/candidate artifacts should be retained durably with their commit/build IDs.
+After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → Android launch → stabilization → iOS → post-launch expansion**.
 
-The earlier wheel prop-contract test failure is resolved. Sky Now now has unrounded aspect classification, explicit rules, independent JPL position fixtures for all ten bodies at one timestamp, and 45 pair themes with five aspect dynamics. Its minute refresh already pauses off-route/inactive; changing that cadence is not a release task. Passing those checks does not establish birth-date input correctness, Ascendant accuracy for all locations, or physical-device accessibility.
+## R1 — Relational ownership and database integrity
 
-Not verified in this review: hosted Supabase policies/data, SMTP/domain configuration, geocoder entitlement, current EAS build history or signing credentials, store accounts/listings, live privacy/support pages, native Android/iOS release artifacts, device performance, backup restore, and production email/deletion behavior. The earlier development-build history and user walkthrough remain historical evidence, not qualification of a new candidate.
+**Status: REPOSITORY COMPLETE. Production deployment must be verified before release.**
 
-## Findings and acceptance criteria
+**Problem.** Row ownership policies verified the child row's `user_id`, while parent foreign keys historically verified only that a parent ID existed. A user-owned child could therefore reference another user's parent and potentially interfere with deletion.
 
-**P0:** resolve before distributing an external beta because another account's data operations may be affected. **P1:** release gate; correctness, account/journal safety, and exposed service/deep-link issues should also be resolved before external beta. **P2:** bounded follow-up that needs an explicit disposition and acceptance evidence. “Confirmed” below means source inspection or the stated local reproduction, not a live exploit.
+**Completed invariant.** Composite same-owner foreign keys now enforce journals → charts, conversations → charts, reports → charts, and messages → conversations. Optional chart relationships preserve `NULL`; PostgreSQL 17 column-specific `ON DELETE SET NULL (chart_id)` preserves the child's non-null owner. The migration fails on invalid legacy relationships instead of silently deleting, shifting, or reassigning data. Dormant conversations/messages/reports client writes and unnecessary client `TRUNCATE`, `REFERENCES`, and `TRIGGER` privileges were removed; `service_role` behavior remains available.
 
-### RH-01 — P0: enforce ownership of related database records
+**Verification.** Clean replay and pre-R1 upgrade replay passed. Two-user pgTAP coverage proved same-owner success, cross-owner insert/update rejection, nullable-parent behavior, deletion isolation, chart/journal survival semantics, dormant-table denial, service behavior, and account-deletion dependency order.
 
-**Confirmed in committed schema; deployed state unverified.** [Initial migration](../supabase/migrations/20260508015720_remote_schema.sql) policies check the inserted/updated row's `user_id`, while chart/conversation foreign keys reference only parent IDs. Later migrations do not add matching parent ownership. An owned conversation/report can therefore refer to another user's chart if that schema is deployed, potentially blocking that owner's chart/account deletion. This review did not establish cross-user reading. [PostgreSQL documents](https://www.postgresql.org/docs/current/ddl-rowsecurity.html) that referential-integrity checks bypass row security.
+**Review.** Independently reviewed and approved, with non-blocking privilege-hardening notes completed before the R1 commit.
 
-Work:
+## R2 — Civil birth date/time correctness
 
-- Revoke unused client write permissions/policies for unshipped features where appropriate; hiding UI does not revoke API access.
-- Enforce same-owner parents for every retained relationship on insert and update, including optional journal chart links. Choose constraints and/or policies that also preserve intended deletion behavior.
-- Inspect existing invalid relationships safely before adding constraints. Write an incremental migration; do not rewrite migration history or delete unrelated users' records as a cleanup shortcut.
-- Exercise [delete-account](../supabase/functions/delete-account/index.ts) through partial failures and retries; keep service credentials server-side and derive identity from the verified JWT.
+**Status: REPOSITORY COMPLETE. Production deployment must be verified before release.**
 
-**Accept:** disposable two-account SQL/integration tests reject foreign parent references and owner reassignment, preserve own reads/writes/deletes, allow nullable links where intended, and prove one user cannot block another's chart/account deletion. Clean migration reset and upgrade both pass. Retest against the deployed candidate backend with disposable accounts.
+**Problem.** Civil calendar dates and wall-clock times were carried as JavaScript `Date` instants in parts of the pipeline. UTC conversion could move the stored birth date, malformed values could normalize, and DST gaps/folds were resolved silently.
 
-### RH-02 — P1: preserve birth calendar dates and resolve ambiguous times
+**Completed invariant.** `CivilDate` and `CivilTime` are the persisted application contract. Validated civil fields serialize directly to `YYYY-MM-DD` and `HH:mm:ss`. One authoritative civil + IANA zone + optional fold offset boundary resolves the exact UTC instant. DST gaps are rejected, fold occurrences require an explicit choice, and `birth_utc_offset_minutes` on users/charts reproduces that choice. Canonical chart identity includes the nullable fold offset with `NULLS NOT DISTINCT`. Legacy rows were preserved without guessed correction. Picker adapters reject device-local skipped calendar dates rather than substituting another date.
 
-**Newly reproduced correctness defect.** [time.ts](../client/lib/time.ts) uses `d.toISOString().split('T')[0]` to save a date selected/displayed in the device's local calendar. It is called from signup, profile editing, and guest-chart creation.
+**Verification.** Coverage includes negative, positive, fractional, and UTC+14 offsets; leap dates; repeated hydrate/save cycles; real process time-zone changes; DST gaps and folds; invalid values; exact calculation instants; and Pacific/Apia and Pacific/Fakaofo's skipped 2011-12-30. The verified post-R2 application baseline was **62 suites / 784 tests**.
 
-| Device time zone / picker value | Date shown | Date currently serialized |
-| --- | --- | --- |
-| Asia/Kolkata, 1997-09-15 00:30 | September 15 | **1997-09-14** |
-| America/Los_Angeles, 1997-09-15 23:30 | September 15 | **1997-09-16** |
+**Review.** Independently reviewed and approved, with skipped-date and real device-time-zone regression notes completed before the R2 commit.
 
-These are local executions of the actual helper, not screenshots or a claim about how often a specific native picker emits these times. The helper's contract is wrong for a calendar date. Existing display-date tests do not cover this save path. Profile hydration at local noon also needs testing in extreme positive offsets.
+## R3 — Journal and client write-surface integrity
 
-`birthToUTC('2026-03-08', '02:30:00', 'America/Los_Angeles')` currently resolves to **03:30 -07:00**, although 02:30 did not exist on that day. Repeated fall-back hours also have no explicit user choice. A numerically accurate ephemeris cannot repair a wrong input instant.
+**Status: REPOSITORY COMPLETE. Production deployment must be verified before release.**
 
-**Work/accept:** serialize selected calendar fields without converting them through UTC; validate full date/time components; round-trip local input to catch DST gaps; reject nonexistent times with useful correction guidance and require a choice for ambiguous offsets. Test signup/edit/guest round trips in negative, positive, fractional, and extreme offsets, leap dates, DST gaps/folds, and devices in a different zone from the birthplace. Existing records cannot be safely bulk-shifted without knowing the intended birth date: define a user-confirmed correction path and chart rebuild/version implications. Preserve supported saved-chart compatibility.
+**Problem.** A shared journal upsert could turn omitted edit fields into `NULL`, the editor trusted route content before loading an owned row, and broad database grants allowed authenticated clients to choose or update server-generated journal/chart IDs. `usage_events` also retained an unused V1 write surface.
 
-### RH-03 — P1: make authentication recover from every failure path
+**Completed invariant.** Journal creation, patch update, and owned fetch are separate operations: `insertJournal()`, `updateJournal()`, and `getOwnedJournal()`. Edit links use the ID only to fetch the authoritative owned record. Missing, foreign, malformed, and deleted rows remain non-editable; failed saves preserve typed text and dirty state. Content-only updates omit unrelated metadata. Column-level grants allow only intended journal/chart write columns, prevent client control of primary keys, reduce active sequence access to `USAGE`, remove unused `usage_events` client writes, and preserve `service_role`.
 
-**Confirmed source gaps.** [App startup](../client/App.tsx) awaits `getSession` without a rejection/retry path. [Login](../client/screens/LoginScreen.tsx), [Signup](../client/screens/SignupScreen.tsx), and [ResetPassword](../client/screens/ResetPasswordScreen.tsx) lack complete `try/finally` recovery. Reset's “Back to Login” can target a route absent while a recovery session is authenticated. [Profile](../client/screens/ProfileScreen.tsx) ignores returned `signOut` errors.
+**Verification.** The post-R3 gate passed **62/62 application suites and 793/793 tests**, TypeScript, lint, and `git diff --check`. R3 pgTAP passed **47/47**; combined R1/R2/R3 pgTAP passed **131/131**. Clean replay, pre-R3 → R3 upgrade with representative rows, canonical chart upsert, R1/R2 compatibility, and service-role account deletion all passed.
 
-**Work/accept:** normalize returned and thrown errors, always clear pending controls, provide a recoverable startup failure, define recovery cancellation/logout semantics, and validate destinations against session state. Add Login/Signup screen tests plus exceptional reset/startup branches. Verify expired/reused links, cold/warm callbacks, repeated submits, session expiry, storage rejection, logout failure, and account A → account B isolation. Deletion must clear local access even if a subsequent remote logout fails. Do not silently skip failed writes during profile bootstrap.
+**Review.** Independent Claude/Opus verdict: **APPROVE WITH NON-BLOCKING NOTES**. Those notes remain R6 defense-in-depth follow-up and are not R3 blockers.
 
-### RH-04 — P1: protect journal edits and validate external navigation
+## R4 — Authentication recovery and Android security/identity
 
-**Source-supported native navigation risk.** [JournalEditor](../client/screens/JournalEditorScreen.tsx) cancels `beforeRemove`; the installed native-stack explicitly warns that this is not fully supported. Adopt the supported [navigation prevention hook](https://reactnavigation.org/docs/preventing-going-back/) and retain a single discard decision.
+**Status: NEXT.** Keep this as one bounded release slice with two connected outcomes: a recoverable account lifecycle and a production-identifiable Android artifact.
 
-**Additional source-supported edit risk:** [App linking](../client/App.tsx) exposes `journal/edit/:id?`, but the editor initializes existing content only from route params and does not fetch the owned row by ID. A link containing an ID but no content opens a blank edit state; saving replacement text can overwrite that row. This path was inspected, not exercised against live data.
+### Authentication and recovery
 
-**Work/accept:** validate external parameter types and lengths; fetch the owned entry before enabling edit/save, or stop exposing unsupported edit links. Missing/deleted/foreign IDs get a safe result. Preserve entry metadata on edits. Test header/system/gesture back, Keep editing, confirmed discard, save failure/success, duplicate saves, and direct links with/without content. Record an explicit draft-recovery decision for OS termination; a navigation guard alone cannot preserve an in-memory draft after process death.
+- Make startup `getSession()` rejection resolve into an explicit recoverable state instead of leaving initialization pending.
+- Give login, signup, verification, and recovery asynchronous paths reliable `try/catch/finally` behavior, usable retry, and clear session-failure UX.
+- Cover CheckEmailScreen's unhandled rejection path.
+- Define recovery, logout, reset, account-switching, expired-session, and account A → account B behavior without stale private state.
+- After successful account deletion, do not let a later `signOut` failure falsely report that deletion itself failed.
+- Remove the navigation reset race that may target Dashboard before the authenticated navigator has registered it.
+- Add exceptional-path tests and complete real-device cold/warm callback, retry, cancellation, and network-failure checks.
 
-### RH-05 — P1: harden birthplace lookup and its production service
+### Android production identity and security
 
-**Confirmed:** [geocode.ts](../client/lib/geocode.ts) embeds `EXPO_PUBLIC_OPENCAGE_KEY`, performs direct vendor requests, and has no request deadline. [Autocomplete](../client/components/auth/LocationAutocompleteField.tsx) invalidates request IDs only when a new request starts, allowing an older response after shortening a query, selection, or unmount.
+- Replace the current/historical development identity `client` with the production app name **Naksha**.
+- Choose and record the final intentional Android package/application ID and production deep-link scheme.
+- Configure release/upload signing with documented ownership and recovery.
+- Remove unnecessary Android permissions and inspect the merged release manifest.
+- Decide and test session-token backup behavior, including `android:allowBackup` and the Android data-extraction policy.
+- Verify production build name, package ID, scheme, version, certificate, permissions, environment, and assets.
+- Produce and inspect a signed Android AAB. Store delivery belongs to the later RC phase.
 
-**Work/accept:** put the vendor credential behind a controlled service, with input/length limits, deadlines, quota/abuse controls, redacted logs, and a key rotation plan. Signup uses this before authentication, so requiring a normal user session alone will break onboarding. Verify the vendor's production allowance, caching/logging terms, and query minimization. OpenCage [recommends a backend proxy for mobile clients](https://opencagedata.com/guides/how-to-protect-your-api-key). Cancel/invalidate lookup work on every query change, selection, and unmount; reject invalid coordinate ranges and malformed responses. Test out-of-order responses, offline/timeout/quota failure, and typed versus selected location semantics. No geocoder secret appears in the release bundle.
+**R4 exit gate.** Auth failure paths recover without stranded controls or invalid navigation; account deletion messaging reflects the actual result; account switching does not leak state; and a signed Android AAB has the intended identity, signing, links, permissions, and backup policy. Android remains first; no iOS qualification is required in R4.
 
-### RH-06 — P1: close the accuracy and freshness gaps beyond Sky Now
+## R5 — Astrology calculation correctness
 
-**Partial validation already exists.** Preserve the [JPL fixtures and rule checks](ui-redesign/current-sky-compass.md). [Whole Sign houses](../client/lib/astro.ts) still use an approximate Ascendant calculation with no comparable independent numerical coverage. [Dashboard guidance](../client/screens/DashboardScreen.tsx) refreshes on navigation focus but has no explicit resume/local-day/week rollover contract. Sky Now's own timer does not refresh the parent guidance.
+**Status: PENDING.** Independent review found the planetary longitude, aspect, and Whole Sign work generally strong. The remaining high-value calculation issue is Ascendant behavior at high latitudes, where the current branch may select the opposite horizon intersection.
 
-**Work/accept:** add independent reference fixtures spanning dates, hemispheres, east/west longitude, high latitudes, and Ascendant sign boundaries. Define supported accuracy/range and behavior where a reference cannot be met. If output semantics change, assess `calculation_version` and saved-data handling; never rewrite user charts silently. Rebuild guidance when its relevant local date/week changes or on resume when stale, preserving the existing forecast selection semantics. Test midnight, Monday, DST, and device/profile timezone differences. Validate account-changing requests cannot publish stale results.
+R5 is limited to:
 
-### RH-07 — P1: provide equivalent accessible exploration and final UI acceptance
+- verify rising versus setting intersection selection;
+- correct high-latitude Ascendant behavior without redesigning the astrology engine;
+- add northern and southern high-latitude fixtures;
+- add Ascendant sign-boundary fixtures; and
+- compare results with independent astronomical/reference sources across supported ranges.
 
-**Confirmed structural gap:** Sky Now exposes accessible planet buttons, but its new aspect readings are selected through chart-line gestures. The SVG is hidden from assistive technology and there is no equivalent aspect-selection list. Add a compact accessible path to select/read each current aspect. [Auth fields](../client/components/auth/EmailField.tsx) also need explicit label association and error announcements verified; visual labels alone do not prove accessibility.
+If a calculation semantic changes, assess `calculation_version`, persisted-chart compatibility, and user-visible behavior. Do not silently rewrite saved charts. Planet systems, aspect rules, and Whole Sign conventions are not being redesigned.
 
-**Accept:** TalkBack can reach every aspect reading and core action; VoiceOver too if Apple ships. Test large text, long readings, empty/error/loading states, keyboard reachability, focus order, reduced motion, contrast over moving skies, and screen reader error recovery on the candidate. Natal chart selection glow still defaults to enabled through [ChartScreenContent](../client/components/charts/ChartScreenContent.tsx): gate it by app/route activity as Sky Now already does. Measure performance on a named modest Android device; do not infer battery/frame-rate claims from desktop timing.
+## R6 — Remaining engineering release readiness
 
-### RH-08 — P1: finish privacy, support, and honest product controls
+**Status: PENDING.** Consolidate the remaining bounded engineering work here. Do not create additional R slices for routine follow-up.
 
-**Confirmed placeholder:** “Export my data” in [Profile](../client/screens/ProfileScreen.tsx) only displays a future-feature alert and unspecified support instruction. No working policy/support/deletion web path was established. Session tokens use [AsyncStorage](../client/lib/supabase.ts); Android backup is enabled.
+### CI and quality gates
 
-**Work/accept:** ship a working export or accurately named data-request flow with a monitored destination and identity verification; link public privacy/support information before signup and in Profile. Inventory account/birth/guest/journal/location data and provider logs/backups; establish retention/deletion behavior without claiming end-to-end encryption. Choose and test credential storage/backup behavior. Hide unimplemented billing/promotional controls. Verify complete account deletion and retry behavior with related records, then handle a real disposable data/support request end to end.
+- Add automated typecheck, lint, Jest, and, where practical, local database/pgTAP gates.
+- Keep bundle/configuration checks appropriate to a release candidate.
+- The external Droid audit demonstrated the value of automation, but its claim that committed pre-R3 HEAD contained an `upsertJournal` test/implementation mismatch was incorrect. The actual committed pre-R3 HEAD was independently verified green; do not repeat that claim.
 
-Apple requires in-app deletion initiation for account-creating apps; Google additionally requires a usable web deletion-request resource. Naksha's server deletion implementation is a foundation, not proof of release-build completion. [Apple account deletion](https://developer.apple.com/support/offering-account-deletion-in-your-app/), [Google account deletion](https://support.google.com/googleplay/android-developer/answer/13327111?hl=en). Finalize disclosures against actual behavior and launch markets.
+### Supabase and generated types
 
-### RH-09 — P1: triage dependencies and deliver the real production identity
+- After reviewed migrations are deployed to the authoritative environment, regenerate `database.types.ts` through the repository's established workflow.
+- Resolve existing generated relationship-metadata drift and verify deployed migration/function versions.
 
-**Confirmed:** app name/slug remain `client`; Android application ID/namespace are `com.anonymous.client`; [checked-in Gradle](../client/android/app/build.gradle) uses debug signing for its release build type. [app.json](../client/app.json) has no iOS bundle identifier. Source permissions include external storage and overlay access; generated/merged output must be inspected. EAS may inject signing configuration, so source defaults do not prove what an uninspected remote artifact uses.
+### Database write-surface follow-up
 
-**Dependency evidence:** current audit counts are above. `react-native → react-devtools-core → shell-quote@1.8.3` is a build/development path to inspect; [the critical advisory](https://github.com/advisories/GHSA-w7jw-789q-3m8p) is not evidence of a mobile remote-command exploit. `@react-navigation/native → core → query-string → decode-uri-component@0.2.2` is relevant to external link parsing; its [malformed-input advisory](https://github.com/advisories/GHSA-vcc3-ghjq-m6fr) needs mitigation and bounded regression tests. No denial of service was attempted. Axios/form-data are installed; no authored Axios imports were found. GL/Three code is dormant but still present. Complete reference/config checks before removing dependencies; `SpaceProvider` remains active.
+- Review broad DML grants still present on notifications, subscriptions, and purchases, even where RLS currently blocks unauthorized writes.
+- Users' birth columns still have broad table-level write grants but are self-row scoped by RLS; consider tighter column privileges only if active flows remain compatible.
+- `journals.chart_id` currently appears unused by V1 client behavior; confirm its product purpose before retaining or removing client mutation paths.
+- Treat these Claude R3 notes as defense in depth, not reopened R3 blockers.
 
-**Work/accept:** settle owned identifiers and approved icon/splash assets; choose how checked-in Android resources stay synchronized with Expo configuration; manage release/upload signing and recovery ownership. Inventory every high/critical advisory by installed version, parent chain, reachable input, patch or reviewed mitigation; also address the exposed moderate decoder finding. Use compatible upgrades/targeted removal and rebuild. Do not run `audit fix --force` or assume every suggested Expo major upgrade is necessary. Preserve the device-approved picker exclusion until deliberately requalified. Inspect final permissions, signing certificate, package ID, version, assets, and environment from the signed candidate.
+### Hydration and persisted-chart resilience
 
-### RH-10 — P1: prove production services, diagnostics, and delivery
+- Prefer validated `chartData.meta` over caller-supplied fields during hydration where it is the authoritative persisted value.
+- Reject or recover clearly from empty `houses` or `planet_houses` arrays rather than hydrating an unusable chart.
+- Verify house-ordering assumptions and durable errors for unsupported or malformed saved charts.
 
-**Unknown hosted configuration, incomplete repository automation.** No CI workflow or crash-reporting integration was found. Supabase local defaults do not reveal hosted redirect allowlists, SMTP, abuse limits, migrations, or function deployment. The default Supabase mail service has testing restrictions; verify [custom SMTP and public delivery](https://supabase.com/docs/guides/auth/auth-smtp).
+### Lifecycle and freshness
 
-**Work/accept:** validate required environment values before building; verify deployed schema/functions and callbacks with disposable external accounts. Add repeatable typecheck/lint/tests, bundle checks, and isolated migration/ownership tests. Choose production crash/error visibility, redact auth URLs/tokens and personal/journal/location data, upload matching symbols/maps, and prove a controlled test event is diagnosable. Assign support, signing recovery, backup restore, and hotfix owners; rehearse a disposable restore and a candidate update. CI and a particular telemetry vendor are engineering choices; the required outcome is repeatable verification and a supportable product.
+- Refresh Dashboard guidance on resume and relevant local day/week rollover.
+- Remove unnecessary duplicate fetches such as Profile/Journal list mount plus focus patterns while preserving retry and freshness.
 
-### RH-11 — Apple gate: qualify native iOS separately
+### Accessibility and motion
 
-**Source-supported picker risk, native behavior unverified.** [TimeField](../client/components/auth/TimeField.tsx) closes the iOS spinner on each change. Test editing hour/minute/AM-PM and implement draft values plus Done/Cancel if required; review DateField too. Decide whether iPad ships (`supportsTablet` is currently true).
+- Provide a TalkBack-accessible way to select and read every Sky Now aspect.
+- Pause or disable chart motion while its route/app is inactive.
+- Apply reduced-motion behavior consistently and verify focus order, errors, large text, and contrast on device.
 
-**Accept:** owned bundle ID/team, signed archive using the current required SDK, TestFlight installation, functioning pickers/keyboard/back gestures, VoiceOver, and the complete account/chart/journal matrix on supported iPhone/iPad configurations. Inspect privacy manifests/required-reason APIs and accurate privacy disclosures. An iOS Hermes export is not an archive or a TestFlight qualification.
+### Geocoder
 
-### RH-12 — P2: bound scale and remove avoidable noise
+- Add cancellation/invalidation on every query change, selection, and unmount; add request timeouts and stale-response protection.
+- Reject malformed responses and invalid coordinates.
+- Choose a production API-key/proxy strategy with quota, abuse, logging, and signup-before-auth constraints accounted for.
 
-Charts and journals currently fetch complete lists/content without pagination. Establish a realistic launch-history size and test it; implement pagination or an explicit supported bound before it can silently hide records at server row limits. Consolidate Profile mount/focus loading, clean asynchronous `act` warnings, and inventory unused dependencies/licenses. Draft persistence and longer-history UX require explicit decisions; a stated small-beta bound can be temporary, but inaccessible existing records cannot be waived as cosmetic debt.
+### Product correctness and settings
 
-## Execution sequence
+- Stop silently overwriting the `show_house_degrees` preference.
+- Avoid ambiguous timezone abbreviations such as IST/CST where a zone identifier or offset is required.
+- Provide durable errors for unsupported saved charts and distinguish MyCharts authentication failures from network failures.
 
-Owner roles below are responsibilities to assign, not additional staff assumed available. Estimates are focused engineer-days for one experienced engineer with access to devices and service accounts. Keep each package in a reviewable change; deploy database and service changes with their own rollout/rollback checks.
+### Privacy, support, services, and operations
 
-| Order | Package | Findings | Owner | Estimate | Exit condition |
-| --- | --- | --- | --- | ---: | --- |
-| 0 | Freeze candidate scope; collect identities, service access, support domain, device/tester availability | All | Product/release owner | 0.5–1 day | Free Android V1 including Sky Now fixed; decisions assigned, not silently assumed |
-| 1 | Database ownership and deletion integration | RH-01 | Backend | 2–4 days | Clean/reset upgrade tests and two-account isolation pass |
-| 2 | Birth date/time correctness and calculation fixtures | RH-02, RH-06 math | Mobile/domain | 2–4 days | Input round trips and documented numerical tolerances pass |
-| 3 | Auth, external links, and journal reliability | RH-03, RH-04 | Mobile | 3–5 days | No stranded auth state, unsafe edit link, or broken discard guard |
-| 4 | Protected geocoding and verified public onboarding | RH-05, RH-10 services | Backend/mobile | 2–4 days | Reliable pre-signup lookup and independent external-email signup/reset |
-| 5 | Accessibility, freshness, and bounded lifecycle/scale fixes | RH-06 UI, RH-07, RH-12 | Mobile/QA | 2–3 days | Current guidance, accessible Sky Now, inactive motion paused |
-| 6 | Privacy/support, truthful controls, approved branding | RH-08, RH-09 identity | Owner/design/mobile | 2–4 days | Every visible data/support action works; policy and listing drafts match behavior |
-| 7 | Dependency disposition, release configuration, CI and diagnostics | RH-09, RH-10 tooling | Mobile/release | 3–5 days | Reproducible signed candidate with inspected configuration and diagnostic proof |
-| 8 | Store-delivered beta, acceptance matrix, fixes, submission packet | All applicable | QA/release | 3–5 days initial cycle | Required gates pass on the exact candidate; no open blocking defects |
+- Replace the Export My Data placeholder with a working export or accurately named, monitored data-request flow.
+- Publish and link accurate privacy, support, and web account-deletion destinations.
+- Verify hosted Supabase configuration, redirects, SMTP delivery, rate/abuse limits, reviewed migrations/functions, two-account isolation, and deletion behavior.
+- Add production-safe crash/error diagnostics with private data and tokens redacted; prove a controlled event is diagnosable.
+- Assign backup/restore, signing recovery, support, and hotfix responsibility.
 
-**Revised Android planning range: approximately 20–35 focused engineer-days**, plus tester/account/store elapsed time. The earlier 1–2-week beta statement was optimistic for an externally distributed beta that meets these gates; the reproduced date bug and broader correctness checks need space in the schedule. Internal development testing can continue throughout. A public submission window around **5–8 calendar weeks** is a planning assumption with steady availability, overlapping owner tasks, and no major SDK migration; re-estimate after packages 1–4. This is not an approval or delivery promise.
+### Dependencies and hygiene
 
-Apple adds native build/device/SDK work, provisionally **8–15 further engineer-days**, and external review time. If Apple becomes first priority, move its signed build/picker spike to package 0 instead of discovering those risks at the end.
+- Triage runtime dependency advisories by reachability and compatible remediation; do not use forced bulk upgrades.
+- Remove dormant dependencies, stubs, contexts, or providers only when clearly unused and safe.
+- Fix the root `.gitignore` markdown-fence artifact and other small stale README/handoff statements.
+- Bound chart/journal history or add pagination before server row limits can hide existing data.
 
-**First implementation work:** RH-01 and RH-02, followed by auth/journal failures. Owner/service/account/listing work starts alongside them. Build a signed internal candidate early enough to expose native problems; do not distribute an external beta with known integrity or data-loss defects.
+**R6 exit gate.** Automated gates are repeatable; deployed schema/types and hosted services are reconciled; active network and hydration paths fail safely; accessibility/lifecycle checks pass; privacy/support/export and diagnostics are real; dependency decisions are recorded; and no known engineering release blocker remains.
 
-## Current store checks
+## Content phase — required after engineering hardening
 
-Rechecked against primary documentation during this review; recheck against the actual console at submission.
+Completing R6 does not make Naksha automatically launch-ready. Deterministic astrology content requires a dedicated freeze and review, especially Weekly Forecast composition, which can sound robotic or assembled even when its underlying astrology data is correct. AI is not required.
 
-- Google phone-app submissions currently require Android 16 / API 36. Installed RN configuration resolves SDK 36; verify the final AAB rather than relying on that source setting. [Google target API policy](https://support.google.com/googleplay/android-developer/answer/11926878?hl=en).
-- Inspect all shipped native libraries and test 16 KB page-size compatibility. Follow current Play Console enforcement/extension notices; do not copy an old universal deadline. [Android page-size guidance](https://developer.android.com/guide/practices/page-sizes).
-- For applicable personal developer accounts created after November 13, 2023, production access requires a closed test with at least 12 testers continuously opted in for 14 days, followed by the production-access application. Check the owner's account eligibility early. [Google testing requirements](https://support.google.com/googleplay/android-developer/answer/14151465?hl=en-GB).
-- Apple uploads require the iOS/iPadOS 26 SDK or later since April 28, 2026. Verify the selected native build toolchain. [Apple SDK requirement](https://developer.apple.com/news/?id=ueeok6yw).
-- Complete accurate listings, privacy/data-safety forms, screenshots from the final build using fictional data, and reviewer access. Apple's 4.3(b) differentiation review is relevant to fortune-telling apps: explain Naksha's actual chart/guidance/journal experience without promising unshipped features or approval. [Apple review guidelines](https://developer.apple.com/app-store/review/guidelines/).
+### C1 — Lexicon completeness
 
-## Candidate acceptance record
+Find missing or inconsistent lexicon entries and prove every supported deterministic combination has an intentional fallback.
 
-For each row record build ID, source commit, backend versions, device/OS, date, tester, result, and evidence. Use disposable data. Test store/internal-release delivery without Metro; a change to native configuration requires a new native artifact.
+### C2 — Editorial quality
 
-| Area | Required evidence |
-| --- | --- |
-| Identity/startup | Owned ID, approved assets, release signing; fresh install/update/cold start; offline/storage/config failure recovers |
-| Accounts | External signup/OTP/resend/recovery; expired/reused links; signed-in recovery cancellation; logout and account-switch isolation |
-| Birth input/calculation | Same calendar date survives every entry/edit path; DST gap/fold handling; reference planets/Ascendant/house signs within documented tolerances |
-| Chart persistence | Self autosave, guest manual save, missing-coordinate view-only, malformed/legacy/future saved data, failed save/delete |
-| Guidance/Sky Now | Correct local day/week after resume/rollover; stable selection; inaccessible aspect gap closed; interpretation never alters calculations |
-| Journal | Owned entry loaded from ID; preserved metadata; create/edit/delete; all back routes; save failure; long writing and keyboard; draft-loss boundary recorded |
-| Backend/deletion | Two-account reads/writes/foreign-parent rejection; unauthorized/expired-token deletion rejection; partial failure/retry; deployed versions match |
-| Accessibility/performance | TalkBack/VoiceOver as applicable; large text/contrast/focus; modest device; memory, inactive animations, repeated use, realistic history |
-| Data/support | Working policy/support/deletion/data request; tested local credential cleanup/backup choice; no private payloads in diagnostic events |
-| Operations | Green automated checks, advisory dispositions, inspected artifact/permissions, diagnosable controlled error, restore/hotfix/support owners |
-| Distribution | Play-delivered candidate and account testing prerequisites; TestFlight/native acceptance separately if Apple ships |
+Review repetitive or generic phrasing, tonal inconsistency, light/shadow balance, prompt/practice relevance, and Today's Energy repetition.
 
-**Go/no-go:** release only after P0/P1 items applicable to the chosen platform have passing evidence or a real scope reduction removes the affected feature/exposure. Record P2 deferrals with an owner and limit. Do not treat green unit tests, a smooth development walkthrough, or a successful JS export as substitutes for these gates.
+### C3 — Composition quality
 
-## Decisions that need the owner before their dependent work
+Review how deterministic fragments combine, with particular attention to Weekly Forecast. Target this structure:
 
-Keep Android first and free V1 as the current working scope. Before implementation reaches dependent steps, confirm permanent Android/iOS identifiers and signing owner; launch countries/audience; support address/domain and retention policy; production Supabase/SMTP/geocoder accounts and quotas; available devices/testers/store account access; Apple timing/iPad support; data-export versus verified request flow; and draft-recovery behavior. These are tracked prerequisites, not reasons to delay independent code fixes or require another broad planning round.
+**strongest theme → supporting/transitional influence → area of life → tension/opportunity across the week → reflection/practical close**
+
+### C4 — Astrology editorial review
+
+Have an astrology-qualified reviewer check terminology, interpretive coherence, sign/house/aspect emphasis, light/shadow balance, and practical guidance without changing verified calculations casually.
+
+## Release-candidate sequence
+
+### RC1 — freeze and build
+
+- Freeze features and content.
+- Verify production Android identity and production Supabase configuration.
+- Apply release signing and produce the signed AAB.
+- Tie source commit, migration/function versions, configuration, and artifact identity together.
+
+### Real-device acceptance
+
+Test signup, email verification, login, profile, all birth-data flows, natal chart, Sky Now, guidance, saved charts, journals, account deletion, restart/resume, network failure, TalkBack/accessibility, reduced motion, keyboard/back behavior, and relevant Android device sizes. Use disposable accounts and invented data; record build, device, OS, result, and evidence.
+
+### Production backend verification
+
+- Run deployed-data preflights, prepare recovery, and deploy only reviewed migrations.
+- Verify RLS/policies, two-account isolation, migration/function versions, SMTP, auth redirects, account deletion, environment configuration, and geocoder configuration.
+- Do not infer production state from local replay alone.
+
+### Google Play testing
+
+- Upload the signed AAB to a Play testing track and install the Play-delivered artifact.
+- Check the developer account's current production-access and tester requirements at that time.
+- Re-run affected acceptance checks against the store-delivered build.
+
+### Store submission
+
+Prepare the final icon, screenshots, feature graphic, description, privacy policy, support information, Data Safety answers, account-deletion disclosure, content rating, target audience, reviewer information, and release notes. All claims must match the candidate and production services.
+
+### Launch and stabilization
+
+Avoid immediate feature expansion. Monitor crashes, authentication, deletion, database behavior, performance, support requests, and reviews. Ship narrow fixes and preserve the ability to roll back or pause rollout.
+
+## Post-launch roadmap
+
+Future scope is separate from V1 release blockers:
+
+**stabilization → iOS → relationships/synastry → deeper transit intelligence → AI assistant if demand supports it → social features only if demand supports them**
+
+iOS requires its own identifiers, signing, native build, TestFlight delivery, picker/gesture/keyboard/device QA, accessibility, and store disclosures. It is not implied by a passing iOS JavaScript export.
+
+Ownership remains private by default. Any future chart sharing or social access must use explicit authorization/sharing records. Do not weaken R1 same-owner constraints to enable cross-user features.
+
+## Release decision
+
+Release only after R1–R6 and C1–C4 are complete, the exact signed candidate passes recorded real-device and production-backend acceptance, and the Play-delivered build satisfies current account-specific testing requirements. Green unit tests or a development walkthrough are necessary evidence, not substitutes for those gates.

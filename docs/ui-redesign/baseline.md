@@ -1,6 +1,8 @@
 # Naksha UI Redesign Baseline
 
-Status: baseline of record — the state from which all visual change is judged
+> **Historical pre-redesign baseline.** This freezes the repository at 2026-09-02 and must remain unchanged as evidence of the starting point. It is not current repository status. The visual migration has since shipped and R1–R3 are repository-complete; see [README.md](README.md) and [../release-hardening-plan.md](../release-hardening-plan.md).
+
+Status: baseline of record — the state from which visual changes were judged
 Captured: 2026-09-02
 Platform focus: Android first
 Companion documents: `ui-audit.md` (findings), `design-system.md` (proposals),

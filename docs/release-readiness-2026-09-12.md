@@ -1,6 +1,6 @@
 # Naksha release-readiness review and plan
 
-> Historical review. Superseded for execution/status by [release-hardening-plan.md](release-hardening-plan.md), reviewed later on 12 September at `ab9c16c1`. The wheel-test mismatch is resolved; 58 suites / 737 tests and both JS exports now pass; Sky Now has JPL reference checks and pair readings. The new review also reproduces birth-date serialization/DST problems and identifies journal direct-edit-link risk. Its revised gates and estimates supersede the ranges below. Findings here remain evidence of the earlier baseline, not a current sign-off.
+> **Status update — 25 September 2026:** This document is the historical 12 September readiness snapshot. It is preserved below as originally assessed and is not the current execution status. R1 relational ownership, R2 civil birth-time correctness, and R3 journal/client write-surface integrity subsequently reached repository completion with local verification and independent review. See the [canonical release-hardening plan](release-hardening-plan.md) for current status, remaining work, and the release sequence. Repository completion does not itself prove production deployment or release-candidate acceptance.
 
 Review date: **12 September 2026**  
 Reviewed baseline: **06ad5378**, branch **ui/v2-redesign**, plus the observed uncommitted Sky Now work.  

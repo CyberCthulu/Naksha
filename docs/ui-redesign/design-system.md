@@ -1,6 +1,6 @@
 # Naksha Design System
 
-Status: **implemented foundation with subsequent refinements**; final native acceptance pending. Reviewed 2026-09-12.
+Status: **implemented foundation with subsequent refinements**; final native acceptance pending. Reviewed against current repository 2026-09-25. Remaining release work is tracked in [release-hardening-plan.md](../release-hardening-plan.md).
 Date: 2026-09-02
 Platform focus: Android first
 Direction: premium celestial editorial

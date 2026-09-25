@@ -1,5 +1,7 @@
 # UI consistency review — 2026-09-09
 
+> **Delivered review record.** This documents the September visual consistency pass. It is not the current release backlog; remaining native, accessibility, motion, and lifecycle gates are tracked in [../release-hardening-plan.md](../release-hardening-plan.md).
+
 Reviewed the dashboard, guidance, shared UI primitives, authentication and birth
 detail forms, charts, saved charts, journal, and profile screens.
 

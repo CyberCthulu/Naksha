@@ -20,14 +20,13 @@ The app is built with **Expo + React Native** in the `client/` directory and use
 10. [Run Commands](#run-commands)
 11. [Known Notes](#known-notes)
 12. [Roadmap](#roadmap)
-13. [Contributing](#contributing)
-14. [License](#license)
+13. [License](#license)
 
 ---
 
 ## Project Overview
 
-**Naksha** (Sanskrit: map / blueprint) is designed to combine traditional astrological structure with modern mobile UX and AI-assisted interpretation workflows.
+**Naksha** (Sanskrit: map / blueprint) is designed to combine traditional astrological structure with modern mobile UX and deterministic interpretation and guided-reflection workflows.
 
 Core product goals:
 
@@ -41,12 +40,12 @@ Core product goals:
 
 ## Current Status
 
-Reviewed 12 September 2026 at `ab9c16c1`. Core free V1 and the active celestial UI are implemented; release hardening and native candidate acceptance remain.
+Updated 25 September 2026 at `70273735`. Core free V1 and the active celestial UI are implemented. R1–R3 release hardening is repository-complete; R4 authentication recovery and Android production identity/security is next. Native candidate acceptance remains outstanding.
 
 - Accounts/profile, natal and guest charts, saved charts, daily/weekly guidance, and journaling.
 - Interactive chart wheel, chart tabs, shared starry backgrounds, translucent cards, and celestial loading.
 - Sky Now above the dashboard tabs with current positions and authored aspect-pair readings.
-- Verification: 58 Jest suites / 737 tests, typecheck, lint, and Android/iOS Hermes exports pass. These do not qualify a signed store release.
+- Post-R3 verification: 62 Jest suites / 793 tests, TypeScript, lint, whitespace, clean database replay, upgrade replay, and combined R1/R2/R3 pgTAP pass. These do not qualify a signed store release or prove production deployment.
 
 Start with the [release-hardening plan](docs/release-hardening-plan.md), [feature list](docs/Feature-List.md), and [engineering handoff](docs/naksha-codebase-handoff.md). AI chat, subscriptions, compatibility, notifications, and extra astrology systems are future work.
 
@@ -104,11 +103,15 @@ Start with the [release-hardening plan](docs/release-hardening-plan.md), [featur
 │  ├─ lib/                  # Domain/business logic + Supabase + helpers
 │  ├─ assets/
 │  └─ android/
+├─ docs/                    # Product, engineering, and release documentation
+├─ supabase/                # Local config, forward migrations, functions, and DB tests
+├─ package.json             # Repository-local Supabase CLI
 ├─ README.md
 └─ COPYRIGHT.txt
+```
 
-Features
-Authentication
+## Features
+### Authentication
 Sign up with email/password
 
 Check-email confirmation flow
@@ -117,14 +120,14 @@ Deep-link callback handling for auth completion
 
 Sign in/out session support
 
-Profile
+### Profile
 First/last name, birth date/time/location, timezone
 
 Timezone normalization helpers
 
 Location geocoding (OpenCage)
 
-Charting
+### Charting
 Natal planetary positions
 
 Aspect computation
@@ -135,21 +138,21 @@ Interactive chart view + interpretation modal
 
 Save chart data to Supabase
 
-Journaling
+### Journaling
 Create/edit/delete journal entries
 
 Journal list with timestamps
 
 Lightweight personal reflection workflow
 
-Account Area
+### Account Area
 Profile view/edit routing
 
 Preferences scaffolding (house system/zodiac/orb modes)
 
 Subscription/purchase display scaffolding
 
-Supabase Backend
+## Supabase Backend
 Naksha currently relies on Supabase for:
 
 User authentication/session handling
@@ -162,20 +165,9 @@ Journal entries
 
 Subscription/purchase records (where available)
 
-Suggested backend repo hygiene (recommended)
-If you want reproducible DB evolution in Git, add:
+Database evolution is source-controlled under `supabase/`, including forward migrations, Edge Functions, local configuration, and pgTAP database tests. Production deployment state must still be verified explicitly; committed migrations alone do not prove the hosted project is current.
 
-supabase/ directory
-
-SQL migrations
-
-seed scripts
-
-RLS policy definitions
-
-Right now, SQL may exist only in your Supabase project unless explicitly checked into this repo.
-
-Environment Variables
+## Environment Variables
 Set these in your Expo environment for client/:
 
 EXPO_PUBLIC_SUPABASE_URL
@@ -189,36 +181,36 @@ Example (conceptual):
 EXPO_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
 EXPO_PUBLIC_OPENCAGE_KEY=<opencage-key>
-Getting Started
-Prerequisites
+## Getting Started
+### Prerequisites
 Node.js 18+
 
 npm
 
 Expo CLI via npx expo ...
 
-Install
+### Install
 cd client
 npm install
-Run Commands
+## Run Commands
 From client/:
 
 npm run start     # Expo dev server
 npm run android   # Android
 npm run ios       # iOS
 npm run web       # Web
-Known Notes
+## Known Notes
 Some files/modules are placeholders for upcoming features.
 
 Some profile preferences are UI-first scaffolding and may be expanded in later chart engine updates.
 
 Ensure deep-link scheme in Expo config and Supabase redirect URLs match your auth flow.
 
-Roadmap
+## Roadmap
 
-The active sequence is correctness/data integrity, auth/journal/geocoder reliability, privacy/support, native identity/signing and dependency triage, then signed-candidate QA and store testing. See the [current plan and acceptance gates](docs/release-hardening-plan.md). Migrations, typed navigation, and substantial automated tests already exist; AI and subscriptions are not release-hardening tasks.
+The current sequence is R4 authentication recovery and Android identity/security, R5 calculation correctness, R6 remaining engineering readiness, C1–C4 content review, then signed-candidate QA and Play testing. See the [current plan and acceptance gates](docs/release-hardening-plan.md). AI and subscriptions are not V1 release-hardening requirements.
 
-License
+## License
 This project is currently closed-source.
 All rights reserved to the creators.
 No copying, distribution, or commercial use without explicit permission.

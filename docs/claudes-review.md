@@ -1,6 +1,6 @@
 # Claude's Architectural Review — Naksha Codebase
 
-> **Historical review snapshot.** This review records architecture findings from before the D0-D6.3 depth/hardening pass. Retain it for rationale, not current status or sequencing. The canonical current handoff is `docs/naksha-codebase-handoff.md`; the current recorded baseline is 25 suites / 183 tests as of 2026-08-29.
+> **Historical review snapshot.** This review predates D0-D6.3 and release hardening R1–R3. Retain it for rationale only; its baselines and operational instructions, including `upsertJournal` guidance, are superseded. Current status is in [naksha-codebase-handoff.md](naksha-codebase-handoff.md), current product scope is in [Feature-List.md](Feature-List.md), and current execution is in [release-hardening-plan.md](release-hardening-plan.md). The post-R3 repository baseline is 62 suites / 793 tests plus 131 combined R1–R3 pgTAP assertions.
 
 Last updated: 2026-06-28 (Naksha Forecast + Guidance Library v1 — Slices 1-5 implemented, reviewed, and approved)
 Reviewer: Claude (Sonnet 4.6)
@@ -266,7 +266,7 @@ Files: CI config or project scripts/docs.
 - `client/screens/ChartScreen.tsx` is now a route-validation shell only. Do not add hooks or rendering to it. All chart logic belongs in `client/components/charts/ChartScreenContent.tsx`.
 - `client/components/profile/` contains extracted presentational cards for `ProfileScreen`. Data loading and save handlers remain in `ProfileScreen` itself; do not add Supabase calls to the card components.
 - `useChartData` has mounted/load-ID/save-ID cancellation guards. Any new async state mutation inside the hook must be preceded by an `isCurrentLoad()` or `isCurrentSave()` check.
-- `upsertJournal`: `id` is only added to the payload when `input.id != null`. Do not pass `id: undefined` in any Supabase upsert payload.
+- **Superseded by R3:** use `insertJournal()` for creation, `updateJournal()` for patch updates, and `getOwnedJournal()` for authoritative edit loading. Do not restore journal-edit upserts.
 - `saveChart` throws if coordinates are null. Always assert `hasChartIdentityCoordinates(input)` before calling it.
 - Chart identity is `(user_id, birth_date, birth_time, time_zone, birth_lat, birth_lon)`. All save/lookup call sites use all six columns.
 - `public.chart_preferences` CHECK constraints currently allow only `'whole_sign'`, `'tropical'`, and `'medium'`. When implementing a new value, expand the CHECK constraint in a new migration before writing it from the frontend.

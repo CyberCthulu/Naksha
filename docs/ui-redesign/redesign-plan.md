@@ -1,6 +1,6 @@
 # Naksha UI/UX Redesign Plan
 
-Status: active UI migration and subsequent sky/loading/Sky Now additions implemented as of 2026-09-12. Final native/accessibility acceptance remains; current execution follows [release hardening](../release-hardening-plan.md).
+Status: historical execution plan. The active UI migration and subsequent sky/loading/Sky Now additions were implemented by 2026-09-12. R1–R3 have since completed; final native/accessibility acceptance and current execution follow [release hardening](../release-hardening-plan.md).
 
 The stage descriptions below retain the original migration plan; read completed slice notes and `consistency-review.md` for delivered work. Old proposal-stage wording does not describe the current application. Device approvals apply only to their recorded slices/builds.
 Direction: Android-first, premium/celestial/editorial

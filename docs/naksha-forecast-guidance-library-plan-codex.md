@@ -5,7 +5,7 @@ Last updated: 2026-06-29
 Scope: deterministic forecast, transit-guidance, reflection-prompt, and practice primitives to build before AI chat.
 Status: **historical implementation plan, superseded for current-state reporting.**
 
-Current-state note (2026-08-29): forecast/guidance work continued through D0-D6.3. Current code includes consolidated reflection CTAs, local-date DailyGuidance, fixed-context JournalEditor handoff, weekly Jupiter/Saturn event ranking and Daily Rhythm, a 34-prompt/24-practice corpus, transit-through-natal-house context, shared chart hydration, typed navigation, and explicit ChartData versioning. The current recorded baseline is 25 suites / 183 tests. Use `docs/naksha-codebase-handoff.md` for canonical engineering status and `docs/Feature-List.md` for product scope. The detailed proposal below is retained for design rationale; statements about deferred work describe its earlier planning state.
+Current-state note (2026-09-25): forecast/guidance work continued through D0-D6.3, and release hardening R1–R3 is now repository-complete. Use [naksha-codebase-handoff.md](naksha-codebase-handoff.md) for current engineering status, [Feature-List.md](Feature-List.md) for product scope, and [release-hardening-plan.md](release-hardening-plan.md) for current sequencing. The detailed proposal, its baselines, and statements about deferred work are retained as historical design rationale. The post-R3 repository baseline is 62 suites / 793 tests plus 131 combined R1–R3 pgTAP assertions.
 
 ## Implementation Status Update
 
@@ -587,7 +587,7 @@ Future UI handoff should:
 
 - navigate to JournalEditor with prompt ID, title, and optional prompt text;
 - display the prompt separately from the user's editable response;
-- pass `prompt_template` into `upsertJournal`;
+- pass `prompt_template` into journal creation (implemented through `insertJournal()`; the proposed upsert path was retired by R3);
 - avoid storing the entire daily/weekly forecast in the journal row;
 - preserve journal deletion and chart `ON DELETE SET NULL` behavior.
 
