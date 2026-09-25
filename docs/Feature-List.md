@@ -2,7 +2,7 @@
 
 Personalized astrology, deterministic forecasts, journaling, and guided reflection. Naksha is a functioning V1 application with comprehensive natal charts, daily and weekly transit guidance with transit-house personalization, and journaling.
 
-This document separates implemented V1 functionality from planned roadmap features. It should not be read as a list of completed features unless an item is marked **DONE**. Last reviewed for accuracy: 2026-09-25 at `70273735`. Active UI and Sky Now are implemented; release-hardening R1–R3 are repository-complete and [R4 is next](release-hardening-plan.md#r4--authentication-recovery-and-android-securityidentity). Implemented does not mean deployed or production-qualified.
+This document separates implemented V1 functionality from planned roadmap features. It should not be read as a list of completed features unless an item is marked **DONE**. Last reviewed for accuracy: 2026-09-25 during the uncommitted R4 worktree based on `1b9c31a5`. Active UI and Sky Now are implemented; release-hardening R1–R3 are repository-complete and [R4 is in progress](release-hardening-plan.md#r4--authentication-recovery-and-android-securityidentity). Implemented does not mean deployed or production-qualified.
 
 ## Status Overview
 
@@ -21,12 +21,12 @@ A quick index of every section below, grouped into four buckets. Each section st
 * Weekly Forecast (Monday–Sunday local weeks, seven snapshots, DST-aware, with transit-house context)
 * Sky Now above the dashboard tabs: current planetary positions, five calculated aspect types, and pair-specific reflective readings
 * Typed Navigation and Chart Versioning (backward-compatible schema with legacy support)
-* Regression Test Suite (62 suites / 793 tests plus 131 combined R1/R2/R3 pgTAP assertions; native release QA and production-backend verification remain open)
+* Regression Test Suite (67 suites / 825 tests plus 131 combined R1/R2/R3 pgTAP assertions; native release QA and production-backend verification remain open)
 
 **Current Phase: Release Hardening & Final Native Acceptance**
 
 * R1 relational ownership, R2 civil birth-time correctness, and R3 journal/client write-surface integrity are repository-complete
-* R4 authentication recovery and Android production identity/security are next
+* R4 authentication recovery and Android production identity/security are in progress; repository implementation is awaiting signed-artifact and device acceptance
 * R5 high-latitude Ascendant correctness and R6 remaining engineering readiness follow
 * C1–C4 content/editorial review remains required before release-candidate freeze
 * Signed Android candidate, production-backend verification, Play testing, privacy/support/store material, and real-device acceptance remain open
@@ -75,6 +75,10 @@ Status: **DONE**
 * Invalid non-empty stored time zones route to profile correction rather than silently falling back to UTC
 * Account deletion through the Supabase Edge Function (historically deployed and manually QA'd; release-candidate deployment must be reverified)
 * Destructive confirmation before account deletion
+* Startup session failure reaches a retryable error state instead of an indefinite loading screen
+* Auth identity changes remount the full navigation container, discarding account A route history and private route parameters before account B renders
+* Verification and password-recovery callbacks follow central auth state; recovery intent is preserved without racing navigator registration
+* Successful server-side account deletion remains reported as successful even if local sign-out needs fallback session cleanup
 
 ### Chart Preferences
 
@@ -533,10 +537,10 @@ Not yet done:
 
 Status: **ACTIVE**
 
-Current verified post-R3 baseline:
+Current verified R4 worktree baseline:
 
 * Typecheck passes
-* Jest passes: 62 suites / 793 tests
+* Jest passes: 67 suites / 825 tests
 * Lint passes
 * `git diff --check` passes
 * R3 pgTAP passes 47/47; combined R1/R2/R3 pgTAP passes 131/131
@@ -587,7 +591,7 @@ Naksha V1 is currently best described as:
 
 **A functioning Western/Tropical astrology application with authenticated profiles, natal chart generation, local interpretations, saved and guest charts, deterministic daily and weekly transit guidance, transit-house personalization, guided reflection, and journaling.**
 
-The D0–D6.3 V1 depth and architecture pass is complete. The active UI and Sky Now are implemented. Release-hardening R1–R3 are repository-complete, R4 is next, and production deployment/native acceptance remain open. The application is not yet production-ready or released.
+The D0–D6.3 V1 depth and architecture pass is complete. The active UI and Sky Now are implemented. Release-hardening R1–R3 are repository-complete, R4 is in progress, and production deployment/native acceptance remain open. The application is not yet production-ready or released.
 
 Naksha is not yet:
 

@@ -1,6 +1,6 @@
 # Naksha release-hardening plan
 
-Updated **25 September 2026 (Pacific)** at commit **`7027373504035be1fad5e0665231527854f64ab2`**, branch **`ui/v2-redesign`**. This is the canonical current roadmap. The [12 September readiness review](release-readiness-2026-09-12.md) remains a historical snapshot.
+Updated **25 September 2026 (Pacific)** during the uncommitted R4 worktree based on **`1b9c31a5994ad5359d7e6ca9425fbd60a9644d2d`**, branch **`ui/v2-redesign`**. This is the canonical current roadmap. The [12 September readiness review](release-readiness-2026-09-12.md) remains a historical snapshot.
 
 ## Release decision and scope
 
@@ -17,7 +17,7 @@ The V1 scope remains accounts/profile, Tropical/Whole Sign natal and guest chart
 | R1 | ✅ **COMPLETE** | Relational ownership and database integrity |
 | R2 | ✅ **COMPLETE** | Civil birth date/time correctness |
 | R3 | ✅ **COMPLETE** | Journal and client write-surface integrity |
-| R4 | 🔵 **NEXT** | Authentication recovery and Android security/identity |
+| R4 | 🟡 **IN PROGRESS** | Authentication recovery and Android security/identity |
 | R5 | ⏳ **PENDING** | Astrology calculation correctness |
 | R6 | ⏳ **PENDING** | Remaining engineering release readiness |
 
@@ -61,7 +61,7 @@ After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → A
 
 ## R4 — Authentication recovery and Android security/identity
 
-**Status: NEXT.** Keep this as one bounded release slice with two connected outcomes: a recoverable account lifecycle and a production-identifiable Android artifact.
+**Status: IN PROGRESS.** Repository implementation is complete for auth recovery and Android configuration, but R4 remains open until the external signing/asset gates and signed-artifact checks below are completed. Keep this as one bounded release slice with two connected outcomes: a recoverable account lifecycle and a production-identifiable Android artifact.
 
 ### Authentication and recovery
 
@@ -72,6 +72,23 @@ After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → A
 - After successful account deletion, do not let a later `signOut` failure falsely report that deletion itself failed.
 - Remove the navigation reset race that may target Dashboard before the authenticated navigator has registered it.
 - Add exceptional-path tests and complete real-device cold/warm callback, retry, cancellation, and network-failure checks.
+
+### Repository implementation in the current R4 worktree
+
+- Auth bootstrap has explicit initializing, authenticated, unauthenticated, and recoverable error states. Retry is re-entrant; auth events supersede stale bootstrap results. Authenticated identity changes remount the full `NavigationContainer`, discarding prior route history and parameters; cold-start URLs are consumed once across those remounts while runtime links remain active.
+- Login, signup, OTP verification/resend, callback exchange, password recovery/reset, sign-out, and account deletion handle rejected promises without stranded controls. Navigation follows central auth state; recovery carries an explicit callback intent across same-user and cross-account callbacks, CheckEmail does not target an unavailable route, and successful server deletion is distinguished from local sign-out cleanup.
+- The owner-approved Android ID is `com.naksha.app`; the visible name is **Naksha**. The `client` Expo slug and existing EAS project ID remain unchanged. The production deep-link scheme remains `naksha`; the `exp+client` scheme is confined to debug manifests.
+- Release builds no longer use the checked-in debug key. Local release signing requires all four untracked `NAKSHA_UPLOAD_*` values; EAS production explicitly uses remote credentials and produces an app bundle with remotely managed `versionCode` increments.
+- Production config removes legacy storage, overlay, and vibration permissions; permits internet access; disables cleartext traffic and backup; and excludes AsyncStorage databases from both legacy backup and Android 12+ cloud/device-transfer paths.
+- The current repository still contains stock Expo placeholder icon/adaptive-icon/splash artwork. No approved Naksha replacement asset exists in the repository.
+
+**Current verification.** Focused R4 auth/native-configuration coverage passes. The full application gate passes **67 suites / 825 tests**, TypeScript, lint, and Android JavaScript export. Expo dependency validation is current; Expo Doctor remains 17/18 solely because checked-in native projects and app config make this a non-CNG project. XML parsing and Expo introspection pass, with introspected Android permissions limited to `INTERNET`. A merged native release manifest and signed artifact could not be produced with the installed environment because Android SDK 36/NDK 27 and production signing credentials are unavailable.
+
+### Remaining R4 gates
+
+- Establish and back up the EAS/Play upload keystore under an explicitly accountable owner; no production credential was created or inspected in this worktree.
+- Supply approved Naksha launcher/adaptive-icon/splash assets and regenerate/verify native resources.
+- Build a signed AAB with Android SDK 36/NDK 27 tooling, inspect its certificate, merged manifest, package, label, version code, debuggable flag, links, permissions, backup policy, and assets, then complete R4 real-device auth/deep-link acceptance.
 
 ### Android production identity and security
 
@@ -155,6 +172,7 @@ If a calculation semantic changes, assess `calculation_version`, persisted-chart
 - Replace the Export My Data placeholder with a working export or accurately named, monitored data-request flow.
 - Publish and link accurate privacy, support, and web account-deletion destinations.
 - Verify hosted Supabase configuration, redirects, SMTP delivery, rate/abuse limits, reviewed migrations/functions, two-account isolation, and deletion behavior.
+- Evaluate verified Android App Links before release as defense against custom-scheme interception. The approved `naksha://` scheme remains in R4; do not treat PKCE code exchange and legacy implicit fragment-token exposure as equivalent.
 - Add production-safe crash/error diagnostics with private data and tokens redacted; prove a controlled event is diagnosable.
 - Assign backup/restore, signing recovery, support, and hotfix responsibility.
 

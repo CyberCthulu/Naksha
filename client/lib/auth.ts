@@ -62,7 +62,8 @@ export async function requestPasswordResetEmail(email: string) {
 }
 
 export async function signOut() {
-  return supabase.auth.signOut()
+  const { error } = await supabase.auth.signOut()
+  if (error) throw error
 }
 
 export async function getUser() {

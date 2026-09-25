@@ -17,6 +17,15 @@ jest.mock('expo-linking', () => ({
   parse: jest.fn(),
 }))
 
+jest.mock('../../lib/authSession', () => ({
+  useAuthSession: () => ({
+    ...mockAuthSession,
+    preparePostAuthRoute: mockPreparePostAuthRoute,
+    clearPostAuthRoute: mockClearPostAuthRoute,
+    getPostAuthRoute: () => mockPostAuthRoute,
+  }),
+}))
+
 jest.mock('../../lib/supabase', () => ({
   __esModule: true,
   default: {
@@ -33,6 +42,13 @@ const { act, create } = TestRenderer
 
 let renderer: ReturnType<typeof create> | null = null
 let capturedUrlHandler: ((event: { url: string }) => void) | null = null
+const mockPreparePostAuthRoute = jest.fn()
+const mockClearPostAuthRoute = jest.fn()
+let mockPostAuthRoute: 'ResetPassword' | null = null
+let mockAuthSession = {
+  status: 'authenticated',
+  user: { id: 'user-1' } as { id: string } | null,
+}
 
 const mockNavigation = {
   reset: jest.fn(),
@@ -80,11 +96,13 @@ function mockedSupabase() {
   }
 }
 
-function mockSession(user: unknown = { id: 'user-1' }) {
+function mockSession(user: { id: string } | null = { id: 'user-1' }) {
+  mockAuthSession = {
+    status: user ? 'authenticated' : 'unauthenticated',
+    user,
+  }
   mockedSupabase().auth.getSession.mockResolvedValue({
-    data: {
-      session: user ? { user } : null,
-    },
+    data: { session: user ? { user } : null },
     error: null,
   })
 }
@@ -115,6 +133,13 @@ describe('AuthCallbackScreen', () => {
 
     renderer = null
     capturedUrlHandler = null
+    mockPostAuthRoute = null
+    mockPreparePostAuthRoute.mockImplementation((route) => {
+      mockPostAuthRoute = route
+    })
+    mockClearPostAuthRoute.mockImplementation(() => {
+      mockPostAuthRoute = null
+    })
 
     mockedLinking().addEventListener.mockImplementation(
       (_eventName: string, handler: (event: { url: string }) => void) => {
@@ -175,6 +200,20 @@ describe('AuthCallbackScreen', () => {
     })
   })
 
+  it('lets the App auth transition register private routes before normal navigation', async () => {
+    mockSession(null)
+    const url = 'naksha://auth/callback?token_hash=hash-1&type=email'
+    mockedLinking().getInitialURL.mockResolvedValue(url)
+    mockParsedUrl(url, {
+      queryParams: { token_hash: 'hash-1', type: 'email' },
+    })
+
+    await renderScreen()
+
+    expect(mockedSupabase().auth.verifyOtp).toHaveBeenCalled()
+    expect(mockNavigation.reset).not.toHaveBeenCalled()
+  })
+
   it('routes recovery token callbacks to ResetPassword', async () => {
     const url = 'naksha://auth/callback?token_hash=hash-1&type=recovery'
     mockedLinking().getInitialURL.mockResolvedValue(url)
@@ -191,6 +230,7 @@ describe('AuthCallbackScreen', () => {
       token_hash: 'hash-1',
       type: 'recovery',
     })
+    expect(mockPreparePostAuthRoute).toHaveBeenCalledWith('ResetPassword')
     expect(mockNavigation.reset).toHaveBeenCalledWith({
       index: 0,
       routes: [{ name: 'ResetPassword' }],
@@ -214,6 +254,27 @@ describe('AuthCallbackScreen', () => {
     expect(mockNavigation.reset).toHaveBeenCalledWith({
       index: 0,
       routes: [{ name: 'Dashboard' }],
+    })
+  })
+
+  it('honors a prepared recovery destination for a code-only same-user callback', async () => {
+    mockPostAuthRoute = 'ResetPassword'
+    const url = 'naksha://auth/callback?code=auth-code-1'
+    mockedLinking().getInitialURL.mockResolvedValue(url)
+    mockParsedUrl(url, {
+      queryParams: {
+        code: 'auth-code-1',
+      },
+    })
+
+    await renderScreen()
+
+    expect(mockedSupabase().auth.exchangeCodeForSession).toHaveBeenCalledWith(
+      'auth-code-1'
+    )
+    expect(mockNavigation.reset).toHaveBeenCalledWith({
+      index: 0,
+      routes: [{ name: 'ResetPassword' }],
     })
   })
 
@@ -359,9 +420,28 @@ describe('AuthCallbackScreen', () => {
       'Verification failed',
       'We could not verify this sign-in link. Please try again or request a new email.'
     )
-    expect(console.warn).toHaveBeenCalledWith(
-      'Auth callback failed:',
-      'expired token'
+    expect(console.warn).toHaveBeenCalledWith('Auth callback failed.')
+    expect(mockNavigation.reset).toHaveBeenCalledWith({
+      index: 0,
+      routes: [{ name: 'Dashboard' }],
+    })
+  })
+
+  it('shows a safe error when callback verification rejects unexpectedly', async () => {
+    const url = 'naksha://auth/callback?token_hash=hash-1&type=email'
+    mockedLinking().getInitialURL.mockResolvedValue(url)
+    mockParsedUrl(url, {
+      queryParams: { token_hash: 'hash-1', type: 'email' },
+    })
+    mockedSupabase().auth.verifyOtp.mockRejectedValueOnce(
+      new Error('network unavailable with internal details')
+    )
+
+    await renderScreen()
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Verification failed',
+      'We could not complete verification. Check your connection or request a new email.'
     )
     expect(mockNavigation.reset).toHaveBeenCalledWith({
       index: 0,

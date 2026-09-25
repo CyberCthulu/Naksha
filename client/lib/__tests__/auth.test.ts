@@ -2,6 +2,7 @@ import supabase from '../supabase'
 import {
   requestPasswordResetEmail,
   resendSignupEmail,
+  signOut,
   signUpWithEmail,
 } from '../auth'
 
@@ -11,6 +12,7 @@ jest.mock('../supabase', () => ({
     auth: {
       resend: jest.fn(),
       resetPasswordForEmail: jest.fn(),
+      signOut: jest.fn(),
       signUp: jest.fn(),
     },
   },
@@ -21,6 +23,7 @@ function mockedSupabase() {
     auth: {
       resend: jest.Mock
       resetPasswordForEmail: jest.Mock
+      signOut: jest.Mock
       signUp: jest.Mock
     }
   }
@@ -41,6 +44,7 @@ describe('auth helpers', () => {
       data: null,
       error: null,
     })
+    mockedSupabase().auth.signOut.mockResolvedValue({ error: null })
   })
 
   it('signs up with the custom-scheme auth callback redirect', async () => {
@@ -66,6 +70,14 @@ describe('auth helpers', () => {
         emailRedirectTo: 'naksha://auth/callback',
       },
     })
+  })
+
+  it('throws when Supabase returns a sign-out error', async () => {
+    mockedSupabase().auth.signOut.mockResolvedValueOnce({
+      error: new Error('network unavailable'),
+    })
+
+    await expect(signOut()).rejects.toThrow('network unavailable')
   })
 
   it('requests password reset email with the custom-scheme auth callback redirect', async () => {

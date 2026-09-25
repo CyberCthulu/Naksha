@@ -18,11 +18,12 @@ describe('root providers', () => {
   it('does not gate rendering on the motion preference or fonts', () => {
     // Only the auth bootstrap may hold the tree back.
     expect(appSource).not.toMatch(/if\s*\(\s*!?\s*reduceMotion/)
-    expect(appSource).toMatch(/if \(!authReady\)/)
+    expect(appSource).toContain("status === 'initializing'")
+    expect(appSource).toContain("status === 'bootstrap-error'")
   })
 
-  it('keeps a light status bar in both the boot and main branches', () => {
-    expect(appSource.match(/<StatusBar style="light" \/>/g)).toHaveLength(2)
+  it('keeps a light status bar in every bootstrap and main branch', () => {
+    expect(appSource.match(/<StatusBar style="light" \/>/g)).toHaveLength(3)
   })
 
   it('falls back to the V2 environment colour rather than pure black', () => {

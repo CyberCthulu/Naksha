@@ -4,9 +4,10 @@ import { ScrollView, Alert } from 'react-native'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import supabase from '../lib/supabase'
+import supabase, { clearPersistedAuthSession } from '../lib/supabase'
 import { signOut } from '../lib/auth'
 import { deleteAccount } from '../lib/accountDeletion'
+import { useAuthSession } from '../lib/authSession'
 
 import { ErrorState } from '../components/ui/ErrorState'
 import { theme } from '../components/ui/theme'
@@ -69,6 +70,7 @@ export default function ProfileScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList, 'Profile'>>()
   const insets = useSafeAreaInsets()
+  const { forceSignedOut } = useAuthSession()
 
   // ✅ prevent “double header” clash (stack header + in-screen header)
   useLayoutEffect(() => {
@@ -226,15 +228,38 @@ export default function ProfileScreen() {
   }
 
   const confirmDeleteAccount = async () => {
+    setDeletingAccount(true)
+
     try {
-      setDeletingAccount(true)
       await deleteAccount()
-      await signOut()
     } catch (e: any) {
       setDeletingAccount(false)
       Alert.alert(
         'Account deletion failed',
         e?.message ?? 'Could not delete your account. Please try again.'
+      )
+      return
+    }
+
+    try {
+      await signOut()
+      setDeletingAccount(false)
+      forceSignedOut()
+    } catch {
+      let localSessionCleared = true
+      try {
+        await clearPersistedAuthSession()
+      } catch {
+        localSessionCleared = false
+      }
+
+      setDeletingAccount(false)
+      forceSignedOut()
+      Alert.alert(
+        'Account deleted',
+        localSessionCleared
+          ? 'Your account was deleted, but Naksha could not finish signing out normally. The saved session on this device was cleared.'
+          : 'Your account was deleted, but Naksha could not fully clear saved session data on this device. Restart the app before signing in again.'
       )
     }
   }

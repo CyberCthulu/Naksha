@@ -118,9 +118,9 @@ Neither of these is a redesign deliverable, and both are hard Play Store blocker
 | Item | Current state | Owner |
 | --- | --- | --- |
 | Custom Naksha launcher / store icon | `assets/icon.png`, `adaptive-icon.png`, and `splash-icon.png` are **stock Expo placeholders** | **Brand-polish task, after the flagship visual direction is approved** |
-| Application name and Android package identifier | `name`/`slug` are `"client"`; package is `com.anonymous.client` | **Release-hardening configuration task** |
+| Application name and Android package identifier | R4 worktree: visible name **Naksha**, preserved slug `client`, approved package `com.naksha.app` | **Release-hardening configuration implemented; signed artifact pending** |
 
-The stock Expo icon and `com.anonymous.client` cannot ship to Play.
+The stock Expo icon still cannot ship to Play. The placeholder package was replaced by the owner-approved `com.naksha.app` in the R4 worktree.
 
 ### Pre-existing defects
 

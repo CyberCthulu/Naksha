@@ -8,6 +8,8 @@ import TextField from '../components/ui/TextField'
 import { AppText } from '../components/ui/AppText'
 import { Button } from '../components/ui/Button'
 import { uiStyles } from '../components/ui/uiStyles'
+import { signOut } from '../lib/auth'
+import { useAuthSession } from '../lib/authSession'
 import supabase from '../lib/supabase'
 import type { RootStackParamList } from '../navigation/types'
 
@@ -28,17 +30,12 @@ export default function ResetPasswordScreen({
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
-
-  const routeAfterReset = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    navigation.reset({
-      index: 0,
-      routes: [{ name: session?.user ? 'Dashboard' : 'Login' }],
-    })
-  }
+  const {
+    status: authStatus,
+    user,
+    clearPostAuthRoute,
+    forceSignedOut,
+  } = useAuthSession()
 
   const handleUpdatePassword = async () => {
     if (submitting) return
@@ -67,24 +64,68 @@ export default function ResetPasswordScreen({
     setError('')
     setMessage('')
 
-    const { error: updateError } = await supabase.auth.updateUser({
-      password,
-    })
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({
+        password,
+      })
 
-    if (updateError) {
+      if (updateError) {
+        setError(updateError.message)
+        return
+      }
+
+      if (authStatus !== 'authenticated' || !user) {
+        setError(
+          'Your recovery session has expired. Request a new password reset email.'
+        )
+        return
+      }
+
+      setMessage('Your password has been updated.')
+      clearPostAuthRoute()
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Dashboard' }],
+      })
+    } catch {
+      setError(
+        'Could not update your password. Check your connection and try again.'
+      )
+    } finally {
       setSubmitting(false)
-      setError(updateError.message)
+    }
+  }
+
+  const handleBackToLogin = async () => {
+    if (submitting) return
+
+    if (authStatus !== 'authenticated' || !user) {
+      clearPostAuthRoute()
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      })
       return
     }
 
-    setMessage('Your password has been updated.')
-    setSubmitting(false)
-    await routeAfterReset()
+    setSubmitting(true)
+    setError('')
+    try {
+      await signOut()
+      clearPostAuthRoute()
+      forceSignedOut()
+    } catch {
+      setError('Could not sign out. Check your connection and try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
     <AuthContainer centered>
-      <AppText variant="title" style={uiStyles.h1}>Set New Password</AppText>
+      <AppText variant="title" style={uiStyles.h1}>
+        Set New Password
+      </AppText>
       <AppText variant="body" style={[uiStyles.sub, { marginBottom: 14 }]}>
         Choose a new password for your Naksha account.
       </AppText>
@@ -114,7 +155,10 @@ export default function ResetPasswordScreen({
       )}
 
       {error !== '' && (
-        <AppText variant="bodySmall" style={[uiStyles.errorText, { marginBottom: 10 }]}>
+        <AppText
+          variant="bodySmall"
+          style={[uiStyles.errorText, { marginBottom: 10 }]}
+        >
           {error}
         </AppText>
       )}
@@ -131,12 +175,7 @@ export default function ResetPasswordScreen({
       <Button
         title="Back to Login"
         variant="tertiary"
-        onPress={() =>
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Login' }],
-          })
-        }
+        onPress={handleBackToLogin}
         disabled={submitting}
       />
     </AuthContainer>

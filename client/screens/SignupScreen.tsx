@@ -81,39 +81,45 @@ export default function SignupScreen() {
     setError('')
     setSubmitting(true)
 
-    const { error } = await signUpWithEmail(email.trim(), password, {
-      first_name: firstName || undefined,
-      last_name: lastName || undefined,
-      birth_date: birthMoment.birthDate,
-      birth_time: birthMoment.birthTime,
-      birth_utc_offset_minutes: birthMoment.birthUtcOffsetMinutes ?? undefined,
-      birth_location: birthLocation || undefined,
-      time_zone: normalized,
-      birth_lat: birthLat ?? undefined,
-      birth_lon: birthLon ?? undefined,
-    })
-
-    setSubmitting(false)
-
-    if (error) {
-      setError(error.message)
-      return
-    }
-
-    navigation.replace('CheckEmail', {
-      email: email.trim(),
-      profile: {
-        first_name: firstName || null,
-        last_name: lastName || null,
+    try {
+      const { error } = await signUpWithEmail(email.trim(), password, {
+        first_name: firstName || undefined,
+        last_name: lastName || undefined,
         birth_date: birthMoment.birthDate,
         birth_time: birthMoment.birthTime,
-        birth_utc_offset_minutes: birthMoment.birthUtcOffsetMinutes,
-        birth_location: birthLocation || null,
+        birth_utc_offset_minutes: birthMoment.birthUtcOffsetMinutes ?? undefined,
+        birth_location: birthLocation || undefined,
         time_zone: normalized,
-        birth_lat: birthLat ?? null,
-        birth_lon: birthLon ?? null,
-      },
-    })
+        birth_lat: birthLat ?? undefined,
+        birth_lon: birthLon ?? undefined,
+      })
+
+      if (error) {
+        setError(error.message)
+        return
+      }
+
+      navigation.replace('CheckEmail', {
+        email: email.trim(),
+        profile: {
+          first_name: firstName || null,
+          last_name: lastName || null,
+          birth_date: birthMoment.birthDate,
+          birth_time: birthMoment.birthTime,
+          birth_utc_offset_minutes: birthMoment.birthUtcOffsetMinutes,
+          birth_location: birthLocation || null,
+          time_zone: normalized,
+          birth_lat: birthLat ?? null,
+          birth_lon: birthLon ?? null,
+        },
+      })
+    } catch {
+      setError(
+        'Could not create your account. Check your connection and try again.'
+      )
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (

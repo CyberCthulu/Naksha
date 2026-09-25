@@ -42,16 +42,23 @@ export default function ForgotPasswordScreen({
     setError('')
     setMessage('')
 
-    const { error: resetError } = await requestPasswordResetEmail(trimmedEmail)
+    try {
+      const { error: resetError } =
+        await requestPasswordResetEmail(trimmedEmail)
 
-    setSubmitting(false)
+      if (resetError) {
+        setError(resetError.message)
+        return
+      }
 
-    if (resetError) {
-      setError(resetError.message)
-      return
+      setMessage(RESET_SENT_MESSAGE)
+    } catch {
+      setError(
+        'Could not request a password reset. Check your connection and try again.'
+      )
+    } finally {
+      setSubmitting(false)
     }
-
-    setMessage(RESET_SENT_MESSAGE)
   }
 
   return (

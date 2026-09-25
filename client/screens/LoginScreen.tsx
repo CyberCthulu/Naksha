@@ -29,17 +29,22 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const handleLogin = async () => {
     if (submitting) return
     setSubmitting(true)
-    const { error } = await signInWithEmail(email.trim(), password)
-    setSubmitting(false)
+    setError('')
 
-    if (error) {
-      if (error.message.includes('Email not confirmed')) {
-        setError('Please verify your email before logging in.')
-      } else {
-        setError(error.message)
+    try {
+      const { error } = await signInWithEmail(email.trim(), password)
+
+      if (error) {
+        if (error.message.includes('Email not confirmed')) {
+          setError('Please verify your email before logging in.')
+        } else {
+          setError(error.message)
+        }
       }
-    } else {
-      setError('')
+    } catch {
+      setError('Could not log in. Check your connection and try again.')
+    } finally {
+      setSubmitting(false)
     }
   }
 

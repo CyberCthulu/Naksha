@@ -9,10 +9,11 @@ import { theme } from '../components/ui/theme'
 import { AppText } from '../components/ui/AppText'
 import { CelestialLoader } from '../components/ui/CelestialLoader'
 import { consumePendingAuthCallbackUrl } from '../lib/authCallbackUrl'
+import { useAuthSession } from '../lib/authSession'
 import type { RootStackParamList } from '../navigation/types'
 
 type VerifyType = 'email' | 'recovery' | 'invite' | 'email_change'
-type FinishRoute = 'ResetPassword'
+type FinishRoute = 'Authenticated' | 'ResetPassword' | 'Default'
 
 type AuthCallbackScreenProps = {
   navigation: Pick<
@@ -28,45 +29,60 @@ export default function AuthCallbackScreen({
 }: AuthCallbackScreenProps) {
   const processingUrl = useRef<string | null>(null)
   const handledUrl = useRef<string | null>(null)
+  const {
+    status,
+    user,
+    preparePostAuthRoute,
+    clearPostAuthRoute,
+    getPostAuthRoute,
+  } = useAuthSession()
+  const authStateRef = useRef({ status, user })
+  authStateRef.current = { status, user }
 
   useEffect(() => {
-    const finish = async (finishRoute?: FinishRoute) => {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession()
+    const finish = (finishRoute: FinishRoute = 'Default') => {
+      const current = authStateRef.current
 
-      if (error) {
-        console.warn('Auth callback session lookup failed:', error.message)
+      if (
+        finishRoute === 'ResetPassword' ||
+        (finishRoute === 'Authenticated' &&
+          getPostAuthRoute() === 'ResetPassword')
+      ) {
+        if (current.status === 'authenticated' && current.user) {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'ResetPassword' }],
+          })
+        }
+        return
       }
 
-      const target =
-        finishRoute === 'ResetPassword'
-          ? 'ResetPassword'
-          : session?.user
-            ? 'Dashboard'
-            : 'Login'
-
-      if (target === 'ResetPassword') {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'ResetPassword' }],
-        })
-      } else if (target === 'Dashboard') {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Dashboard' }],
-        })
-      } else {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Login' }],
-        })
+      if (finishRoute === 'Authenticated') {
+        if (current.status === 'authenticated' && current.user) {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Dashboard' }],
+          })
+        }
+        return
       }
+
+      clearPostAuthRoute()
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name:
+              current.status === 'authenticated' && current.user
+                ? 'Dashboard'
+                : 'Login',
+          },
+        ],
+      })
     }
 
-    const showAuthError = (message: string, error: { message?: string }) => {
-      console.warn('Auth callback failed:', error.message ?? message)
+    const showAuthError = (message: string) => {
+      console.warn('Auth callback failed.')
       Alert.alert('Verification failed', message)
     }
 
@@ -78,8 +94,13 @@ export default function AuthCallbackScreen({
       getRouteParamUrl() ??
       (await ExpoLinking.getInitialURL())
 
-    const getFragment = (url: string, parsed: ReturnType<typeof ExpoLinking.parse>) => {
-      const rawFragment = url.includes('#') ? url.slice(url.indexOf('#') + 1) : undefined
+    const getFragment = (
+      url: string,
+      parsed: ReturnType<typeof ExpoLinking.parse>
+    ) => {
+      const rawFragment = url.includes('#')
+        ? url.slice(url.indexOf('#') + 1)
+        : undefined
       const parsedFragment =
         typeof (parsed as any)?.fragment === 'string'
           ? ((parsed as any).fragment as string)
@@ -88,13 +109,20 @@ export default function AuthCallbackScreen({
       return rawFragment || parsedFragment
     }
 
+    const prepareRecovery = (type?: string | null) => {
+      const recovery = type === 'recovery'
+      if (recovery) preparePostAuthRoute('ResetPassword')
+      return recovery
+    }
+
     const handleUrl = async (incomingUrl?: string | null) => {
       let url: string | null | undefined
+      let recoveryPrepared = false
       try {
         url = incomingUrl ?? (await getStartupUrl())
 
         if (!url) {
-          await finish()
+          finish()
           return
         }
 
@@ -122,71 +150,80 @@ export default function AuthCallbackScreen({
             : undefined
 
         const fragment = getFragment(url, parsed)
-
-        const fragmentParams = fragment ? new URLSearchParams(fragment) : undefined
+        const fragmentParams = fragment
+          ? new URLSearchParams(fragment)
+          : undefined
         const accessToken = fragmentParams?.get('access_token') ?? undefined
         const refreshToken = fragmentParams?.get('refresh_token') ?? undefined
         const fragmentType = fragmentParams?.get('type') ?? undefined
 
         if (tokenHash && type) {
+          recoveryPrepared = prepareRecovery(type)
           const { error } = await supabase.auth.verifyOtp({
             token_hash: tokenHash,
             type,
           })
 
           if (error) {
+            if (recoveryPrepared) clearPostAuthRoute()
             showAuthError(
-              'We could not verify this sign-in link. Please try again or request a new email.',
-              error
+              'We could not verify this sign-in link. Please try again or request a new email.'
             )
+            finish()
+            return
           }
 
-          await finish(!error && type === 'recovery' ? 'ResetPassword' : undefined)
+          finish(recoveryPrepared ? 'ResetPassword' : 'Authenticated')
           return
         }
 
-        // Fallbacks kept in case other auth flows still use them
         if (code) {
+          recoveryPrepared = prepareRecovery(type)
           const { error } = await supabase.auth.exchangeCodeForSession(code)
 
           if (error) {
+            if (recoveryPrepared) clearPostAuthRoute()
             showAuthError(
-              'We could not complete sign-in from this link. Please try again or request a new email.',
-              error
+              'We could not complete sign-in from this link. Please try again or request a new email.'
             )
+            finish()
+            return
           }
 
-          await finish(!error && type === 'recovery' ? 'ResetPassword' : undefined)
+          finish(recoveryPrepared ? 'ResetPassword' : 'Authenticated')
           return
         }
 
-        if (fragment) {
-          if (accessToken && refreshToken) {
-            const { error } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            })
+        if (fragment && accessToken && refreshToken) {
+          recoveryPrepared = prepareRecovery(fragmentType)
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
 
-            if (error) {
-              showAuthError(
-                'We could not restore your sign-in session from this link. Please try again.',
-                error
-              )
-            }
-
-            await finish(
-              !error && fragmentType === 'recovery'
-                ? 'ResetPassword'
-                : undefined
+          if (error) {
+            if (recoveryPrepared) clearPostAuthRoute()
+            showAuthError(
+              'We could not restore your sign-in session from this link. Please try again.'
             )
+            finish()
             return
           }
+
+          finish(recoveryPrepared ? 'ResetPassword' : 'Authenticated')
+          return
         }
 
-        await finish()
-      } catch (e) {
-        console.warn('Auth callback failed:', e)
-        await finish()
+        showAuthError(
+          'This sign-in link is incomplete or expired. Request a new email and try again.'
+        )
+        finish()
+      } catch {
+        if (recoveryPrepared) clearPostAuthRoute()
+        showAuthError(
+          'We could not complete verification. Check your connection or request a new email.'
+        )
+        finish()
       } finally {
         if (url && processingUrl.current === url) {
           handledUrl.current = url
@@ -195,14 +232,20 @@ export default function AuthCallbackScreen({
       }
     }
 
-    handleUrl()
+    void handleUrl()
 
     const sub = ExpoLinking.addEventListener('url', ({ url }) => {
-      handleUrl(url)
+      void handleUrl(url)
     })
 
     return () => sub.remove()
-  }, [navigation, route?.params?.url])
+  }, [
+    clearPostAuthRoute,
+    getPostAuthRoute,
+    navigation,
+    preparePostAuthRoute,
+    route?.params?.url,
+  ])
 
   return (
     <View
@@ -213,7 +256,9 @@ export default function AuthCallbackScreen({
       accessibilityState={{ busy: true }}
     >
       <CelestialLoader size={96} color={theme.accent.base} />
-      <AppText variant="body" style={styles.label}>Verifying your account…</AppText>
+      <AppText variant="body" style={styles.label}>
+        Verifying your account…
+      </AppText>
     </View>
   )
 }

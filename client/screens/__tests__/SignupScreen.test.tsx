@@ -164,4 +164,29 @@ describe('SignupScreen civil birth contract', () => {
       })
     )
   })
+
+  it('recovers from an unexpected rejected signup and permits retry', async () => {
+    ;(signUpWithEmail as jest.Mock)
+      .mockRejectedValueOnce(new Error('network unavailable'))
+      .mockResolvedValueOnce({ error: null })
+    const screen = await renderScreen()
+
+    await completeAndSubmit(screen)
+
+    expect(
+      screen.root
+        .findAll((node) => String(node.type) === 'Text')
+        .some((node) =>
+          String(node.props.children).includes(
+            'Could not create your account. Check your connection and try again.'
+          )
+        )
+    ).toBe(true)
+    expect(
+      screen.root.findAllByType(Button).some((node) => node.props.title === 'Sign Up')
+    ).toBe(true)
+
+    await completeAndSubmit(screen)
+    expect(signUpWithEmail).toHaveBeenCalledTimes(2)
+  })
 })

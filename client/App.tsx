@@ -1,5 +1,5 @@
 // App.tsx
-import React, { useEffect, useState, createContext } from 'react'
+import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import {
   NavigationContainer,
@@ -17,8 +17,8 @@ import { Background, type BackgroundVariant } from './components/ui/Background'
 import { ReducedMotionProvider } from './components/ui/useReducedMotion'
 import { theme } from './components/ui/theme'
 import { LoadingState } from './components/ui/LoadingState'
+import { ErrorState } from './components/ui/ErrorState'
 
-import supabase from './lib/supabase'
 import { SpaceProvider } from './components/space/SpaceProvider'
 // import SpaceBackground from './components/space/SpaceBackground'
 
@@ -38,6 +38,10 @@ import JournalListScreen from './screens/JournalListScreen'
 import ProfileScreen from './screens/ProfileScreen'
 import { normalizeAuthCallbackUrlForRouting } from './lib/authCallbackUrl'
 import type { RootStackParamList } from './navigation/types'
+import {
+  AuthSessionProvider,
+  useAuthSessionController,
+} from './lib/authSession'
 
 /**
  * One Background per route, wrapped at registration rather than inside each
@@ -83,40 +87,49 @@ const ProfileRoute = withBackground(ProfileScreen, 'atmospheric')
 // hero: the flagship chart surface.
 const ChartRoute = withBackground(ChartScreen, 'hero')
 
-export const AuthContext = createContext<{ user: any | null }>({ user: null })
 const Stack = createNativeStackNavigator<RootStackParamList>()
 
-const linking: LinkingOptions<RootStackParamList> = {
-  prefixes: [Linking.createURL('/'), 'naksha://'],
-  config: {
-    screens: {
-      Login: 'login',
-      Signup: 'signup',
-      ForgotPassword: 'forgot-password',
-      ResetPassword: 'reset-password',
-      CheckEmail: 'verify-email',
-      Dashboard: 'dashboard',
-      CompleteProfile: 'complete-profile',
-      CreateGuestChart: 'guest-chart/new',
-      Chart: 'chart',
-      MyCharts: 'my-charts',
-      AuthCallback: 'auth/callback',
-      JournalEditor: 'journal/edit/:id?',
-      JournalList: 'journal/list',
-      Profile: 'profile',
-    },
-  },
-  async getInitialURL() {
-    const url = await Linking.getInitialURL()
-    return normalizeAuthCallbackUrlForRouting(url)
-  },
-  subscribe(listener: (url: string) => void) {
-    const subscription = Linking.addEventListener('url', ({ url }) => {
-      listener(normalizeAuthCallbackUrlForRouting(url) ?? url)
-    })
+export function createAppLinkingOptions(): LinkingOptions<RootStackParamList> {
+  let initialUrlConsumed = false
 
-    return () => subscription.remove()
-  },
+  return {
+    prefixes: [Linking.createURL('/'), 'naksha://'],
+    config: {
+      screens: {
+        Login: 'login',
+        Signup: 'signup',
+        ForgotPassword: 'forgot-password',
+        ResetPassword: 'reset-password',
+        CheckEmail: 'verify-email',
+        Dashboard: 'dashboard',
+        CompleteProfile: 'complete-profile',
+        CreateGuestChart: 'guest-chart/new',
+        Chart: 'chart',
+        MyCharts: 'my-charts',
+        AuthCallback: 'auth/callback',
+        JournalEditor: 'journal/edit/:id?',
+        JournalList: 'journal/list',
+        Profile: 'profile',
+      },
+    },
+    async getInitialURL() {
+      if (initialUrlConsumed) return null
+
+      // A keyed NavigationContainer remounts when auth identity changes. Mark
+      // this read consumed before awaiting so a cold-start link can initialize
+      // only the first container and cannot be replayed into the next user.
+      initialUrlConsumed = true
+      const url = await Linking.getInitialURL()
+      return normalizeAuthCallbackUrlForRouting(url)
+    },
+    subscribe(listener: (url: string) => void) {
+      const subscription = Linking.addEventListener('url', ({ url }) => {
+        listener(normalizeAuthCallbackUrlForRouting(url) ?? url)
+      })
+
+      return () => subscription.remove()
+    },
+  }
 }
 
 const TransparentTheme = {
@@ -133,49 +146,32 @@ const TransparentTheme = {
 }
 
 export default function App() {
-  const [user, setUser] = useState<any | null>(null)
-  const [authReady, setAuthReady] = useState(false)
+  const authSession = useAuthSessionController()
+  const { status, user, postAuthRoute, retryBootstrap } = authSession
+  const linking = React.useMemo(createAppLinkingOptions, [])
 
-  // Holds the native splash until the four app fonts resolve, then hides it.
-  // Failure and timeout both count as resolved, so the app can never be
-  // stranded behind the splash by a font. Auth initialization below is
-  // untouched and keeps its own loading state.
+  // Font failure and timeout both resolve, so font loading cannot strand boot.
   useAppFonts()
 
-  useEffect(() => {
-    let mounted = true
-
-    const initAuth = async () => {
-      const { data, error } = await supabase.auth.getSession()
-
-      if (error) {
-        console.warn('Error getting session:', error.message)
-      }
-
-      if (!mounted) return
-
-      setUser(data.session?.user ?? null)
-      setAuthReady(true)
-    }
-
-    initAuth()
-
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) return
-      setUser(session?.user ?? null)
-    })
-
-    return () => {
-      mounted = false
-      data.subscription.unsubscribe()
-    }
-  }, [])
-
-  if (!authReady) {
+  if (status === 'initializing') {
     return (
       <View style={styles.bootRoot}>
         <StatusBar style="light" />
         <LoadingState label="Preparing Naksha" size="large" />
+      </View>
+    )
+  }
+
+  if (status === 'bootstrap-error') {
+    return (
+      <View style={styles.bootRoot}>
+        <StatusBar style="light" />
+        <ErrorState
+          testID="auth-bootstrap-error"
+          title="Could not restore your session"
+          description="Check your connection and try again."
+          action={{ label: 'Retry', onPress: retryBootstrap }}
+        />
       </View>
     )
   }
@@ -191,8 +187,12 @@ export default function App() {
         <StatusBar style="light" />
         {/* <SpaceBackground /> */}
 
-        <AuthContext.Provider value={{ user }}>
-          <NavigationContainer linking={linking} theme={TransparentTheme}>
+        <AuthSessionProvider value={authSession}>
+          <NavigationContainer
+            key={user?.id ?? 'signed-out'}
+            linking={linking}
+            theme={TransparentTheme}
+          >
             <Stack.Navigator
               screenOptions={{
                 headerShown: false,
@@ -203,6 +203,9 @@ export default function App() {
             >
               {user ? (
                 <>
+                  {postAuthRoute === 'ResetPassword' ? (
+                    <Stack.Screen name="ResetPassword" component={ResetPasswordRoute} />
+                  ) : null}
                   <Stack.Screen name="Dashboard" component={DashboardRoute} />
                   <Stack.Screen name="CompleteProfile" component={CompleteProfileRoute} />
                   <Stack.Screen name="CreateGuestChart" component={CreateGuestChartRoute} />
@@ -217,15 +220,17 @@ export default function App() {
                   <Stack.Screen name="Login" component={LoginRoute} />
                   <Stack.Screen name="Signup" component={SignupRoute} />
                   <Stack.Screen name="ForgotPassword" component={ForgotPasswordRoute} />
-                  <Stack.Screen name="CheckEmail" component={CheckEmailRoute} />
                 </>
               )}
 
-              <Stack.Screen name="ResetPassword" component={ResetPasswordRoute} />
+              <Stack.Screen name="CheckEmail" component={CheckEmailRoute} />
+              {!user || postAuthRoute !== 'ResetPassword' ? (
+                <Stack.Screen name="ResetPassword" component={ResetPasswordRoute} />
+              ) : null}
               <Stack.Screen name="AuthCallback" component={AuthCallbackRoute} />
             </Stack.Navigator>
           </NavigationContainer>
-        </AuthContext.Provider>
+        </AuthSessionProvider>
       </View>
     </SpaceProvider>
     </ReducedMotionProvider>

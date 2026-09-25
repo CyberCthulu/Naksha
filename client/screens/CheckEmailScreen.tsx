@@ -8,10 +8,7 @@ import {
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import supabase from '../lib/supabase'
 import { resendSignupEmail, verifySignupOtp } from '../lib/auth'
-import {
-  isProfileComplete,
-  type ProfileCompletionData,
-} from '../lib/profileCompletion'
+import { useAuthSession } from '../lib/authSession'
 import type { RootStackParamList } from '../navigation/types'
 
 import AuthContainer from '../components/auth/AuthContainer'
@@ -31,6 +28,8 @@ export default function CheckEmailScreen() {
       NativeStackNavigationProp<RootStackParamList, 'CheckEmail'>
     >()
   const route = useRoute<RouteProp<RootStackParamList, 'CheckEmail'>>()
+  const { status, user } = useAuthSession()
+  const authenticated = status === 'authenticated' && Boolean(user)
 
   useLayoutEffect(() => {
     navigation.setOptions?.({ headerShown: false })
@@ -42,7 +41,6 @@ export default function CheckEmailScreen() {
   const [code, setCode] = useState('')
   const [resending, setResending] = useState(false)
   const [verifying, setVerifying] = useState(false)
-
   const initialMessage = useMemo(() => {
     if (!email) {
       return 'We sent you a confirmation code. Enter it below to verify your email and continue.'
@@ -52,7 +50,16 @@ export default function CheckEmailScreen() {
 
   const [message, setMessage] = useState(initialMessage)
 
+  const handleBack = () => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: authenticated ? 'Dashboard' : 'Login' }],
+    })
+  }
+
   const handleResend = async () => {
+    if (resending || verifying) return
+
     if (!email) {
       Alert.alert('Missing email', 'We could not find an email to resend to.')
       return
@@ -67,12 +74,19 @@ export default function CheckEmailScreen() {
       } else {
         setMessage('Confirmation code resent. Please check your inbox again.')
       }
+    } catch {
+      Alert.alert(
+        'Resend Failed',
+        'Could not resend the confirmation email. Check your connection and try again.'
+      )
     } finally {
       setResending(false)
     }
   }
 
   const handleVerify = async () => {
+    if (verifying || resending) return
+
     const trimmedCode = code.trim()
 
     if (!email) {
@@ -105,7 +119,6 @@ export default function CheckEmailScreen() {
           'Verification incomplete',
           'Your email was verified, but we could not start your session. Please log in.'
         )
-        navigation.replace('Login')
         return
       }
 
@@ -119,15 +132,13 @@ export default function CheckEmailScreen() {
           'Verification incomplete',
           'Your email was verified, but we could not start your session. Please log in.'
         )
-        navigation.replace('Login')
         return
       }
 
       const profile = params.profile
-      let savedProfile: ProfileCompletionData | null = null
 
       if (profile) {
-        const { data: upsertedProfile, error: upsertErr } = await supabase
+        const { error: upsertErr } = await supabase
           .from('users')
           .upsert(
             {
@@ -152,34 +163,17 @@ export default function CheckEmailScreen() {
           Alert.alert('Save Failed', upsertErr.message)
           return
         }
-
-        savedProfile = upsertedProfile as ProfileCompletionData | null
-      } else {
-        const { data: existingProfile, error: profileErr } = await supabase
-          .from('users')
-          .select(PROFILE_SELECT)
-          .eq('id', user.id)
-          .maybeSingle()
-
-        if (profileErr) {
-          Alert.alert('Profile Load Failed', profileErr.message)
-          return
-        }
-
-        savedProfile = existingProfile as ProfileCompletionData | null
       }
 
+      // Supabase's auth event is the navigation boundary. App remounts the
+      // navigator for the authenticated identity; Dashboard then makes the
+      // authoritative complete-profile decision from public.users.
       setMessage('Email Verified.')
-      navigation.reset({
-        index: 0,
-        routes: [
-          {
-            name: isProfileComplete(savedProfile)
-              ? 'Dashboard'
-              : 'CompleteProfile',
-          },
-        ],
-      })
+    } catch {
+      Alert.alert(
+        'Verification Failed',
+        'Could not verify the code. Check your connection and try again.'
+      )
     } finally {
       setVerifying(false)
     }
@@ -189,8 +183,10 @@ export default function CheckEmailScreen() {
     <AuthContainer>
       <ScreenHeader
         title="Check Email"
-        onBack={() => navigation.replace('Login')}
-        backAccessibilityLabel="Back to login"
+        onBack={handleBack}
+        backAccessibilityLabel={
+          authenticated ? 'Back to dashboard' : 'Back to login'
+        }
       />
 
       <Card>
@@ -217,18 +213,20 @@ export default function CheckEmailScreen() {
           title={verifying ? 'Verifying your code…' : 'Verify Code'}
           onPress={handleVerify}
           loading={verifying}
+          disabled={resending}
         />
         <Button
           title="Resend Email"
           variant="secondary"
           onPress={handleResend}
           loading={resending}
+          disabled={verifying}
           style={styles.secondaryAction}
         />
         <Button
-          title="Back to Login"
+          title={authenticated ? 'Back to Dashboard' : 'Back to Login'}
           variant="tertiary"
-          onPress={() => navigation.replace('Login')}
+          onPress={handleBack}
           disabled={verifying || resending}
           style={styles.secondaryAction}
         />

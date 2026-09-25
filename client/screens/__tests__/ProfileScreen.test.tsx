@@ -5,7 +5,7 @@ import TestRenderer from 'react-test-renderer'
 import ProfileScreen from '../ProfileScreen'
 import { deleteAccount } from '../../lib/accountDeletion'
 import { signOut } from '../../lib/auth'
-import supabase from '../../lib/supabase'
+import supabase, { clearPersistedAuthSession } from '../../lib/supabase'
 import type { UserRow } from '../../lib/domainTypes'
 import { Button } from '../../components/ui/Button'
 import { theme } from '../../components/ui/theme'
@@ -15,6 +15,7 @@ const mockNavigation = {
   navigate: jest.fn(),
   setOptions: jest.fn(),
 }
+const mockForceSignedOut = jest.fn()
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => mockNavigation,
@@ -23,6 +24,10 @@ jest.mock('@react-navigation/native', () => ({
 
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 24, left: 0 }),
+}))
+
+jest.mock('../../lib/authSession', () => ({
+  useAuthSession: () => ({ forceSignedOut: mockForceSignedOut }),
 }))
 
 jest.mock('../../lib/accountDeletion', () => ({
@@ -37,6 +42,7 @@ jest.mock('../../lib/auth', () => ({
 
 jest.mock('../../lib/supabase', () => ({
   __esModule: true,
+  clearPersistedAuthSession: jest.fn(),
   default: {
     auth: {
       getUser: jest.fn(),
@@ -218,7 +224,8 @@ describe('ProfileScreen account deletion', () => {
 
     mockProfileQueries()
     mockedDeleteAccount().mockResolvedValue()
-    mockedSignOut().mockResolvedValue({ error: null } as any)
+    mockedSignOut().mockResolvedValue(undefined)
+    ;(clearPersistedAuthSession as jest.Mock).mockResolvedValue(undefined)
   })
 
   afterEach(() => {
@@ -271,6 +278,31 @@ describe('ProfileScreen account deletion', () => {
 
     expect(mockedDeleteAccount()).toHaveBeenCalledTimes(1)
     expect(mockedSignOut()).toHaveBeenCalledTimes(1)
+    expect(mockForceSignedOut).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not report deletion failure when only local sign out fails', async () => {
+    mockedSignOut().mockRejectedValueOnce(new Error('network unavailable'))
+    const screen = await renderScreen()
+
+    await pressDeleteAccount(screen)
+    await act(async () => {
+      confirmationButtons()[1].onPress?.()
+      await settleAsyncWork()
+    })
+
+    expect(mockedDeleteAccount()).toHaveBeenCalledTimes(1)
+    expect(mockedSignOut()).toHaveBeenCalledTimes(1)
+    expect(clearPersistedAuthSession).toHaveBeenCalledTimes(1)
+    expect(mockForceSignedOut).toHaveBeenCalledTimes(1)
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Account deleted',
+      expect.stringContaining('could not finish signing out normally')
+    )
+    expect(Alert.alert).not.toHaveBeenCalledWith(
+      'Account deletion failed',
+      expect.anything()
+    )
   })
 
   it('shows a safe error and stays signed in when deletion fails', async () => {
@@ -335,7 +367,8 @@ describe('ProfileScreen presentation', () => {
     renderer = null
     mockProfileQueries()
     mockedDeleteAccount().mockResolvedValue()
-    mockedSignOut().mockResolvedValue({ error: null } as any)
+    mockedSignOut().mockResolvedValue(undefined)
+    ;(clearPersistedAuthSession as jest.Mock).mockResolvedValue(undefined)
   })
 
   afterEach(() => {

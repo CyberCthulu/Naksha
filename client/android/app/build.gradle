@@ -81,15 +81,32 @@ def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBu
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+// Local release signing is opt-in. Store these values in untracked Gradle
+// properties or environment variables; EAS injects its remote credentials on
+// the build worker. Without either source, local release artifacts are unsigned.
+def releaseSigningValue = { propertyName, environmentName ->
+    findProperty(propertyName) ?: System.getenv(environmentName)
+}
+def releaseStoreFile = releaseSigningValue('NAKSHA_UPLOAD_STORE_FILE', 'NAKSHA_UPLOAD_STORE_FILE')
+def releaseStorePassword = releaseSigningValue('NAKSHA_UPLOAD_STORE_PASSWORD', 'NAKSHA_UPLOAD_STORE_PASSWORD')
+def releaseKeyAlias = releaseSigningValue('NAKSHA_UPLOAD_KEY_ALIAS', 'NAKSHA_UPLOAD_KEY_ALIAS')
+def releaseKeyPassword = releaseSigningValue('NAKSHA_UPLOAD_KEY_PASSWORD', 'NAKSHA_UPLOAD_KEY_PASSWORD')
+def releaseSigningValues = [releaseStoreFile, releaseStorePassword, releaseKeyAlias, releaseKeyPassword]
+def releaseSigningConfigured = releaseSigningValues.every { it }
+
+if (releaseSigningValues.any { it } && !releaseSigningConfigured) {
+    throw new GradleException('Naksha release signing requires all four NAKSHA_UPLOAD_* values.')
+}
+
 android {
     ndkVersion rootProject.ext.ndkVersion
 
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.anonymous.client'
+    namespace 'com.naksha.app'
     defaultConfig {
-        applicationId 'com.anonymous.client'
+        applicationId 'com.naksha.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -104,15 +121,23 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        if (releaseSigningConfigured) {
+            release {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            if (releaseSigningConfigured) {
+                signingConfig signingConfigs.release
+            }
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds

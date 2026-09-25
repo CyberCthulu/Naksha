@@ -1,6 +1,6 @@
 # Naksha Codebase Handoff
 
-Last reviewed: 2026-09-25 at `7027373504035be1fad5e0665231527854f64ab2` (`ui/v2-redesign`)
+Last reviewed: 2026-09-25 during the uncommitted R4 worktree based on `1b9c31a5994ad5359d7e6ca9425fbd60a9644d2d` (`ui/v2-redesign`)
 
 This document is the current engineering handoff. Use [Feature-List.md](Feature-List.md) for implemented product scope and [release-hardening-plan.md](release-hardening-plan.md) for the active release sequence. Dated audits and implementation plans under `docs/` are historical evidence; their baselines and instructions do not override these current documents.
 
@@ -23,7 +23,9 @@ The post-R3 local baseline is:
 - Clean database replay and the tested pre-R3-to-R3 upgrade path passing.
 - Local service-role account-deletion compatibility passing.
 
-R4 is next: authentication recovery plus production Android identity and security. R5 covers the remaining high-value astrology calculation risk at high latitudes. R6 contains the remaining engineering release gates. Content review C1–C4 and a signed release-candidate cycle follow R6.
+The current R4 worktree gate is **67/67 Jest suites and 825/825 tests**, with TypeScript and lint passing. Android JavaScript export, Expo dependency validation, XML parsing, and Expo config introspection pass. Expo Doctor remains at the known 17/18 non-CNG result. Native manifest merging and AAB generation remain unverified because the installed environment lacks Android SDK 36/NDK 27 and production signing credentials.
+
+R4 is in progress: auth recovery and repository Android identity/security configuration are implemented locally. R4 remains open for approved brand assets, accountable production signing credentials, signed-AAB inspection, and real-device acceptance. R5 covers the remaining high-value astrology calculation risk at high latitudes. R6 contains the remaining engineering release gates. Content review C1–C4 and a signed release-candidate cycle follow R6.
 
 ## Source-of-truth hierarchy
 
@@ -38,16 +40,16 @@ R4 is next: authentication recovery plus production Android identity and securit
 - `client/`: Expo 54 / React Native 0.81 application, TypeScript, Jest, and ESLint.
 - `supabase/`: local Supabase configuration, ten migration files, three pgTAP R1–R3 suites, and the account-deletion Edge Function.
 - `docs/`: current references plus historical audits and implementation records.
-- `server/`: empty; there is no separate application server.
+- There is no `server/` directory or separate application server.
 - Root `package.json`: local Supabase CLI tooling.
 
 The client uses React Navigation, Supabase Auth/Postgres, AsyncStorage session persistence, Luxon and timezone-support for civil-time handling, astronomy-engine for calculations, react-native-svg for chart rendering, and OpenCage for location lookup.
 
 ## Application shell and navigation
 
-`client/App.tsx` registers 14 routes. Login, Signup, ForgotPassword, and CheckEmail form the signed-out stack. AuthCallback and ResetPassword remain reachable across auth states. Dashboard, Chart, CreateGuestChart, MyCharts, Profile, CompleteProfile, JournalList, and JournalEditor form the signed-in stack. The deep-link scheme is `naksha://`; journal edit links use `journal/edit/:id?`.
+`client/App.tsx` registers 14 routes. Login, Signup, and ForgotPassword form the signed-out stack. CheckEmail, AuthCallback, and ResetPassword remain reachable across auth states. Dashboard, Chart, CreateGuestChart, MyCharts, Profile, CompleteProfile, JournalList, and JournalEditor form the signed-in stack. The deep-link scheme is `naksha://`; journal edit links use `journal/edit/:id?`.
 
-The startup session bootstrap still awaits `supabase.auth.getSession()` without the complete rejection recovery required for release. Related async failure handling, recovery UX, post-deletion sign-out behavior, and an authenticated-navigation reset race belong to R4.
+R4 gives session bootstrap explicit initializing, authenticated, unauthenticated, and retryable error states. Auth events supersede stale bootstrap results. Each authenticated identity owns a keyed `NavigationContainer`, so a direct account change discards the prior user’s route history and parameters. Cold-start URL retrieval is one-shot across those container remounts, while runtime deep-link events remain subscribed. Recovery intent is authoritative even for same-user PKCE callbacks, and CheckEmail chooses a registered destination from current auth state.
 
 ## Authentication and profiles
 
@@ -76,7 +78,7 @@ A spring DST gap is rejected as nonexistent. A fall fold requires the user to se
 
 The app calculates Tropical longitudes for the Sun through Pluto, medium-orb major aspects, and Whole Sign houses when coordinates are available. `client/lib/time.ts` resolves civil input to an exact instant before `computeNatalPlanets` receives it. Calculation code does not independently reinterpret civil values.
 
-The current Ascendant implementation is approximate. Independent review identified a possible opposite-horizon selection at sufficiently high latitudes; R5 owns rising-versus-setting verification, correction, and northern/southern reference fixtures.
+The focused remaining calculation risk is Ascendant horizon selection at sufficiently high latitudes, where independent review found that the opposite intersection may be selected. R5 owns rising-versus-setting verification, correction, and northern/southern reference fixtures; the planetary longitude, aspect, and Whole Sign work is otherwise considered strong.
 
 New chart data emits schema and calculation version 1. Runtime validation distinguishes unversioned legacy, current, unsupported future, and malformed persisted payloads. Unsupported payloads are not interpreted or overwritten.
 
@@ -145,19 +147,25 @@ Remaining release work includes Sky Now aspect semantics, lifecycle/motion behav
 
 ## Production identity and release state
 
-The current development identity is still a placeholder:
+The current R4 worktree establishes:
 
-- Expo app name/slug: `client`
-- Android package: `com.anonymous.client`
-- Deep-link scheme: `naksha`
+- User-visible Expo/Android app name: **Naksha**
+- Preserved Expo slug: `client`
+- Owner-approved Android package/namespace: `com.naksha.app`
+- Preserved production deep-link scheme: `naksha`
+- Preserved EAS project linkage: `02e47ee9-8b27-4b02-95f3-efc2bece95d7`
+- Local version: `1.0.0`; native base `versionCode`: `1`; production EAS builds use the remote version source and auto-increment `versionCode`
+- Production permission intent: `INTERNET` only; legacy storage, overlay, and vibration permissions are blocked
+- `allowBackup=false`, legacy/Android 12+ AsyncStorage database exclusions, and cleartext disabled
+- Debug signing remains development-only; local release output is unsigned unless all untracked `NAKSHA_UPLOAD_*` values are supplied; EAS production is configured for remote credentials
 
-R4 must establish the intentional Naksha name, final package/application ID, production scheme, signing, necessary permissions, backup/data-extraction policy, and a signed Android AAB. Android is the launch platform; iOS follows after Android stabilization unless requirements change.
+R4 is not complete. The repository contains only stock Expo placeholder icon/splash assets, no production keystore was created or inspected, and no signed AAB or merged release manifest was produced because the local Android SDK 36/NDK 27 toolchain is absent. Android remains the launch platform; iOS follows after Android stabilization unless requirements change.
 
 There is no automated CI gate. R6 should run typecheck, lint, Jest, and DB/pgTAP coverage where practical.
 
 ## Current release blockers and sequence
 
-1. **R4 — next:** auth recovery plus Android production identity/security.
+1. **R4 — in progress:** finish brand assets, signing ownership, signed-AAB inspection, and real-device auth/native acceptance.
 2. **R5:** high-latitude Ascendant/reference correctness.
 3. **R6:** remaining engineering readiness, including CI, generated types, hydration, lifecycle, accessibility, geocoder resilience, settings correctness, privacy/support/export, diagnostics, and dependency disposition.
 4. **C1–C4:** lexicon completeness, editorial quality, composition quality, and astrology editorial review.

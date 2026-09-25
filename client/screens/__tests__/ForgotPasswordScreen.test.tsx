@@ -159,6 +159,26 @@ describe('ForgotPasswordScreen', () => {
     expectText(screen, 'rate limited')
   })
 
+  it('recovers from an unexpected rejected reset request and permits retry', async () => {
+    mockedRequestPasswordResetEmail()
+      .mockRejectedValueOnce(new Error('network unavailable'))
+      .mockResolvedValueOnce({ data: null, error: null } as any)
+    const screen = await renderScreen()
+
+    await act(async () => {
+      emailInput(screen).props.onChangeText('ada@example.com')
+      await settleAsyncWork()
+    })
+    await press(screen, 'Send Reset Email')
+
+    expectText(
+      screen,
+      'Could not request a password reset. Check your connection and try again.'
+    )
+    await press(screen, 'Send Reset Email')
+    expect(mockedRequestPasswordResetEmail()).toHaveBeenCalledTimes(2)
+  })
+
   it('navigates back to Login', async () => {
     const screen = await renderScreen()
 
