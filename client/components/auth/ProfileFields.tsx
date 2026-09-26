@@ -11,6 +11,7 @@ import { uiStyles } from '../ui/uiStyles'
 import { normalizeZone } from '../../lib/timezones'
 import type { CivilDate, CivilTime } from '../../lib/time'
 import BirthTimeResolutionField from './BirthTimeResolutionField'
+import { useFormAppearance } from '../ui/FormAppearance'
 
 type Props = {
   firstName: string
@@ -53,6 +54,8 @@ export default function ProfileFields({
   setBirthLat,
   setBirthLon,
 }: Props) {
+  const soft = useFormAppearance() === 'soft'
+
   return (
     <View>
       <FormField label="First Name">
@@ -120,7 +123,9 @@ export default function ProfileFields({
 
       {birthLat != null && birthLon != null && (
         <AppText variant="bodySmall" style={[uiStyles.muted, { marginBottom: 16 }]}>
-          Resolved: {birthLocation} ({birthLat.toFixed(4)}, {birthLon.toFixed(4)})
+          {soft
+            ? 'Location resolved'
+            : `Resolved: ${birthLocation} (${birthLat.toFixed(4)}, ${birthLon.toFixed(4)})`}
         </AppText>
       )}
 

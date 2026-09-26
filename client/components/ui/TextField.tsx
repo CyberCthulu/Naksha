@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { StyleSheet, TextInput, type TextInputProps } from 'react-native'
 import { theme } from './theme'
+import { useFormAppearance } from './FormAppearance'
+import { formStyles } from './formStyles'
 
 export type TextFieldProps = TextInputProps & {
   /** Renders the invalid state. The message itself belongs to FormField. */
@@ -16,6 +18,7 @@ export default function TextField({
   ...rest
 }: TextFieldProps) {
   const [focused, setFocused] = useState(false)
+  const appearance = useFormAppearance()
 
   return (
     <TextInput
@@ -33,6 +36,7 @@ export default function TextField({
       }}
       style={[
         styles.input,
+        appearance === 'soft' && formStyles.softInput,
         !editable && styles.disabled,
         focused && styles.focused,
         error && styles.error,

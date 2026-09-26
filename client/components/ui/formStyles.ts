@@ -27,4 +27,7 @@ export const formStyles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: theme.background.sunken,
   },
+  softInput: {
+    backgroundColor: theme.surface.base,
+  },
 })

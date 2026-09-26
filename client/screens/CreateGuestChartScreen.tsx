@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import AuthContainer from '../components/auth/AuthContainer'
+import { AuthFormSection } from '../components/auth/AuthFormSection'
 import BirthTimeResolutionField from '../components/auth/BirthTimeResolutionField'
 import DateField from '../components/auth/DateField'
 import LocationAutocompleteField from '../components/auth/LocationAutocompleteField'
@@ -14,7 +15,7 @@ import { Button } from '../components/ui/Button'
 import FormField from '../components/ui/FormField'
 import TextField from '../components/ui/TextField'
 import { ScreenHeader } from '../components/ui/ScreenHeader'
-import { uiStyles } from '../components/ui/uiStyles'
+import { theme } from '../components/ui/theme'
 import {
   prepareBirthMoment,
   type CivilDate,
@@ -103,85 +104,95 @@ export default function CreateGuestChartScreen() {
   }
 
   return (
-    <AuthContainer>
+    <AuthContainer formAppearance="soft">
       <ScreenHeader
         title="Create Guest Chart"
         onBack={() => navigation.goBack()}
       />
 
-      <MutedText variant="body" style={styles.subtitle}>
+      <MutedText variant="bodySmall" style={styles.subtitle}>
         Enter another person{"'"}s birth details to view their chart.
       </MutedText>
 
-      <FormField label="Name">
-        <TextField
-          value={name}
-          onChangeText={setName}
-          placeholder="Name"
-          autoCapitalize="words"
-        />
-      </FormField>
+      <AuthFormSection title="Person">
+        <FormField label="Name">
+          <TextField
+            value={name}
+            onChangeText={setName}
+            placeholder="Name"
+            autoCapitalize="words"
+          />
+        </FormField>
+      </AuthFormSection>
 
-      <DateField
-        label="Birth Date"
-        value={birthDate}
-        onChange={(value) => {
-          setBirthDate(value)
-          setBirthUtcOffsetMinutes(null)
-        }}
-      />
-
-      <TimeField
-        label="Birth Time"
-        value={birthTime}
-        onChange={(value) => {
-          setBirthTime(value)
-          setBirthUtcOffsetMinutes(null)
-        }}
-      />
-
-      <BirthTimeResolutionField
-        birthDate={birthDate}
-        birthTime={birthTime}
-        timeZone={timeZone}
-        selectedOffsetMinutes={birthUtcOffsetMinutes}
-        onSelectOffsetMinutes={setBirthUtcOffsetMinutes}
-      />
-
-      <LocationAutocompleteField
-        value={birthLocation}
-        onChange={(next) => {
-          setBirthLocation(next)
-          setBirthLat(null)
-          setBirthLon(null)
-          setBirthUtcOffsetMinutes(null)
-        }}
-        onSelectLocation={(result) => {
-          setBirthLocation(result.name)
-          setBirthLat(result.lat)
-          setBirthLon(result.lon)
-
-          const normalized = normalizeZone(result.timeZone)
-          if (normalized) {
-            setTimeZone(normalized)
+      <AuthFormSection title="Birth moment">
+        <DateField
+          label="Birth Date"
+          value={birthDate}
+          onChange={(value) => {
+            setBirthDate(value)
             setBirthUtcOffsetMinutes(null)
-          }
-        }}
-      />
+          }}
+        />
 
-      {birthLat != null && birthLon != null && (
-        <AppText variant="bodySmall" style={[uiStyles.muted, styles.resolvedText]}>
-          Resolved: {birthLocation} ({birthLat.toFixed(4)}, {birthLon.toFixed(4)})
-        </AppText>
-      )}
+        <TimeField
+          label="Birth Time"
+          value={birthTime}
+          onChange={(value) => {
+            setBirthTime(value)
+            setBirthUtcOffsetMinutes(null)
+          }}
+        />
 
-      <TimeZonePicker
-        value={timeZone}
-        onChange={(value) => {
-          setTimeZone(value)
-          setBirthUtcOffsetMinutes(null)
-        }}
-      />
+        <BirthTimeResolutionField
+          birthDate={birthDate}
+          birthTime={birthTime}
+          timeZone={timeZone}
+          selectedOffsetMinutes={birthUtcOffsetMinutes}
+          onSelectOffsetMinutes={setBirthUtcOffsetMinutes}
+        />
+      </AuthFormSection>
+
+      <AuthFormSection title="Birth place">
+        <LocationAutocompleteField
+          value={birthLocation}
+          onChange={(next) => {
+            setBirthLocation(next)
+            setBirthLat(null)
+            setBirthLon(null)
+            setBirthUtcOffsetMinutes(null)
+          }}
+          onSelectLocation={(result) => {
+            setBirthLocation(result.name)
+            setBirthLat(result.lat)
+            setBirthLon(result.lon)
+
+            const normalized = normalizeZone(result.timeZone)
+            if (normalized) {
+              setTimeZone(normalized)
+              setBirthUtcOffsetMinutes(null)
+            }
+          }}
+        />
+
+        {birthLat != null && birthLon != null && (
+          <AppText
+            variant="bodySmall"
+            accessibilityLiveRegion="polite"
+            style={styles.resolvedText}
+          >
+            Location resolved
+          </AppText>
+        )}
+
+        <TimeZonePicker
+          value={timeZone}
+          onChange={(value) => {
+            setTimeZone(value)
+            setBirthUtcOffsetMinutes(null)
+          }}
+        />
+      </AuthFormSection>
 
       <View style={styles.actions}>
         <Button title="Create Chart" onPress={onCreateChart} />
@@ -192,13 +203,14 @@ export default function CreateGuestChartScreen() {
 
 const styles = StyleSheet.create({
   subtitle: {
-    marginTop: 6,
-    marginBottom: 18,
+    marginTop: theme.space.xs,
+    marginBottom: theme.space.xxl,
   },
   resolvedText: {
-    marginBottom: 16,
+    color: theme.text.secondary,
+    marginBottom: theme.space.lg,
   },
   actions: {
-    marginTop: 18,
+    marginTop: theme.space.xs,
   },
 })

@@ -9,15 +9,18 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { theme } from '../ui/theme'
+import { FormAppearanceContext, type FormAppearance } from '../ui/FormAppearance'
 
 type Props = {
   children: ReactNode
   centered?: boolean
+  formAppearance?: FormAppearance
 }
 
 export default function AuthContainer({
   children,
   centered = false,
+  formAppearance = 'default',
 }: Props) {
   const insets = useSafeAreaInsets()
 
@@ -31,7 +34,7 @@ export default function AuthContainer({
         style={{ flex: 1 }}
         contentContainerStyle={{
           flexGrow: 1,
-          paddingHorizontal: theme.spacing.screen,
+          paddingHorizontal: theme.space.xl,
           paddingTop: insets.top + theme.space.xs,
           paddingBottom: insets.bottom + 24,
           justifyContent: centered ? 'center' : 'flex-start',
@@ -39,7 +42,15 @@ export default function AuthContainer({
         keyboardShouldPersistTaps="handled"
         contentInsetAdjustmentBehavior="always"
       >
-        <View>{children}</View>
+        <FormAppearanceContext.Provider value={formAppearance}>
+          <View
+            style={formAppearance === 'soft'
+              ? { width: '100%', maxWidth: 480, alignSelf: 'center' }
+              : undefined}
+          >
+            {children}
+          </View>
+        </FormAppearanceContext.Provider>
       </ScrollView>
     </KeyboardAvoidingView>
   )

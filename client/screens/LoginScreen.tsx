@@ -1,6 +1,6 @@
 // screens/LoginScreen.tsx
 import { useState } from 'react'
-import { View } from 'react-native'
+import { Image, StyleSheet, View } from 'react-native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { signInWithEmail } from '../lib/auth'
 
@@ -8,9 +8,10 @@ import AuthContainer from '../components/auth/AuthContainer'
 import EmailField from '../components/auth/EmailField'
 import PasswordField from '../components/auth/PasswordField'
 
-import { uiStyles } from '../components/ui/uiStyles'
-import { AppText } from '../components/ui/AppText'
+import { AppText, MutedText } from '../components/ui/AppText'
 import { Button } from '../components/ui/Button'
+import { Card } from '../components/ui/Card'
+import { theme } from '../components/ui/theme'
 import type { RootStackParamList } from '../navigation/types'
 
 type LoginScreenProps = {
@@ -49,43 +50,110 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   }
 
   return (
-    <AuthContainer centered>
-      <AppText variant="title" style={uiStyles.h1}>Log In</AppText>
-
-      <EmailField value={email} onChange={setEmail} />
-      <PasswordField value={password} onChange={setPassword} />
-
-      {error !== '' && (
-        <AppText variant="bodySmall" style={[uiStyles.errorText, { marginBottom: 10 }]}>
-          {error}
+    <AuthContainer formAppearance="soft">
+      <View style={styles.introduction}>
+        <Image
+          source={require('../assets/naksha-logo-transparent.png')}
+          style={styles.mark}
+          resizeMode="contain"
+          accessible={false}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        />
+        <AppText variant="display" accessibilityRole="header" style={styles.brand}>
+          Naksha
         </AppText>
-      )}
+        <MutedText variant="bodySmall" style={styles.supportingLine}>
+          Your chart. Your sky. Your map.
+        </MutedText>
+      </View>
 
-      <Button
-        title={submitting ? 'Logging in...' : 'Login'}
-        variant="primary"
-        onPress={handleLogin}
-        disabled={submitting}
-      />
+      <Card style={styles.form}>
+        <AppText variant="title" accessibilityRole="header" style={styles.title}>
+          Log In
+        </AppText>
 
-      <View style={{ height: 10 }} />
+        <EmailField value={email} onChange={setEmail} />
+        <PasswordField value={password} onChange={setPassword} />
 
-      <Button
-        title="Forgot password?"
-        variant="tertiary"
-        onPress={() => navigation.navigate('ForgotPassword')}
-        disabled={submitting}
-      />
+        {error !== '' && (
+          <AppText
+            variant="bodySmall"
+            accessibilityLiveRegion="polite"
+            style={styles.error}
+          >
+            {error}
+          </AppText>
+        )}
 
-      <View style={{ height: 10 }} />
+        <Button
+          title={submitting ? 'Logging in...' : 'Log In'}
+          variant="primary"
+          onPress={handleLogin}
+          disabled={submitting}
+        />
 
-      <Button
-        title="Don't have an account? Sign Up"
-        variant="tertiary"
-        onPress={() => navigation.navigate('Signup')}
-        style={{ marginTop: 8 }}
-        disabled={submitting}
-      />
+        <Button
+          title="Forgot password?"
+          variant="quiet"
+          size="sm"
+          onPress={() => navigation.navigate('ForgotPassword')}
+          disabled={submitting}
+          style={styles.recovery}
+        />
+      </Card>
+
+      <View style={styles.footer}>
+        <MutedText variant="bodySmall">New to Naksha?</MutedText>
+        <Button
+          title="Sign Up"
+          variant="tertiary"
+          size="sm"
+          onPress={() => navigation.navigate('Signup')}
+          disabled={submitting}
+        />
+      </View>
     </AuthContainer>
   )
 }
+
+const styles = StyleSheet.create({
+  introduction: {
+    alignItems: 'center',
+    paddingTop: theme.space.xxl,
+    paddingBottom: theme.space.xxxl,
+  },
+  mark: {
+    width: 88,
+    height: 88,
+  },
+  brand: {
+    marginTop: theme.space.sm,
+    textAlign: 'center',
+  },
+  supportingLine: {
+    marginTop: theme.space.sm,
+    textAlign: 'center',
+  },
+  form: {
+    marginBottom: theme.space.md,
+  },
+  title: {
+    marginBottom: theme.space.xl,
+  },
+  error: {
+    color: theme.state.danger,
+    marginBottom: theme.space.md,
+  },
+  recovery: {
+    marginTop: theme.space.sm,
+  },
+  footer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    columnGap: theme.space.xs,
+    paddingBottom: theme.space.lg,
+  },
+})

@@ -12,6 +12,7 @@ import { AppText, MutedText } from '../ui/AppText'
 import { CelestialLoader } from '../ui/CelestialLoader'
 import { uiStyles } from '../ui/uiStyles'
 import { theme } from '../ui/theme'
+import { useFormAppearance } from '../ui/FormAppearance'
 
 type Props = {
   label?: string
@@ -32,8 +33,9 @@ export default function LocationAutocompleteField({
   value,
   onChange,
   onSelectLocation,
-  placeholder = 'City, State/Country',
+  placeholder,
 }: Props) {
+  const soft = useFormAppearance() === 'soft'
   const [query, setQuery] = useState(value)
   const [results, setResults] = useState<GeocodeResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -106,7 +108,9 @@ export default function LocationAutocompleteField({
       <TextField
         value={query}
         onChangeText={handleChangeText}
-        placeholder={placeholder}
+        placeholder={
+          placeholder ?? (soft ? 'Search city or birthplace' : 'City, State/Country')
+        }
         autoCorrect={false}
         autoCapitalize="words"
       />
@@ -147,7 +151,7 @@ export default function LocationAutocompleteField({
                 ]}
               >
                 <AppText variant="body">{item.name}</AppText>
-                {!!coords && (
+                {!!coords && !soft && (
                   <MutedText variant="caption" style={styles.resultCoords}>
                     {coords}
                   </MutedText>

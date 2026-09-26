@@ -3,7 +3,18 @@ import { Picker } from '@react-native-picker/picker'
 import { TIMEZONES } from '../../lib/timezones'
 import FormField from '../ui/FormField'
 import { formStyles } from '../ui/formStyles'
+import { useFormAppearance } from '../ui/FormAppearance'
 import { theme } from '../ui/theme'
+
+function friendlyZoneLabel(zone: string): string {
+  if (zone.startsWith('Etc/')) return zone
+
+  const segments = zone.split('/').map((segment) => segment.replace(/_/g, ' '))
+  if (segments.length < 2) return segments[0]
+
+  const city = segments.pop()
+  return `${city} · ${segments.join(' / ')}`
+}
 
 export default function TimeZonePicker({
   value,
@@ -12,9 +23,11 @@ export default function TimeZonePicker({
   value: string
   onChange: (s: string) => void
 }) {
+  const soft = useFormAppearance() === 'soft'
+
   return (
     <FormField label="Time Zone">
-      <View style={formStyles.pickerWrap}>
+      <View style={[formStyles.pickerWrap, soft && formStyles.softInput]}>
         <Picker
           accessibilityLabel="Time Zone"
           selectedValue={value}
@@ -36,7 +49,11 @@ export default function TimeZonePicker({
           }
         >
           {TIMEZONES.map((tz) => (
-            <Picker.Item key={tz} label={tz} value={tz} />
+            <Picker.Item
+              key={tz}
+              label={soft ? friendlyZoneLabel(tz) : tz}
+              value={tz}
+            />
           ))}
         </Picker>
       </View>

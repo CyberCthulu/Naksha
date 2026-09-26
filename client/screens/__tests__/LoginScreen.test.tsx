@@ -49,7 +49,7 @@ async function renderScreen() {
   return renderer!
 }
 
-async function submit(screen: TestRenderer.ReactTestRenderer) {
+async function fillCredentials(screen: TestRenderer.ReactTestRenderer) {
   const inputs = screen.root.findAllByType(TextInput)
   await act(async () => {
     inputs.find((node) => node.props.placeholder === 'you@example.com')!.props.onChangeText(
@@ -61,16 +61,20 @@ async function submit(screen: TestRenderer.ReactTestRenderer) {
     await settleAsyncWork()
   })
 
+}
+
+async function submit(screen: TestRenderer.ReactTestRenderer) {
+  await fillCredentials(screen)
   const button = screen.root
     .findAllByType(Button)
-    .find((node) => node.props.title === 'Login')!
+    .find((node) => node.props.title === 'Log In')!
   await act(async () => {
     await button.props.onPress()
     await settleAsyncWork()
   })
 }
 
-describe('LoginScreen exceptional paths', () => {
+describe('LoginScreen', () => {
   beforeEach(() => {
     ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
     jest.clearAllMocks()
@@ -80,6 +84,56 @@ describe('LoginScreen exceptional paths', () => {
 
   afterEach(() => {
     if (renderer) act(() => renderer?.unmount())
+  })
+
+  it('introduces Naksha and keeps signup and recovery navigation available', async () => {
+    const screen = await renderScreen()
+
+    expectText(screen, 'Naksha')
+    expectText(screen, 'Your chart. Your sky. Your map.')
+
+    await act(async () => {
+      screen.root.findAllByType(Button)
+        .find((node) => node.props.title === 'Forgot password?')!.props.onPress()
+      screen.root.findAllByType(Button)
+        .find((node) => node.props.title === 'Sign Up')!.props.onPress()
+    })
+
+    expect(mockNavigation.navigate.mock.calls).toEqual([
+      ['ForgotPassword'],
+      ['Signup'],
+    ])
+  })
+
+  it('disables account actions during login and submits credentials once', async () => {
+    let resolveSignIn!: (value: any) => void
+    mockedSignIn().mockImplementationOnce(() => new Promise((resolve) => {
+      resolveSignIn = resolve
+    }))
+    const screen = await renderScreen()
+    await fillCredentials(screen)
+
+    let pendingLogin!: Promise<void>
+    await act(async () => {
+      pendingLogin = screen.root.findAllByType(Button)
+        .find((node) => node.props.title === 'Log In')!.props.onPress()
+      await settleAsyncWork()
+    })
+
+    expect(screen.root.findAllByType(Button).every((node) => node.props.disabled)).toBe(true)
+    await act(async () => {
+      await screen.root.findAllByType(Button)
+        .find((node) => node.props.title === 'Logging in...')!.props.onPress()
+    })
+    expect(mockedSignIn()).toHaveBeenCalledTimes(1)
+    expect(mockedSignIn()).toHaveBeenCalledWith('ada@example.com', 'secret-password')
+    expect(mockNavigation.navigate).not.toHaveBeenCalled()
+
+    await act(async () => {
+      resolveSignIn({ data: null, error: null })
+      await pendingLogin
+    })
+    expect(screen.root.findAllByType(Button).every((node) => !node.props.disabled)).toBe(true)
   })
 
   it('recovers from an unexpected rejected login and permits retry', async () => {
@@ -92,7 +146,7 @@ describe('LoginScreen exceptional paths', () => {
 
     expectText(screen, 'Could not log in. Check your connection and try again.')
     expect(
-      screen.root.findAllByType(Button).some((node) => node.props.title === 'Login')
+      screen.root.findAllByType(Button).some((node) => node.props.title === 'Log In')
     ).toBe(true)
 
     await submit(screen)

@@ -4,6 +4,7 @@ import DateTimePicker from '@react-native-community/datetimepicker'
 import { AppText } from '../ui/AppText'
 import FormField from '../ui/FormField'
 import { formStyles } from '../ui/formStyles'
+import { useFormAppearance } from '../ui/FormAppearance'
 import { theme } from '../ui/theme'
 import {
   civilTimeFromPicker,
@@ -21,6 +22,7 @@ export default function TimeField({
   onChange: (d: CivilTime) => void
 }) {
   const [open, setOpen] = useState(false)
+  const appearance = useFormAppearance()
   const displayValue = value
     ? `${value.hour % 12 || 12}:${String(value.minute).padStart(2, '0')} ${value.hour >= 12 ? 'PM' : 'AM'}`
     : 'Select Time'
@@ -32,7 +34,7 @@ export default function TimeField({
         accessibilityLabel={label}
         accessibilityValue={{ text: displayValue }}
         onPress={() => setOpen(true)}
-        style={formStyles.input}
+        style={[formStyles.input, appearance === 'soft' && formStyles.softInput]}
       >
         <AppText
           variant="body"

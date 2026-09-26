@@ -4,6 +4,7 @@ import DateTimePicker from '@react-native-community/datetimepicker'
 import { AppText } from '../ui/AppText'
 import FormField from '../ui/FormField'
 import { formStyles } from '../ui/formStyles'
+import { useFormAppearance } from '../ui/FormAppearance'
 import { theme } from '../ui/theme'
 import {
   civilDateFromPicker,
@@ -21,6 +22,7 @@ export default function DateField({
   onChange: (d: CivilDate) => void
 }) {
   const [open, setOpen] = useState(false)
+  const appearance = useFormAppearance()
   const displayValue = value
     ? `${String(value.year).padStart(4, '0')}-${String(value.month).padStart(2, '0')}-${String(value.day).padStart(2, '0')}`
     : 'Select Date'
@@ -50,7 +52,7 @@ export default function DateField({
         accessibilityLabel={label}
         accessibilityValue={{ text: displayValue }}
         onPress={openPicker}
-        style={formStyles.input}
+        style={[formStyles.input, appearance === 'soft' && formStyles.softInput]}
       >
         <AppText
           variant="body"

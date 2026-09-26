@@ -215,6 +215,16 @@ describe('CreateGuestChartScreen', () => {
     jest.restoreAllMocks()
   })
 
+  it('groups person, birth moment, and birth place under accessible headings', async () => {
+    const screen = await renderScreen()
+
+    for (const label of ['Person', 'Birth moment', 'Birth place']) {
+      expect(screen.root.findAllByType(Text).some((node) =>
+        node.props.accessibilityRole === 'header' && node.props.children === label
+      )).toBe(true)
+    }
+  })
+
   it('validates missing required fields', async () => {
     const screen = await renderScreen()
 
@@ -296,5 +306,40 @@ describe('CreateGuestChartScreen', () => {
       },
       chartMode: 'guest',
     })
+  })
+
+  it('clears location confirmation and saved coordinates when the place is edited', async () => {
+    const screen = await renderScreen()
+    await act(async () => {
+      textInputByPlaceholder(screen, 'Name').props.onChangeText('Grace Hopper')
+    })
+    await press(screen, 'Pick Date')
+    await press(screen, 'Pick Time')
+    await press(screen, 'Select Location')
+
+    const visibleText = () => screen.root.findAllByType(Text)
+      .map((node) => textValue(node.props.children)).join(' ')
+    expect(visibleText()).toContain('Location resolved')
+    expect(visibleText()).not.toContain('51.5072')
+    expect(visibleText()).not.toContain('-0.1276')
+
+    await act(async () => {
+      textInputByPlaceholder(screen, 'City, State/Country').props.onChangeText('')
+    })
+    expect(visibleText()).not.toContain('Location resolved')
+
+    await act(async () => {
+      textInputByPlaceholder(screen, 'City, State/Country').props.onChangeText('Another Place')
+    })
+    await press(screen, 'Create Chart')
+
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('Chart', expect.objectContaining({
+      chartMode: 'guest',
+      profile: expect.objectContaining({
+        birth_location: 'Another Place',
+        birth_lat: null,
+        birth_lon: null,
+      }),
+    }))
   })
 })

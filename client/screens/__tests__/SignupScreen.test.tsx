@@ -1,5 +1,5 @@
 import React from 'react'
-import { TextInput } from 'react-native'
+import { Text, TextInput } from 'react-native'
 import TestRenderer from 'react-test-renderer'
 
 import SignupScreen from '../SignupScreen'
@@ -79,7 +79,7 @@ function inputByPlaceholder(root: TestRenderer.ReactTestRenderer, value: string)
     .find((node) => node.props.placeholder === value)!
 }
 
-async function completeAndSubmit(screen: TestRenderer.ReactTestRenderer) {
+async function completeProfile(screen: TestRenderer.ReactTestRenderer) {
   await act(async () => {
     inputByPlaceholder(screen, 'you@example.com').props.onChangeText(
       'ada@example.com'
@@ -93,6 +93,10 @@ async function completeAndSubmit(screen: TestRenderer.ReactTestRenderer) {
     await settleAsyncWork()
   })
 
+}
+
+async function completeAndSubmit(screen: TestRenderer.ReactTestRenderer) {
+  await completeProfile(screen)
   const signup = screen.root
     .findAllByType(Button)
     .find((node) => node.props.title === 'Sign Up')!
@@ -118,6 +122,57 @@ describe('SignupScreen civil birth contract', () => {
 
   afterEach(() => {
     if (renderer) act(() => renderer?.unmount())
+  })
+
+  it('groups account and birth details and offers the existing login route', async () => {
+    const screen = await renderScreen()
+
+    for (const label of ['Account', 'Your birth details']) {
+      expect(screen.root.findAllByType(Text).some((node) =>
+        node.props.accessibilityRole === 'header' && node.props.children === label
+      )).toBe(true)
+    }
+
+    await act(async () => {
+      screen.root.findAllByType(Button)
+        .find((node) => node.props.title === 'Log In')!.props.onPress()
+    })
+    expect(mockNavigation.replace).toHaveBeenCalledWith('Login')
+    expect(signUpWithEmail).not.toHaveBeenCalled()
+  })
+
+  it('disables signup and login actions until account creation completes', async () => {
+    let resolveSignUp!: (value: any) => void
+    ;(signUpWithEmail as jest.Mock).mockImplementationOnce(() => new Promise((resolve) => {
+      resolveSignUp = resolve
+    }))
+    const screen = await renderScreen()
+    await completeProfile(screen)
+
+    let pendingSignup!: Promise<void>
+    await act(async () => {
+      pendingSignup = screen.root.findAllByType(Button)
+        .find((node) => node.props.title === 'Sign Up')!.props.onPress()
+      await settleAsyncWork()
+    })
+
+    expect(screen.root.findAllByType(Button).every((node) => node.props.disabled)).toBe(true)
+    expect(mockNavigation.replace).not.toHaveBeenCalled()
+    await act(async () => {
+      await screen.root.findAllByType(Button)
+        .find((node) => node.props.title === 'Signing Up…')!.props.onPress()
+    })
+    expect(signUpWithEmail).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      resolveSignUp({ error: null })
+      await pendingSignup
+    })
+    expect(mockNavigation.replace).toHaveBeenCalledWith(
+      'CheckEmail',
+      expect.objectContaining({ email: 'ada@example.com' })
+    )
+    expect(screen.root.findAllByType(Button).every((node) => !node.props.disabled)).toBe(true)
   })
 
   it('submits civil date and time without UTC date serialization', async () => {

@@ -14,6 +14,7 @@ export type ButtonVariant =
   | 'primary'
   | 'secondary'
   | 'tertiary'
+  | 'quiet'
   | 'destructive'
   | 'destructiveSolid'
   /** Backward-compatible alias for `secondary`. */
@@ -152,6 +153,9 @@ const surfaceStyles = StyleSheet.create({
   tertiary: {
     backgroundColor: 'transparent',
   },
+  quiet: {
+    backgroundColor: 'transparent',
+  },
   destructive: {
     backgroundColor: 'transparent',
     borderWidth: 1,
@@ -166,6 +170,7 @@ const labelStyles = StyleSheet.create({
   primary: { color: theme.text.onAccent },
   secondary: { color: theme.text.primary },
   tertiary: { color: theme.accent.base },
+  quiet: { color: theme.text.secondary },
   destructive: { color: theme.state.danger },
   destructiveSolid: { color: theme.text.onAccent },
 })
