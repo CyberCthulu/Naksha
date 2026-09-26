@@ -144,6 +144,11 @@ describe('ErrorState', () => {
 
     expect(container.props.accessibilityRole).toBe('alert')
     expect(container.props.accessibilityLiveRegion).toBe('polite')
+    expect(flattenStyles(container.props.style)).toMatchObject({
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    })
 
     const texts = hostTexts(screen)
     expect(texts).toContain('Could not load charts')
