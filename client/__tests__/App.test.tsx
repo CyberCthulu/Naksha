@@ -2,13 +2,15 @@ import React from 'react'
 import TestRenderer from 'react-test-renderer'
 
 import App, { createAppLinkingOptions } from '../App'
-import supabase from '../lib/supabase'
+import supabase, { clearPersistedAuthSession } from '../lib/supabase'
 import * as ExpoLinking from 'expo-linking'
+import { AuthApiError } from '@supabase/supabase-js'
 
 const mockDashboardMount = jest.fn()
 
 jest.mock('../lib/supabase', () => ({
   __esModule: true,
+  clearPersistedAuthSession: jest.fn(),
   default: {
     auth: {
       getSession: jest.fn(),
@@ -193,6 +195,7 @@ describe('App auth bootstrap and identity boundary', () => {
     jest.spyOn(console, 'warn').mockImplementation(jest.fn())
     renderer = null
     authListener = null
+    ;(clearPersistedAuthSession as jest.Mock).mockResolvedValue(undefined)
     mockedAuth().getSession.mockResolvedValue({
       data: { session: null },
       error: null,
@@ -264,6 +267,23 @@ describe('App auth bootstrap and identity boundary', () => {
 
     expect(textContent()).toContain('Signed out')
     expect(mockedAuth().getSession).toHaveBeenCalledTimes(2)
+  })
+
+  it('clears a revoked refresh token and opens the signed-out app', async () => {
+    mockedAuth().getSession.mockResolvedValueOnce({
+      data: { session: null },
+      error: new AuthApiError(
+        'Invalid Refresh Token: Refresh Token Not Found',
+        400,
+        'refresh_token_not_found'
+      ),
+    })
+
+    await renderApp()
+
+    expect(clearPersistedAuthSession).toHaveBeenCalledTimes(1)
+    expect(textContent()).toContain('Signed out')
+    expect(textContent()).not.toContain('Could not restore your session')
   })
 
   it('does not let a stale bootstrap result overwrite a newer auth event', async () => {

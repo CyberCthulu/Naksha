@@ -78,6 +78,13 @@ describe('auth helpers', () => {
     })
 
     await expect(signOut()).rejects.toThrow('network unavailable')
+    expect(mockedSupabase().auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
+  })
+
+  it('signs out only the session stored by this installation', async () => {
+    await signOut()
+
+    expect(mockedSupabase().auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
   })
 
   it('requests password reset email with the custom-scheme auth callback redirect', async () => {

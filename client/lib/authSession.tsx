@@ -8,9 +8,13 @@ import React, {
   useState,
   type ReactNode,
 } from 'react'
-import type { Session, User } from '@supabase/supabase-js'
+import {
+  isAuthApiError,
+  type Session,
+  type User,
+} from '@supabase/supabase-js'
 
-import supabase from './supabase'
+import supabase, { clearPersistedAuthSession } from './supabase'
 
 export type AuthSessionStatus =
   | 'initializing'
@@ -54,6 +58,14 @@ function stateForSession(session: Session | null): AuthSessionState {
   return session?.user
     ? { status: 'authenticated', user: session.user }
     : { status: 'unauthenticated', user: null }
+}
+
+function isRevokedRefreshToken(error: unknown): boolean {
+  return (
+    isAuthApiError(error) &&
+    (error.code === 'refresh_token_not_found' ||
+      error.message === 'Invalid Refresh Token: Refresh Token Not Found')
+  )
 }
 
 export function useAuthSessionController(): AuthSessionContextValue {
@@ -117,7 +129,7 @@ export function useAuthSessionController(): AuthSessionContextValue {
         }
 
         setState(stateForSession(data.session))
-      } catch {
+      } catch (error) {
         if (
           !mountedRef.current ||
           bootstrapAttemptRef.current !== attempt ||
@@ -126,11 +138,31 @@ export function useAuthSessionController(): AuthSessionContextValue {
           return
         }
 
+        if (isRevokedRefreshToken(error)) {
+          try {
+            await clearPersistedAuthSession()
+          } catch {
+            console.warn('Could not fully clear a revoked local session.')
+          }
+
+          if (
+            !mountedRef.current ||
+            bootstrapAttemptRef.current !== attempt ||
+            authEventRevisionRef.current !== startingAuthRevision
+          ) {
+            return
+          }
+
+          setPreparedPostAuthRoute(null)
+          setState({ status: 'unauthenticated', user: null })
+          return
+        }
+
         console.warn('Session bootstrap failed.')
         setState({ status: 'bootstrap-error', user: null })
       }
     })()
-  }, [])
+  }, [setPreparedPostAuthRoute])
 
   useEffect(() => {
     mountedRef.current = true
