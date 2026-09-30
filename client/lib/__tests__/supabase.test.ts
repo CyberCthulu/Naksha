@@ -43,4 +43,19 @@ describe('Supabase auth storage contract', () => {
       'sb-project-ref-auth-token-user',
     ])
   })
+
+  it('fails clearly when a required release environment value is missing', () => {
+    const originalUrl = process.env.EXPO_PUBLIC_SUPABASE_URL
+    delete process.env.EXPO_PUBLIC_SUPABASE_URL
+
+    try {
+      jest.isolateModules(() => {
+        expect(() => require('../supabase')).toThrow(
+          'Missing required EXPO_PUBLIC_SUPABASE_URL. Configure it for this build environment.'
+        )
+      })
+    } finally {
+      process.env.EXPO_PUBLIC_SUPABASE_URL = originalUrl
+    }
+  })
 })

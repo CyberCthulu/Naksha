@@ -2,7 +2,7 @@
 
 Personalized astrology, deterministic forecasts, journaling, and guided reflection. Naksha is a functioning V1 application with comprehensive natal charts, daily and weekly transit guidance with transit-house personalization, and journaling.
 
-This document separates implemented V1 functionality from planned roadmap features. It should not be read as a list of completed features unless an item is marked **DONE**. Last reviewed for accuracy: 2026-09-30 after R5 completion through `88c5d2ad`. Active UI and Sky Now are implemented; release-hardening R1–R5 are repository-complete and [R6 is next](release-hardening-plan.md#r6--remaining-engineering-release-readiness). Implemented does not mean deployed or production-qualified.
+This document separates implemented V1 functionality from planned roadmap features. It should not be read as a list of completed features unless an item is marked **DONE**. Last reviewed for accuracy: 2026-09-30 during R6.3. Active UI and Sky Now are implemented; release-hardening R1–R5 are repository-complete and [R6 is in progress](release-hardening-plan.md#r6--remaining-engineering-release-readiness). Implemented does not mean deployed or production-qualified.
 
 ## Status Overview
 
@@ -27,7 +27,7 @@ A quick index of every section below, grouped into four buckets. Each section st
 
 * R1 relational ownership, R2 civil birth-time correctness, R3 journal/client write-surface integrity, R4 authentication recovery/Android identity, and R5 Ascendant correctness are repository-complete
 * Production signing, signed-artifact inspection, and device acceptance remain release-candidate gates
-* R6 remaining engineering readiness is next
+* R6 remaining engineering readiness is in progress; R6.1 and R6.2 are repository-complete
 * C1–C4 content/editorial review remains required before release-candidate freeze
 * Signed Android candidate, production-backend verification, Play testing, privacy/support/store material, and real-device acceptance remain open
 * iOS and post-V1 features remain after Android launch
@@ -549,12 +549,16 @@ Current verified post-R5 repository baseline:
 
 ### CI / Release Readiness
 
-Status: **NOT COMPLETE**
+Status: **IN PROGRESS**
+
+Completed during R6.3:
+
+* GitHub Actions gate for typecheck, lint, Jest, changed-line whitespace validation, clean migration replay, and all pgTAP suites
+* Generated Supabase types refreshed from the linked authoritative public schema
 
 Not yet done:
 
-* CI workflow
-* Automated schema reset/diff validation
+* Signed-artifact configuration/manifest inspection and production-service verification
 * Signed-candidate execution of the [release-candidate sequence](release-hardening-plan.md#release-candidate-sequence)
 * Production build QA record
 * Store metadata
@@ -591,7 +595,7 @@ Naksha V1 is currently best described as:
 
 **A functioning Western/Tropical astrology application with authenticated profiles, natal chart generation, local interpretations, saved and guest charts, deterministic daily and weekly transit guidance, transit-house personalization, guided reflection, and journaling.**
 
-The D0–D6.3 V1 depth and architecture pass is complete. The active UI and Sky Now are implemented. Release-hardening R1–R5 are repository-complete, R6 is next, and native release-candidate acceptance remains open. The application is not yet production-ready or released.
+The D0–D6.3 V1 depth and architecture pass is complete. The active UI and Sky Now are implemented. Release-hardening R1–R5 are repository-complete, R6 is in progress, and native release-candidate acceptance remains open. The application is not yet production-ready or released.
 
 Naksha is not yet:
 

@@ -4,11 +4,33 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
 
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!
+function requirePublicEnvironmentValue(name: string, value: string | undefined) {
+  const normalized = value?.trim()
+  if (!normalized) {
+    throw new Error(`Missing required ${name}. Configure it for this build environment.`)
+  }
+  return normalized
+}
 
+const SUPABASE_URL = requirePublicEnvironmentValue(
+  'EXPO_PUBLIC_SUPABASE_URL',
+  process.env.EXPO_PUBLIC_SUPABASE_URL
+)
+const SUPABASE_ANON_KEY = requirePublicEnvironmentValue(
+  'EXPO_PUBLIC_SUPABASE_ANON_KEY',
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+)
 
-const AUTH_STORAGE_KEY = `sb-${new URL(SUPABASE_URL).hostname.split('.')[0]}-auth-token`
+let supabaseProjectRef: string
+try {
+  supabaseProjectRef = new URL(SUPABASE_URL).hostname.split('.')[0]
+} catch {
+  throw new Error(
+    'Invalid EXPO_PUBLIC_SUPABASE_URL. Configure a valid absolute URL for this build environment.'
+  )
+}
+
+const AUTH_STORAGE_KEY = `sb-${supabaseProjectRef}-auth-token`
 
 /**
  * Last-resort local cleanup after the server account has already been deleted
@@ -32,11 +54,5 @@ const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
     detectSessionInUrl: false, // RN doesn't have location.href
   },
 })
-
-
-// const supabase = createClient(
-//   process.env.EXPO_PUBLIC_SUPABASE_URL!,
-//   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!
-// )
 
 export default supabase

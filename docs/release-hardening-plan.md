@@ -19,7 +19,7 @@ The V1 scope remains accounts/profile, Tropical/Whole Sign natal and guest chart
 | R3 | ✅ **COMPLETE** | Journal and client write-surface integrity |
 | R4 | ✅ **COMPLETE** | Authentication recovery and Android security/identity |
 | R5 | ✅ **COMPLETE** | Astrology calculation correctness |
-| R6 | 🔵 **NEXT** | Remaining engineering release readiness |
+| R6 | 🔵 **IN PROGRESS** | Remaining engineering release readiness |
 
 After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → Android launch → stabilization → iOS → post-launch expansion**.
 
@@ -115,18 +115,18 @@ After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → A
 
 ## R6 — Remaining engineering release readiness
 
-**Status: PENDING.** Consolidate the remaining bounded engineering work here. Do not create additional R slices for routine follow-up.
+**Status: IN PROGRESS.** R6.1 runtime freshness and R6.2 accessibility/motion are repository-complete. R6.3 release infrastructure is in progress. Consolidate the remaining bounded engineering work here; do not create additional top-level release slices for routine follow-up.
 
 ### CI and quality gates
 
-- Add automated typecheck, lint, Jest, and, where practical, local database/pgTAP gates.
-- Keep bundle/configuration checks appropriate to a release candidate.
+- **R6.3 completed:** `.github/workflows/ci.yml` runs typecheck, lint, Jest, changed-line whitespace validation, clean local migration replay, and all pgTAP suites on pull requests and pushes to the maintained integration branches. It uses locked npm installs and local Docker/Supabase without hosted credentials.
+- Keep signed bundle/configuration checks appropriate to a release candidate; source CI does not replace artifact inspection or device acceptance.
 - The external Droid audit demonstrated the value of automation, but its claim that committed pre-R3 HEAD contained an `upsertJournal` test/implementation mismatch was incorrect. The actual committed pre-R3 HEAD was independently verified green; do not repeat that claim.
 
 ### Supabase and generated types
 
-- After reviewed migrations are deployed to the authoritative environment, regenerate `database.types.ts` through the repository's established workflow.
-- Resolve existing generated relationship-metadata drift and verify deployed migration/function versions.
+- **R6.3 completed:** regenerated `client/lib/database.types.ts` from the linked authoritative `public` schema. The generated relationships now describe the R1 composite owner foreign keys, and the R2 columns remain represented.
+- Re-run the same linked generation after future production migrations; verify deployed migration/function versions independently because generated types do not prove function deployment or runtime policy behavior.
 
 ### Database write-surface follow-up
 
@@ -143,14 +143,13 @@ After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → A
 
 ### Lifecycle and freshness
 
-- Refresh Dashboard guidance on resume and relevant local day/week rollover.
-- Remove unnecessary duplicate fetches such as Profile/Journal list mount plus focus patterns while preserving retry and freshness.
+- **R6.1 completed:** Dashboard guidance evaluates freshness on focus/resume and at the earlier of one active hour after the last successful Today evaluation or the next profile-local midnight. Weekly guidance changes on its profile-local week key. Timers stop off-screen/in background, guidance-only refresh avoids database/chart work, Current Sky follows a bounded active cadence, and retry/full-load guards prevent competing refreshes.
+- Duplicate Profile/Journal list mount-plus-focus fetches remain a bounded follow-up where they are still present.
 
 ### Accessibility and motion
 
-- Provide a TalkBack-accessible way to select and read every Sky Now aspect.
-- Pause or disable chart motion while its route/app is inactive.
-- Apply reduced-motion behavior consistently and verify focus order, errors, large text, and contrast on device.
+- **R6.2 completed at repository level:** Sky Now exposes semantic aspect selection with concise announcements and contextual chart labels; chart motion respects route/app activity; modal semantics and reduced-motion transitions are covered by focused tests.
+- TalkBack focus behavior, large text, contrast, Android Back, relevant device sizes, and motion on a signed candidate remain real-device acceptance work.
 
 ### Geocoder
 
@@ -170,14 +169,14 @@ After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → A
 - Publish and link accurate privacy, support, and web account-deletion destinations.
 - Verify hosted Supabase configuration, redirects, SMTP delivery, rate/abuse limits, reviewed migrations/functions, two-account isolation, and deletion behavior.
 - Evaluate verified Android App Links before release as defense against custom-scheme interception. The approved `naksha://` scheme remains in R4; do not treat PKCE code exchange and legacy implicit fragment-token exposure as equivalent.
-- Add production-safe crash/error diagnostics with private data and tokens redacted; prove a controlled event is diagnosable.
-- Assign backup/restore, signing recovery, support, and hotfix responsibility.
+- No remote crash reporter is currently configured. Decide whether launch will use an approved privacy-scoped service or explicitly accept local-only diagnostics, then prove a controlled event is diagnosable without tokens or private payloads.
+- Follow [release-operations.md](release-operations.md) for the current backup limits, pre-migration backup checklist, public environment boundary, missing external destinations, and ownership that must be assigned before release.
 
 ### Dependencies and hygiene
 
-- Triage runtime dependency advisories by reachability and compatible remediation; do not use forced bulk upgrades.
-- Remove dormant dependencies, stubs, contexts, or providers only when clearly unused and safe.
-- Fix the root `.gitignore` markdown-fence artifact and other small stale README/handoff statements.
+- The R6.3 production-dependency audit currently reports 37 advisories (1 critical, 13 high, 22 moderate, 1 low), largely through Expo/build-time dependency paths; direct `axios` and Babel findings also require explicit reachability and compatible-remediation review. Do not use forced bulk upgrades or cross the Expo SDK boundary inside R6.3.
+- Dormant Three/Fiber/GL code, and direct `axios`, `expo-file-system`, and `zustand` entries with no active source imports, are cleanup candidates only after a dedicated build/type verification; no dependency was removed in R6.3.
+- The root `.gitignore` markdown-fence artifact is fixed. Remove other dormant dependencies, stubs, contexts, or providers only when clearly unused and safe.
 - Bound chart/journal history or add pagination before server row limits can hide existing data.
 
 **R6 exit gate.** Automated gates are repeatable; deployed schema/types and hosted services are reconciled; active network and hydration paths fail safely; accessibility/lifecycle checks pass; privacy/support/export and diagnostics are real; dependency decisions are recorded; and no known engineering release blocker remains.

@@ -1,6 +1,6 @@
 # Naksha Codebase Handoff
 
-Last reviewed: 2026-09-30 after R5 completion through `88c5d2adbc66b945f7e72a773bf969c456acc9ce` (`ui/v2-redesign`)
+Last reviewed: 2026-09-30 during R6.3 release-infrastructure work (`ui/v2-redesign`)
 
 This document is the current engineering handoff. Use [Feature-List.md](Feature-List.md) for implemented product scope and [release-hardening-plan.md](release-hardening-plan.md) for the active release sequence. Dated audits and implementation plans under `docs/` are historical evidence; their baselines and instructions do not override these current documents.
 
@@ -12,7 +12,7 @@ Naksha is an Expo/React Native Android-first astrology app backed by Supabase. T
 - **R2:** civil birth date/time storage, strict validation, explicit DST gap/fold handling, persisted fold choice, and one civil-to-UTC calculation boundary.
 - **R3:** authoritative journal edit loading, separate insert/update operations, safe failure behavior, and narrowed client write surfaces.
 
-These changes have not been declared production-deployed by the repository work. Reviewed migrations require the deployment preflight and verification described in the release plan.
+The reviewed R1–R3 migrations are documented as deployed to the linked production project after their preflight. Release-candidate work must still re-verify the remote migration/function versions, policies, two-account isolation, and active application paths.
 
 The post-R3 local baseline is:
 
@@ -25,13 +25,14 @@ The post-R3 local baseline is:
 
 The post-R5 repository gate is **69/69 Jest suites and 843/843 tests**, with TypeScript and lint passing. Android JavaScript export, Expo dependency validation, XML parsing, and Expo config introspection remain at their post-R4 passing baseline. Expo Doctor remains at the known 17/18 non-CNG result. Native manifest merging and AAB generation remain unverified because the installed environment lacks Android SDK 36/NDK 27 and production signing credentials.
 
-R4 is repository-complete: auth recovery, local-only sign-out, revoked refresh-token recovery, Android identity/security configuration, approved branding, and first-run Login/Signup/Guest Chart polish are committed. R5 is complete: the high-latitude Ascendant branch inversion is corrected and persisted calculation-version compatibility is explicit. Accountable production signing, signed-AAB inspection, and real-device acceptance remain release-candidate gates. R6 is next and contains the remaining engineering release gates. Content review C1–C4 and a signed release-candidate cycle follow R6.
+R4 is repository-complete: auth recovery, local-only sign-out, revoked refresh-token recovery, Android identity/security configuration, approved branding, and first-run Login/Signup/Guest Chart polish are committed. R5 is complete: the high-latitude Ascendant branch inversion is corrected and persisted calculation-version compatibility is explicit. R6.1 runtime freshness and R6.2 accessibility/motion are repository-complete; R6.3 release infrastructure is in progress. Accountable production signing, signed-AAB inspection, real-device acceptance, and the remaining R6 engineering work are still open. Content review C1–C4 and a signed release-candidate cycle follow R6.
 
 ## Source-of-truth hierarchy
 
 - [release-hardening-plan.md](release-hardening-plan.md): current R1–R6, content, release-candidate, and launch roadmap.
 - [Feature-List.md](Feature-List.md): current implemented product behavior and known limits.
 - This handoff: current code structure, invariants, and operating notes.
+- [release-operations.md](release-operations.md): release environments, backup/recovery boundaries, diagnostics, public destinations, and operational ownership.
 - [ui-redesign/current-sky-compass.md](ui-redesign/current-sky-compass.md): current Sky Now behavior and interpretation structure.
 - [release-readiness-2026-09-12.md](release-readiness-2026-09-12.md) and the remaining dated audits/plans: historical snapshots.
 
@@ -100,7 +101,7 @@ Dashboard guidance is deterministic and local:
 
 The guidance and interpretation libraries remain deterministic; AI is not required. The content phase after engineering hardening must address missing entries, repetition, generic phrasing, tonal balance, prompt relevance, Today's Energy repetition, and Weekly Forecast composition.
 
-Known engineering gaps include Dashboard refresh across resume and local day/week rollover, Sky Now aspect accessibility, inactive chart motion, and reduced-motion consistency.
+R6.1 now refreshes time-sensitive guidance and Current Sky across focus/resume and local rollover without repeating chart/database work or running background timers. R6.2 provides semantic Sky Now aspect selection, contextual chart labels, inactive-route motion control, modal semantics, and reduced-motion handling. Signed-candidate lifecycle and TalkBack behavior still require device acceptance.
 
 ## Journal write contract
 
@@ -129,7 +130,7 @@ Optional chart relationships use column-specific `ON DELETE SET NULL (chart_id)`
 
 R2 added nullable `birth_utc_offset_minutes` to users and charts and expanded canonical chart identity. R3 narrowed chart/journal column grants, removed client `usage_events` writes because there is no V1 consumer, and preserved service-role deletion order.
 
-The generated client schema is `client/lib/database.types.ts`. R6 must regenerate it from the deployed authoritative schema after migrations are deployed and resolve existing relationship metadata drift. Do not regenerate it merely because local relationship metadata changed.
+The generated client schema is `client/lib/database.types.ts`. During R6.3 it was regenerated from the linked authoritative `public` schema; its relationship metadata now names the R1 composite owner foreign keys and includes the deployed R2 columns. Re-run linked generation after future production migrations rather than hand-editing this file.
 
 Notifications, subscriptions, and purchases retain broad DML grants while RLS currently blocks unauthorized writes. Users' birth columns retain table-level write grants with self-row RLS. These are non-blocking defense-in-depth reviews for R6.
 
@@ -161,11 +162,11 @@ The completed R4 repository slice establishes:
 
 Approved Naksha launcher, adaptive foreground, splash, logo, and wordmark assets are integrated in Expo and checked-in Android resources, including the Android 12+ splash background override. No production keystore was created or inspected, and no signed AAB or merged release manifest was produced because the local Android SDK 36/NDK 27 toolchain and production credentials were not available for the recorded verification. Those artifact and device checks remain mandatory release-candidate work. Android remains the launch platform; iOS follows after Android stabilization unless requirements change.
 
-There is no automated CI gate. R6 should run typecheck, lint, Jest, and DB/pgTAP coverage where practical.
+`.github/workflows/ci.yml` is the automated source gate. Pull requests and pushes to `main`/`ui/v2-redesign` run typecheck, lint, Jest, whitespace validation, clean local migration replay, and all pgTAP suites without hosted secrets. See [release-operations.md](release-operations.md) for what CI does not prove.
 
 ## Current release blockers and sequence
 
-1. **R6 — next:** remaining engineering readiness, including CI, generated types, hydration, lifecycle, accessibility, geocoder resilience, settings correctness, privacy/support/export, diagnostics, and dependency disposition.
+1. **R6 — in progress:** R6.1 lifecycle, R6.2 accessibility/motion, and the source-CI/generated-type portions of R6.3 are complete. Hydration, geocoder resilience, settings correctness, privacy/support/export, diagnostics disposition, advisory disposition, and external release operations remain.
 2. **C1–C4:** lexicon completeness, editorial quality, composition quality, and astrology editorial review.
 3. **Release candidate:** freeze, production configuration, accountable signing, signed AAB, real-device acceptance, backend verification, Play testing, and store submission.
 4. **Launch:** Android launch and narrow stabilization fixes.
