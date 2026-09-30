@@ -17,6 +17,10 @@ function flattenStyles(style: unknown): Record<string, unknown> {
   return {}
 }
 
+jest.mock('../../ui/useReducedMotion', () => ({
+  useReducedMotion: () => false,
+}))
+
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 24, left: 0 }),
 }))

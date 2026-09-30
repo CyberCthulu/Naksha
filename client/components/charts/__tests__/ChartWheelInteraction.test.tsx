@@ -210,13 +210,17 @@ describe('Wheel zoom', () => {
     expect(hosts('chart-wheel-transform')).toHaveLength(1)
   })
 
-  it('offers zoom and reset as accessibility actions instead of controls', () => {
+  it('offers zoom and reset on a labelled accessibility element', () => {
     const frame = renderChart().root.findAll(
       (n) =>
         typeof n.type === 'string' &&
-        n.props?.testID === 'interactive-chart-wheel'
+        n.props?.testID === 'chart-wheel-accessibility'
     )[0]
 
+    expect(frame.props.accessible).toBe(true)
+    expect(frame.props.importantForAccessibility).toBe('yes')
+    expect(frame.props.accessibilityLabel).toBe('Interactive astrology chart')
+    expect(frame.props.accessibilityValue).toEqual({ text: '1.0 times zoom' })
     expect(frame.props.accessibilityActions).toEqual([
       { name: 'zoomIn', label: 'Zoom into chart' },
       { name: 'zoomOut', label: 'Zoom out of chart' },
@@ -225,16 +229,29 @@ describe('Wheel zoom', () => {
     expect(typeof frame.props.onAccessibilityAction).toBe('function')
   })
 
-  it('accepts every accessibility zoom action without throwing', () => {
-    const frame = renderChart().root.findAll(
-      (n) =>
-        typeof n.type === 'string' &&
-        n.props?.testID === 'interactive-chart-wheel'
-    )[0]
+  it('updates the exposed zoom value and accepts every accessibility action', () => {
+    const screen = renderChart()
+    const accessibilityElement = () =>
+      screen.root.findAll(
+        (n) =>
+          typeof n.type === 'string' &&
+          n.props?.testID === 'chart-wheel-accessibility'
+      )[0]
 
-    for (const actionName of ['zoomIn', 'zoomOut', 'resetZoom', 'unknown']) {
+    act(() =>
+      accessibilityElement().props.onAccessibilityAction({
+        nativeEvent: { actionName: 'zoomIn' },
+      })
+    )
+    expect(accessibilityElement().props.accessibilityValue).toEqual({
+      text: '1.5 times zoom',
+    })
+
+    for (const actionName of ['zoomOut', 'resetZoom', 'unknown']) {
       act(() =>
-        frame.props.onAccessibilityAction({ nativeEvent: { actionName } })
+        accessibilityElement().props.onAccessibilityAction({
+          nativeEvent: { actionName },
+        })
       )
     }
   })
@@ -650,9 +667,16 @@ describe('Selection path parity', () => {
     )[0]
   }
 
+  function interpretationModal(screen: ReturnType<typeof create>) {
+    return screen.root.findAll(
+      (n) =>
+        n.props?.transparent === true &&
+        typeof n.props?.onRequestClose === 'function'
+    )[0]
+  }
+
   function modalVisible(screen: ReturnType<typeof create>) {
-    const modals = screen.root.findAll((n) => n.props?.animationType === 'slide')
-    return modals.some((m) => m.props.visible === true)
+    return interpretationModal(screen)?.props.visible === true
   }
 
   it('produces identical state from the wheel and the Positions row', () => {
@@ -741,9 +765,7 @@ describe('Selection path parity', () => {
     act(() => positionsRow(screen, 'Mars').props.onPress())
     expect(modalVisible(screen)).toBe(true)
 
-    const modal = screen.root.findAll(
-      (n) => n.props?.animationType === 'slide'
-    )[0]
+    const modal = interpretationModal(screen)
     act(() => modal.props.onRequestClose())
 
     expect(wheel(screen).props.selection).toEqual(before)

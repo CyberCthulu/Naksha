@@ -13,6 +13,7 @@ import { AppText } from '../ui/AppText'
 import { Icon } from '../ui/Icon'
 import { SkySurface } from '../ui/SkySurface'
 import { theme } from '../ui/theme'
+import { useReducedMotion } from '../ui/useReducedMotion'
 import InterpretationCard from './InterpretationCard'
 import { Interpretation } from '../../lib/lexicon'
 
@@ -72,6 +73,7 @@ export default function InterpretationModal({
    */
   const currentPagerIndexRef = useRef<number | null>(null)
   const insets = useSafeAreaInsets()
+  const reduceMotion = useReducedMotion()
 
   const normalizedCurrentIndex =
     pages.length > 0
@@ -220,13 +222,15 @@ export default function InterpretationModal({
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType={reduceMotion === false ? 'slide' : 'none'}
       transparent
       onRequestClose={onClose}
     >
       {/* Full-screen backdrop — tap outside the sheet to close */}
       <Pressable
         testID="interpretation-backdrop"
+        accessible={false}
+        importantForAccessibility="no"
         style={styles.backdrop}
         onPress={onClose}
       />
@@ -235,6 +239,7 @@ export default function InterpretationModal({
           derived from a fragile percentage calculation */}
       <SkySurface
         testID="interpretation-sheet"
+        accessibilityViewIsModal
         style={[styles.sheet, { top: sheetTop }]}
       >
         {/* Fixed header row */}

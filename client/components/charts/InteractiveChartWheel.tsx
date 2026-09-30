@@ -31,6 +31,7 @@ type PlanetAccentName = keyof typeof theme.planet
 
 type Props = {
   motionEnabled?: boolean
+  accessibilityLabel?: string
   size: number
   planets: PlanetPos[]
   aspects: Aspect[]
@@ -67,6 +68,7 @@ export const TAP_MAX_DURATION = 260
  */
 export function InteractiveChartWheel({
   motionEnabled = true,
+  accessibilityLabel = 'Interactive astrology chart',
   size,
   planets,
   aspects,
@@ -329,23 +331,37 @@ export function InteractiveChartWheel({
     <View
       testID="interactive-chart-wheel"
       style={[styles.frame, { width: size, height: size }]}
-      accessibilityActions={[
-        { name: 'zoomIn', label: 'Zoom into chart' },
-        { name: 'zoomOut', label: 'Zoom out of chart' },
-        { name: 'resetZoom', label: 'Reset chart to fitted size' },
-      ]}
-      onAccessibilityAction={(event) => {
-        const action = event.nativeEvent.actionName
-
-        if (action === 'zoomIn') {
-          applyScale(savedScale.value + ACCESSIBILITY_ZOOM_STEP)
-        } else if (action === 'zoomOut') {
-          applyScale(savedScale.value - ACCESSIBILITY_ZOOM_STEP)
-        } else if (action === 'resetZoom') {
-          reset()
-        }
-      }}
     >
+      {/* A sibling of the interactive planet controls, rather than an
+          accessible parent around them. That gives TalkBack a labelled chart
+          context and working zoom actions without grouping the planet buttons
+          into one inaccessible element. */}
+      <View
+        testID="chart-wheel-accessibility"
+        accessible
+        importantForAccessibility="yes"
+        pointerEvents="none"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint="Use accessibility actions to zoom the chart"
+        accessibilityValue={{ text: `${view.scale.toFixed(1)} times zoom` }}
+        accessibilityActions={[
+          { name: 'zoomIn', label: 'Zoom into chart' },
+          { name: 'zoomOut', label: 'Zoom out of chart' },
+          { name: 'resetZoom', label: 'Reset chart to fitted size' },
+        ]}
+        onAccessibilityAction={(event) => {
+          const action = event.nativeEvent.actionName
+
+          if (action === 'zoomIn') {
+            applyScale(savedScale.value + ACCESSIBILITY_ZOOM_STEP)
+          } else if (action === 'zoomOut') {
+            applyScale(savedScale.value - ACCESSIBILITY_ZOOM_STEP)
+          } else if (action === 'resetZoom') {
+            reset()
+          }
+        }}
+        style={StyleSheet.absoluteFill}
+      />
       <GestureDetector gesture={composed}>
         {/* Untransformed. Tap coordinates therefore arrive in frame space and
             are inverted explicitly, rather than depending on how the platform

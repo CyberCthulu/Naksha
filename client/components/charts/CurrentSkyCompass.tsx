@@ -1,9 +1,16 @@
 import { useState } from 'react'
-import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native'
+import {
+  AccessibilityInfo,
+  Pressable,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from 'react-native'
 
 import { useCurrentSky } from '../../hooks/useCurrentSky'
 import { formatSkyPosition, skyAspectKey } from '../../lib/currentSky'
 import { angularSeparation, ASPECT_RULES } from '../../lib/aspects'
+import type { Aspect } from '../../lib/astro'
 import { getSkyAspectMeaning } from '../../lib/lexicon'
 import { AppText } from '../ui/AppText'
 import { Button } from '../ui/Button'
@@ -31,6 +38,7 @@ export function CurrentSkyCompass() {
     planet: 'Sun',
   })
   const [showPositions, setShowPositions] = useState(false)
+  const [showAspects, setShowAspects] = useState(false)
   const [showRules, setShowRules] = useState(false)
   const wheelSize = Math.min(
     measuredWidth || Math.max(1, width - 2 * (theme.space.xl + theme.space.lg)),
@@ -73,6 +81,18 @@ export function CurrentSkyCompass() {
   const separation =
     aspectA && aspectB ? angularSeparation(aspectA.lon, aspectB.lon) : undefined
 
+  const selectAspectFromList = (aspect: Aspect) => {
+    const key = skyAspectKey(aspect)
+    const label =
+      ASPECT_RULES.find((rule) => rule.type === aspect.type)?.label ??
+      aspect.type
+
+    setSelection({ kind: 'aspect', key })
+    AccessibilityInfo.announceForAccessibility(
+      `${aspect.a} and ${aspect.b} ${label.toLowerCase()}. Interpretation shown above.`
+    )
+  }
+
   return (
     <Card testID="current-sky-compass">
       <View style={styles.heading}>
@@ -111,6 +131,7 @@ export function CurrentSkyCompass() {
               planets={sky.planets}
               aspects={sky.aspects}
               houses={null}
+              accessibilityLabel="Current sky chart"
               focusedPlanet={
                 selection?.kind === 'planet' ? selection.planet : null
               }
@@ -181,7 +202,7 @@ export function CurrentSkyCompass() {
             )}
           </View>
           <AppText variant="caption" style={styles.hint}>
-            Tap an aspect line to explore what it may mean.
+            Select a planet or aspect to explore what it may mean.
           </AppText>
           <AppText variant="caption" style={styles.hint}>
             Tropical zodiac · Earth-centered view. Pinch to zoom.
@@ -189,6 +210,7 @@ export function CurrentSkyCompass() {
           <Pressable
             testID="current-sky-positions-toggle"
             accessibilityRole="button"
+            accessibilityLabel="Planet positions"
             accessibilityState={{ expanded: showPositions }}
             onPress={() => setShowPositions((current) => !current)}
             style={({ pressed }) => [styles.toggle, pressed && styles.pressed]}
@@ -229,6 +251,69 @@ export function CurrentSkyCompass() {
                 </Pressable>
               ))
             : null}
+          <Pressable
+            testID="current-sky-aspects-toggle"
+            accessibilityRole="button"
+            accessibilityLabel="Current sky aspects"
+            accessibilityState={{ expanded: showAspects }}
+            onPress={() => setShowAspects((current) => !current)}
+            style={({ pressed }) => [styles.toggle, pressed && styles.pressed]}
+          >
+            <AppText variant="subheading" style={styles.toggleText}>
+              {showAspects ? 'Hide current aspects' : 'Show current aspects'}
+            </AppText>
+          </Pressable>
+          {showAspects ? (
+            <View testID="current-sky-aspects">
+              {sky.aspects.length > 0 ? (
+                sky.aspects.map((aspect) => {
+                  const key = skyAspectKey(aspect)
+                  const rule = ASPECT_RULES.find(
+                    (candidate) => candidate.type === aspect.type
+                  )
+                  const orb =
+                    aspect.orb > 0 && aspect.orb < 0.005
+                      ? 'less than 0.01 degrees orb'
+                      : `${aspect.orb.toFixed(2)} degrees orb`
+                  const isSelected =
+                    selection?.kind === 'aspect' && selection.key === key
+
+                  return (
+                    <Pressable
+                      key={key}
+                      testID={`current-sky-aspect-${key}`}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${aspect.a} and ${aspect.b}, ${rule?.label ?? aspect.type}, ${orb}`}
+                      accessibilityHint="Selects this aspect and shows its interpretation"
+                      accessibilityState={{ selected: isSelected }}
+                      onPress={() => selectAspectFromList(aspect)}
+                      style={({ pressed }) => [
+                        styles.aspect,
+                        isSelected && styles.positionSelected,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <AppText variant="body" style={styles.aspectPair}>
+                        {`${aspect.a} · ${aspect.b}`}
+                      </AppText>
+                      <View style={styles.aspectMeta}>
+                        <AppText variant="eyebrow" style={styles.aspectType}>
+                          {rule?.label ?? aspect.type}
+                        </AppText>
+                        <AppText variant="numeric" style={styles.description}>
+                          {`${aspect.orb > 0 && aspect.orb < 0.005 ? '<0.01' : aspect.orb.toFixed(2)}° orb`}
+                        </AppText>
+                      </View>
+                    </Pressable>
+                  )
+                })
+              ) : (
+                <AppText variant="bodySmall" style={styles.description}>
+                  No current aspects within Naksha’s supported orbs.
+                </AppText>
+              )}
+            </View>
+          ) : null}
           {error ? (
             <AppText variant="bodySmall" style={styles.description}>
               Couldn’t refresh the sky. Showing the last update.
@@ -244,6 +329,7 @@ export function CurrentSkyCompass() {
           <Pressable
             testID="current-sky-rules-toggle"
             accessibilityRole="button"
+            accessibilityLabel="Calculation details"
             accessibilityState={{ expanded: showRules }}
             onPress={() => setShowRules((current) => !current)}
             style={({ pressed }) => [styles.toggle, pressed && styles.pressed]}
@@ -343,4 +429,19 @@ const styles = StyleSheet.create({
     minHeight: theme.touchTarget.min,
   },
   positionSelected: { backgroundColor: theme.cardSurface.selected },
+  aspect: {
+    minHeight: theme.touchTarget.min,
+    justifyContent: 'center',
+    paddingVertical: theme.space.md,
+  },
+  aspectPair: { color: theme.text.primary },
+  aspectMeta: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    columnGap: theme.space.sm,
+    rowGap: theme.space.hair,
+    marginTop: theme.space.xs,
+  },
+  aspectType: { color: theme.accent.base },
 })

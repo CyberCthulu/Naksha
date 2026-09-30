@@ -1,9 +1,11 @@
 import React from 'react'
+import { AccessibilityInfo } from 'react-native'
 import TestRenderer from 'react-test-renderer'
 import { CurrentSkyCompass } from '../CurrentSkyCompass'
 import { InteractiveChartWheel } from '../InteractiveChartWheel'
 import { useCurrentSky } from '../../../hooks/useCurrentSky'
 import { Button } from '../../ui/Button'
+import { theme } from '../../ui/theme'
 import type { CurrentSky } from '../../../lib/currentSky'
 import { buildCurrentSky } from '../../../lib/currentSky'
 
@@ -55,6 +57,7 @@ afterEach(() => act(() => renderer.unmount()))
 it('shows the current sky with no natal houses and a dated position readout', () => {
   expect(wheel().props.planets).toBe(sky.planets)
   expect(wheel().props.houses).toBeNull()
+  expect(wheel().props.accessibilityLabel).toBe('Current sky chart')
   expect(text()).toContain('2026')
   expect(text()).toContain('Sun · 20°00′ Virgo')
   expect(text()).not.toContain('birth')
@@ -69,6 +72,56 @@ it('exposes exact positions and selects planets through the accessible list', ()
   expect(text()).toContain('Mars · 20°00′ Gemini')
   press('current-sky-positions-toggle')
   expect(text()).not.toContain('current-sky-planet-Moon')
+})
+
+it('exposes labelled aspect controls that select the same interpretation', () => {
+  const positionsToggle = renderer.root.find(
+    (node) => node.props.testID === 'current-sky-positions-toggle'
+  )
+  const aspectsToggle = renderer.root.find(
+    (node) => node.props.testID === 'current-sky-aspects-toggle'
+  )
+  const rulesToggle = renderer.root.find(
+    (node) => node.props.testID === 'current-sky-rules-toggle'
+  )
+
+  expect(positionsToggle.props.accessibilityLabel).toBe('Planet positions')
+  expect(aspectsToggle.props.accessibilityLabel).toBe('Current sky aspects')
+  expect(aspectsToggle.props.accessibilityState).toEqual({ expanded: false })
+  expect(rulesToggle.props.accessibilityLabel).toBe('Calculation details')
+  expect(aspectsToggle.props.style({ pressed: false })[0].minHeight).toBe(
+    theme.touchTarget.min
+  )
+
+  press('current-sky-aspects-toggle')
+  const opposition = renderer.root.find(
+    (node) => node.props.testID === 'current-sky-aspect-Sun:opp:Moon'
+  )
+  expect(opposition.props.accessibilityRole).toBe('button')
+  expect(opposition.props.accessibilityLabel).toBe(
+    'Sun and Moon, Opposition, 0.00 degrees orb'
+  )
+  expect(opposition.props.accessibilityState).toEqual({ selected: false })
+  expect(opposition.props.style({ pressed: false })[0].minHeight).toBe(
+    theme.touchTarget.min
+  )
+
+  const announce = jest
+    .spyOn(AccessibilityInfo, 'announceForAccessibility')
+    .mockImplementation(() => {})
+
+  press('current-sky-aspect-Sun:opp:Moon')
+  expect(announce).toHaveBeenCalledWith(
+    'Sun and Moon opposition. Interpretation shown above.'
+  )
+  announce.mockRestore()
+  expect(wheel().props.selection).toEqual({ kind: 'aspect', index: 0 })
+  expect(text()).toContain('Purpose and belonging')
+  expect(
+    renderer.root.find(
+      (node) => node.props.testID === 'current-sky-aspect-Sun:opp:Moon'
+    ).props.accessibilityState
+  ).toEqual({ selected: true })
 })
 
 it('preserves the selected aspect across refresh reordering and clears removed aspects', () => {

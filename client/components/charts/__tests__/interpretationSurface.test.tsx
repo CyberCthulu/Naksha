@@ -7,6 +7,12 @@ import InterpretationCard from '../InterpretationCard'
 import type { InterpretationPage } from '../interpretationTypes'
 import { theme } from '../../ui/theme'
 
+let mockReducedMotion: boolean | null = false
+
+jest.mock('../../ui/useReducedMotion', () => ({
+  useReducedMotion: () => mockReducedMotion,
+}))
+
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 24, right: 0, bottom: 48, left: 0 }),
 }))
@@ -85,6 +91,7 @@ function flatten(style: unknown): Record<string, unknown> {
 
 beforeEach(() => {
   ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
+  mockReducedMotion = false
   renderer = null
 })
 
@@ -272,7 +279,20 @@ describe('Interpretation modal chrome', () => {
     expect(content.paddingBottom as number).toBeGreaterThan(0)
   })
 
-  it('preserves slide animation and close semantics', () => {
+  it.each([true, null])(
+    'keeps the sheet transition static when reduced motion is %s',
+    (preference) => {
+      mockReducedMotion = preference
+      const screen = renderModal()
+      const modal = screen.root.findAll(
+        (n) => String(n.type) === 'Modal' || n.props?.animationType
+      )[0]
+
+      expect(modal.props.animationType).toBe('none')
+    }
+  )
+
+  it('preserves slide animation and close semantics when motion is allowed', () => {
     const onClose = jest.fn()
     const screen = renderModal({ onClose })
     const modal = screen.root.findAll(
@@ -281,6 +301,24 @@ describe('Interpretation modal chrome', () => {
 
     expect(modal.props.animationType).toBe('slide')
     expect(typeof modal.props.onRequestClose).toBe('function')
+
+    const sheet = screen.root.findAll(
+      (n) => n.props?.testID === 'interpretation-sheet'
+    )[0]
+    const backdrop = screen.root.findAll(
+      (n) => n.props?.testID === 'interpretation-backdrop'
+    )[0]
+    expect(sheet.props.accessibilityViewIsModal).toBe(true)
+    expect(sheet.props.accessibilityLabel).toBeUndefined()
+    expect(backdrop.props.accessible).toBe(false)
+    expect(backdrop.props.importantForAccessibility).toBe('no')
+
+    const titles = screen.root.findAll(
+      (node) =>
+        node.props?.accessibilityRole === 'header' &&
+        node.children.includes('Sun')
+    )
+    expect(titles.length).toBeGreaterThan(0)
 
     act(() => modal.props.onRequestClose())
     expect(onClose).toHaveBeenCalledTimes(1)
