@@ -17,6 +17,7 @@ import {
 import {
   CURRENT_CHART_CALCULATION_VERSION,
   CURRENT_CHART_SCHEMA_VERSION,
+  HISTORICAL_CHART_CALCULATION_VERSION,
 } from '../../lib/chartDataVersions'
 import { UNSUPPORTED_CHART_DATA_MESSAGE } from '../../lib/chartDataValidation'
 
@@ -208,8 +209,10 @@ describe('useChartData', () => {
     expect(saved.calculation_version).toBeUndefined()
   })
 
-  it('hydrates missing legacy houses through the shared chart path', async () => {
+  it('loads explicit V1 with missing houses without V2 hydration or overwrite', async () => {
     const saved = makeChartData({
+      schema_version: CURRENT_CHART_SCHEMA_VERSION,
+      calculation_version: HISTORICAL_CHART_CALCULATION_VERSION,
       houses: null,
       planet_houses: null,
     })
@@ -221,11 +224,14 @@ describe('useChartData', () => {
       tz: 'Europe/London',
     })
 
-    expect(result.houses).toHaveLength(12)
-    expect(result.planetHouses).toHaveLength(saved.planets.length)
-    expect(saved.houses).toBeNull()
-    expect(saved.planet_houses).toBeNull()
+    expect(result.loading).toBe(false)
+    expect(result.planets).toEqual(saved.planets)
+    expect(result.houses).toBeNull()
+    expect(result.planetHouses).toBeNull()
+    expect(result.isSaved).toBe(true)
+    expect(mockedSupabase().auth.getUser).not.toHaveBeenCalled()
     expect(mockedBuildChartData()).not.toHaveBeenCalled()
+    expect(mockedGetChartCalculationPreferences()).not.toHaveBeenCalled()
     expect(mockedSaveChart()).not.toHaveBeenCalled()
   })
 

@@ -5,6 +5,7 @@ import {
 import {
   CURRENT_CHART_CALCULATION_VERSION,
   CURRENT_CHART_SCHEMA_VERSION,
+  HISTORICAL_CHART_CALCULATION_VERSION,
 } from '../chartDataVersions'
 
 const validChartData = {
@@ -35,19 +36,26 @@ describe('parseChartData', () => {
     expect(parseChartData(validChartData)).toEqual(validChartData)
   })
 
-  it('accepts explicit current schema and calculation versions', () => {
-    const currentChartData = {
+  it.each([
+    [
+      'historical V1',
+      HISTORICAL_CHART_CALCULATION_VERSION,
+      'historical-v1',
+    ],
+    ['current V2', CURRENT_CHART_CALCULATION_VERSION, 'current'],
+  ])('accepts explicit %s chart data', (_, calculationVersion, compatibility) => {
+    const chartData = {
       ...validChartData,
       schema_version: CURRENT_CHART_SCHEMA_VERSION,
-      calculation_version: CURRENT_CHART_CALCULATION_VERSION,
+      calculation_version: calculationVersion,
     }
 
-    expect(validateChartData(currentChartData)).toEqual({
+    expect(validateChartData(chartData)).toEqual({
       status: 'valid',
-      compatibility: 'current',
-      data: currentChartData,
+      compatibility,
+      data: chartData,
     })
-    expect(parseChartData(currentChartData)).toEqual(currentChartData)
+    expect(parseChartData(chartData)).toEqual(chartData)
   })
 
   it('detects an unsupported future schema version before shape parsing', () => {

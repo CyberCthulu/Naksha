@@ -3,6 +3,7 @@ import type { ChartData, ChartMeta } from './charts'
 import {
   CURRENT_CHART_CALCULATION_VERSION,
   CURRENT_CHART_SCHEMA_VERSION,
+  HISTORICAL_CHART_CALCULATION_VERSION,
 } from './chartDataVersions'
 
 const VALID_ASPECT_TYPES = new Set(['conj', 'opp', 'trine', 'square', 'sextile'])
@@ -13,7 +14,7 @@ export const UNSUPPORTED_CHART_DATA_MESSAGE =
 export type ChartDataValidationResult =
   | {
       status: 'valid'
-      compatibility: 'legacy-v1' | 'current'
+      compatibility: 'legacy-v1' | 'historical-v1' | 'current'
       data: ChartData
     }
   | {
@@ -124,7 +125,10 @@ export function validateChartData(value: unknown): ChartDataValidationResult {
       }
     }
 
-    if (calculationVersion !== CURRENT_CHART_CALCULATION_VERSION) {
+    if (
+      calculationVersion !== HISTORICAL_CHART_CALCULATION_VERSION &&
+      calculationVersion !== CURRENT_CHART_CALCULATION_VERSION
+    ) {
       return {
         status: 'unsupported',
         field: 'calculation_version',
@@ -200,9 +204,15 @@ export function validateChartData(value: unknown): ChartDataValidationResult {
     data.calculation_version = value.calculation_version as number
   }
 
+  const compatibility = isLegacy
+    ? 'legacy-v1'
+    : data.calculation_version === HISTORICAL_CHART_CALCULATION_VERSION
+      ? 'historical-v1'
+      : 'current'
+
   return {
     status: 'valid',
-    compatibility: isLegacy ? 'legacy-v1' : 'current',
+    compatibility,
     data,
   }
 }

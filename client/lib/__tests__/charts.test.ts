@@ -157,6 +157,8 @@ describe('buildChartData', () => {
       birth_lon: -122.4194,
     })
 
+    expect(CURRENT_CHART_SCHEMA_VERSION).toBe(1)
+    expect(CURRENT_CHART_CALCULATION_VERSION).toBe(2)
     expect(chart.schema_version).toBe(CURRENT_CHART_SCHEMA_VERSION)
     expect(chart.calculation_version).toBe(
       CURRENT_CHART_CALCULATION_VERSION

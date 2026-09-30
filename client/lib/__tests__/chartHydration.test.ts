@@ -7,6 +7,7 @@ import type { ChartData } from '../charts'
 import {
   CURRENT_CHART_CALCULATION_VERSION,
   CURRENT_CHART_SCHEMA_VERSION,
+  HISTORICAL_CHART_CALCULATION_VERSION,
 } from '../chartDataVersions'
 import { resolveStoredBirthMoment } from '../time'
 
@@ -39,6 +40,8 @@ function makeChartData(
   ]
 
   return {
+    schema_version: CURRENT_CHART_SCHEMA_VERSION,
+    calculation_version: CURRENT_CHART_CALCULATION_VERSION,
     meta: {
       name: 'Ada Natal Chart',
       birth_date: CONTEXT.birthDate,
@@ -65,7 +68,7 @@ describe('hydrateChartData', () => {
     expect(hydrateChartData({ chartData, ...CONTEXT })).toBe(chartData)
   })
 
-  it('reconstructs missing legacy houses from valid birth context', () => {
+  it('reconstructs missing current-version houses from valid birth context', () => {
     const chartData = makeChartData({
       houses: null,
       planet_houses: null,
@@ -88,11 +91,13 @@ describe('hydrateChartData', () => {
     expect(hydrated.planet_houses).toEqual(
       assignPlanetsToWholeSignHouses(chartData.planets, expectedHouses)
     )
-    expect(hydrated).not.toHaveProperty('schema_version')
-    expect(hydrated).not.toHaveProperty('calculation_version')
+    expect(hydrated.schema_version).toBe(CURRENT_CHART_SCHEMA_VERSION)
+    expect(hydrated.calculation_version).toBe(
+      CURRENT_CHART_CALCULATION_VERSION
+    )
   })
 
-  it('uses a persisted instant when a legacy fold chart has no offset choice', () => {
+  it('uses a persisted instant when a current fold chart has no offset choice', () => {
     const instantUtc = '2025-11-02T09:30:00.000Z'
     const chartData = makeChartData({
       meta: {
@@ -126,20 +131,30 @@ describe('hydrateChartData', () => {
     )
   })
 
-  it('preserves explicit version metadata while hydrating houses', () => {
+  it.each([
+    [
+      'unversioned legacy V1',
+      { schema_version: undefined, calculation_version: undefined },
+    ],
+    [
+      'explicit calculation V1',
+      {
+        schema_version: CURRENT_CHART_SCHEMA_VERSION,
+        calculation_version: HISTORICAL_CHART_CALCULATION_VERSION,
+      },
+    ],
+  ])('does not synthesize V2 houses into %s data', (_, versions) => {
     const chartData = makeChartData({
-      schema_version: CURRENT_CHART_SCHEMA_VERSION,
-      calculation_version: CURRENT_CHART_CALCULATION_VERSION,
+      ...versions,
       houses: null,
       planet_houses: null,
     })
 
     const hydrated = hydrateChartData({ chartData, ...CONTEXT })
 
-    expect(hydrated.schema_version).toBe(CURRENT_CHART_SCHEMA_VERSION)
-    expect(hydrated.calculation_version).toBe(
-      CURRENT_CHART_CALCULATION_VERSION
-    )
+    expect(hydrated).toBe(chartData)
+    expect(hydrated.houses).toBeNull()
+    expect(hydrated.planet_houses).toBeNull()
   })
 
   it('leaves missing houses absent without complete coordinates', () => {
@@ -159,16 +174,4 @@ describe('hydrateChartData', () => {
     expect(hydrated.planet_houses).toBeNull()
   })
 
-  it('does not mutate legacy chart input while hydrating it', () => {
-    const chartData = makeChartData({
-      houses: null,
-      planet_houses: null,
-    })
-    const before = JSON.parse(JSON.stringify(chartData))
-
-    const hydrated = hydrateChartData({ chartData, ...CONTEXT })
-
-    expect(chartData).toEqual(before)
-    expect(hydrated).not.toBe(chartData)
-  })
 })

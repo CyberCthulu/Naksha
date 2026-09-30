@@ -10,6 +10,11 @@ import { theme } from '../../components/ui/theme'
 import { Button } from '../../components/ui/Button'
 import { deleteChart, listCharts } from '../../lib/charts'
 import { validateChartData } from '../../lib/chartDataValidation'
+import {
+  CURRENT_CHART_CALCULATION_VERSION,
+  CURRENT_CHART_SCHEMA_VERSION,
+  HISTORICAL_CHART_CALCULATION_VERSION,
+} from '../../lib/chartDataVersions'
 import supabase from '../../lib/supabase'
 
 const mockNavigation = {
@@ -111,9 +116,23 @@ const LEGACY_DATA = {
   planet_houses: null,
 }
 
-const CURRENT_DATA = { ...LEGACY_DATA, schema_version: 1, calculation_version: 1 }
+const HISTORICAL_DATA = {
+  ...LEGACY_DATA,
+  schema_version: CURRENT_CHART_SCHEMA_VERSION,
+  calculation_version: HISTORICAL_CHART_CALCULATION_VERSION,
+}
 
-const FUTURE_DATA = { ...LEGACY_DATA, schema_version: 2, calculation_version: 1 }
+const CURRENT_DATA = {
+  ...LEGACY_DATA,
+  schema_version: CURRENT_CHART_SCHEMA_VERSION,
+  calculation_version: CURRENT_CHART_CALCULATION_VERSION,
+}
+
+const FUTURE_DATA = {
+  ...LEGACY_DATA,
+  schema_version: CURRENT_CHART_SCHEMA_VERSION + 1,
+  calculation_version: CURRENT_CHART_CALCULATION_VERSION,
+}
 
 const MALFORMED_DATA = { meta: { birth_date: 5 }, planets: 'nope' }
 
@@ -288,21 +307,22 @@ describe('MyCharts row interactions', () => {
   it('preserves legacy, current, unsupported, malformed and no-coordinate rows', async () => {
     mockedListCharts.mockResolvedValue([
       chartRow(1, 'Legacy', LEGACY_DATA),
-      chartRow(2, 'Current', CURRENT_DATA),
-      chartRow(3, 'Future', FUTURE_DATA),
-      chartRow(4, 'Broken', MALFORMED_DATA),
-      chartRow(5, 'NoCoords', NO_COORDS_DATA),
+      chartRow(2, 'Historical', HISTORICAL_DATA),
+      chartRow(3, 'Current', CURRENT_DATA),
+      chartRow(4, 'Future', FUTURE_DATA),
+      chartRow(5, 'Broken', MALFORMED_DATA),
+      chartRow(6, 'NoCoords', NO_COORDS_DATA),
     ])
 
     const screen = await renderScreen()
     const texts = hostTexts(screen)
 
-    // Legacy (unversioned), current and no-coordinate rows all render their
+    // Legacy (unversioned), historical V1, current V2 and no-coordinate rows render their
     // birth moment. The date is built from the stored 'YYYY-MM-DD' fields, so
     // it reads as the 15th on every device rather than shifting westward.
     expect(
       texts.filter((t) => t.startsWith('15 Sep 1997 · '))
-    ).toHaveLength(3)
+    ).toHaveLength(4)
 
     // The row used to print the whole database record. None of it survives:
     // the zone and the coordinates are still stored and still drive every

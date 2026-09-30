@@ -3,6 +3,10 @@ import {
   computeWholeSignHouses,
 } from './astro'
 import type { ChartData } from './charts'
+import {
+  CURRENT_CHART_CALCULATION_VERSION,
+  CURRENT_CHART_SCHEMA_VERSION,
+} from './chartDataVersions'
 import { resolveStoredBirthMoment } from './time'
 
 export type ChartHydrationInput = {
@@ -24,6 +28,14 @@ export function hydrateChartData({
   birthLat,
   birthLon,
 }: ChartHydrationInput): ChartData {
+  const isCurrentCalculation =
+    chartData.schema_version === CURRENT_CHART_SCHEMA_VERSION &&
+    chartData.calculation_version === CURRENT_CHART_CALCULATION_VERSION
+
+  // Historical V1 results stay exactly as persisted. Filling missing houses
+  // here with the current algorithm would create a V1/V2 hybrid chart.
+  if (!isCurrentCalculation) return chartData
+
   let houses = chartData.houses
 
   if (!houses) {

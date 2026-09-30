@@ -28,6 +28,7 @@ import { HOUSE_GUIDANCE } from '../../lib/lexicon/guidance'
 import {
   CURRENT_CHART_CALCULATION_VERSION,
   CURRENT_CHART_SCHEMA_VERSION,
+  HISTORICAL_CHART_CALCULATION_VERSION,
 } from '../../lib/chartDataVersions'
 import { UNSUPPORTED_CHART_DATA_MESSAGE } from '../../lib/chartDataValidation'
 
@@ -1207,46 +1208,31 @@ it('opens on Today with This Week neither shown nor reachable', async () => {
     ).toBe(mockedBuildDailyGuidance().mock.calls[0][0].evaluatedAt)
   })
 
-  it('hydrates legacy saved houses before the shared guidance path', async () => {
-    const legacyChart = {
+  it('loads historical V1 without synthesizing or overwriting missing houses', async () => {
+    const historicalChart = {
       ...makeChartData({ sunLon: 15, moonLon: 45 }),
+      schema_version: CURRENT_CHART_SCHEMA_VERSION,
+      calculation_version: HISTORICAL_CHART_CALCULATION_VERSION,
       houses: null,
       planet_houses: null,
     }
-    mockedBuildDailyGuidance().mockImplementation((input) =>
-      makeDailyGuidance({
-        transitHouse:
-          input.natalHouses?.length === 12
-            ? { house: 10, guidance: HOUSE_GUIDANCE[10] }
-            : null,
-      })
-    )
     mockDashboardQueries({
       userRow: completeUser,
-      chartRow: { chart_data: legacyChart },
+      chartRow: { chart_data: historicalChart },
     })
 
-    const screen = await renderScreen()
+    await renderScreen()
     const dailyInput = mockedBuildDailyGuidance().mock.calls[0][0]
     const weeklyInput = mockedBuildWeeklyForecast().mock.calls[0][0]
 
-    expect(dailyInput.natalPlanets).toBe(legacyChart.planets)
-    expect(dailyInput.natalHouses).toHaveLength(12)
-    expect(weeklyInput.natalHouses).toBe(dailyInput.natalHouses)
+    expect(dailyInput.natalPlanets).toBe(historicalChart.planets)
+    expect(dailyInput.natalHouses).toBeNull()
+    expect(weeklyInput.natalHouses).toBeNull()
     expect(weeklyInput.evaluatedAt).toBe(dailyInput.evaluatedAt)
     expect(mockedBuildChartData()).not.toHaveBeenCalled()
+    expect(mockedGetChartCalculationPreferences()).not.toHaveBeenCalled()
     expect(mockedSaveChart()).not.toHaveBeenCalled()
-
-    await act(async () => {
-      findPressableByAccessibilityLabel(
-        screen,
-        'Expand Today’s Energy details'
-      ).props.onPress()
-    })
-    expectText(screen, 'Life area')
-    expectText(screen, 'House 10')
   })
-
   it('passes equivalent normalized chart inputs for saved and fresh sources', async () => {
     const equivalentChart = makeChartData({ sunLon: 15, moonLon: 45 })
     mockDashboardQueries({

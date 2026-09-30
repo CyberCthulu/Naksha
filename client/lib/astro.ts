@@ -167,9 +167,38 @@ export function assignPlanetsToWholeSignHouses(
   })
 }
 
+export function computeAscendantLongitude(
+  jsDate: Date,
+  latDeg: number,
+  lonDeg: number
+): number {
+  const jd = toJulianDate(jsDate)
+  const eps = meanObliquity(jd) * DEG2RAD
+  const phi = latDeg * DEG2RAD
+  const lst = localSiderealDegrees(jd, lonDeg) * DEG2RAD
+
+  const num = Math.cos(lst)
+  const den =
+    -Math.sin(lst) * Math.cos(eps) - Math.tan(phi) * Math.sin(eps)
+  let lambdaAsc = norm360(Math.atan2(num, den) * RAD2DEG)
+
+  // The ecliptic intersects the horizon at antipodal points. At high
+  // latitudes, atan2 can select the western (setting) intersection. As local
+  // sidereal time advances, the eastern (rising) point has increasing altitude.
+  const altitudeRate =
+    Math.cos(phi) *
+    (-Math.cos(lambdaAsc * DEG2RAD) * Math.sin(lst) +
+      Math.sin(lambdaAsc * DEG2RAD) * Math.cos(eps) * Math.cos(lst))
+  if (altitudeRate < 0) {
+    lambdaAsc = norm360(lambdaAsc + 180)
+  }
+
+  return lambdaAsc
+}
+
 /**
  * Compute Whole-Sign house cusps from birth date/time and location.
- * - Uses an approximate Ascendant formula (good enough for UX)
+ * - Selects the eastern (rising) ecliptic-horizon intersection
  * - House 1 starts at 0° of the Ascendant’s sign
  * - Each subsequent house is the next sign (30° steps)
  */
@@ -178,16 +207,7 @@ export function computeWholeSignHouses(
   latDeg: number,
   lonDeg: number
 ): HouseCusp[] {
-  const jd = toJulianDate(jsDate)
-  const eps = meanObliquity(jd) * DEG2RAD
-  const phi = latDeg * DEG2RAD
-  const lst = localSiderealDegrees(jd, lonDeg) * DEG2RAD
-
-  // Ascendant longitude (approx Meeus-style formula)
-  const num = Math.cos(lst)
-  const den = -Math.sin(lst) * Math.cos(eps) - Math.tan(phi) * Math.sin(eps)
-  let lambdaAsc = Math.atan2(num, den) * RAD2DEG
-  lambdaAsc = norm360(lambdaAsc)
+  const lambdaAsc = computeAscendantLongitude(jsDate, latDeg, lonDeg)
 
   // Whole-sign: 1st house cusp at 0° of Ascendant's sign
   const ascSign = Math.floor(lambdaAsc / 30)
