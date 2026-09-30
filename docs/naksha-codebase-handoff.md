@@ -1,6 +1,6 @@
 # Naksha Codebase Handoff
 
-Last reviewed: 2026-09-30 after the R4 repository changes through `11268e3e4af657e8dfc6e5159a9234e63d514576` (`ui/v2-redesign`)
+Last reviewed: 2026-09-30 after R5 completion through `88c5d2adbc66b945f7e72a773bf969c456acc9ce` (`ui/v2-redesign`)
 
 This document is the current engineering handoff. Use [Feature-List.md](Feature-List.md) for implemented product scope and [release-hardening-plan.md](release-hardening-plan.md) for the active release sequence. Dated audits and implementation plans under `docs/` are historical evidence; their baselines and instructions do not override these current documents.
 
@@ -23,9 +23,9 @@ The post-R3 local baseline is:
 - Clean database replay and the tested pre-R3-to-R3 upgrade path passing.
 - Local service-role account-deletion compatibility passing.
 
-The post-R4 repository gate is **68/68 Jest suites and 839/839 tests**, with TypeScript and lint passing. Android JavaScript export, Expo dependency validation, XML parsing, and Expo config introspection pass. Expo Doctor remains at the known 17/18 non-CNG result. Native manifest merging and AAB generation remain unverified because the installed environment lacks Android SDK 36/NDK 27 and production signing credentials.
+The post-R5 repository gate is **69/69 Jest suites and 843/843 tests**, with TypeScript and lint passing. Android JavaScript export, Expo dependency validation, XML parsing, and Expo config introspection remain at their post-R4 passing baseline. Expo Doctor remains at the known 17/18 non-CNG result. Native manifest merging and AAB generation remain unverified because the installed environment lacks Android SDK 36/NDK 27 and production signing credentials.
 
-R4 is repository-complete: auth recovery, local-only sign-out, revoked refresh-token recovery, Android identity/security configuration, approved branding, and first-run Login/Signup/Guest Chart polish are committed. Accountable production signing, signed-AAB inspection, and real-device acceptance remain release-candidate gates. R5 covers the remaining high-value astrology calculation risk at high latitudes. R6 contains the remaining engineering release gates. Content review C1–C4 and a signed release-candidate cycle follow R6.
+R4 is repository-complete: auth recovery, local-only sign-out, revoked refresh-token recovery, Android identity/security configuration, approved branding, and first-run Login/Signup/Guest Chart polish are committed. R5 is complete: the high-latitude Ascendant branch inversion is corrected and persisted calculation-version compatibility is explicit. Accountable production signing, signed-AAB inspection, and real-device acceptance remain release-candidate gates. R6 is next and contains the remaining engineering release gates. Content review C1–C4 and a signed release-candidate cycle follow R6.
 
 ## Source-of-truth hierarchy
 
@@ -78,9 +78,9 @@ A spring DST gap is rejected as nonexistent. A fall fold requires the user to se
 
 The app calculates Tropical longitudes for the Sun through Pluto, medium-orb major aspects, and Whole Sign houses when coordinates are available. `client/lib/time.ts` resolves civil input to an exact instant before `computeNatalPlanets` receives it. Calculation code does not independently reinterpret civil values.
 
-The focused remaining calculation risk is Ascendant horizon selection at sufficiently high latitudes, where independent review found that the opposite intersection may be selected. R5 owns rising-versus-setting verification, correction, and northern/southern reference fixtures; the planetary longitude, aspect, and Whole Sign work is otherwise considered strong.
+R5 confirmed and corrected an Ascendant branch inversion at sufficiently high absolute latitudes above roughly the polar-circle threshold (~66.56°). The prior algebraic branch could select the setting horizon intersection instead of the rising point, producing an approximately 180° error. The corrected implementation explicitly classifies the candidate as rising or setting and selects the antipodal point only when necessary. Normal-latitude behavior is preserved, and independent northern, southern, transition, and sign-boundary fixtures verify the result.
 
-New chart data emits schema and calculation version 1. Runtime validation distinguishes unversioned legacy, current, unsupported future, and malformed persisted payloads. Unsupported payloads are not interpreted or overwritten.
+New chart data emits `schema_version: 1` and `calculation_version: 2`. Unversioned and explicit calculation-V1 payloads remain readable as historical results. Historical V1 payloads are never hydrated with V2 house calculations, future calculation versions remain unsupported, and existing V1 high-latitude charts are not silently recalculated. If needed, a future explicit recalculation/upgrade flow can replace a historical chart with a clearly labelled V2 result.
 
 Canonical saved-chart identity includes:
 
@@ -165,12 +165,11 @@ There is no automated CI gate. R6 should run typecheck, lint, Jest, and DB/pgTAP
 
 ## Current release blockers and sequence
 
-1. **R5 — next:** high-latitude Ascendant/reference correctness.
-2. **R6:** remaining engineering readiness, including CI, generated types, hydration, lifecycle, accessibility, geocoder resilience, settings correctness, privacy/support/export, diagnostics, and dependency disposition.
-3. **C1–C4:** lexicon completeness, editorial quality, composition quality, and astrology editorial review.
-4. **Release candidate:** freeze, production configuration, accountable signing, signed AAB, real-device acceptance, backend verification, Play testing, and store submission.
-5. **Launch:** Android launch and narrow stabilization fixes.
-6. **Later:** iOS, relationships/synastry, deeper transit intelligence, optional AI, and optional social features.
+1. **R6 — next:** remaining engineering readiness, including CI, generated types, hydration, lifecycle, accessibility, geocoder resilience, settings correctness, privacy/support/export, diagnostics, and dependency disposition.
+2. **C1–C4:** lexicon completeness, editorial quality, composition quality, and astrology editorial review.
+3. **Release candidate:** freeze, production configuration, accountable signing, signed AAB, real-device acceptance, backend verification, Play testing, and store submission.
+4. **Launch:** Android launch and narrow stabilization fixes.
+5. **Later:** iOS, relationships/synastry, deeper transit intelligence, optional AI, and optional social features.
 
 Future sharing must use explicit authorization/sharing records. It must not weaken R1's private-by-default same-owner constraints.
 

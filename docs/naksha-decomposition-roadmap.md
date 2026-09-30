@@ -55,7 +55,7 @@ These are completed contracts, not roadmap items.
 | D5/D5.1 | Transit-house context | Daily Life area and day-specific weekly house context use the moving planet's current longitude against natal Whole Sign houses; missing houses omit context safely. |
 | D6.1 | Shared hydration/guidance path | `hydrateChartData` is shared by Dashboard and `useChartData`; saved/fresh charts converge before guidance; invalid stored time zones route to correction. |
 | D6.2 | Active navigation typing | `RootStackParamList` types all 14 registered routes and active JournalEditor/Chart payloads without changing runtime navigation. |
-| D6.3 | ChartData compatibility contract | New chart JSON carries `schema_version: 1` and `calculation_version: 1`; valid unversioned legacy data remains supported; future versions are not silently consumed. |
+| D6.3 | ChartData compatibility contract | New chart JSON carries `schema_version: 1` and `calculation_version: 2`; unversioned and explicit V1 data remains readable as historical results without V2 house hydration or silent recalculation; future versions are not silently consumed. |
 
 ## 5. Current Pressure Points
 

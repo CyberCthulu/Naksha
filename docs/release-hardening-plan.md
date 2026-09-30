@@ -1,12 +1,12 @@
 # Naksha release-hardening plan
 
-Updated **30 September 2026 (Pacific)** after the R4 repository changes through **`11268e3e4af657e8dfc6e5159a9234e63d514576`**, branch **`ui/v2-redesign`**. This is the canonical current roadmap. The [12 September readiness review](release-readiness-2026-09-12.md) remains a historical snapshot.
+Updated **30 September 2026 (Pacific)** after R5 completion through **`88c5d2adbc66b945f7e72a773bf969c456acc9ce`**, branch **`ui/v2-redesign`**. This is the canonical current roadmap. The [12 September readiness review](release-readiness-2026-09-12.md) remains a historical snapshot.
 
 ## Release decision and scope
 
 Naksha's free V1 feature loop and primary visual design are substantially implemented. Public Android release is not yet approved. Android remains the launch platform; iOS follows after Android launch unless requirements change.
 
-R1–R3 are **repository complete**: their implementation, local database verification, application regression gates, and independent reviews are complete. This does not by itself establish that every reviewed migration is deployed to production or that a store candidate has passed real-device acceptance. Production versions and behavior must be verified during release-candidate work.
+R1–R5 are **repository complete**: their implementation, applicable local database verification, application regression gates, and independent reviews are complete. This does not by itself establish that every reviewed migration is deployed to production or that a store candidate has passed real-device acceptance. Production versions and behavior must be verified during release-candidate work.
 
 The V1 scope remains accounts/profile, Tropical/Whole Sign natal and guest charts, saved charts, daily and weekly guidance, Sky Now, and private journaling. AI, synastry, social features, subscriptions, reports, extra astrology systems, and another UI redesign are outside release hardening.
 
@@ -17,9 +17,9 @@ The V1 scope remains accounts/profile, Tropical/Whole Sign natal and guest chart
 | R1 | ✅ **COMPLETE** | Relational ownership and database integrity |
 | R2 | ✅ **COMPLETE** | Civil birth date/time correctness |
 | R3 | ✅ **COMPLETE** | Journal and client write-surface integrity |
-| R4 | ✅ **REPOSITORY COMPLETE** | Authentication recovery and Android security/identity |
-| R5 | 🔵 **NEXT** | Astrology calculation correctness |
-| R6 | ⏳ **PENDING** | Remaining engineering release readiness |
+| R4 | ✅ **COMPLETE** | Authentication recovery and Android security/identity |
+| R5 | ✅ **COMPLETE** | Astrology calculation correctness |
+| R6 | 🔵 **NEXT** | Remaining engineering release readiness |
 
 After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → Android launch → stabilization → iOS → post-launch expansion**.
 
@@ -105,17 +105,13 @@ After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → A
 
 ## R5 — Astrology calculation correctness
 
-**Status: PENDING.** Independent review found the planetary longitude, aspect, and Whole Sign work generally strong. The remaining high-value calculation issue is Ascendant behavior at high latitudes, where the current branch may select the opposite horizon intersection.
+**Status: COMPLETE.** The suspected Ascendant/Descendant branch inversion was confirmed. At sufficiently high absolute latitudes above roughly the polar-circle threshold (~66.56°), the previous algebraic branch could return the western, setting ecliptic-horizon intersection rather than the eastern, rising intersection. The result was approximately 180° wrong and could shift the Whole Sign first house by six signs.
 
-R5 is limited to:
+**Completed correction.** The existing Ascendant formula remains in place, followed by an explicit rising-versus-setting classification from the altitude change as local sidereal time advances. A setting result is rotated 180° to the antipodal rising point and normalized. Normal-latitude output is preserved. Independent northern and southern fixtures cover low, mid, high, and inversion-producing latitudes, both sides of branch transitions, rising-versus-setting classification, and sign-boundary behavior.
 
-- verify rising versus setting intersection selection;
-- correct high-latitude Ascendant behavior without redesigning the astrology engine;
-- add northern and southern high-latitude fixtures;
-- add Ascendant sign-boundary fixtures; and
-- compare results with independent astronomical/reference sources across supported ranges.
+**Persisted compatibility.** New calculations emit `schema_version: 1` and `calculation_version: 2`. Unversioned ChartData and explicit calculation V1 remain readable as historical persisted results. V1 data with missing houses or planet-house assignments is not hydrated using V2 calculations, so Naksha does not create mixed V1/V2 payloads. Future calculation versions remain unsupported. Existing historical V1 high-latitude charts are not silently recalculated or relabelled; a future explicit recalculation/upgrade path may be considered if product need justifies it.
 
-If a calculation semantic changes, assess `calculation_version`, persisted-chart compatibility, and user-visible behavior. Do not silently rewrite saved charts. Planet systems, aspect rules, and Whole Sign conventions are not being redesigned.
+**Verification and review.** The focused independent-reference matrix and compatibility tests pass, as does the full post-R5 application gate: **69 suites / 843 tests**, TypeScript, lint, and `git diff --check`. R5 was independently reviewed, approved, and committed. Planetary bodies, aspect rules, schema shape, and Whole Sign house policy were not redesigned.
 
 ## R6 — Remaining engineering release readiness
 
