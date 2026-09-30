@@ -8,7 +8,11 @@ import {
   ScrollView,
   StyleSheet,
 } from 'react-native'
-import { useFocusEffect, useNavigation } from '@react-navigation/native'
+import {
+  useFocusEffect,
+  useIsFocused,
+  useNavigation,
+} from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -33,6 +37,12 @@ import {
   type WeeklyForecast,
 } from '../lib/guidance'
 import type { UserRow } from '../lib/domainTypes'
+import {
+  DASHBOARD_GUIDANCE_REFRESH_MS,
+  getDashboardDataRevision,
+  getDashboardGuidanceKeys,
+} from '../lib/dashboardFreshness'
+import { useActiveDashboardRefresh } from '../hooks/useActiveDashboardRefresh'
 import {
   needsProfileCompletion,
   profileFromAuthMetadata,
@@ -243,12 +253,16 @@ export default function DashboardScreen() {
   const [todayEnergy, setTodayEnergy] = useState<DailyGuidance | null>(null)
   const [weeklyForecast, setWeeklyForecast] =
     useState<WeeklyForecast | null>(null)
+  const [guidanceTimeZone, setGuidanceTimeZone] = useState<string | null>(null)
+  const [guidanceEvaluatedAt, setGuidanceEvaluatedAt] =
+    useState<number | null>(null)
 
   const nav =
     useNavigation<
       NativeStackNavigationProp<RootStackParamList, 'Dashboard'>
     >()
   const insets = useSafeAreaInsets()
+  const isFocused = useIsFocused()
 
   const openJournalReflection = useCallback(
     (
@@ -279,16 +293,75 @@ export default function DashboardScreen() {
   const didNavigateRef = useRef(false)
   const unmounted = useRef(false)
   const loadingRef = useRef(false)
-  const lastLoadAtRef = useRef(0)
+  const errorRef = useRef(false)
+  const loadedDataRevisionRef = useRef(-1)
+  const guidanceContextRef = useRef<GuidanceBuildContext | null>(null)
+  const guidanceDateRef = useRef<string | null>(null)
+  const guidanceWeekRef = useRef<string | null>(null)
+  const guidanceEvaluatedAtRef = useRef<number | null>(null)
+
+  const resetGuidance = useCallback(() => {
+    guidanceContextRef.current = null
+    guidanceDateRef.current = null
+    guidanceWeekRef.current = null
+    guidanceEvaluatedAtRef.current = null
+    setGuidanceTimeZone(null)
+    setGuidanceEvaluatedAt(null)
+    setTodayEnergy(null)
+    setWeeklyForecast(null)
+  }, [])
+
+  const refreshGuidanceForNow = useCallback(
+    (evaluatedAt: Date) => {
+      if (loadingRef.current) return
+
+      const context = guidanceContextRef.current
+      if (!context) return
+
+      try {
+        const keys = getDashboardGuidanceKeys(
+          evaluatedAt,
+          context.timeZone
+        )
+
+        const lastEvaluatedAt = guidanceEvaluatedAtRef.current
+        const dailyExpired =
+          guidanceDateRef.current !== keys.localDate ||
+          lastEvaluatedAt == null ||
+          Math.abs(evaluatedAt.getTime() - lastEvaluatedAt) >=
+            DASHBOARD_GUIDANCE_REFRESH_MS
+
+        if (dailyExpired) {
+          setTodayEnergy(
+            buildDailyGuidance({ ...context, evaluatedAt })
+          )
+          guidanceDateRef.current = keys.localDate
+          guidanceEvaluatedAtRef.current = evaluatedAt.getTime()
+          setGuidanceEvaluatedAt(evaluatedAt.getTime())
+        }
+
+        if (guidanceWeekRef.current !== keys.weekStartDate) {
+          setWeeklyForecast(
+            buildWeeklyForecast({ ...context, evaluatedAt })
+          )
+          guidanceWeekRef.current = keys.weekStartDate
+        }
+      } catch (e: any) {
+        errorRef.current = true
+        resetGuidance()
+        setError(
+          e?.message ?? 'Could not refresh your guidance. Please try again.'
+        )
+      }
+    },
+    [resetGuidance]
+  )
 
   const load = useCallback(async () => {
-    const now = Date.now()
-
     if (loadingRef.current) return
-    if (now - lastLoadAtRef.current < 500) return
 
     loadingRef.current = true
-    lastLoadAtRef.current = now
+    errorRef.current = false
 
     try {
       if (!unmounted.current) {
@@ -307,8 +380,7 @@ export default function DashboardScreen() {
         setProfile(null)
         setSunSign(null)
         setMoonSign(null)
-        setTodayEnergy(null)
-        setWeeklyForecast(null)
+        resetGuidance()
         setError('No active session found.')
         return
       }
@@ -364,8 +436,7 @@ export default function DashboardScreen() {
       if (needsProfileCompletion(u)) {
         setSunSign(null)
         setMoonSign(null)
-        setTodayEnergy(null)
-        setWeeklyForecast(null)
+        resetGuidance()
 
         if (!didNavigateRef.current) {
           didNavigateRef.current = true
@@ -379,8 +450,7 @@ export default function DashboardScreen() {
       if (!tz) {
         setSunSign(null)
         setMoonSign(null)
-        setTodayEnergy(null)
-        setWeeklyForecast(null)
+        resetGuidance()
 
         if (!didNavigateRef.current) {
           didNavigateRef.current = true
@@ -393,8 +463,7 @@ export default function DashboardScreen() {
       if (!(u.birth_date && u.birth_time)) {
         setSunSign(null)
         setMoonSign(null)
-        setTodayEnergy(null)
-        setWeeklyForecast(null)
+        resetGuidance()
         return
       }
 
@@ -501,22 +570,33 @@ export default function DashboardScreen() {
 
       setSunSign(sun ? ZODIAC[signOf(sun.lon)] : null)
       setMoonSign(moon ? ZODIAC[signOf(moon.lon)] : null)
+      const evaluatedAt = new Date()
       const guidanceContext: GuidanceBuildContext = {
         natalPlanets: hydratedChart.planets,
         natalHouses: hydratedChart.houses,
-        evaluatedAt: new Date(),
+        evaluatedAt,
         timeZone: tz,
       }
+      const freshness = getDashboardGuidanceKeys(evaluatedAt, tz)
+      const nextTodayEnergy = buildDailyGuidance(guidanceContext)
+      const nextWeeklyForecast = buildWeeklyForecast(guidanceContext)
 
-      setTodayEnergy(buildDailyGuidance(guidanceContext))
-      setWeeklyForecast(buildWeeklyForecast(guidanceContext))
+      guidanceContextRef.current = guidanceContext
+      guidanceDateRef.current = freshness.localDate
+      guidanceWeekRef.current = freshness.weekStartDate
+      guidanceEvaluatedAtRef.current = evaluatedAt.getTime()
+      loadedDataRevisionRef.current = getDashboardDataRevision()
+      setGuidanceTimeZone(tz)
+      setGuidanceEvaluatedAt(evaluatedAt.getTime())
+      setTodayEnergy(nextTodayEnergy)
+      setWeeklyForecast(nextWeeklyForecast)
     } catch (e: any) {
+      errorRef.current = true
       if (!unmounted.current) {
         setError(e?.message ?? 'Failed to load dashboard.')
         setSunSign(null)
         setMoonSign(null)
-        setTodayEnergy(null)
-        setWeeklyForecast(null)
+        resetGuidance()
       }
     } finally {
       loadingRef.current = false
@@ -525,7 +605,7 @@ export default function DashboardScreen() {
         setLoading(false)
       }
     }
-  }, [nav])
+  }, [nav, resetGuidance])
 
   useEffect(() => {
     unmounted.current = false
@@ -540,11 +620,27 @@ export default function DashboardScreen() {
       didNavigateRef.current = false
 
       const task = InteractionManager.runAfterInteractions(() => {
-        load()
+        const needsFullLoad =
+          guidanceContextRef.current == null ||
+          errorRef.current ||
+          loadedDataRevisionRef.current !== getDashboardDataRevision()
+
+        if (needsFullLoad) {
+          load()
+        } else {
+          refreshGuidanceForNow(new Date())
+        }
       })
 
       return () => task.cancel()
-  }, [load])
+    }, [load, refreshGuidanceForNow])
+  )
+
+  useActiveDashboardRefresh(
+    isFocused && guidanceTimeZone != null,
+    guidanceTimeZone,
+    guidanceEvaluatedAt,
+    refreshGuidanceForNow
   )
 
   const firstName = profile?.first_name?.trim() || ''

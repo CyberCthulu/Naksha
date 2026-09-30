@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button'
 import supabase from '../../lib/supabase'
 import { geocodePlace } from '../../lib/geocode'
 import type { UserRow } from '../../lib/domainTypes'
+import { getDashboardDataRevision } from '../../lib/dashboardFreshness'
 
 const mockNavigation = {
   goBack: jest.fn(),
@@ -258,6 +259,7 @@ describe('CompleteProfileScreen', () => {
   })
 
   it('saves selected-coordinate profile data to public.users without auth metadata writes', async () => {
+    const revisionBeforeSave = getDashboardDataRevision()
     const query = mockUsersQuery(completeUser)
     const screen = await renderScreen()
 
@@ -277,6 +279,7 @@ describe('CompleteProfileScreen', () => {
     })
     expect(query.updateEq).toHaveBeenCalledWith('id', 'user-1')
     expect(mockedSupabase().auth.updateUser).not.toHaveBeenCalled()
+    expect(getDashboardDataRevision()).toBe(revisionBeforeSave + 1)
     expect(mockNavigation.goBack).toHaveBeenCalled()
   })
 

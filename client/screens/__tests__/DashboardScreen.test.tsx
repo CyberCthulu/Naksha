@@ -1,5 +1,5 @@
 import React from 'react'
-import { InteractionManager, StyleSheet, Text, View } from 'react-native'
+import { AppState, InteractionManager, StyleSheet, Text, View } from 'react-native'
 import TestRenderer from 'react-test-renderer'
 
 import DashboardScreen from '../DashboardScreen'
@@ -31,6 +31,9 @@ import {
   HISTORICAL_CHART_CALCULATION_VERSION,
 } from '../../lib/chartDataVersions'
 import { UNSUPPORTED_CHART_DATA_MESSAGE } from '../../lib/chartDataValidation'
+import { markDashboardDataStale } from '../../lib/dashboardFreshness'
+
+let mockDashboardFocusEffect: (() => void | (() => void)) | null = null
 
 const mockNavigation = {
   navigate: jest.fn(),
@@ -48,7 +51,9 @@ jest.mock('@react-navigation/native', () => {
 
   return {
     useNavigation: () => mockNavigation,
+    useIsFocused: () => true,
     useFocusEffect: (callback: () => void | (() => void)) => {
+      mockDashboardFocusEffect = callback
       React.useEffect(callback, [callback])
     },
   }
@@ -87,6 +92,7 @@ jest.mock('../../lib/supabase', () => ({
 }))
 
 const { act, create } = TestRenderer
+const originalAppState = AppState.currentState
 
 let renderer: ReturnType<typeof create> | null = null
 
@@ -567,6 +573,7 @@ describe('DashboardScreen', () => {
       })
 
     renderer = null
+    mockDashboardFocusEffect = null
 
     mockSignedInUser()
     mockDashboardQueries({
@@ -591,6 +598,8 @@ describe('DashboardScreen', () => {
     }
     renderer = null
     jest.restoreAllMocks()
+    jest.useRealTimers()
+    AppState.currentState = originalAppState
   })
 
   it('loads a complete profile without redirecting to CompleteProfile', async () => {
@@ -1208,6 +1217,70 @@ it('opens on Today with This Week neither shown nor reachable', async () => {
     ).toBe(mockedBuildDailyGuidance().mock.calls[0][0].evaluatedAt)
   })
 
+  it('refreshes only Today after an active hour without database or chart work', async () => {
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2026-09-13T17:00:00.000Z'))
+    AppState.currentState = 'active'
+
+    await renderScreen()
+
+    mockedSupabase().auth.getUser.mockClear()
+    mockedSupabase().from.mockClear()
+    mockedBuildChartData().mockClear()
+    mockedGetChartCalculationPreferences().mockClear()
+    mockedSaveChart().mockClear()
+    mockedBuildDailyGuidance().mockClear()
+    mockedBuildWeeklyForecast().mockClear()
+
+    await act(async () => {
+      jest.advanceTimersByTime(60 * 60 * 1_000)
+      await settleAsyncWork()
+    })
+
+    expect(mockedBuildDailyGuidance()).toHaveBeenCalledTimes(1)
+    expect(mockedBuildWeeklyForecast()).not.toHaveBeenCalled()
+    expect(mockedSupabase().auth.getUser).not.toHaveBeenCalled()
+    expect(mockedSupabase().from).not.toHaveBeenCalled()
+    expect(mockedBuildChartData()).not.toHaveBeenCalled()
+    expect(mockedSaveChart()).not.toHaveBeenCalled()
+  })
+
+  it('avoids database work on ordinary refocus and reloads after profile invalidation', async () => {
+    await renderScreen()
+
+    mockedSupabase().auth.getUser.mockClear()
+    mockedSupabase().from.mockClear()
+    mockedBuildChartData().mockClear()
+    mockedGetChartCalculationPreferences().mockClear()
+    mockedSaveChart().mockClear()
+    mockedBuildDailyGuidance().mockClear()
+    mockedBuildWeeklyForecast().mockClear()
+
+    await act(async () => {
+      mockDashboardFocusEffect?.()
+      await settleAsyncWork()
+    })
+
+    expect(mockedSupabase().auth.getUser).not.toHaveBeenCalled()
+    expect(mockedSupabase().from).not.toHaveBeenCalled()
+    expect(mockedBuildDailyGuidance()).not.toHaveBeenCalled()
+    expect(mockedBuildWeeklyForecast()).not.toHaveBeenCalled()
+
+    markDashboardDataStale()
+    await act(async () => {
+      mockDashboardFocusEffect?.()
+      await settleAsyncWork()
+    })
+
+    expect(mockedSupabase().auth.getUser).toHaveBeenCalledTimes(1)
+    expect(mockedSupabase().from).toHaveBeenCalledWith('users')
+    expect(mockedSupabase().from).toHaveBeenCalledWith('charts')
+    expect(mockedBuildChartData()).not.toHaveBeenCalled()
+    expect(mockedSaveChart()).not.toHaveBeenCalled()
+    expect(mockedBuildDailyGuidance()).toHaveBeenCalledTimes(1)
+    expect(mockedBuildWeeklyForecast()).toHaveBeenCalledTimes(1)
+  })
+
   it('loads historical V1 without synthesizing or overwriting missing houses', async () => {
     const historicalChart = {
       ...makeChartData({ sunLon: 15, moonLon: 45 }),
@@ -1324,6 +1397,26 @@ it('opens on Today with This Week neither shown nor reachable', async () => {
     expect(mockedSaveChart()).not.toHaveBeenCalled()
     expect(mockedBuildDailyGuidance()).not.toHaveBeenCalled()
     expect(mockedBuildWeeklyForecast()).not.toHaveBeenCalled()
+
+    mockDashboardQueries({
+      userRow: completeUser,
+      chartRow: { chart_data: makeChartData() },
+    })
+
+    await act(async () => {
+      retry?.props.onPress()
+      await settleAsyncWork()
+    })
+
+    expect(
+      screen.root.findAll(
+        (node) => node.props?.testID === 'dashboard-error'
+      )
+    ).toHaveLength(0)
+    expect(mockedBuildDailyGuidance()).toHaveBeenCalledTimes(1)
+    expect(mockedBuildWeeklyForecast()).toHaveBeenCalledTimes(1)
+    expect(mockedBuildChartData()).not.toHaveBeenCalled()
+    expect(mockedSaveChart()).not.toHaveBeenCalled()
   })
 
   it('does not interpret, rebuild, or overwrite unsupported saved chart data', async () => {

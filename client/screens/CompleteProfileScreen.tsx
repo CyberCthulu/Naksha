@@ -6,6 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import supabase from '../lib/supabase'
 import { normalizeZone, getDeviceTimeZoneNormalized } from '../lib/timezones'
+import { markDashboardDataStale } from '../lib/dashboardFreshness'
 import {
   parseCivilDate,
   parseCivilTime,
@@ -199,6 +200,7 @@ export default function CompleteProfileScreen() {
         .eq('id', user.id)
       if (upErr) throw upErr
 
+      markDashboardDataStale()
       navigation.goBack()
     } catch (e: any) {
       Alert.alert('Save failed', e?.message ?? 'Unknown error')
