@@ -40,12 +40,12 @@ Core product goals:
 
 ## Current Status
 
-Updated 25 September 2026 at `70273735`. Core free V1 and the active celestial UI are implemented. R1–R3 release hardening is repository-complete; R4 authentication recovery and Android production identity/security is next. Native candidate acceptance remains outstanding.
+Updated 30 September 2026 after R4 repository completion through `11268e3e`. Core free V1 and the active celestial UI are implemented. R1–R4 release hardening is repository-complete; R5 astrology calculation correctness is next. Signed native candidate acceptance remains outstanding.
 
 - Accounts/profile, natal and guest charts, saved charts, daily/weekly guidance, and journaling.
 - Interactive chart wheel, chart tabs, shared starry backgrounds, translucent cards, and celestial loading.
 - Sky Now above the dashboard tabs with current positions and authored aspect-pair readings.
-- Post-R3 verification: 62 Jest suites / 793 tests, TypeScript, lint, whitespace, clean database replay, upgrade replay, and combined R1/R2/R3 pgTAP pass. These do not qualify a signed store release or prove production deployment.
+- Post-R4 repository verification: 68 Jest suites / 839 tests, TypeScript, lint, and whitespace pass. R1/R2/R3 database replay and combined pgTAP verification remain the latest database baseline. These checks do not qualify a signed store release.
 
 Start with the [release-hardening plan](docs/release-hardening-plan.md), [feature list](docs/Feature-List.md), and [engineering handoff](docs/naksha-codebase-handoff.md). AI chat, subscriptions, compatibility, notifications, and extra astrology systems are future work.
 

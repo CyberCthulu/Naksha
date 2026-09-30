@@ -1,6 +1,6 @@
 # Naksha release-hardening plan
 
-Updated **25 September 2026 (Pacific)** during the uncommitted R4 worktree based on **`1b9c31a5994ad5359d7e6ca9425fbd60a9644d2d`**, branch **`ui/v2-redesign`**. This is the canonical current roadmap. The [12 September readiness review](release-readiness-2026-09-12.md) remains a historical snapshot.
+Updated **30 September 2026 (Pacific)** after the R4 repository changes through **`11268e3e4af657e8dfc6e5159a9234e63d514576`**, branch **`ui/v2-redesign`**. This is the canonical current roadmap. The [12 September readiness review](release-readiness-2026-09-12.md) remains a historical snapshot.
 
 ## Release decision and scope
 
@@ -17,8 +17,8 @@ The V1 scope remains accounts/profile, Tropical/Whole Sign natal and guest chart
 | R1 | ✅ **COMPLETE** | Relational ownership and database integrity |
 | R2 | ✅ **COMPLETE** | Civil birth date/time correctness |
 | R3 | ✅ **COMPLETE** | Journal and client write-surface integrity |
-| R4 | 🟡 **IN PROGRESS** | Authentication recovery and Android security/identity |
-| R5 | ⏳ **PENDING** | Astrology calculation correctness |
+| R4 | ✅ **REPOSITORY COMPLETE** | Authentication recovery and Android security/identity |
+| R5 | 🔵 **NEXT** | Astrology calculation correctness |
 | R6 | ⏳ **PENDING** | Remaining engineering release readiness |
 
 After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → Android launch → stabilization → iOS → post-launch expansion**.
@@ -61,7 +61,7 @@ After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → A
 
 ## R4 — Authentication recovery and Android security/identity
 
-**Status: IN PROGRESS.** Repository implementation is complete for auth recovery and Android configuration, but R4 remains open until the external signing/asset gates and signed-artifact checks below are completed. Keep this as one bounded release slice with two connected outcomes: a recoverable account lifecycle and a production-identifiable Android artifact.
+**Status: REPOSITORY COMPLETE.** Authentication recovery, Android identity/security configuration, approved branding, and first-run auth/guest-chart polish are committed. Production signing, signed-artifact inspection, and real-device acceptance remain release-candidate gates; repository completion does not claim that those external checks have passed.
 
 ### Authentication and recovery
 
@@ -73,21 +73,22 @@ After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → A
 - Remove the navigation reset race that may target Dashboard before the authenticated navigator has registered it.
 - Add exceptional-path tests and complete real-device cold/warm callback, retry, cancellation, and network-failure checks.
 
-### Repository implementation in the current R4 worktree
+### Completed repository implementation
 
 - Auth bootstrap has explicit initializing, authenticated, unauthenticated, and recoverable error states. Retry is re-entrant; auth events supersede stale bootstrap results. Authenticated identity changes remount the full `NavigationContainer`, discarding prior route history and parameters; cold-start URLs are consumed once across those remounts while runtime links remain active.
 - Login, signup, OTP verification/resend, callback exchange, password recovery/reset, sign-out, and account deletion handle rejected promises without stranded controls. Navigation follows central auth state; recovery carries an explicit callback intent across same-user and cross-account callbacks, CheckEmail does not target an unavailable route, and successful server deletion is distinguished from local sign-out cleanup.
+- Sign-out is local to the current installation. A revoked or missing persisted refresh token is cleared locally during bootstrap and resolves to the signed-out app instead of trapping the user in a restore-session error.
+- Login, Signup, and Guest Chart use the completed first-run form hierarchy and shared field appearance without changing their data contracts or navigation behavior.
 - The owner-approved Android ID is `com.naksha.app`; the visible name is **Naksha**. The `client` Expo slug and existing EAS project ID remain unchanged. The production deep-link scheme remains `naksha`; the `exp+client` scheme is confined to debug manifests.
 - Release builds no longer use the checked-in debug key. Local release signing requires all four untracked `NAKSHA_UPLOAD_*` values; EAS production explicitly uses remote credentials and produces an app bundle with remotely managed `versionCode` increments.
 - Production config removes legacy storage, overlay, and vibration permissions; permits internet access; disables cleartext traffic and backup; and excludes AsyncStorage databases from both legacy backup and Android 12+ cloud/device-transfer paths.
-- The current repository still contains stock Expo placeholder icon/adaptive-icon/splash artwork. No approved Naksha replacement asset exists in the repository.
+- Approved Naksha launcher, adaptive foreground, splash, logo, and wordmark assets are present. Expo and checked-in Android resources use the approved navy branding, including the Android 12+ splash background override.
 
-**Current verification.** Focused R4 auth/native-configuration coverage passes. The full application gate passes **67 suites / 825 tests**, TypeScript, lint, and Android JavaScript export. Expo dependency validation is current; Expo Doctor remains 17/18 solely because checked-in native projects and app config make this a non-CNG project. XML parsing and Expo introspection pass, with introspected Android permissions limited to `INTERNET`. A merged native release manifest and signed artifact could not be produced with the installed environment because Android SDK 36/NDK 27 and production signing credentials are unavailable.
+**Current verification.** Focused R4 auth/native-configuration coverage passes. The full application gate passes **68 suites / 839 tests**, TypeScript, lint, and Android JavaScript export. Expo dependency validation is current; Expo Doctor remains 17/18 solely because checked-in native projects and app config make this a non-CNG project. XML parsing and Expo introspection pass, with introspected Android permissions limited to `INTERNET`. A merged native release manifest and signed artifact could not be produced with the installed environment because Android SDK 36/NDK 27 and production signing credentials are unavailable.
 
-### Remaining R4 gates
+### Remaining release-candidate gates
 
-- Establish and back up the EAS/Play upload keystore under an explicitly accountable owner; no production credential was created or inspected in this worktree.
-- Supply approved Naksha launcher/adaptive-icon/splash assets and regenerate/verify native resources.
+- Establish and back up the EAS/Play upload keystore under an explicitly accountable owner; no production credential was created or inspected during R4 repository verification.
 - Build a signed AAB with Android SDK 36/NDK 27 tooling, inspect its certificate, merged manifest, package, label, version code, debuggable flag, links, permissions, backup policy, and assets, then complete R4 real-device auth/deep-link acceptance.
 
 ### Android production identity and security
@@ -100,7 +101,7 @@ After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → A
 - Verify production build name, package ID, scheme, version, certificate, permissions, environment, and assets.
 - Produce and inspect a signed Android AAB. Store delivery belongs to the later RC phase.
 
-**R4 exit gate.** Auth failure paths recover without stranded controls or invalid navigation; account deletion messaging reflects the actual result; account switching does not leak state; and a signed Android AAB has the intended identity, signing, links, permissions, and backup policy. Android remains first; no iOS qualification is required in R4.
+**R4 repository exit gate.** Auth failure paths recover without stranded controls or invalid navigation; account deletion messaging reflects the actual result; account switching does not leak state; revoked local sessions recover safely; and checked-in Android identity, links, permissions, backup policy, and branding match the approved configuration. The signed-AAB and device checks above remain mandatory before release. Android remains first; no iOS qualification is required in R4.
 
 ## R5 — Astrology calculation correctness
 

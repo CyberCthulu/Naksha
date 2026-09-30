@@ -1,6 +1,6 @@
 # Naksha Codebase Handoff
 
-Last reviewed: 2026-09-25 during the uncommitted R4 worktree based on `1b9c31a5994ad5359d7e6ca9425fbd60a9644d2d` (`ui/v2-redesign`)
+Last reviewed: 2026-09-30 after the R4 repository changes through `11268e3e4af657e8dfc6e5159a9234e63d514576` (`ui/v2-redesign`)
 
 This document is the current engineering handoff. Use [Feature-List.md](Feature-List.md) for implemented product scope and [release-hardening-plan.md](release-hardening-plan.md) for the active release sequence. Dated audits and implementation plans under `docs/` are historical evidence; their baselines and instructions do not override these current documents.
 
@@ -23,9 +23,9 @@ The post-R3 local baseline is:
 - Clean database replay and the tested pre-R3-to-R3 upgrade path passing.
 - Local service-role account-deletion compatibility passing.
 
-The current R4 worktree gate is **67/67 Jest suites and 825/825 tests**, with TypeScript and lint passing. Android JavaScript export, Expo dependency validation, XML parsing, and Expo config introspection pass. Expo Doctor remains at the known 17/18 non-CNG result. Native manifest merging and AAB generation remain unverified because the installed environment lacks Android SDK 36/NDK 27 and production signing credentials.
+The post-R4 repository gate is **68/68 Jest suites and 839/839 tests**, with TypeScript and lint passing. Android JavaScript export, Expo dependency validation, XML parsing, and Expo config introspection pass. Expo Doctor remains at the known 17/18 non-CNG result. Native manifest merging and AAB generation remain unverified because the installed environment lacks Android SDK 36/NDK 27 and production signing credentials.
 
-R4 is in progress: auth recovery and repository Android identity/security configuration are implemented locally. R4 remains open for approved brand assets, accountable production signing credentials, signed-AAB inspection, and real-device acceptance. R5 covers the remaining high-value astrology calculation risk at high latitudes. R6 contains the remaining engineering release gates. Content review C1–C4 and a signed release-candidate cycle follow R6.
+R4 is repository-complete: auth recovery, local-only sign-out, revoked refresh-token recovery, Android identity/security configuration, approved branding, and first-run Login/Signup/Guest Chart polish are committed. Accountable production signing, signed-AAB inspection, and real-device acceptance remain release-candidate gates. R5 covers the remaining high-value astrology calculation risk at high latitudes. R6 contains the remaining engineering release gates. Content review C1–C4 and a signed release-candidate cycle follow R6.
 
 ## Source-of-truth hierarchy
 
@@ -147,7 +147,7 @@ Remaining release work includes Sky Now aspect semantics, lifecycle/motion behav
 
 ## Production identity and release state
 
-The current R4 worktree establishes:
+The completed R4 repository slice establishes:
 
 - User-visible Expo/Android app name: **Naksha**
 - Preserved Expo slug: `client`
@@ -159,19 +159,18 @@ The current R4 worktree establishes:
 - `allowBackup=false`, legacy/Android 12+ AsyncStorage database exclusions, and cleartext disabled
 - Debug signing remains development-only; local release output is unsigned unless all untracked `NAKSHA_UPLOAD_*` values are supplied; EAS production is configured for remote credentials
 
-R4 is not complete. The repository contains only stock Expo placeholder icon/splash assets, no production keystore was created or inspected, and no signed AAB or merged release manifest was produced because the local Android SDK 36/NDK 27 toolchain is absent. Android remains the launch platform; iOS follows after Android stabilization unless requirements change.
+Approved Naksha launcher, adaptive foreground, splash, logo, and wordmark assets are integrated in Expo and checked-in Android resources, including the Android 12+ splash background override. No production keystore was created or inspected, and no signed AAB or merged release manifest was produced because the local Android SDK 36/NDK 27 toolchain and production credentials were not available for the recorded verification. Those artifact and device checks remain mandatory release-candidate work. Android remains the launch platform; iOS follows after Android stabilization unless requirements change.
 
 There is no automated CI gate. R6 should run typecheck, lint, Jest, and DB/pgTAP coverage where practical.
 
 ## Current release blockers and sequence
 
-1. **R4 — in progress:** finish brand assets, signing ownership, signed-AAB inspection, and real-device auth/native acceptance.
-2. **R5:** high-latitude Ascendant/reference correctness.
-3. **R6:** remaining engineering readiness, including CI, generated types, hydration, lifecycle, accessibility, geocoder resilience, settings correctness, privacy/support/export, diagnostics, and dependency disposition.
-4. **C1–C4:** lexicon completeness, editorial quality, composition quality, and astrology editorial review.
-5. **Release candidate:** freeze, production configuration, signed AAB, real-device acceptance, backend verification, Play testing, and store submission.
-6. **Launch:** Android launch and narrow stabilization fixes.
-7. **Later:** iOS, relationships/synastry, deeper transit intelligence, optional AI, and optional social features.
+1. **R5 — next:** high-latitude Ascendant/reference correctness.
+2. **R6:** remaining engineering readiness, including CI, generated types, hydration, lifecycle, accessibility, geocoder resilience, settings correctness, privacy/support/export, diagnostics, and dependency disposition.
+3. **C1–C4:** lexicon completeness, editorial quality, composition quality, and astrology editorial review.
+4. **Release candidate:** freeze, production configuration, accountable signing, signed AAB, real-device acceptance, backend verification, Play testing, and store submission.
+5. **Launch:** Android launch and narrow stabilization fixes.
+6. **Later:** iOS, relationships/synastry, deeper transit intelligence, optional AI, and optional social features.
 
 Future sharing must use explicit authorization/sharing records. It must not weaken R1's private-by-default same-owner constraints.
 
