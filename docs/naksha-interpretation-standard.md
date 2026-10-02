@@ -1,8 +1,8 @@
 # Naksha Interpretation Standard
 
-**Status:** Proposed governing specification for C1–C4
+**Status:** Approved governing specification for C1–C4; C1.1 reconciled
 
-**Baseline:** `ui/v2-redesign` at `6f1a163655962f5d5db328aefd4da798b111c879`
+**Baseline:** `ui/v2-redesign` at `d62132898d39f698436caa2d7f8183040798c329`
 
 **Verified:** 2026-10-02
 
@@ -24,7 +24,7 @@ This specification is normative. Current content that conflicts with it is exist
 
 ## 2. Current-HEAD verification
 
-The current implementation remains materially consistent with the two independent editorial audits now stored in `docs/`. Since their source baseline, the only changed files are the two audit reports themselves. No interpretation, calculation, composition, or rendering source has drifted.
+The current implementation remains materially consistent with the two independent editorial audits stored in `docs/`, except for the narrow C1.1 doctrine corrections recorded below. Calculation, composition, rendering, and the broader interpretation architecture have not drifted.
 
 The following conclusions remain true at current HEAD:
 
@@ -42,7 +42,7 @@ The following conclusions remain true at current HEAD:
 | Prompts and practices | Selection is deterministic and structurally traceable, but tag/source matching can choose an item with only broad thematic relevance. House-specific constructive, caution, and inquiry fields do not participate in ordinary prompt/practice selection. |
 | Tests | Existing tests strongly protect finite coverage, IDs, nonblank fields, deterministic selection, calculation rules, and rendering reachability. They do not establish interpretive quality. The Sky Now distinctness test can pass when only the generic dynamic sentence changes. |
 
-The current source also contains objective Whole Sign doctrine conflicts: four house definitions equate house numbers with angles, eight planet-house entries say a planet “rules this house,” and nine house-sign entries say a sign “rules this house.” These are listed in section 17.
+C1.1 corrected the objective Whole Sign doctrine conflicts identified by the audits: four house/angle equivalences, eight planet-house rulership claims, and nine house-sign rulership claims. Section 17 records those completed corrections.
 
 ## 3. V1 astrological doctrine
 
@@ -58,22 +58,27 @@ V1 uses:
 
 Interpretation content must not create a placement or aspect. It must not describe a near miss as an aspect, silently change an orb, or present a content gap as an astronomical absence.
 
+Aspects are calculated from angular separation and orb, so they can cross sign boundaries. Aspect prose must not infer a shared element, shared modality, sign compatibility, same-element harmony, or sign opposition unless that relationship is present in the structured data being interpreted. Authors should interpret the planetary relationship and aspect mechanism supported by the calculation.
+
 ### 3.2 Houses and angles
 
-Houses are life areas. Angles are exact chart points. They are related but not interchangeable.
+Signs, houses, and angles are distinct. A sign is a thirty-degree zodiacal section and describes symbolic style. A house is a chart area and describes life topics. An angle is an exact zodiacal point.
 
-Under Naksha’s Whole Sign calculation, the sign containing the Ascendant becomes the entire first house and each following sign becomes the next house. The Ascendant remains an exact degree within the first house. The Descendant is the exact opposite point. The MC and IC are also exact points and may fall outside the tenth and fourth Whole Sign houses.
+Under Naksha’s Whole Sign calculation, **the sign occupying the first Whole Sign house is the rising sign; the Ascendant is the exact zodiacal point within that sign.** The entire rising sign forms the first house, and each following sign forms the next house. The Descendant is the exact opposite point within the seventh Whole Sign house. The MC and IC are exact points that may fall in houses other than the tenth and fourth.
 
 Therefore:
 
 - the first house must not be labeled “the Ascendant”;
+- the first house must not be labeled “the rising sign,” although its occupying sign is the rising sign;
 - the seventh house must not be labeled “the Descendant”;
 - the fourth house must not be labeled “the IC”;
 - the tenth house must not be labeled “the MC”;
 - natural-zodiac correspondences must not be stated as literal house rulership facts;
 - a planet or sign is not “naturally in” a house because a modern teaching analogy associates them.
 
-The current chart engine uses the Ascendant sign to construct Whole Sign houses. It does not provide a separate V1 angle-interpretation system. Content must omit unsupported angle claims rather than substitute house meanings for them.
+Calling the fourth house the IC or the tenth house the MC is factually incorrect in Whole Sign because those angles may occur in other houses. Calling the first house the Ascendant or the seventh house the Descendant also improperly conflates a house with an exact point, even though those points fall within their corresponding Whole Sign houses.
+
+The current chart engine uses the rising sign to construct Whole Sign houses. The rising sign is supported evidence and may describe manner, orientation, or presentation when carefully framed. V1 does not provide a separate angle-interpretation or angle-aspect system. Content must omit unsupported angle claims rather than substitute house meanings for them.
 
 ### 3.3 Rulers
 
@@ -81,17 +86,28 @@ V1 does not use house rulers, chart rulers, dispositors, or rulership chains in 
 
 No runtime interpretation may claim that a planet or sign rules a numbered house. If future educational copy mentions rulership, it must distinguish traditional rulership from modern association explicitly and must not turn either into a natural-house identity. Adding an interpretive rulership system requires a separate doctrine decision and calculation/content design.
 
+V1 also does not use planet-to-sign rulership as an interpretation mechanism. A statement such as “Saturn traditionally rules Capricorn” may appear only as clearly labeled educational reference when needed. It must not silently shape natal interpretation, scoring, or synthesis unless Naksha later adopts a consistent ruler doctrine and supporting architecture.
+
 ### 3.4 Dignities
 
 V1 does not calculate, score, rank, or interpret essential dignity. Terms such as domicile, exaltation, detriment, and fall must not be used to imply that a placement is good, bad, stronger, weaker, or more evolved.
 
-Existing “at home” phrasing is not a supported interpretive mechanism. It should be removed or confined later to clearly labeled educational reference copy only after an explicit dignity decision. No C1–C4 rewrite should infer dignity effects from sign placement.
+Existing “at home” phrasing is not a supported interpretive mechanism and must not covertly imply dignity status. Its cleanup belongs to later C1 content work, not the C1.1 closure. No C1–C4 rewrite should infer dignity effects from sign placement unless Naksha later implements dignity doctrine deliberately and consistently.
 
 ### 3.5 Outer planets
 
-Uranus, Neptune, and Pluto remain part of V1. Their functions can be personally relevant through chart-specific evidence, especially house placement and aspects to personal planets or angles when those factors are actually supported.
+Uranus, Neptune, and Pluto remain part of V1. Their functions can be personally relevant through chart-specific evidence, especially house placement and aspects to personal planets when those factors are actually supported.
 
 Their sign placements span cohorts and must first be framed as shared or generational symbolism. An outer-planet sign alone must not be presented as a unique personality, private history, mission, or destiny. Aspects solely between slow outer planets also require collective and generational calibration.
+
+Future outer-planet authoring must follow this evidence ladder:
+
+- outer planet in sign → shared or generational context first;
+- outer planet in house → individualized location or life-area expression;
+- outer planet aspect to a personal planet → individualized interaction mechanism;
+- outer-planet-to-outer-planet aspect → strongly generational or collective.
+
+The current Daily guidance engine does not use Uranus, Neptune, or Pluto as transiting planets. Content must not imply that outer-planet transits are part of Daily unless the engine later supports them explicitly.
 
 ### 3.6 Techniques outside V1
 
@@ -132,9 +148,11 @@ Sun, Moon, Mercury, Venus, and Mars placements may describe tendencies in the ch
 
 Jupiter and Saturn may be personally meaningful, especially through houses and aspects, but their sign positions move more slowly and should not be used as totalizing personality claims. Their interpretation should distinguish an individual pattern from wider age-cohort conditions where relevant.
 
+Aspects involving two bodies that are Jupiter-or-slower should generally be framed as long-cycle or cohort-level phenomena unless more individualized chart evidence is present. This is contextual calibration rather than a rigid personality rule. A house placement or an aspect involving a personal planet can provide more individualized evidence.
+
 ### 4.3 Uranus, Neptune, and Pluto signs
 
-These are Tier 1 by sign alone. Personal expression requires additional chart-specific evidence that the product actually possesses. A house placement can locate the life area; an aspect to a personal planet can describe the interaction. Neither licenses claims about biography, trauma, vocation, or destiny.
+These are Tier 1 by sign alone. Aspects consisting only of Uranus, Neptune, and Pluto are strongly generational. Personal expression requires additional chart-specific evidence that the product actually possesses. A house placement can locate the life area; an aspect to a personal planet can describe the interaction. Neither licenses claims about biography, trauma, vocation, or destiny.
 
 ### 4.4 Sky Now
 
@@ -148,9 +166,13 @@ Transit-to-natal guidance is more personal because the current sky is compared w
 
 Direction is part of the meaning. Transiting Mars square natal Mercury is not interchangeable with transiting Mercury square natal Mars. The first describes current initiative or urgency pressing on an established mental and communicative function; the second describes current information or conversation engaging an established action and assertion pattern.
 
-### 4.6 Guest charts
+### 4.6 Self and guest charts
 
-The app user is not necessarily the chart subject. Content and rendering must carry subject context. A saved or guest chart must not automatically say “you” unless the surface has established that the viewer is the subject. Neutral forms such as “this placement,” “the chart subject,” or subject-aware naming are required when ownership is uncertain.
+When Naksha reliably knows that a chart belongs to the current user, natural second-person language is allowed and generally preferred.
+
+For a guest chart, content must not address the app user as though the chart describes them and must not infer pronouns from a person’s name. Use the known subject name where natural, or use “this placement,” “this pattern,” and other subject-safe constructions. “The chart subject” is acceptable in technical documentation but should not become routine user-facing copy.
+
+When subject age is known and the reading is for a minor or child, avoid adult-specific assumptions about career, marriage, sexuality, parenthood, finances, or independent living.
 
 ### 4.7 Missing houses or uncertain context
 
@@ -180,6 +202,14 @@ The content does not need nine labeled paragraphs. It does need a coherent seque
 
 **Guidance interpretation:** Explain why the current configuration supports the stated caution, opportunity, prompt, or practice. Advice must follow from the astrology rather than from generic wellness language.
 
+**Configuration recognizability:** If the label is hidden, a strong interpretation should still contain enough configuration-specific mechanism for a knowledgeable reviewer to distinguish it from neighboring configurations. This is an editorial acceptance heuristic, not a unit-test requirement.
+
+**Concrete expression:** Every substantial long-form interpretation should include at least one recognizable ordinary-life behavior, situation, decision pattern, relational expression, or perceptual experience where appropriate. Abstraction alone does not satisfy the contract.
+
+**Template migration:** Do not replace one universal template with another. “At its best… When imbalanced…” must not become mandatory boilerplate. Constructive and difficult ranges should emerge naturally from the configuration.
+
+**Neighbor differentiation:** Closely related configurations should not automatically resolve to the same constructive move, caution, or remedy. The recommendation must follow from the mechanism being interpreted.
+
 ### 5.2 Range, not verdict
 
 Constructive and difficult expressions are ranges of the same symbolic pattern. Challenging does not mean defective. Supportive does not mean virtuous, easy in every circumstance, or guaranteed to be used well.
@@ -190,6 +220,8 @@ Interpretation must avoid false psychological certainty. It can identify a plaus
 
 The aspect changes how two planetary functions interact. It is not a reusable introductory sentence placed before an unchanged pair paragraph.
 
+**The planetary pair shapes how the aspect operator manifests.** A square, trine, opposition, conjunction, or sextile is not a reusable emotional sentence pasted onto every pair. Saturnian friction may appear as pressure, inhibition, structure, responsibility, or withholding. Neptunian friction may appear as diffusion, uncertainty, idealization, porousness, or loss of clarity. Martian friction may appear as urgency, conflict, impatience, or direct pressure. Ease also changes according to the pair.
+
 | Aspect | Interaction mechanism | Lived distinction | Common error to avoid |
 |---|---|---|---|
 | Conjunction | Concentration, co-presence, and blending. The functions become hard to separate and may amplify, compete, or operate as one complex. | One function readily carries the other; the person or moment may have difficulty knowing which need is leading. | Treating every conjunction as cooperation, ease, or a positive merger. |
@@ -197,6 +229,8 @@ The aspect changes how two planetary functions interact. It is not a reusable in
 | Square | Friction, interference, and action pressure. The functions obstruct or provoke one another and require a changed method. | The conflict tends to be immediate: acting on one function complicates the other, producing frustration, effort, or adaptation. | Reducing it to generic “growth” or treating conflict as proof of defect. |
 | Trine | Affinity and low resistance. The functions exchange support readily and may become habitual or underexamined. | Capacity can feel natural enough to be overlooked; ease can reinforce an unhelpful habit as well as a skill. | Treating it as a blessing, virtue, or guaranteed talent. |
 | Sextile | Compatible opportunity that becomes useful through participation. The functions can coordinate, but the connection is more elective than automatic. | A conversation, choice, invitation, or small act can activate the potential. | Writing it as a weaker trine or assuming support without engagement. |
+
+Projection into another person is one possible opposition expression. It is not a mandatory template for every opposition.
 
 ### 6.1 Required contrasts
 
@@ -208,31 +242,41 @@ The same planetary pair must change meaningfully across these mechanisms. Changi
 
 ### 6.2 Supported and reachable combinations
 
-Editorial coverage must follow the calculation model and real astronomical reachability. Do not demand content for impossible natal combinations merely to fill a mathematical matrix.
+Editorial coverage must follow the calculation model and real astronomical reachability. Do not demand content for impossible natal combinations merely to fill a mathematical matrix. The manifest must distinguish:
 
-For each surface, a supported-combination manifest should be derived from the bodies the calculation can produce, the five aspect rules, and any astronomical constraints relevant to those bodies. Transit-to-natal reachability must preserve the directional roles even when the same unordered pair exists in natal or Sky Now content. Unsupported combinations need an explicit state; they must not silently fall into copy that looks bespoke.
+1. impossible combinations;
+2. combinations whose reachability depends on epoch, date, or product support;
+3. rare but reachable combinations.
+
+For each surface, a supported-combination manifest should be derived from the bodies the calculation can produce, the five aspect rules, and any astronomical constraints relevant to those bodies. The current client has no clearly enforced supported birth-date window. C1.2 must inspect actual calculation and product constraints, determine whether a supported window exists, and identify any window that requires a product decision rather than inventing one.
+
+Transit-to-natal directionality remains distinct from same-moment natal or current-sky reachability. Unsupported combinations need an explicit state; they must not silently fall into copy that looks bespoke.
 
 ## 7. Context-specific interpretation architecture
 
 ### 7.1 Natal planet × sign
 
-The planet supplies the function; the sign supplies the mode, priorities, and style through which that function operates. The interpretation must explain their interaction.
+Planet in sign answers: **How does this planetary function operate—its style, priorities, and manner?** The planet supplies the function; the sign supplies the mode through which that function operates. The interpretation must explain their interaction.
 
-It must not turn sign adjectives into a personality verdict. For Uranus, Neptune, and Pluto, the sign layer begins with shared generational context and reserves individual claims for additional chart evidence.
+It must not become a generic sign description with a planet name attached or turn sign adjectives into a personality verdict. For Uranus, Neptune, and Pluto, the sign layer begins with shared generational context and reserves individual claims for additional chart evidence.
 
 ### 7.2 Natal planet × house
 
-The planet supplies the function; the house locates the life area where that function tends to seek expression or become especially noticeable. A house is not a second personality adjective.
+Planet in house answers: **Where, and through which kinds of situations, is this planetary function especially exercised, tested, or noticed?** The planet supplies the function; the house locates the life area where that function tends to seek expression or become especially noticeable.
 
-The interpretation should connect the function to ordinary choices or attention in that area. It must not infer a specific career, family history, relationship outcome, or childhood event from the house alone.
+The interpretation should connect the function to ordinary choices or attention in that area. It must not repeat sign-style personality traits or infer a specific career, event, family history, relationship outcome, or childhood event from the house alone.
 
 ### 7.3 House × sign
 
-The house supplies stable life topics; the sign describes the style, conditions, or approach through which those topics are encountered. In Whole Sign houses, the sign occupies the whole house.
+House in sign answers: **In what style or under what conditions is this life area approached?** The house supplies stable life topics; the sign describes the style, conditions, or approach through which those topics are encountered. In Whole Sign houses, the sign occupies the whole house.
 
-House-sign content must not say that the sign rules the house, reproduce the natural zodiac as fact, or collapse the sign into a second definition of the house. A useful interpretation shows how the same house topic is approached differently through different signs.
+House-sign content is generally a lighter, background layer. It must not become a second personality profile, say that the sign rules the house, reproduce the natural zodiac as fact, or collapse the sign into a second definition of the house. A useful interpretation shows how the same house topic is approached differently through different signs.
+
+Planets occupying a house carry stronger individualized interpretive weight than the house-sign style layer. The first-house sign is a legitimate special case: because it is the rising sign and is directly tied to chart orientation, it may appropriately describe manner and presentation when carefully framed.
 
 ### 7.4 Natal planet pair × aspect
+
+Aspect answers: **How do two planetary functions interact—fuse, cooperate, interfere, alternate, polarize, or create an opening?** It must not merely define two planets and append the generic aspect type.
 
 The required architecture is hybrid:
 
@@ -321,6 +365,8 @@ The strongest current Sky Now pair passages are stylistic starting points, espec
 
 Explain astrology terms when they first matter. Do not use technical language as a substitute for meaning. Vary sentence length, but keep each paragraph centered on one interpretive movement. Second person is appropriate only when subject context supports it.
 
+State supported claims plainly. Constant hedging can make accurate interpretation unreadable, but confident language must remain proportionate to the evidence.
+
 ## 10. Prohibited and default patterns
 
 The following are prohibited as defaults and require specific evidence if they appear at all:
@@ -342,9 +388,16 @@ The following are prohibited as defaults and require specific evidence if they a
 - technical astronomy or computation language in user-facing prose unless it helps comprehension;
 - three independent symbol definitions presented as synthesis;
 - generic advice attached to astrology by a transition such as “therefore, practice self-care” without a derived mechanism;
-- using “may,” “can,” or “take what resonates” to soften a claim that remains unsupported.
+- using “may,” “can,” or “take what resonates” to soften a claim that remains unsupported;
+- inferring pronouns for a guest-chart subject from their name;
+- adult-specific assumptions when the subject is known to be a minor;
+- giving every placement in one sign the same stereotyped correction;
+- using “energy” or “energies” instead of naming the actual planetary function;
+- universal “the work is to…” or “the lesson is…” closings;
+- career or vocation lists inferred from a sign or house alone;
+- sign-corrective clichés, such as assuming every Capricorn must soften or every Pisces must ground.
 
-Repeated structures such as “the challenge is,” “at your best,” and “you may” are not banned individually. They become a quality failure when they make different configurations interchangeable.
+Repeated structures such as “the challenge is,” “at your best,” “the work is to,” and “you may” are not banned individually. They become a quality failure when they make different configurations interchangeable or carry unsupported reasoning. This standard rejects repetitive reasoning patterns rather than treating a potentially legitimate phrase as forbidden in every context.
 
 ## 11. Benchmark examples
 
@@ -356,13 +409,13 @@ These are standard-setting samples, not a replacement lexicon and not approved s
 
 **Conjunction — good:** “Emotional needs and the instinct to manage responsibility arrive together, so care may quickly become something to organize, contain, or earn. This can support dependable care, but it can also make a feeling seem like another task before it has been felt.”
 
-**Opposition — good:** “The need for reassurance and the demand to stay composed can occupy opposite sides of a seesaw. A person may alternate between seeking care and taking on the role of the responsible one, or meet one side through another person. The work is to negotiate room for both without assuming that need cancels competence.”
+**Opposition — good:** “The need for reassurance and the demand to stay composed can occupy opposite sides of a seesaw. A person may alternate between seeking care and taking on the role of the responsible one, or meet one side through another person. A fuller expression makes room for need and competence without forcing either into the other’s role.”
 
 **Square — good:** “A need for comfort can collide with an internal rule about what must be done first. The pressure may show up as self-criticism, withholding a request, or pushing through until the plan becomes unsustainable. Adjusting the expectation is part of the response, not a failure of responsibility.”
 
 **Trine — good:** “Feeling and steadiness can cooperate with little friction. Reliable routines, calm boundaries, or practical care may come naturally. Because this pattern is easy to rely on, the person may not notice when composure has become the only acceptable emotional language.”
 
-**Sextile — good:** “There is an opening to give a feeling practical support: make a request, set a kind boundary, or create a routine that holds what matters. The connection becomes useful through a deliberate act; it need not operate automatically.”
+**Sextile — good:** “Emotional needs and practical steadiness can support one another when the opening is used. Naming a need may make it easier to create a workable plan or boundary, yet a person can miss the connection by waiting for support to organize itself. Unlike the trine’s readily available composure, the sextile’s compatibility becomes dependable through participation.”
 
 ### 11.2 Mercury–Neptune hard aspect
 
@@ -376,13 +429,13 @@ This differs from an opposition, which should emphasize polarized positions such
 
 **Bad:** “Venus is love and Mars is passion. Their opposition asks for balance.”
 
-**Good, opposition:** “The wish for mutuality and the urge to pursue a desire can pull from opposite sides. A person may alternate between accommodating and pressing forward, or experience one role through a partner. Clear desire and genuine consent allow attraction and reciprocity to remain in the same conversation.”
+**Good, opposition:** “The wish to receive, accommodate, or preserve mutuality can pull against the urge to pursue, assert, or compete. A person may alternate between pleasing and pressing forward, experience one role through another person, or notice the split in a collaboration, negotiation, creative decision, or intimate relationship. The fuller expression allows preference and initiative to remain clear without treating agreement as surrender or assertion as domination.”
 
 ### 11.4 Planet × sign
 
 **Bad, Mercury in Pisces:** “You are intuitive, sensitive, and imaginative. The challenge is focus, and growth comes through boundaries.”
 
-**Good:** “Mercury describes how the mind notices, connects, and communicates; Pisces works through image, mood, and association. Thoughts may arrive as a whole impression before they can be arranged into steps, which can support metaphor and emotional nuance while making exact instructions harder to hold. Separating the imaginative pass from the editing pass gives both abilities room.”
+**Good:** “Mercury describes how the mind notices, connects, and communicates; Pisces works through image, mood, and association. Thoughts may arrive as a whole impression before they can be arranged into steps, which can support metaphor and emotional nuance while making exact instructions harder to hold. Images, examples, or a rough sketch can give associative thought a form that other people can follow.”
 
 ### 11.5 Planet × house
 
@@ -394,7 +447,7 @@ This differs from an opposition, which should emphasize polarized positions such
 
 **Bad, Capricorn tenth house:** “Capricorn naturally rules the tenth house, so career success comes through ambition and discipline.”
 
-**Good:** “The tenth house concerns public responsibility, long-range contribution, and how a life becomes visible to others. Capricorn approaches those topics through structure, standards, and gradual proof. The person may prefer roles with clear accountability or build credibility over time, while needing to notice when achievement becomes the only measure of authority.”
+**Good:** “As a lighter house-style layer, Capricorn approaches the tenth house’s public responsibility and long-range contribution through structure, standards, and gradual proof. The person may prefer clear accountability or build credibility over time, while needing to notice when achievement becomes the only measure of authority. Planets occupying the tenth house would carry stronger individualized weight.”
 
 This does not claim that Capricorn rules the tenth house or that the tenth house is the MC.
 
@@ -405,6 +458,17 @@ This does not claim that Capricorn rules the tenth house or that the tenth house
 **Good:** “Current pressure to act or answer quickly is pressing against the chart’s established way of thinking and communicating. The person may feel compelled to decide before all the information is in, speak more sharply than intended, or become productive by finally addressing a stalled conversation. A useful response is to identify the decision that actually needs action, then check one assumption before replying.”
 
 This is temporary and directional. It does not predict an argument, and it is not interchangeable with transiting Mercury square natal Mars.
+
+### 11.8 Future benchmark requirements
+
+Before the relevant rewrites begin, the standard’s benchmark set must add:
+
+- an outer-planet context ladder comparing sign alone, sign plus house, and an aspect to a personal planet;
+- a Sky Now collective reading;
+- a guest-chart reading with subject-safe language;
+- a fully composed Daily reading.
+
+These are benchmark requirements for later C1–C3 work, not content to author during C1.1 closure.
 
 ## 12. Rendering expectations
 
@@ -518,79 +582,30 @@ Fully bespoke entries remain appropriate where composition becomes mechanical or
 
 For placement families, a finite bespoke or editorially composed result must explain the combined placement. Concatenating complete planet-sign and planet-house paragraphs may remain useful as supporting detail, but it does not fulfill the synthesis contract by itself.
 
-## 17. Objective doctrine conflicts at current HEAD
+## 17. C1.1 objective doctrine correction record
 
-These entries conflict with the V1 doctrine above. They were not changed while drafting this standard.
+C1.1 completed the following narrow corrections without changing calculation, keys, resolvers, persistence, composition, or UI behavior:
 
-### 17.1 House/angle conflation
+- `client/lib/lexicon/houses/meanings.ts`: removed the four first-house/Ascendant, fourth-house/IC, seventh-house/Descendant, and tenth-house/MC equivalences;
+- `client/lib/lexicon/planetHouses/meanings.ts`: removed eight natural-zodiac claims that a planet “rules this house”;
+- `client/lib/lexicon/houses/signMeanings.ts`: removed nine natural-zodiac claims that a sign “rules this house”;
+- `client/lib/lexicon/houses/index.ts`: replaced dormant “on the cusp of this house” fallback language with Whole Sign house language;
+- `client/lib/lexicon/__tests__/doctrineIntegrity.test.ts`: protects the doctrine across generic houses, planet-house content, house-sign content, and the fallback.
 
-`client/lib/lexicon/houses/meanings.ts`:
+The broader issues remain scheduled content work. `client/lib/lexicon/planets/index.ts` still needs generational calibration for all 36 Uranus, Neptune, and Pluto sign entries. Existing “at home” dignity shorthand also remains for a later deliberate cleanup. Neither belongs to the C1.1 closure.
 
-- House 1 long text labels the first house “(Ascendant)” at line 10.
-- House 4 long text labels the fourth house “(IC)” at line 26.
-- House 7 long text labels the seventh house “(Descendant)” at line 41.
-- House 10 long text labels the tenth house “(MC)” at line 56.
+## 18. C1.1 closure and next implementation boundary
 
-### 17.2 Natural-house rulership assertions in planet × house
+C1.1 is complete when the correction record above and its regression tests pass. The next slice is C1.2: a calculation-derived supported and reachable aspect/interpretation coverage manifest. C1.2 must answer:
 
-`client/lib/lexicon/planetHouses/meanings.ts`:
+1. Which bodies and aspect types each natal, Sky Now, Daily, and Weekly surface actually calculates and displays?
+2. Which combinations are impossible, epoch/date-dependent, product-limited, or rare but reachable?
+3. Does the product enforce a supported birth-date window? If not, does one require an explicit product decision?
+4. How do angular-separation and orb rules permit cross-sign aspects?
+5. Which identities are unordered pairs, and which preserve direction such as transiting planet → natal target?
+6. Which computed combinations have bespoke interpretation, deterministic composition, generic fallback, or no supported interpretation?
+7. How should unsupported states be represented without appearing as bespoke interpretation?
 
-- Moon in house 4, line 105;
-- Mercury in house 3, line 174;
-- Venus in house 7, line 273;
-- Jupiter in house 9, line 435;
-- Saturn in house 10, line 516;
-- Uranus in house 11, line 597;
-- Neptune in house 12, line 678;
-- Pluto in house 8, line 729.
+C1.2 must inspect the live calculation and product constraints. It must not infer a birth window, author the aspect rewrite, or change verified astronomy merely to simplify the coverage matrix.
 
-Each calls the placement natural because the planet “rules this house.”
-
-### 17.3 Natural-house rulership assertions in house × sign
-
-`client/lib/lexicon/houses/signMeanings.ts`:
-
-- Cancer on house 4, line 255;
-- Leo on house 5, line 335;
-- Virgo on house 6, line 415;
-- Libra on house 7, line 495;
-- Scorpio on house 8, line 575;
-- Sagittarius on house 9, line 655;
-- Capricorn on house 10, line 735;
-- Aquarius on house 11, line 815;
-- Pisces on house 12, line 895.
-
-Each calls the combination natural because the sign “rules this house.”
-
-### 17.4 Outer-planet sign personalness
-
-`client/lib/lexicon/planets/index.ts` contains all 36 Uranus, Neptune, and Pluto sign entries. They are written primarily as individual second-person traits, challenges, or missions and do not establish their generational/shared basis. The blocks begin with Uranus at line 683, Neptune at line 774, and Pluto at line 865 in the current file.
-
-Several also use unsupported rulership/dignity shorthand: Uranus in Aquarius at line 756, Neptune in Pisces at line 854, and Pluto in Scorpio at line 917 say the planet is “at home.” Other current “at home” entries appear for Moon in Cancer, Mercury in Gemini, Venus in Taurus, Jupiter in Sagittarius, and Saturn in Capricorn. V1 does not use those statements as an interpretive mechanism.
-
-## 18. Required approval and next implementation boundary
-
-Adopting this document settles the default doctrine. Three choices still need explicit product/editorial approval before their related implementation:
-
-1. **Chart-subject voice:** approve subject-aware variants for self versus guest charts, or choose neutral chart-subject language for all natal content. The standard prohibits automatic second person when ownership is uncertain either way.
-2. **Dignity reference copy:** confirm that dignity language is removed from interpretive prose entirely in V1, or retained only in a separately labeled educational glossary. Dignity must not influence interpretation or ranking under either choice.
-3. **Reachability manifest:** approve the generated, calculation-backed list of supported natal and Sky Now pair/aspect combinations before authoring coverage targets. A theoretical 45 × 5 matrix must not override astronomical reachability.
-
-The first implementation slice after approval should remain inside C1 and correct only objective doctrine conflicts:
-
-1. remove the four house/angle equivalences in `houses/meanings.ts`;
-2. remove the eight planet-to-natural-house rulership claims in `planetHouses/meanings.ts` without rewriting the rest of those entries;
-3. remove the nine sign-to-natural-house rulership claims in `houses/signMeanings.ts` without rewriting the rest of those entries;
-4. add narrow regression checks that these literal equivalences and rulership claims cannot return;
-5. preserve calculation code, keys, lookup behavior, and UI structure.
-
-Outer-planet sign calibration should be the following C1 editorial slice because it affects 36 full interpretations and requires an approved shared template plus bespoke review. Natal aspect architecture and the large lexicon rewrite begin only after the standard and objective-correction slice are accepted.
-
-Likely files for the first slice:
-
-- `client/lib/lexicon/houses/meanings.ts`
-- `client/lib/lexicon/planetHouses/meanings.ts`
-- `client/lib/lexicon/houses/signMeanings.ts`
-- the nearest lexicon coverage/integrity test file, or a narrowly scoped doctrine-integrity test beside those lexicons
-
-No calculation file should change for that slice.
+Outer-planet sign calibration, dignity cleanup, natal aspect architecture, and the large lexicon rewrite remain later C1–C3 work.

@@ -29,7 +29,7 @@ export function getHouseSignMeaning(
     short: `${base.short} You tend to approach this area of life ${flavor}.`,
     long: `${base.long}
 
-With ${sign} on the cusp of this house, you tend to approach this part of life ${flavor}. This sign colors how you experience, express, and develop the themes of this house.`,
+With ${sign} occupying this Whole Sign house, you tend to approach this part of life ${flavor}. This sign colors how you experience, express, and develop the themes of this house.`,
   }
 }
 
