@@ -252,7 +252,7 @@ There can be a need for variety within your personal space, and you may feel mos
     },
     Cancer: {
       short: 'Your inner foundation is deeply emotional, nurturing, and rooted in care and protection.',
-      long: `With Cancer on the 4th House, this is a natural placement, as Cancer rules this house. Your sense of home, family, and emotional grounding tends to be deeply important to your identity.
+      long: `With Cancer on the 4th House, your sense of home, family, and emotional grounding tends to be deeply important to your identity.
 
 You may be highly sensitive to your environment and feel a strong need to create a safe, nurturing space for yourself and others. Family bonds and emotional memory can run deep. Growth comes through developing boundaries, so care and connection do not become overprotection or emotional overwhelm.`,
     },
@@ -332,7 +332,7 @@ Romance often carries a strong emotional component, with a desire for safety, cl
     },
     Leo: {
       short: 'You express yourself confidently, creatively, and with a strong desire to shine and be seen.',
-      long: `With Leo on the 5th House, this is a natural placement, as Leo rules this house. Your creativity and self-expression tend to be vibrant, bold, and central to your identity.
+      long: `With Leo on the 5th House, your creativity and self-expression tend to be vibrant, bold, and central to your identity.
 
 You may feel most alive when you are creating, performing, leading, or expressing your authentic self openly. Romance can be passionate, dramatic, and full of warmth. There is often a desire to be appreciated for who you are. Growth comes through grounding your self-expression in authenticity, so it remains true rather than dependent on recognition.`,
     },
@@ -412,7 +412,7 @@ You tend to bring warmth, creativity, and presence into what you do, even in eve
     },
     Virgo: {
       short: 'You approach work, routines, and health with precision, discipline, and strong attention to detail.',
-      long: `With Virgo on the 6th House, this is a natural placement, as Virgo rules this house. Your approach to daily life tends to be organized, analytical, and improvement-focused.
+      long: `With Virgo on the 6th House, your approach to daily life tends to be organized, analytical, and improvement-focused.
 
 You may excel at refining systems, solving problems, and maintaining efficient routines. There is often a strong awareness of health, habits, and productivity. However, this can also bring overthinking or perfectionism. Growth comes through balancing discipline with self-compassion, so your routine supports rather than pressures you.`,
     },
@@ -492,7 +492,7 @@ You may express love through helping, supporting, or improving shared systems. H
     },
     Libra: {
       short: 'You seek relationships that are balanced, harmonious, and rooted in mutual understanding.',
-      long: `With Libra on the 7th House, this is a natural placement, as Libra rules this house. Relationships are often central to your life, and you may feel a strong pull toward partnership.
+      long: `With Libra on the 7th House, relationships are often central to your life, and you may feel a strong pull toward partnership.
 
 You tend to value fairness, cooperation, and mutual respect, and may be skilled at navigating interpersonal dynamics. There is often a desire for harmony and connection. Growth comes through maintaining your individuality, so balance does not come at the cost of your own voice.`,
     },
@@ -572,7 +572,7 @@ There is often a desire for harmony even within intense emotional situations. Ho
     },
     Scorpio: {
       short: 'You approach intimacy, transformation, and shared resources with intensity, depth, and a natural affinity for change.',
-      long: `With Scorpio on the 8th House, this is a natural placement, as Scorpio rules this house. Your relationship with transformation, intimacy, and power tends to be profound and deeply rooted.
+      long: `With Scorpio on the 8th House, your relationship with transformation, intimacy, and power tends to be profound and deeply rooted.
 
 You may be drawn to experiences that involve emotional depth, psychological insight, and transformation. There can be strong instincts around control, trust, and vulnerability. Growth comes through balancing power with openness, so transformation becomes a path of empowerment rather than control.`,
     },
@@ -652,7 +652,7 @@ You often seek truth beneath the surface rather than accepting ideas at face val
     },
     Sagittarius: {
       short: 'You pursue knowledge, belief, and truth through expansion, exploration, and a natural search for meaning.',
-      long: `With Sagittarius on the 9th House, this is a natural placement, as Sagittarius rules this house. Your approach to learning and belief systems tends to be expansive, optimistic, and meaning-driven.
+      long: `With Sagittarius on the 9th House, your approach to learning and belief systems tends to be expansive, optimistic, and meaning-driven.
 
 You may be drawn to travel, philosophy, spirituality, or teaching, and you often seek to understand the bigger picture. Growth comes through grounding your insights, so your beliefs translate into lived wisdom rather than remaining abstract.`,
     },
@@ -732,7 +732,7 @@ Your public image may be optimistic, open, and forward-looking. You often seek m
     },
     Capricorn: {
       short: 'You pursue your career and public path with discipline, responsibility, and a strong drive for achievement.',
-      long: `With Capricorn on the 10th House, this is a natural placement, as Capricorn rules this house. Your career path tends to be structured, goal-oriented, and focused on long-term success.
+      long: `With Capricorn on the 10th House, your career path tends to be structured, goal-oriented, and focused on long-term success.
 
 You may take your public role seriously and feel a strong sense of duty to achieve. You are often seen as capable and authoritative. Growth comes through balancing ambition with personal fulfillment, so success includes both external achievement and inner satisfaction.`,
     },
@@ -812,7 +812,7 @@ You often take responsibility within groups and may contribute through leadershi
     },
     Aquarius: {
       short: 'You engage with friendships, communities, and goals independently, innovatively, and with a strong connection to the collective.',
-      long: `With Aquarius on the 11th House, this is a natural placement, as Aquarius rules this house. Your approach to community tends to be progressive, unconventional, and future-focused.
+      long: `With Aquarius on the 11th House, your approach to community tends to be progressive, unconventional, and future-focused.
 
 You may be drawn to groups that align with your ideals and value individuality within the collective. You often think in terms of systems, networks, and shared progress. Growth comes through balancing independence with emotional connection, so your involvement remains both authentic and human.`,
     },
@@ -892,7 +892,7 @@ There can be a sense of distance from emotion or a tendency to retreat into thou
     },
     Pisces: {
       short: 'Your inner world is deeply intuitive, fluid, and connected to emotion, imagination, and the unseen.',
-      long: `With Pisces on the 12th House, this is a natural placement, as Pisces rules this house. Your subconscious may be highly sensitive, intuitive, and connected to deeper emotional or spiritual layers.
+      long: `With Pisces on the 12th House, your subconscious may be highly sensitive, intuitive, and connected to deeper emotional or spiritual layers.
 
 You may experience strong imagination, empathy, or connection to the unseen. Boundaries can sometimes blur, leading to overwhelm. Growth comes through grounding and clarity, so your sensitivity becomes a source of insight and healing.`,
     },

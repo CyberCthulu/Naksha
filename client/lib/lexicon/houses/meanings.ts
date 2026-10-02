@@ -7,7 +7,7 @@ import { HouseNumber, Interpretation } from '../types'
 export const HOUSE_MEANINGS: Record<HouseNumber, Interpretation> = {
   1: {
     short: 'Your identity, approach to life, and how others first perceive you.',
-    long: `The 1st House (Ascendant) describes the lens through which you engage with the world.
+    long: `The 1st House describes the lens through which you engage with the world.
 It governs self-presentation, physical appearance, and the spontaneous part of your personality.
 Planets here strongly shape your instinctive behavior and life direction.`,
   },
@@ -23,7 +23,7 @@ It also describes short trips, early education, and the rhythms of your everyday
   },
   4: {
     short: 'Home, roots, childhood, and emotional foundations.',
-    long: `The 4th House (IC) represents your private world — your home life, ancestry, and the emotional soil you grew from.
+    long: `The 4th House represents your private world — your home life, ancestry, and the emotional soil you grew from.
 It’s where you retreat for comfort and protection.`,
   },
   5: {
@@ -38,7 +38,7 @@ It includes your job environment and how you manage time, stress, and structure.
   },
   7: {
     short: 'Partnerships, committed relationships, and one-on-one dynamics.',
-    long: `The 7th House (Descendant) rules your significant relationships — romantic partners, business partners, and close allies.
+    long: `The 7th House describes your significant relationships — romantic partners, business partners, and close allies.
 It shows what qualities you attract and seek in others.`,
   },
   8: {
@@ -53,7 +53,7 @@ It represents your search for meaning and perspective beyond personal experience
   },
   10: {
     short: 'Career, public identity, legacy, and long-term ambition.',
-    long: `The 10th House (MC) shows your professional direction, reputation, achievements, and role in society.
+    long: `The 10th House shows your professional direction, reputation, achievements, and role in society.
 It’s where you strive to leave a mark on the world.`,
   },
   11: {
