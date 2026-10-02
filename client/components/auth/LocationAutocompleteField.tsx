@@ -42,7 +42,6 @@ export default function LocationAutocompleteField({
   const [showResults, setShowResults] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const requestIdRef = useRef(0)
 
   useEffect(() => {
@@ -50,33 +49,37 @@ export default function LocationAutocompleteField({
   }, [value])
 
   useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-
+    const requestId = ++requestIdRef.current
     const trimmed = query.trim()
+    let controller: AbortController | null = null
+
+    setResults([])
+    setLoading(false)
 
     if (trimmed.length < 3) {
-      setResults([])
-      setLoading(false)
       setError(null)
+      setShowResults(false)
       return
     }
 
-    debounceRef.current = setTimeout(async () => {
-      const requestId = ++requestIdRef.current
+    const debounce = setTimeout(async () => {
+      controller = new AbortController()
       setLoading(true)
       setError(null)
 
       try {
-        const next = await geocodePlace(trimmed)
+        const next = await geocodePlace(trimmed, {
+          signal: controller.signal,
+        })
 
         if (requestId !== requestIdRef.current) return
 
         setResults(next)
         setShowResults(true)
       } catch {
-        if (requestId !== requestIdRef.current) return
+        if (controller.signal.aborted || requestId !== requestIdRef.current) return
         setResults([])
-        setError('Could not load location suggestions.')
+        setError('Could not load location suggestions. Please try again.')
       } finally {
         if (requestId === requestIdRef.current) {
           setLoading(false)
@@ -85,7 +88,11 @@ export default function LocationAutocompleteField({
     }, 400)
 
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
+      clearTimeout(debounce)
+      controller?.abort()
+      if (requestId === requestIdRef.current) {
+        requestIdRef.current += 1
+      }
     }
   }, [query])
 

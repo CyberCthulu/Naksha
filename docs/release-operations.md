@@ -12,7 +12,7 @@ EAS build profiles select explicit `development`, `preview`, and `production` en
 
 These values are embedded in the application bundle. The Supabase anon key is designed for client use with RLS and grants; it is not a substitute for a server secret. Never configure a Supabase service-role key, private signing material, or another secret as an `EXPO_PUBLIC_*` value. A local template lives at `client/.env.example`; real values remain untracked.
 
-The repository does not establish that the remote EAS values are populated or that preview and production target different Supabase/OpenCage projects. Before a release build, the release owner must inspect the selected EAS environment without copying values into logs and record the target project identities. A missing Supabase URL or anon key now fails at client initialization with an explicit configuration error. OpenCage already reports its missing public key when location search is used.
+The repository does not establish that the remote EAS values are populated or that preview and production target different Supabase/OpenCage projects. Before a release build, the release owner must inspect the selected EAS environment without copying values into logs and record the target project identities. The EAS pre-install hook now stops a build when any required public value is absent and validates the Supabase URL without printing values. Client startup retains the same Supabase validation as defense in depth. OpenCage reports its missing public key when location search is used.
 
 Stable application identity remains:
 
@@ -51,7 +51,55 @@ Before launch, the owner must either adopt a production diagnostics service with
 
 The repository currently contains no approved public privacy-policy URL, support URL/contact, or web account-deletion URL. Do not invent them in application or store configuration. Before Google Play submission, the owner must publish and verify all three destinations, link the in-app privacy/support surfaces to the approved destinations, and ensure the web deletion path accurately describes or implements the available deletion request flow.
 
-The in-app **Export my data** action remains a placeholder rather than a working export or monitored request channel. It must be replaced with a real export or accurately named data-request process before release acceptance.
+The unavailable in-app **Export my data** action is hidden. It must remain hidden until a real export or accurately named, monitored data-request process exists.
+
+## Release candidate and production checklist
+
+The repository gate cannot complete these external checks. Record an owner, date, evidence, and result for every item against the exact signed candidate.
+
+### A. EAS and production environment
+
+- Populate and inspect the EAS `production` environment for `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, and `EXPO_PUBLIC_OPENCAGE_KEY` without copying values into logs. The `eas-build-pre-install` hook must pass.
+- Confirm the Supabase/OpenCage targets are intentional for production, no service-role or server secret is bundled, and preview/production separation matches the release decision.
+- Verify the preserved EAS project, `com.naksha.app`, `naksha://` callback scheme, version, and remote `versionCode` source.
+
+### B. Supabase production configuration
+
+- Confirm remote migration and Edge Function versions. Apply any newly reviewed migration only after its data preflight and recovery checkpoint.
+- Verify RLS, grants, two-account isolation, SMTP, redirects, rate/abuse limits, account deletion, and ordinary profile/chart/journal reads and writes through production PostgREST.
+- Production currently reports PostgREST 14.5. Re-prove R3 column-grant behavior there: default-generated chart/journal IDs must work, explicit IDs must fail, and the canonical chart `INSERT ... ON CONFLICT DO UPDATE` path must still succeed.
+
+### C. Privacy, support, account deletion, and export
+
+- Publish and verify the real privacy-policy URL, monitored support destination, and public web account-deletion URL; connect only those approved destinations to the app and Play listing.
+- Establish a real data-export or monitored data-request process before exposing an in-app export action. The unavailable placeholder is intentionally hidden.
+- Complete Data Safety, deletion, retention, diagnostics, and support disclosures from actual production behavior.
+
+### D. Backup and recovery
+
+- Verify the current provider backup/PITR entitlement, retention, last recovery point, and restore permissions.
+- Create and validate the scoped pre-deploy logical backup described above, assign the recovery decision owner, and rehearse restoration against a non-production target.
+
+### E. Signing and AAB inspection
+
+- Assign and back up EAS/Play upload-credential ownership and recovery access.
+- Produce the signed AAB and record its source commit, certificate fingerprint, package, label, version/versionCode, debuggable state, permissions, backup/data-extraction policy, deep links, and branded assets.
+
+### F. Android accessibility and device acceptance
+
+- Test the signed build on relevant Android sizes and versions: cold/warm auth, callbacks/recovery, account switching/deletion, birth pickers and DST states, chart/guidance/Sky Now, journals, restart/resume, network failure, and local rollover.
+- Record TalkBack order/labels/actions, modal focus and Android Back, large text, contrast, reduced motion, inactive-route motion, and launcher/deep-link behavior.
+
+### G. Play closed testing and store submission
+
+- Upload only the inspected AAB to the intended Play testing track, install the Play-delivered artifact, and repeat the affected acceptance checks.
+- Satisfy the developer account's current tester/production-access requirements and complete screenshots, feature graphic, description, content rating, target audience, reviewer access, and release notes.
+
+### H. Dependency and artifact verification
+
+- Confirm the shipped bundle does not contain the removed `query-string` / `decode-uri-component` path and that React Navigation deep links still pass on device.
+- Inspect whether dev-launcher-only `fast-uri` and other development/build advisories are absent from the release artifact; do not infer artifact reachability from the npm tree alone.
+- Record the accepted/remediated state of remaining advisories and decide whether production diagnostics are configured or local-only diagnostics are an explicitly accepted launch limitation.
 
 ## Release gate ownership
 

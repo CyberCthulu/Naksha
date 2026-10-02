@@ -21,14 +21,25 @@ const SUPABASE_ANON_KEY = requirePublicEnvironmentValue(
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
 )
 
-let supabaseProjectRef: string
+let parsedSupabaseUrl: URL
 try {
-  supabaseProjectRef = new URL(SUPABASE_URL).hostname.split('.')[0]
+  parsedSupabaseUrl = new URL(SUPABASE_URL)
 } catch {
   throw new Error(
-    'Invalid EXPO_PUBLIC_SUPABASE_URL. Configure a valid absolute URL for this build environment.'
+    'Invalid EXPO_PUBLIC_SUPABASE_URL. Configure an HTTP or HTTPS URL with a hostname.'
   )
 }
+
+if (
+  !['http:', 'https:'].includes(parsedSupabaseUrl.protocol) ||
+  !parsedSupabaseUrl.hostname
+) {
+  throw new Error(
+    'Invalid EXPO_PUBLIC_SUPABASE_URL. Configure an HTTP or HTTPS URL with a hostname.'
+  )
+}
+
+const supabaseProjectRef = parsedSupabaseUrl.hostname.split('.')[0]
 
 const AUTH_STORAGE_KEY = `sb-${supabaseProjectRef}-auth-token`
 

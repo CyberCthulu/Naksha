@@ -21,6 +21,7 @@ import {
   validateChartData,
 } from '../lib/chartDataValidation'
 import type { ChartMode, ChartProfile } from '../lib/domainTypes'
+import { safeErrorDiagnostic } from '../lib/diagnostics'
 
 type UseChartDataArgs = {
   profile: ChartProfile
@@ -286,7 +287,7 @@ export default function useChartData({
         } catch (e) {
           if (!isCurrentLoad()) return
 
-          console.warn('Auto-save failed:', e)
+          console.warn('Auto-save failed:', safeErrorDiagnostic(e))
           setIsSaved(false)
           setSaveWarning(
             'This chart is ready to view, but it was not saved automatically. Tap Save Chart Data to try again.'

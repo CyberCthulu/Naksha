@@ -366,7 +366,12 @@ describe('useChartData', () => {
   })
 
   it('sets a save warning and leaves self charts unsaved when auto-save fails', async () => {
-    mockedSaveChart().mockRejectedValueOnce(new Error('network down'))
+    mockedSaveChart().mockRejectedValueOnce({
+      code: 'PGRST500',
+      message: 'Network down',
+      details: 'private chart detail',
+      hint: 'private hint',
+    })
 
     const result = await renderUseChartData({
       profile: validProfile,
@@ -379,10 +384,10 @@ describe('useChartData', () => {
     expect(result.saveWarning).toBe(
       'This chart is ready to view, but it was not saved automatically. Tap Save Chart Data to try again.'
     )
-    expect(console.warn).toHaveBeenCalledWith(
-      'Auto-save failed:',
-      expect.any(Error)
-    )
+    expect(console.warn).toHaveBeenCalledWith('Auto-save failed:', {
+      code: 'PGRST500',
+      message: 'Network down',
+    })
   })
 
   it('clears saveWarning and marks saved after successful manual save', async () => {

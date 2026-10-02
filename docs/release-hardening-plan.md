@@ -115,7 +115,7 @@ After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → A
 
 ## R6 — Remaining engineering release readiness
 
-**Status: IN PROGRESS.** R6.1 runtime freshness and R6.2 accessibility/motion are repository-complete. R6.3 release infrastructure is in progress. Consolidate the remaining bounded engineering work here; do not create additional top-level release slices for routine follow-up.
+**Status: IN PROGRESS.** R6.1 runtime freshness, R6.2 accessibility/motion, and R6.3 release infrastructure are complete. R6.4 final repository hardening is implemented pending independent review and the one repository-wide R6 gate. External production/store work is tracked in the [Release Candidate checklist](release-operations.md#release-candidate-and-production-checklist).
 
 ### CI and quality gates
 
@@ -130,7 +130,7 @@ After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → A
 
 ### Database write-surface follow-up
 
-- Review broad DML grants still present on notifications, subscriptions, and purchases, even where RLS currently blocks unauthorized writes.
+- **R6.4 implemented, pending review/deployment:** the shipped client only reads subscriptions/purchases and has no direct notification/subscription/purchase mutation path. One forward migration revokes their anon/authenticated DML and sequence access, removes the dormant notification-update policy, preserves owner-scoped reads, and leaves service-role behavior unchanged.
 - Users' birth columns still have broad table-level write grants but are self-row scoped by RLS; consider tighter column privileges only if active flows remain compatible.
 - `journals.chart_id` currently appears unused by V1 client behavior; confirm its product purpose before retaining or removing client mutation paths.
 - Treat these Claude R3 notes as defense in depth, not reopened R3 blockers.
@@ -153,8 +153,7 @@ After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → A
 
 ### Geocoder
 
-- Add cancellation/invalidation on every query change, selection, and unmount; add request timeouts and stale-response protection.
-- Reject malformed responses and invalid coordinates.
+- **R6.4 implemented:** OpenCage requests have a bounded timeout, caller cancellation, query-change/unmount invalidation, request-generation stale-response protection, clean network/timeout errors, and silent cancellation. Existing malformed-result filtering and timezone parsing remain intact.
 - Choose a production API-key/proxy strategy with quota, abuse, logging, and signup-before-auth constraints accounted for.
 
 ### Product correctness and settings
@@ -165,7 +164,7 @@ After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → A
 
 ### Privacy, support, services, and operations
 
-- Replace the Export My Data placeholder with a working export or accurately named, monitored data-request flow.
+- The misleading Export My Data placeholder is hidden in R6.4. Expose an action only after a working export or accurately named, monitored data-request flow exists.
 - Publish and link accurate privacy, support, and web account-deletion destinations.
 - Verify hosted Supabase configuration, redirects, SMTP delivery, rate/abuse limits, reviewed migrations/functions, two-account isolation, and deletion behavior.
 - Evaluate verified Android App Links before release as defense against custom-scheme interception. The approved `naksha://` scheme remains in R4; do not treat PKCE code exchange and legacy implicit fragment-token exposure as equivalent.
@@ -174,12 +173,12 @@ After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → A
 
 ### Dependencies and hygiene
 
-- The R6.3 production-dependency audit currently reports 37 advisories (1 critical, 13 high, 22 moderate, 1 low), largely through Expo/build-time dependency paths; direct `axios` and Babel findings also require explicit reachability and compatible-remediation review. Do not use forced bulk upgrades or cross the Expo SDK boundary inside R6.3.
-- Dormant Three/Fiber/GL code, and direct `axios`, `expo-file-system`, and `zustand` entries with no active source imports, are cleanup candidates only after a dedicated build/type verification; no dependency was removed in R6.3.
+- **R6.4 implemented:** a semver-compatible React Navigation core update removes the reachable `query-string` → `decode-uri-component` deep-link path; focused navigation/deep-link tests and signed-artifact confirmation remain required. The `nanoid` precondition does not match its current React Navigation usage. Build/dev-only advisories remain an artifact-verification item rather than a forced-upgrade target.
+- Direct `axios` was repository-wide unused and is removed. `zustand` and `expo-file-system` remain installed through active/dormant dependency relationships; Three/Fiber/GL remains referenced by the dormant `SpaceBackground` source and was not removed.
 - The root `.gitignore` markdown-fence artifact is fixed. Remove other dormant dependencies, stubs, contexts, or providers only when clearly unused and safe.
 - Bound chart/journal history or add pagination before server row limits can hide existing data.
 
-**R6 exit gate.** Automated gates are repeatable; deployed schema/types and hosted services are reconciled; active network and hydration paths fail safely; accessibility/lifecycle checks pass; privacy/support/export and diagnostics are real; dependency decisions are recorded; and no known engineering release blocker remains.
+**R6 repository exit gate.** Automated gates are repeatable; schema/types and source-controlled grants are reconciled; active network and hydration paths fail safely; accessibility/lifecycle source checks pass; diagnostics are sanitized; dependency decisions are recorded; and no known source-code release blocker remains. Production environments, public destinations, backups, signing, signed artifacts, device acceptance, and Play delivery remain Release Candidate gates.
 
 ## Content phase — required after engineering hardening
 

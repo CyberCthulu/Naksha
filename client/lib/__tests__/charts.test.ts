@@ -333,7 +333,12 @@ describe('getChartCalculationPreferences', () => {
   })
 
   it('falls back to defaults when preference lookup fails', async () => {
-    const error = new Error('preferences unavailable')
+    const error = {
+      code: 'PGRST001',
+      message: 'Preferences unavailable',
+      details: 'private row detail',
+      hint: 'private hint',
+    }
     mockPreferencesLookup({ error })
 
     await expect(getChartCalculationPreferences('user-1')).resolves.toEqual(
@@ -341,7 +346,7 @@ describe('getChartCalculationPreferences', () => {
     )
     expect(console.warn).toHaveBeenCalledWith(
       'Chart preferences fetch failed:',
-      error
+      { code: 'PGRST001', message: 'Preferences unavailable' }
     )
   })
 })

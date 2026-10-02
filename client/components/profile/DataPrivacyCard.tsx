@@ -6,7 +6,6 @@ import { Card } from '../ui/Card'
 import { theme } from '../ui/theme'
 
 type Props = {
-  onExportData: () => void
   onDeleteAccount: () => void
   deletingAccount?: boolean
 }
@@ -14,13 +13,10 @@ type Props = {
 /**
  * Data and privacy actions.
  *
- * Both used to be bold blue text at roughly a 34dp target -- account deletion,
- * the one irreversible action in the app, styled as a hyperlink. They are
- * buttons now, and deletion carries the destructive variant so its weight
- * matches what it does. The confirmation behind it is unchanged.
+ * Account deletion remains a destructive button with confirmation. Data export
+ * stays hidden until a real export or monitored request destination exists.
  */
 export default function DataPrivacyCard({
-  onExportData,
   onDeleteAccount,
   deletingAccount = false,
 }: Props) {
@@ -29,13 +25,6 @@ export default function DataPrivacyCard({
       <AppText variant="heading" style={styles.title}>
         Data &amp; Privacy
       </AppText>
-
-      <Button
-        title="Export my data"
-        variant="tertiary"
-        onPress={onExportData}
-        style={styles.action}
-      />
 
       <Button
         title={deletingAccount ? 'Deleting account…' : 'Delete account'}

@@ -44,18 +44,62 @@ describe('Supabase auth storage contract', () => {
     ])
   })
 
-  it('fails clearly when a required release environment value is missing', () => {
+  function loadWithEnvironment(url?: string, anonKey?: string) {
     const originalUrl = process.env.EXPO_PUBLIC_SUPABASE_URL
-    delete process.env.EXPO_PUBLIC_SUPABASE_URL
+    const originalAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+
+    if (url == null) delete process.env.EXPO_PUBLIC_SUPABASE_URL
+    else process.env.EXPO_PUBLIC_SUPABASE_URL = url
+
+    if (anonKey == null) delete process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+    else process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = anonKey
 
     try {
-      jest.isolateModules(() => {
-        expect(() => require('../supabase')).toThrow(
-          'Missing required EXPO_PUBLIC_SUPABASE_URL. Configure it for this build environment.'
-        )
-      })
+      jest.isolateModules(() => require('../supabase'))
     } finally {
-      process.env.EXPO_PUBLIC_SUPABASE_URL = originalUrl
+      if (originalUrl == null) delete process.env.EXPO_PUBLIC_SUPABASE_URL
+      else process.env.EXPO_PUBLIC_SUPABASE_URL = originalUrl
+
+      if (originalAnonKey == null) delete process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+      else process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = originalAnonKey
     }
+  }
+
+  it('fails clearly when the Supabase URL is missing', () => {
+    expect(() => loadWithEnvironment(undefined, 'public-anon-key')).toThrow(
+      'Missing required EXPO_PUBLIC_SUPABASE_URL. Configure it for this build environment.'
+    )
+  })
+
+  it('fails clearly when the Supabase anon key is missing', () => {
+    expect(() =>
+      loadWithEnvironment('https://project-ref.supabase.co', undefined)
+    ).toThrow(
+      'Missing required EXPO_PUBLIC_SUPABASE_ANON_KEY. Configure it for this build environment.'
+    )
+  })
+
+  it.each([
+    ['malformed input', 'not a URL'],
+    ['unsupported scheme', 'ftp://project-ref.supabase.co'],
+    ['hostless URL', 'file:///tmp/supabase'],
+  ])('rejects %s', (_case, url) => {
+    expect(() => loadWithEnvironment(url, 'public-anon-key')).toThrow(
+      'Invalid EXPO_PUBLIC_SUPABASE_URL. Configure an HTTP or HTTPS URL with a hostname.'
+    )
+  })
+
+  it('accepts a local HTTP Supabase URL', () => {
+    loadWithEnvironment('http://127.0.0.1:54321', 'local-anon-key')
+
+    expect(mockCreateClient).toHaveBeenLastCalledWith(
+      'http://127.0.0.1:54321',
+      'local-anon-key',
+      expect.objectContaining({
+        auth: expect.objectContaining({
+          storageKey: 'sb-127-auth-token',
+        }),
+      })
+    )
   })
 })

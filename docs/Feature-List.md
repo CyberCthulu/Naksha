@@ -2,7 +2,7 @@
 
 Personalized astrology, deterministic forecasts, journaling, and guided reflection. Naksha is a functioning V1 application with comprehensive natal charts, daily and weekly transit guidance with transit-house personalization, and journaling.
 
-This document separates implemented V1 functionality from planned roadmap features. It should not be read as a list of completed features unless an item is marked **DONE**. Last reviewed for accuracy: 2026-09-30 during R6.3. Active UI and Sky Now are implemented; release-hardening R1–R5 are repository-complete and [R6 is in progress](release-hardening-plan.md#r6--remaining-engineering-release-readiness). Implemented does not mean deployed or production-qualified.
+This document separates implemented V1 functionality from planned roadmap features. It should not be read as a list of completed features unless an item is marked **DONE**. Last reviewed for accuracy: 2026-09-30 during R6.4. Active UI and Sky Now are implemented; release-hardening R1–R5 are repository-complete and [R6 is in progress](release-hardening-plan.md#r6--remaining-engineering-release-readiness). Implemented does not mean deployed or production-qualified.
 
 ## Status Overview
 
@@ -525,7 +525,7 @@ Implemented:
 
 Not yet done:
 
-* Data export
+* Data export or monitored data-request process; the unavailable in-app action is hidden
 * Retention policy
 * External billing cancellation/refund policy
 * Delete-data-without-deleting-account flow

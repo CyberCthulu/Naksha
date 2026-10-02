@@ -13,6 +13,7 @@ import {
 
 import { resolveStoredBirthMoment } from './time'
 import { normalizeZone } from './timezones'
+import { safeErrorDiagnostic } from './diagnostics'
 import {
   CURRENT_CHART_CALCULATION_VERSION,
   CURRENT_CHART_SCHEMA_VERSION,
@@ -85,7 +86,7 @@ export async function getChartCalculationPreferences(
     .maybeSingle<ChartPreferencesRow>()
 
   if (error) {
-    console.warn('Chart preferences fetch failed:', error)
+    console.warn('Chart preferences fetch failed:', safeErrorDiagnostic(error))
     return DEFAULT_CHART_CALCULATION_PREFERENCES
   }
 

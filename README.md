@@ -40,7 +40,7 @@ Core product goals:
 
 ## Current Status
 
-Updated 30 September 2026 during R6 release hardening. Core free V1 and the active celestial UI are implemented. R1–R5 are repository-complete; R6.1 and R6.2 are repository-complete, and R6.3 release infrastructure is in progress. Signed native candidate acceptance remains outstanding.
+Updated 30 September 2026 during R6 release hardening. Core free V1 and the active celestial UI are implemented. R1–R5 and R6.1–R6.3 are repository-complete; R6.4 final source hardening is pending independent review and the complete R6 gate. Signed native candidate acceptance remains outstanding.
 
 - Accounts/profile, natal and guest charts, saved charts, daily/weekly guidance, and journaling.
 - Interactive chart wheel, chart tabs, shared starry backgrounds, translucent cards, and celestial loading.

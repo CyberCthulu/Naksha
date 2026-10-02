@@ -1,6 +1,6 @@
 # Naksha Codebase Handoff
 
-Last reviewed: 2026-09-30 during R6.3 release-infrastructure work (`ui/v2-redesign`)
+Last reviewed: 2026-09-30 during R6.4 final repository hardening (`ui/v2-redesign`)
 
 This document is the current engineering handoff. Use [Feature-List.md](Feature-List.md) for implemented product scope and [release-hardening-plan.md](release-hardening-plan.md) for the active release sequence. Dated audits and implementation plans under `docs/` are historical evidence; their baselines and instructions do not override these current documents.
 
@@ -25,7 +25,7 @@ The post-R3 local baseline is:
 
 The post-R5 repository gate is **69/69 Jest suites and 843/843 tests**, with TypeScript and lint passing. Android JavaScript export, Expo dependency validation, XML parsing, and Expo config introspection remain at their post-R4 passing baseline. Expo Doctor remains at the known 17/18 non-CNG result. Native manifest merging and AAB generation remain unverified because the installed environment lacks Android SDK 36/NDK 27 and production signing credentials.
 
-R4 is repository-complete: auth recovery, local-only sign-out, revoked refresh-token recovery, Android identity/security configuration, approved branding, and first-run Login/Signup/Guest Chart polish are committed. R5 is complete: the high-latitude Ascendant branch inversion is corrected and persisted calculation-version compatibility is explicit. R6.1 runtime freshness and R6.2 accessibility/motion are repository-complete; R6.3 release infrastructure is in progress. Accountable production signing, signed-AAB inspection, real-device acceptance, and the remaining R6 engineering work are still open. Content review C1–C4 and a signed release-candidate cycle follow R6.
+R4 is repository-complete: auth recovery, local-only sign-out, revoked refresh-token recovery, Android identity/security configuration, approved branding, and first-run Login/Signup/Guest Chart polish are committed. R5 is complete: the high-latitude Ascendant branch inversion is corrected and persisted calculation-version compatibility is explicit. R6.1 runtime freshness, R6.2 accessibility/motion, and R6.3 release infrastructure are complete. R6.4 final repository hardening is implemented pending independent review and the complete R6 gate. Accountable production signing, signed-AAB inspection, real-device acceptance, and the remaining R6 engineering work are still open. Content review C1–C4 and a signed release-candidate cycle follow R6.
 
 ## Source-of-truth hierarchy
 
@@ -132,13 +132,13 @@ R2 added nullable `birth_utc_offset_minutes` to users and charts and expanded ca
 
 The generated client schema is `client/lib/database.types.ts`. During R6.3 it was regenerated from the linked authoritative `public` schema; its relationship metadata now names the R1 composite owner foreign keys and includes the deployed R2 columns. Re-run linked generation after future production migrations rather than hand-editing this file.
 
-Notifications, subscriptions, and purchases retain broad DML grants while RLS currently blocks unauthorized writes. Users' birth columns retain table-level write grants with self-row RLS. These are non-blocking defense-in-depth reviews for R6.
+The R6.4 forward migration closes anon/authenticated notification, subscription, and purchase writes and sequence access because Android V1 only reads subscription/purchase state. Owner-scoped reads and service-role behavior remain. The migration is locally verified but not production-deployed. Users' birth columns retain table-level write grants with self-row RLS.
 
 ## Location search
 
 `client/lib/geocode.ts` calls OpenCage directly with `EXPO_PUBLIC_OPENCAGE_KEY`. Signup, Complete Profile, and Guest Chart use location selection to capture coordinates and a time-zone annotation when available.
 
-R6 must add cancellation, timeout, stale-response protection, malformed-response handling, and a production API-key/proxy decision. Do not treat an Expo public variable as a secret.
+R6.4 adds a ten-second timeout, caller cancellation, query-change/unmount invalidation, stale-response protection, clean retry errors, and focused lifecycle coverage while preserving OpenCage parsing/timezone behavior. The public-key/quota/proxy decision remains a Release Candidate production configuration task; an Expo public variable is not a secret.
 
 ## UI and accessibility
 
@@ -166,7 +166,7 @@ Approved Naksha launcher, adaptive foreground, splash, logo, and wordmark assets
 
 ## Current release blockers and sequence
 
-1. **R6 — in progress:** R6.1 lifecycle, R6.2 accessibility/motion, and the source-CI/generated-type portions of R6.3 are complete. Hydration, geocoder resilience, settings correctness, privacy/support/export, diagnostics disposition, advisory disposition, and external release operations remain.
+1. **R6 — final review/gate:** R6.1–R6.3 are complete. R6.4 source hardening is implemented pending independent review and one complete repository gate. External environments, destinations, backup, signing, device acceptance, dependency artifact inspection, and Play work are tracked in the Release Candidate checklist.
 2. **C1–C4:** lexicon completeness, editorial quality, composition quality, and astrology editorial review.
 3. **Release candidate:** freeze, production configuration, accountable signing, signed AAB, real-device acceptance, backend verification, Play testing, and store submission.
 4. **Launch:** Android launch and narrow stabilization fixes.

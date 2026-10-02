@@ -43,6 +43,7 @@ import {
   getDashboardGuidanceKeys,
 } from '../lib/dashboardFreshness'
 import { useActiveDashboardRefresh } from '../hooks/useActiveDashboardRefresh'
+import { safeErrorDiagnostic } from '../lib/diagnostics'
 import {
   needsProfileCompletion,
   profileFromAuthMetadata,
@@ -551,7 +552,7 @@ export default function DashboardScreen() {
               chart_data: chartData,
             })
           } catch (e) {
-            console.warn('Auto-save failed:', e)
+            console.warn('Auto-save failed:', safeErrorDiagnostic(e))
           }
         }
       }

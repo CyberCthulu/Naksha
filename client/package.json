@@ -7,6 +7,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
+    "validate:public-env": "node ./scripts/validate-public-env.js",
+    "eas-build-pre-install": "npm run validate:public-env",
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "lint": "eslint ."
@@ -26,7 +28,6 @@
     "@react-three/fiber": "9.5.0",
     "@supabase/supabase-js": "^2.49.8",
     "astronomy-engine": "^2.1.19",
-    "axios": "^1.9.0",
     "expo": "~54.0.37",
     "expo-asset": "~12.0.13",
     "expo-dev-client": "~6.0.21",

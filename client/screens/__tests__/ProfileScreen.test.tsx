@@ -469,14 +469,9 @@ describe('ProfileScreen presentation', () => {
       return match.props.variant
     }
 
-    /*
-     * All three were bold blue text at roughly a 34dp target -- account
-     * deletion, the one irreversible action in the app, styled as a
-     * hyperlink. They are Buttons now, which is also what gives them their
-     * touch target: Button's own suite owns the 48dp guarantee, so asserting
-     * it again here would only test the wrong node.
-     */
-    expect(variantOf('Export my data')).toBe('tertiary')
+    expect(buttons.some((node) => node.props.title === 'Export my data')).toBe(
+      false
+    )
     expect(variantOf('Sign out')).toBe('tertiary')
     expect(variantOf('Delete account')).toBe('destructive')
   })

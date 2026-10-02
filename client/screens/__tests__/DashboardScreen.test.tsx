@@ -2046,6 +2046,28 @@ it('opens on Today with This Week neither shown nor reachable', async () => {
     expectText(screen, 'Libra')
   })
 
+  it('logs only sanitized fields when automatic chart saving fails', async () => {
+    const builtChart = makeChartData()
+    mockedBuildChartData().mockReturnValue(builtChart)
+    mockedSaveChart().mockRejectedValueOnce({
+      code: 'PGRST500',
+      message: 'Save unavailable',
+      details: 'private chart detail',
+      hint: 'private hint',
+    })
+    mockDashboardQueries({
+      userRow: completeUser,
+      chartRow: null,
+    })
+
+    await renderScreen()
+
+    expect(console.warn).toHaveBeenCalledWith('Auto-save failed:', {
+      code: 'PGRST500',
+      message: 'Save unavailable',
+    })
+  })
+
   it('auto-saves a newly built self chart when coordinates are present', async () => {
     const builtChart = makeChartData({
       sunLon: 105,

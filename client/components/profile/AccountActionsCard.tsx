@@ -7,14 +7,12 @@ import { theme } from '../ui/theme'
 import DataPrivacyCard from './DataPrivacyCard'
 
 type Props = {
-  onExportData: () => void
   onDeleteAccount: () => void
   onSignOut: () => void
   deletingAccount?: boolean
 }
 
 export default function AccountActionsCard({
-  onExportData,
   onDeleteAccount,
   onSignOut,
   deletingAccount = false,
@@ -22,7 +20,6 @@ export default function AccountActionsCard({
   return (
     <>
       <DataPrivacyCard
-        onExportData={onExportData}
         onDeleteAccount={onDeleteAccount}
         deletingAccount={deletingAccount}
       />

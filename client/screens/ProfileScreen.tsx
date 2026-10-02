@@ -219,14 +219,6 @@ export default function ProfileScreen() {
     }
   }
 
-  const onExportData = () => {
-    Alert.alert(
-      'Export Data',
-      'In a future version, this will generate an export of your charts, journals, and usage. For now, please reach out to support to request an export.',
-      [{ text: 'OK' }]
-    )
-  }
-
   const confirmDeleteAccount = async () => {
     setDeletingAccount(true)
 
@@ -340,7 +332,6 @@ export default function ProfileScreen() {
       <PurchasesCard purchases={purchases} />
 
       <AccountActionsCard
-        onExportData={onExportData}
         onDeleteAccount={onDeleteAccount}
         onSignOut={onSignOut}
         deletingAccount={deletingAccount}
