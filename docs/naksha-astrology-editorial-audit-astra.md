@@ -536,7 +536,7 @@ Evaluation: October 2, 2026. Resulting week: **September 28–October 4, 2026**.
 
 Top theme:
 
-> **Saturn square natal Neptune**  
+> **Saturn square natal Neptune**
 > “This pattern appears in 7 of 7 sampled days. Two demands interfere with each other, creating pressure for an adjustment or new skill. It connects limits, responsibility, standards, time, and durability with imagination, empathy, ideals, ambiguity, and perceptual boundaries.”
 
 Second theme: Saturn square natal Sun. It repeats the same persistence and square sentences, changing only the natal topic list.
