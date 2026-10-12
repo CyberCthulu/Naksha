@@ -528,12 +528,12 @@ describe("coverage denominators and content provenance", () => {
       ).toHaveLength(164);
       expect(
         cells.filter(({ cycleClass }) => cycleClass === "cohortSameMoment"),
-      ).toHaveLength(5);
+      ).toHaveLength(35);
       expect(
         cells.filter(
           ({ cycleClass }) => cycleClass === "generationalSameMoment",
         ),
-      ).toHaveLength(45);
+      ).toHaveLength(15);
       expect(
         cells.filter(({ cycleClass }) => cycleClass === "notApplicable"),
       ).toHaveLength(11);
@@ -554,6 +554,49 @@ describe("coverage denominators and content provenance", () => {
         ({ cycleClass }) => cycleClass === "slowPersonalTransit",
       ),
     ).toHaveLength(100);
+  });
+
+  it.each([
+    ["Jupiter", "Saturn"],
+    ["Jupiter", "Uranus"],
+    ["Jupiter", "Neptune"],
+    ["Jupiter", "Pluto"],
+    ["Saturn", "Uranus"],
+    ["Saturn", "Neptune"],
+    ["Saturn", "Pluto"],
+  ] as const)(
+    "classifies %s-%s as cohort rather than generational",
+    (first, second) => {
+      for (const cells of [NATAL_ASPECT_CELLS, SKY_NOW_ASPECT_CELLS]) {
+        const pairCells = cells.filter(
+          ({ pair }) => pair[0] === first && pair[1] === second,
+        );
+        expect(pairCells).toHaveLength(5);
+        expect(
+          pairCells.every(
+            ({ cycleClass }) => cycleClass === "cohortSameMoment",
+          ),
+        ).toBe(true);
+      }
+    },
+  );
+
+  it.each([
+    ["Uranus", "Neptune"],
+    ["Uranus", "Pluto"],
+    ["Neptune", "Pluto"],
+  ] as const)("classifies %s-%s as generational", (first, second) => {
+    for (const cells of [NATAL_ASPECT_CELLS, SKY_NOW_ASPECT_CELLS]) {
+      const pairCells = cells.filter(
+        ({ pair }) => pair[0] === first && pair[1] === second,
+      );
+      expect(pairCells).toHaveLength(5);
+      expect(
+        pairCells.every(
+          ({ cycleClass }) => cycleClass === "generationalSameMoment",
+        ),
+      ).toBe(true);
+    }
   });
 });
 

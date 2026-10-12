@@ -215,7 +215,7 @@ function sameMomentCycleClass(first: PlanetKey, second: PlanetKey): CycleClass {
     requireBodyIndex(second) >= requireBodyIndex("Jupiter");
   if (!bothSlow) return "ordinaryCycle";
 
-  return requireBodyIndex(first) >= requireBodyIndex("Uranus") ||
+  return requireBodyIndex(first) >= requireBodyIndex("Uranus") &&
     requireBodyIndex(second) >= requireBodyIndex("Uranus")
     ? "generationalSameMoment"
     : "cohortSameMoment";
