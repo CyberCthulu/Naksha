@@ -625,7 +625,9 @@ The current contract records:
 
 Runtime selection is recorded separately from interpretation coverage. Daily calculates eligible contacts and renders one primary contact. Weekly samples seven local-noon readings, deduplicates directional identities, applies tighter highlight filters, and ranks up to five highlights and three themes. Contacts omitted by ranking are runtime selection omissions, not missing content.
 
-Known conformance work remains explicitly deferred: retain full orb precision until display rounding; connect five house-only prompts to relevant house context without outranking the transit mechanism; define the product epoch and reject future birth dates by the birth location's local civil date; prevent noncanonical persisted bodies from receiving generic Naksha interpretation; reconsider a later canonical Daily contact when a higher-ranked legacy target is noncanonical; narrow rising-sign doctrine-test patterns before rising-sign content work; remove benchmark meta-commentary before benchmark-derived authoring; clean up dignity language; and calibrate outer-planet sign content.
+Transit aspect classification, Daily primary selection, and Weekly filtering, significance, and orb tie-breaking retain full precision. Rounding at presentation and saved-chart compatibility boundaries must not alter selection behavior.
+
+Known conformance work remains explicitly deferred: connect five house-only prompts to relevant house context without outranking the transit mechanism; define the product epoch and reject future birth dates by the birth location's local civil date; prevent noncanonical persisted bodies from receiving generic Naksha interpretation; reconsider a later canonical Daily contact when a higher-ranked legacy target is noncanonical; narrow rising-sign doctrine-test patterns before rising-sign content work; remove benchmark meta-commentary before benchmark-derived authoring; clean up dignity language; and calibrate outer-planet sign content.
 
 ## 20. C1.2C contract-hardening clarifications
 

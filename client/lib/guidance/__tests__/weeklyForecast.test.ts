@@ -17,6 +17,12 @@ import {
   type BuildWeeklyForecastInput,
   resolveTransitHouseContext,
 } from '../index'
+import type { WeeklyTransitHighlight } from '../types'
+import {
+  calculateWeeklySignificanceScore,
+  compareWeeklyHighlights,
+  isWithinWeeklyOrbLimit,
+} from '../weeklyTransitEvents'
 
 const EVALUATED_AT = new Date('2026-05-14T18:00:00.000Z')
 const TIME_ZONE = 'America/Los_Angeles'
@@ -87,6 +93,83 @@ function weeklyRelevantNatalPlanets({
       : []),
   ]
 }
+
+function weeklyHighlight(
+  overrides: Partial<WeeklyTransitHighlight> & {
+    selectionOrb?: number
+  } = {}
+): WeeklyTransitHighlight & { selectionOrb?: number } {
+  return {
+    transitPlanet: 'Mars',
+    natalPlanet: 'Moon',
+    aspect: 'conj',
+    orb: 1,
+    tone: 'intensifying',
+    intensity: 'high',
+    sourceIds: [],
+    date: '2026-05-11',
+    activeDays: 1,
+    significanceScore: 50,
+    ...overrides,
+  }
+}
+
+describe('weekly transit precision', () => {
+  it.each([
+    ['Mars', 'conj', 3],
+    ['Mars', 'opp', 3],
+    ['Mars', 'trine', 2.5],
+    ['Mars', 'square', 2.5],
+    ['Mars', 'sextile', 2],
+    ['Saturn', 'conj', 1.5],
+  ] as const)(
+    'filters %s %s against its full-precision %s-degree limit',
+    (planet, aspect, limit) => {
+      expect(
+        isWithinWeeklyOrbLimit(planet, aspect, limit - 0.0004)
+      ).toBe(true)
+      expect(isWithinWeeklyOrbLimit(planet, aspect, limit)).toBe(true)
+      expect(
+        isWithinWeeklyOrbLimit(planet, aspect, limit + 0.004)
+      ).toBe(false)
+      expect(Number((limit + 0.004).toFixed(2))).toBe(limit)
+    }
+  )
+
+  it('uses full precision for the significance orb-closeness contribution', () => {
+    const tighterOrb = 1.001
+    const looserOrb = 1.004
+
+    expect(Number(tighterOrb.toFixed(2))).toBe(
+      Number(looserOrb.toFixed(2))
+    )
+    expect(
+      calculateWeeklySignificanceScore(
+        { transitPlanet: 'Mars', aspect: 'conj', orb: tighterOrb },
+        1
+      )
+    ).toBeGreaterThan(
+      calculateWeeklySignificanceScore(
+        { transitPlanet: 'Mars', aspect: 'conj', orb: looserOrb },
+        1
+      )
+    )
+  })
+
+  it('uses full precision for the orb tie-break before identity order', () => {
+    const tighter = weeklyHighlight({
+      natalPlanet: 'Venus',
+      selectionOrb: 1.001,
+    })
+    const looser = weeklyHighlight({
+      natalPlanet: 'Mars',
+      selectionOrb: 1.004,
+    })
+
+    expect(tighter.orb).toBe(looser.orb)
+    expect(compareWeeklyHighlights(tighter, looser)).toBeLessThan(0)
+  })
+})
 
 describe('buildWeeklyForecast', () => {
   it('returns deterministic output for a fixed chart and local week', () => {

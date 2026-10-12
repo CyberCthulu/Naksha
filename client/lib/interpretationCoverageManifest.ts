@@ -123,8 +123,9 @@ export const ASPECT_ORB_POLICY = {
   },
   calculationBasis: "minimumEclipticLongitudeSeparation",
   boundaryRule: "inclusive",
-  knownConformanceGap:
-    "Weekly tight-orb filters currently receive two-decimal rounded orbs. Daily ranking also uses rounded orbs. Selection and filtering should eventually retain full precision and round only for display.",
+  transitSelectionPrecision: "fullPrecision",
+  transitResultOrbPrecision: "twoDecimalPresentationValue",
+  persistedNatalOrbPrecision: "twoDecimalCompatibilityValue",
 } as const;
 
 /**
@@ -355,7 +356,8 @@ export const SURFACE_SELECTION_POLICIES = {
     renderedPrimaryLimit: 1,
     order: ["orbAscending", "transitPriority", "natalName", "aspectKey"],
     lowerRankedContacts: "runtimeSelectionOmission",
-    orbPrecisionConformance: "currentlyRanksRoundedTwoDecimalOrbs",
+    orbPrecisionConformance:
+      "fullPrecisionSelectionWithRoundedPresentationValue",
   },
   weeklyDailyRhythm: {
     snapshots: 7,
@@ -391,6 +393,7 @@ export const SURFACE_SELECTION_POLICIES = {
       activeDayCap: 3,
       activeDayWeight: 2,
       scoreDecimalPlaces: 2,
+      orbInputPrecision: "fullPrecision",
       ordering: [
         "significanceScoreDescending",
         "planetRelevanceDescending",
@@ -400,7 +403,8 @@ export const SURFACE_SELECTION_POLICIES = {
       ],
     },
     lowerRankedContacts: "runtimeSelectionOmission",
-    orbPrecisionConformance: "currentlyFiltersRoundedTwoDecimalOrbs",
+    orbPrecisionConformance:
+      "fullPrecisionFilteringRankingAndTieBreakWithRoundedPresentationValue",
   },
 } as const;
 
@@ -631,8 +635,6 @@ export const SAVED_CHART_BODY_CONTRACT = {
 } as const;
 
 export const KNOWN_CONFORMANCE_FOLLOW_UPS = [
-  "weekly-orb-rounding",
-  "daily-rounded-orb-ranking",
   "house-only-prompt-eligibility",
   "product-epoch-undecided",
   "future-birth-date-policy",

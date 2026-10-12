@@ -29,6 +29,7 @@ import {
   FALLBACK_CONTRACT,
   HOUSE_ONLY_PROMPT_IDS,
   IMPOSSIBLE_SAME_MOMENT_CELLS,
+  KNOWN_CONFORMANCE_FOLLOW_UPS,
   NATAL_ASPECT_CELLS,
   PRODUCT_EPOCH_POLICY,
   PROMPT_PRACTICE_REACHABILITY,
@@ -660,6 +661,7 @@ describe("selection and prompt/practice contracts", () => {
       activeDayCap: contractRanking.activeDayCap,
       activeDayWeight: contractRanking.activeDayWeight,
       scoreDecimalPlaces: contractRanking.scoreDecimalPlaces,
+      orbInputPrecision: contractRanking.orbInputPrecision,
       ordering: contractRanking.ordering,
     });
     expect(
@@ -705,6 +707,34 @@ describe("selection and prompt/practice contracts", () => {
         weeklyHighlight({ date: "2026-01-02" }),
       ),
     ).toBeLessThan(0);
+  });
+
+  it("records full-precision transit selection without changing boundary rounding", () => {
+    expect(ASPECT_ORB_POLICY).toEqual(
+      expect.objectContaining({
+        transitSelectionPrecision: "fullPrecision",
+        transitResultOrbPrecision: "twoDecimalPresentationValue",
+        persistedNatalOrbPrecision: "twoDecimalCompatibilityValue",
+      }),
+    );
+    expect(SURFACE_SELECTION_POLICIES.daily.orbPrecisionConformance).toBe(
+      "fullPrecisionSelectionWithRoundedPresentationValue",
+    );
+    expect(
+      SURFACE_SELECTION_POLICIES.weeklyHighlights.orbPrecisionConformance,
+    ).toBe(
+      "fullPrecisionFilteringRankingAndTieBreakWithRoundedPresentationValue",
+    );
+    expect(
+      SURFACE_SELECTION_POLICIES.weeklyHighlights.significanceRanking
+        .orbInputPrecision,
+    ).toBe("fullPrecision");
+    expect(KNOWN_CONFORMANCE_FOLLOW_UPS).not.toContain(
+      "weekly-orb-rounding",
+    );
+    expect(KNOWN_CONFORMANCE_FOLLOW_UPS).not.toContain(
+      "daily-rounded-orb-ranking",
+    );
   });
 
   it("keeps Weekly prompt scoring synchronized with runtime weights", () => {

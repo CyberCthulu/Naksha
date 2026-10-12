@@ -3,6 +3,7 @@ import {
   ASPECT_RULES,
   calculateAspects,
 } from '../aspects'
+import { findAspects, findAspectsWithFullPrecision } from '../astro'
 
 const planetsAt = (a: number, b: number) => [
   { name: 'Moon', lon: a },
@@ -91,6 +92,20 @@ describe('aspect rules', () => {
     expect(aspect.type).toBe('opp')
     expect(aspect.orb).toBeCloseTo(1.1418047568802194, 12)
     expect(aspect.orb).not.toBe(Number(aspect.orb.toFixed(2)))
+  })
+
+  it('keeps full precision available without changing saved-chart orb rounding', () => {
+    const planets = planetsAt(0, 3.004)
+    const [preciseAspect] = findAspectsWithFullPrecision(planets)
+    const [savedAspect] = findAspects(planets)
+
+    expect(preciseAspect.orb).toBeCloseTo(3.004, 12)
+    expect(savedAspect).toEqual({
+      a: 'Moon',
+      b: 'Saturn',
+      type: 'conj',
+      orb: 3,
+    })
   })
 
   it('does not call a small nonzero orb an exact aspect', () => {

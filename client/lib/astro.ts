@@ -49,15 +49,22 @@ export type Aspect = {
 
 export type AspectOrbMode = 'medium'
 
-/** Preserve the existing saved-chart representation; Sky Now uses full precision. */
-export function findAspects(
+export function findAspectsWithFullPrecision(
   planets: PlanetPos[],
   orbMode: AspectOrbMode = 'medium'
 ): Aspect[] {
   if (orbMode !== 'medium') {
     throw new Error('Unsupported aspect orb mode. Only medium is implemented.')
   }
-  return calculateAspects(planets).map(aspect => ({
+  return calculateAspects(planets)
+}
+
+/** Preserve the existing two-decimal saved-chart representation. */
+export function findAspects(
+  planets: PlanetPos[],
+  orbMode: AspectOrbMode = 'medium'
+): Aspect[] {
+  return findAspectsWithFullPrecision(planets, orbMode).map(aspect => ({
     ...aspect,
     orb: +aspect.orb.toFixed(2),
   }))

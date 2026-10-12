@@ -111,6 +111,50 @@ describe('daily transit helpers', () => {
     expect(strongest?.natal.name).toBe('Venus')
   })
 
+  it('uses full precision before transit priority when displayed orbs tie', () => {
+    const natalPlanets = [planet('Mars', 0)]
+    const transitPlanets = [
+      planet('Moon', 1.004),
+      planet('Sun', 1.001),
+    ]
+
+    const aspects = findDailyTransitAspects(
+      natalPlanets,
+      transitPlanets
+    )
+    const strongest = findStrongestDailyTransitAspect(
+      natalPlanets,
+      transitPlanets
+    )
+
+    expect(aspects.map(({ orb }) => orb)).toEqual([1, 1])
+    expect(aspects.map(({ transit }) => transit.name)).toEqual([
+      'Sun',
+      'Moon',
+    ])
+    expect(strongest?.transit.name).toBe('Sun')
+  })
+
+  it('retains transit priority when true orbs are equal', () => {
+    const natalPlanets = [planet('Mars', 0)]
+    const transitPlanets = [
+      planet('Sun', 1.001),
+      planet('Moon', 1.001),
+    ]
+
+    const strongest = findStrongestDailyTransitAspect(
+      natalPlanets,
+      transitPlanets
+    )
+
+    expect(strongest).toEqual(
+      expect.objectContaining({
+        orb: 1,
+        transit: expect.objectContaining({ name: 'Moon' }),
+      })
+    )
+  })
+
   it('builds today energy with Sun/Moon signs and generic aspect meaning', () => {
     const transitPlanets = computeTransitPlanets(FIXED_DATE)
     const transitSun = transitPlanets.find((item) => item.name === 'Sun')
