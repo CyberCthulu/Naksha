@@ -1,5 +1,10 @@
 // lib/lexicon/aspects/index.ts
-import { AspectType, Interpretation, maybe } from '../types'
+import {
+  AspectType,
+  Interpretation,
+  isPlanetKey,
+  maybe,
+} from '../types'
 
 export const ASPECT_MEANINGS: Record<AspectType, Interpretation> = {
   conj: {
@@ -36,4 +41,17 @@ even if they don’t demand your attention as loudly as squares or oppositions.`
 
 export function getAspectMeaning(type: AspectType): Interpretation | null {
   return maybe(ASPECT_MEANINGS[type])
+}
+
+export function getNatalAspectMeaning(
+  firstBody: string,
+  secondBody: string,
+  type: string
+): Interpretation | null {
+  if (!isPlanetKey(firstBody) || !isPlanetKey(secondBody)) return null
+  if (!Object.prototype.hasOwnProperty.call(ASPECT_MEANINGS, type)) {
+    return null
+  }
+
+  return getAspectMeaning(type as AspectType)
 }

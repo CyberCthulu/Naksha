@@ -7,6 +7,7 @@ import {
 } from './astro'
 import {
   getAspectMeaning,
+  isPlanetKey,
   type PlanetKey,
   type ZodiacName,
   zodiacNameFromLongitude,
@@ -33,7 +34,7 @@ export type DailyTransitPlanetIdentity = {
 export type DailyNatalPlanetIdentity = {
   kind: 'natal'
   id: string
-  name: string
+  name: PlanetKey
   lon: number
 }
 
@@ -107,7 +108,9 @@ function buildTransitIdentity(
 function buildNatalIdentity(
   planet: PlanetPos,
   index: number
-): DailyNatalPlanetIdentity {
+): DailyNatalPlanetIdentity | null {
+  if (!isPlanetKey(planet.name)) return null
+
   return {
     kind: 'natal',
     id: `natal:${planet.name}:${index}`,
@@ -164,7 +167,10 @@ function findDailyTransitCandidates(
     const identity = buildTransitIdentity(planet, index)
     return identity ? [identity] : []
   })
-  const natalIdentities = natalPlanets.map(buildNatalIdentity)
+  const natalIdentities = natalPlanets.flatMap((planet, index) => {
+    const identity = buildNatalIdentity(planet, index)
+    return identity ? [identity] : []
+  })
   const identities = [...transitIdentities, ...natalIdentities]
   const identitiesById = new Map(
     identities.map((identity) => [identity.id, identity])

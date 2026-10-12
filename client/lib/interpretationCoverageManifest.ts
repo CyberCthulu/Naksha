@@ -1,17 +1,10 @@
-import type { AspectType, PlanetKey } from "./lexicon";
+import {
+  CANONICAL_PLANET_KEYS,
+  type AspectType,
+  type PlanetKey,
+} from "./lexicon";
 
-export const CANONICAL_ASTROLOGICAL_BODIES = [
-  "Sun",
-  "Moon",
-  "Mercury",
-  "Venus",
-  "Mars",
-  "Jupiter",
-  "Saturn",
-  "Uranus",
-  "Neptune",
-  "Pluto",
-] as const satisfies readonly PlanetKey[];
+export const CANONICAL_ASTROLOGICAL_BODIES = CANONICAL_PLANET_KEYS;
 
 export const CANONICAL_ASPECT_TYPES = [
   "conj",
@@ -626,20 +619,18 @@ export const FALLBACK_CONTRACT: readonly FallbackContractEntry[] = [
 export const SAVED_CHART_BODY_CONTRACT = {
   supportedBodies: CANONICAL_ASTROLOGICAL_BODIES,
   permissiveLegacyHydrationExpandsContract: false,
-  eventualRule:
+  interpretationEligibility:
     "Noncanonical identities must not receive Naksha interpretation content merely because their aspect type is recognized.",
-  knownGap:
-    "Persisted aspect data can contain noncanonical planet names and currently render generic aspect prose as if supported.",
-  relatedDailyGap:
-    "A highest-ranked transit with a noncanonical natal target can be dropped after selection, causing a false no-primary fallback instead of considering a later canonical contact.",
+  hydrationPolicy:
+    "Noncanonical body names may remain readable in legacy persisted chart data.",
+  dailyPrimarySelection:
+    "Unsupported natal identities are excluded before ranking; the highest-ranked supported canonical contact becomes primary.",
 } as const;
 
 export const KNOWN_CONFORMANCE_FOLLOW_UPS = [
   "house-only-prompt-eligibility",
   "product-epoch-undecided",
   "future-birth-date-policy",
-  "noncanonical-saved-identities",
-  "daily-noncanonical-primary-selection",
   "rising-sign-doctrine-test-pattern-narrowing",
   "benchmark-meta-commentary-cleanup",
   "dignity-language-cleanup",

@@ -136,6 +136,21 @@ describe('parseChartData', () => {
     expect(parsed?.planet_houses).toBeNull()
   })
 
+  it('keeps legacy noncanonical aspect identities readable', () => {
+    const legacyAspect = {
+      a: 'UnknownBody',
+      b: 'Moon',
+      type: 'square',
+      orb: 1.25,
+    }
+    const parsed = parseChartData({
+      ...validChartData,
+      aspects: [legacyAspect],
+    })
+
+    expect(parsed?.aspects).toEqual([legacyAspect])
+  })
+
   it('returns null for malformed chart data', () => {
     expect(parseChartData(null)).toBeNull()
     expect(parseChartData({ ...validChartData, meta: null })).toBeNull()

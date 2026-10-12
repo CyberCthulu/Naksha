@@ -10,6 +10,7 @@ import { GLYPH_COMPASS_TRIGGER_CLEARANCE } from '../GlyphCompass'
 import { theme } from '../../ui/theme'
 import { SpaceProvider } from '../../space/SpaceProvider'
 import useChartData from '../../../hooks/useChartData'
+import { getAspectMeaning } from '../../../lib/lexicon'
 
 jest.mock('../../../hooks/useChartData', () => ({
   __esModule: true,
@@ -481,6 +482,70 @@ describe('Chart content coverage', () => {
     expect(texts).toContain('Conjunction')
     expect(texts).toContain('1.42° orb')
     expect(texts).toContain('0.31° orb')
+  })
+
+  it('keeps legacy aspect labels visible without interpreting unsupported bodies', () => {
+    const legacyAspects = [
+      { a: 'Moon', b: 'Saturn', type: 'square' as const, orb: 1.1 },
+      {
+        a: 'UnknownBody',
+        b: 'Saturn',
+        type: 'square' as const,
+        orb: 1.2,
+      },
+      {
+        a: 'Moon',
+        b: 'UnknownBody',
+        type: 'trine' as const,
+        orb: 1.3,
+      },
+    ]
+    mockedUseChartData.mockReturnValue(
+      chartState({ aspects: legacyAspects })
+    )
+    const screen = renderChart()
+    const rowText = (testID: string) =>
+      byTestID(screen, testID)[0]
+        .findAll((node) => String(node.type) === 'Text')
+        .map((node) =>
+          node.children
+            .filter((child) => typeof child === 'string')
+            .join('')
+        )
+        .join(' ')
+    const squareSummary = getAspectMeaning('square')?.short ?? ''
+    const trineSummary = getAspectMeaning('trine')?.short ?? ''
+
+    press(screen, 'chart-tab-aspects')
+
+    expect(rowText('aspect-row-Moon-Saturn')).toContain(squareSummary)
+    expect(rowText('aspect-row-UnknownBody-Saturn')).toContain(
+      'UnknownBody'
+    )
+    expect(rowText('aspect-row-UnknownBody-Saturn')).not.toContain(
+      squareSummary
+    )
+    expect(rowText('aspect-row-Moon-UnknownBody')).toContain(
+      'UnknownBody'
+    )
+    expect(rowText('aspect-row-Moon-UnknownBody')).not.toContain(
+      trineSummary
+    )
+
+    act(() =>
+      screen.root.findByType(InteractiveChartWheel).props.onSelectAspect(1)
+    )
+    const detailText = byTestID(screen, 'chart-aspect-detail')[0]
+      .findAll((node) => String(node.type) === 'Text')
+      .map((node) =>
+        node.children
+          .filter((child) => typeof child === 'string')
+          .join('')
+      )
+      .join(' ')
+
+    expect(detailText).toContain('UnknownBody')
+    expect(detailText).not.toContain(squareSummary)
   })
 
   it('falls back safely when there are no aspects', () => {

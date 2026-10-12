@@ -3,26 +3,14 @@ import {
   zodiacNameFromLongitude,
   getPlanetSignMeaning,
   getPlanetHouseMeaning,
+  isPlanetKey,
   type PlanetKey,
   type HouseNumber,
 } from './lexicon'
 import type { PlanetHousePlacement } from './astro'
 
 export function asPlanetKey(name: string): PlanetKey | null {
-  const allowed: PlanetKey[] = [
-    'Sun',
-    'Moon',
-    'Mercury',
-    'Venus',
-    'Mars',
-    'Jupiter',
-    'Saturn',
-    'Uranus',
-    'Neptune',
-    'Pluto',
-  ]
-
-  return (allowed as string[]).includes(name) ? (name as PlanetKey) : null
+  return isPlanetKey(name) ? name : null
 }
 
 export function asHouseNumber(n: number): HouseNumber | null {

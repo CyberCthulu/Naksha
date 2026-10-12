@@ -11,7 +11,7 @@ import type { ChartMode, ChartProfile } from '../../lib/domainTypes'
 import { asHouseNumber, asPlanetKey } from '../../lib/chartInterpretation'
 import { buildHousePages, buildPlanetPages } from '../../lib/chartPageBuilders'
 import {
-  getAspectMeaning,
+  getNatalAspectMeaning,
   getHouseMeaning,
   getHouseSignMeaning,
   getPlanetSignMeaning,
@@ -285,7 +285,9 @@ export default function ChartScreenContent({
     return {
       aspect,
       label: type ? ASPECT_LABELS[type] : aspect.type,
-      summary: type ? getAspectMeaning(type)?.short ?? null : null,
+      summary: type
+        ? getNatalAspectMeaning(aspect.a, aspect.b, type)?.short ?? null
+        : null,
     }
   }, [selection, aspects])
 

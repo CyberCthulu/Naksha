@@ -221,6 +221,44 @@ describe('buildDailyGuidance', () => {
     ])
   })
 
+  it('recovers the next canonical primary after a tighter unsupported target', () => {
+    const moonLongitude = transitLongitude('Moon')
+    const guidance = buildDailyGuidance({
+      natalPlanets: [
+        planet('UnknownBody', moonLongitude + 0.1),
+        planet('Mars', moonLongitude + 0.2),
+      ],
+      evaluatedAt: FIXED_DATE,
+    })
+
+    expect(guidance.primaryTransit).toEqual(
+      expect.objectContaining({
+        transitPlanet: 'Moon',
+        natalPlanet: 'Mars',
+        aspect: 'conj',
+        orb: 0.2,
+      })
+    )
+    expect(guidance.transitSummary.body).toContain(
+      'Moon conjoins natal Mars'
+    )
+    expect(guidance.transitSummary.body).not.toContain(
+      'No tight personal transit aspect is emphasized'
+    )
+  })
+
+  it('uses the no-primary fallback when only unsupported targets have contacts', () => {
+    const guidance = buildDailyGuidance({
+      natalPlanets: [planet('UnknownBody', transitLongitude('Moon'))],
+      evaluatedAt: FIXED_DATE,
+    })
+
+    expect(guidance.primaryTransit).toBeNull()
+    expect(guidance.transitSummary.body).toContain(
+      'No tight personal transit aspect is emphasized'
+    )
+  })
+
   it('uses supportive aspect guidance for a trine opportunity', () => {
     const guidance = buildDailyGuidance({
       natalPlanets: chartForMoonAspect('Venus', 120),

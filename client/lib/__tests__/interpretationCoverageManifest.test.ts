@@ -33,6 +33,7 @@ import {
   NATAL_ASPECT_CELLS,
   PRODUCT_EPOCH_POLICY,
   PROMPT_PRACTICE_REACHABILITY,
+  SAVED_CHART_BODY_CONTRACT,
   SAME_MOMENT_REACHABILITY_GUARD_BOUNDS,
   SKY_NOW_ASPECT_CELLS,
   SURFACE_SELECTION_POLICIES,
@@ -734,6 +735,25 @@ describe("selection and prompt/practice contracts", () => {
     );
     expect(KNOWN_CONFORMANCE_FOLLOW_UPS).not.toContain(
       "daily-rounded-orb-ranking",
+    );
+  });
+
+  it("separates legacy hydration from canonical interpretation eligibility", () => {
+    expect(SAVED_CHART_BODY_CONTRACT).toEqual(
+      expect.objectContaining({
+        supportedBodies: CANONICAL_ASTROLOGICAL_BODIES,
+        permissiveLegacyHydrationExpandsContract: false,
+        interpretationEligibility:
+          "Noncanonical identities must not receive Naksha interpretation content merely because their aspect type is recognized.",
+        dailyPrimarySelection:
+          "Unsupported natal identities are excluded before ranking; the highest-ranked supported canonical contact becomes primary.",
+      }),
+    );
+    expect(KNOWN_CONFORMANCE_FOLLOW_UPS).not.toContain(
+      "noncanonical-saved-identities",
+    );
+    expect(KNOWN_CONFORMANCE_FOLLOW_UPS).not.toContain(
+      "daily-noncanonical-primary-selection",
     );
   });
 

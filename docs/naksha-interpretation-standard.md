@@ -627,7 +627,9 @@ Runtime selection is recorded separately from interpretation coverage. Daily cal
 
 Transit aspect classification, Daily primary selection, and Weekly filtering, significance, and orb tie-breaking retain full precision. Rounding at presentation and saved-chart compatibility boundaries must not alter selection behavior.
 
-Known conformance work remains explicitly deferred: connect five house-only prompts to relevant house context without outranking the transit mechanism; define the product epoch and reject future birth dates by the birth location's local civil date; prevent noncanonical persisted bodies from receiving generic Naksha interpretation; reconsider a later canonical Daily contact when a higher-ranked legacy target is noncanonical; narrow rising-sign doctrine-test patterns before rising-sign content work; remove benchmark meta-commentary before benchmark-derived authoring; clean up dignity language; and calibrate outer-planet sign content.
+Legacy saved aspects may hydrate defensively, but only the canonical ten bodies are eligible for Naksha interpretation. Daily primary selection skips unsupported natal identities before ranking supported contacts, so malformed legacy data cannot suppress a valid personal transit.
+
+Known conformance work remains explicitly deferred: connect five house-only prompts to relevant house context without outranking the transit mechanism; define the product epoch and reject future birth dates by the birth location's local civil date; narrow rising-sign doctrine-test patterns before rising-sign content work; remove benchmark meta-commentary before benchmark-derived authoring; clean up dignity language; and calibrate outer-planet sign content.
 
 ## 20. C1.2C contract-hardening clarifications
 

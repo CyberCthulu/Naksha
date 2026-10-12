@@ -51,10 +51,6 @@ function unique(values: readonly string[]): string[] {
   return [...new Set(values)]
 }
 
-function isPlanetKey(name: string): name is PlanetKey {
-  return Object.prototype.hasOwnProperty.call(NATAL_TARGET_GUIDANCE, name)
-}
-
 function stableHash(value: string): number {
   let hash = 2166136261
 
@@ -92,7 +88,7 @@ function selectDeterministically<T extends SelectableGuidance>(
 function buildPrimaryTransit(
   aspect: DailyTransitAspect | null
 ): PrimaryTransitContext | null {
-  if (!aspect || !isPlanetKey(aspect.natal.name)) return null
+  if (!aspect) return null
 
   const transit = TRANSIT_PLANET_GUIDANCE[aspect.transit.name]
   const target = NATAL_TARGET_GUIDANCE[aspect.natal.name]

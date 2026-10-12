@@ -2,7 +2,10 @@
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
 import { Aspect } from '../../lib/astro'
-import { getAspectMeaning, type AspectType } from '../../lib/lexicon'
+import {
+  getNatalAspectMeaning,
+  type AspectType,
+} from '../../lib/lexicon'
 import { AppText } from '../ui/AppText'
 import { theme } from '../ui/theme'
 import { PLANET_GLYPH } from './ChartCompass'
@@ -40,7 +43,9 @@ export default function AspectsList({ aspects }: Props) {
         .sort((a, b) => a.orb - b.orb)
         .map((a, i) => {
           const at = asAspectType(a.type)
-          const meaning = at ? getAspectMeaning(at) : null
+          const meaning = at
+            ? getNatalAspectMeaning(a.a, a.b, at)
+            : null
           const glyphA = PLANET_GLYPH[a.a]
           const glyphB = PLANET_GLYPH[a.b]
 
