@@ -3,6 +3,7 @@ import {
   type HouseCusp,
   type PlanetPos,
 } from '../../astro'
+import { angularSeparation } from '../../aspects'
 import {
   ASPECT_DYNAMIC_GUIDANCE,
   HOUSE_GUIDANCE,
@@ -19,6 +20,7 @@ import {
 } from '../index'
 import type { WeeklyTransitHighlight } from '../types'
 import {
+  buildWeeklyTransitHighlights,
   calculateWeeklySignificanceScore,
   compareWeeklyHighlights,
   isWithinWeeklyOrbLimit,
@@ -168,6 +170,88 @@ describe('weekly transit precision', () => {
 
     expect(tighter.orb).toBe(looser.orb)
     expect(compareWeeklyHighlights(tighter, looser)).toBeLessThan(0)
+  })
+
+  it('filters a rounding-sensitive conjunction through the full Weekly pipeline', () => {
+    const snapshot = {
+      date: '2026-05-14',
+      evaluatedAt: EVALUATED_AT,
+    }
+    const marsLongitude = transitLongitude('Mars', snapshot.evaluatedAt)
+    const highlightsAt = (orb: number) =>
+      buildWeeklyTransitHighlights({
+        natalPlanets: [
+          {
+            name: 'Pluto',
+            lon: (marsLongitude + orb) % 360,
+          },
+        ],
+        snapshots: [snapshot],
+      })
+    const findMarsPlutoConjunction = (
+      highlights: ReturnType<typeof highlightsAt>
+    ) =>
+      highlights.find(
+        (highlight) =>
+          highlight.transitPlanet === 'Mars' &&
+          highlight.aspect === 'conj' &&
+          highlight.natalPlanet === 'Pluto'
+      )
+
+    const outside = findMarsPlutoConjunction(highlightsAt(3.004))
+    const inside = findMarsPlutoConjunction(highlightsAt(2.996))
+
+    expect(Number((3.004).toFixed(2))).toBe(3)
+    expect(outside).toBeUndefined()
+    expect(inside).toEqual(
+      expect.objectContaining({
+        transitPlanet: 'Mars',
+        aspect: 'conj',
+        natalPlanet: 'Pluto',
+        orb: 3,
+      })
+    )
+  })
+
+  it('selects the true minimum-orb snapshot as the Weekly representative day', () => {
+    const earlier = {
+      date: '2026-05-14',
+      evaluatedAt: new Date('2026-05-14T23:58:00.000Z'),
+    }
+    const later = {
+      date: '2026-05-15',
+      evaluatedAt: new Date('2026-05-15T00:03:00.000Z'),
+    }
+    const earlierMars = transitLongitude('Mars', earlier.evaluatedAt)
+    const laterMars = transitLongitude('Mars', later.evaluatedAt)
+    const natalPluto = (laterMars + 1.001) % 360
+    const earlierOrb = angularSeparation(earlierMars, natalPluto)
+    const laterOrb = angularSeparation(laterMars, natalPluto)
+
+    expect(earlierOrb).toBeCloseTo(1.004, 2)
+    expect(laterOrb).toBeCloseTo(1.001, 12)
+    expect(earlierOrb).toBeGreaterThan(laterOrb)
+    expect(Number(earlierOrb.toFixed(2))).toBe(
+      Number(laterOrb.toFixed(2))
+    )
+
+    const highlight = buildWeeklyTransitHighlights({
+      natalPlanets: [{ name: 'Pluto', lon: natalPluto }],
+      snapshots: [earlier, later],
+    }).find(
+      (candidate) =>
+        candidate.transitPlanet === 'Mars' &&
+        candidate.aspect === 'conj' &&
+        candidate.natalPlanet === 'Pluto'
+    )
+
+    expect(highlight).toEqual(
+      expect.objectContaining({
+        date: later.date,
+        orb: 1,
+        activeDays: 2,
+      })
+    )
   })
 })
 
