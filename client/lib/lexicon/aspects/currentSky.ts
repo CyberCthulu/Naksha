@@ -518,7 +518,7 @@ export const SKY_PAIR_THEMES: Record<string, PairTheme> = {
   },
 }
 
-const MOON_SATURN: Record<
+export const MOON_SATURN_ASPECT_OVERRIDES: Record<
   AspectType,
   Pick<SkyAspectMeaning, 'meaning' | 'practice'>
 > = {
@@ -554,6 +554,20 @@ const MOON_SATURN: Record<
   },
 }
 
+export const SKY_PAIR_ASPECT_OVERRIDES: Readonly<
+  Record<
+    string,
+    Partial<
+      Record<
+        AspectType,
+        Pick<SkyAspectMeaning, 'meaning' | 'practice'>
+      >
+    >
+  >
+> = {
+  'Moon:Saturn': MOON_SATURN_ASPECT_OVERRIDES,
+}
+
 /** Symmetric pair lookup; unsupported data receives no invented interpretation. */
 export function getSkyAspectMeaning(
   a: string,
@@ -572,7 +586,7 @@ export function getSkyAspectMeaning(
   const key = first < second ? `${a}:${b}` : `${b}:${a}`
   const pair = SKY_PAIR_THEMES[key]
   if (!pair) return null
-  const custom = key === 'Moon:Saturn' ? MOON_SATURN[type] : undefined
+  const custom = SKY_PAIR_ASPECT_OVERRIDES[key]?.[type]
   const slow = Math.min(first, second) >= SKY_PLANETS.indexOf('Jupiter')
   const experience =
     type === 'opp' || type === 'square' ? pair.friction : pair.potential

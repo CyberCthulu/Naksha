@@ -24,10 +24,15 @@ import {
   type WeeklyTransitSnapshot,
 } from './weeklyTransitEvents'
 
-const DAYS_PER_WEEK = 7
-const MAX_WEEKLY_THEMES = 3
-const MAX_PROMPTS = 3
-const MAX_PRACTICES = 3
+export const DAYS_PER_WEEK = 7
+export const MAX_WEEKLY_THEMES = 3
+export const MAX_PROMPTS = 3
+export const MAX_PRACTICES = 3
+export const WEEKLY_PROMPT_SELECTION_WEIGHTS = {
+  sourceMatch: 100,
+  tagMatch: 10,
+  toneMatch: 1,
+} as const
 
 const ASPECT_TITLES = {
   conj: 'conjunct',
@@ -190,9 +195,11 @@ function selectForWeeklyPattern<T extends SelectableGuidance>(
     return {
       record,
       score:
-        sourceMatches * 100 +
-        tagMatches * 10 +
-        (record.tone === transit.tone ? 1 : 0),
+        sourceMatches * WEEKLY_PROMPT_SELECTION_WEIGHTS.sourceMatch +
+        tagMatches * WEEKLY_PROMPT_SELECTION_WEIGHTS.tagMatch +
+        (record.tone === transit.tone
+          ? WEEKLY_PROMPT_SELECTION_WEIGHTS.toneMatch
+          : 0),
     }
   })
   const highestScore = Math.max(...ranked.map(({ score }) => score))

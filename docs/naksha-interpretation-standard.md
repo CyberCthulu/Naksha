@@ -594,9 +594,9 @@ C1.1 completed the following narrow corrections without changing calculation, ke
 
 The broader issues remain scheduled content work. `client/lib/lexicon/planets/index.ts` still needs generational calibration for all 36 Uranus, Neptune, and Pluto sign entries. Existing “at home” dignity shorthand also remains for a later deliberate cleanup. Neither belongs to the C1.1 closure.
 
-## 18. C1.1 closure and next implementation boundary
+## 18. C1.1 closure and C1.2 audit boundary
 
-C1.1 is complete when the correction record above and its regression tests pass. The next slice is C1.2: a calculation-derived supported and reachable aspect/interpretation coverage manifest. C1.2 must answer:
+C1.1 closed when the correction record above and its regression tests passed. The subsequent C1.2A calculation-derived reachability audit answered:
 
 1. Which bodies and aspect types each natal, Sky Now, Daily, and Weekly surface actually calculates and displays?
 2. Which combinations are impossible, epoch/date-dependent, product-limited, or rare but reachable?
@@ -606,6 +606,31 @@ C1.1 is complete when the correction record above and its regression tests pass.
 6. Which computed combinations have bespoke interpretation, deterministic composition, generic fallback, or no supported interpretation?
 7. How should unsupported states be represented without appearing as bespoke interpretation?
 
-C1.2 must inspect the live calculation and product constraints. It must not infer a birth window, author the aspect rewrite, or change verified astronomy merely to simplify the coverage matrix.
+C1.2A inspected the live calculation and product constraints. It did not infer a birth window, author the aspect rewrite, or change verified astronomy merely to simplify the coverage matrix. C1.2B encodes those reviewed findings in the machine-readable contract below.
 
 Outer-planet sign calibration, dignity cleanup, natal aspect architecture, and the large lexicon rewrite remain later C1–C3 work.
+
+## 19. C1.2B machine-readable coverage contract
+
+The canonical coverage source is `client/lib/interpretationCoverageManifest.ts`. It records physical reachability, product support, content provenance, presentation, editorial acceptance, qualitative cycle class, runtime selection, fallback behavior, and known conformance gaps as separate dimensions. Documentation and UI labels must not collapse those dimensions: text resolving successfully does not make it bespoke, and specific presentation does not establish editorial acceptance.
+
+The current contract records:
+
+- Natal and Sky Now each have 225 theoretical unordered pair-aspect cells. Eleven Sun–Mercury, Sun–Venus, and Mercury–Venus cells are physically impossible under the verified model, leaving 214 reachable cells.
+- Natal has zero pair-specific interpretations: all 214 reachable cells currently use generic aspect definitions beneath specific pair labels.
+- Sky Now has five partially bespoke Moon–Saturn cells and 209 reachable pair-theme plus generic/binary aspect compositions.
+- Daily has 250 supported directional cells: five eligible transiting bodies × ten natal targets × five aspects.
+- Weekly's seven-day rhythm uses the Daily contract; its highlight matrix has 350 supported directional cells: seven eligible transiting bodies × ten natal targets × five aspects.
+- The product-supported astrology epoch remains undecided. Civil-year validation from 1 through 9999 is an input envelope, not an astrology support promise.
+
+Runtime selection is recorded separately from interpretation coverage. Daily calculates eligible contacts and renders one primary contact. Weekly samples seven local-noon readings, deduplicates directional identities, applies tighter highlight filters, and ranks up to five highlights and three themes. Contacts omitted by ranking are runtime selection omissions, not missing content.
+
+Known conformance work remains explicitly deferred: retain full orb precision until display rounding; connect five house-only prompts to relevant house context without outranking the transit mechanism; define the product epoch and reject future birth dates by the birth location's local civil date; prevent noncanonical persisted bodies from receiving generic Naksha interpretation; reconsider a later canonical Daily contact when a higher-ranked legacy target is noncanonical; narrow rising-sign doctrine-test patterns before rising-sign content work; remove benchmark meta-commentary before benchmark-derived authoring; clean up dignity language; and calibrate outer-planet sign content.
+
+## 20. C1.2C contract-hardening clarifications
+
+Cycle class is a qualitative temporal-scale and context label. It does not encode an exact recurrence interval, product epoch, or editorial judgment. Directional Jupiter and Saturn contacts are slow personal transits; they are not cohort claims. Cohort and generational labels apply only to supported same-moment slow-planet pairs.
+
+Editorial acceptance requires an explicit review-evidence entry in the TypeScript contract. The current accepted-cell count is zero. Conservative Sun–Mercury, Sun–Venus, and Mercury–Venus separation bounds guard the eleven-cell impossibility assumption against future orb-window changes; those bounds are contract checks rather than ephemeris calculations.
+
+Daily source-match provenance includes both the headline transit mechanism and Sun/Moon sign background context. Twenty-two practices are source candidates through the primary transit mechanism. `tidy-one-area` and `rest-window` are source candidates only through background sign records. All selection tiers still render without a visible provenance distinction.
