@@ -31,6 +31,13 @@ type SelectableGuidance = Pick<
   sourceIds: readonly string[]
 }
 
+type DailyPromptSelectionProvenance =
+  | 'primaryTransitMechanism'
+  | 'activeHouseContext'
+  | 'backgroundSignContext'
+  | 'tagFallback'
+  | 'fullLibraryFallback'
+
 type PrimaryTransitContext = {
   result: DailyGuidanceTransit
   aspect: DailyTransitAspect
@@ -62,6 +69,14 @@ function stableHash(value: string): number {
   return hash >>> 0
 }
 
+function selectByStableHash<T extends SelectableGuidance>(
+  records: readonly T[],
+  seed: string
+): T {
+  const sorted = [...records].sort((a, b) => a.id.localeCompare(b.id))
+  return sorted[stableHash(seed) % sorted.length]
+}
+
 function selectDeterministically<T extends SelectableGuidance>(
   records: readonly T[],
   tags: readonly GuidanceTag[],
@@ -80,9 +95,138 @@ function selectDeterministically<T extends SelectableGuidance>(
       : tagMatches.length > 0
       ? tagMatches
       : records
-  const sorted = [...candidates].sort((a, b) => a.id.localeCompare(b.id))
 
-  return sorted[stableHash(seed) % sorted.length]
+  return selectByStableHash(candidates, seed)
+}
+
+function selectDailyReflectionPrompt({
+  records,
+  primaryMechanismSourceIds,
+  activeHouseSourceId,
+  backgroundSignSourceIds,
+  tags,
+  seed,
+}: {
+  records: readonly ReflectionPrompt[]
+  primaryMechanismSourceIds: readonly string[]
+  activeHouseSourceId: string | null
+  backgroundSignSourceIds: readonly string[]
+  tags: readonly GuidanceTag[]
+  seed: string
+}): {
+  prompt: ReflectionPrompt
+  provenance: DailyPromptSelectionProvenance
+} {
+  const backgroundMatches = records.filter((record) =>
+    record.sourceIds.some((sourceId) =>
+      backgroundSignSourceIds.includes(sourceId)
+    )
+  )
+  const mechanismMatches = records.map((record) => ({
+    record,
+    count: record.sourceIds.filter((sourceId) =>
+      primaryMechanismSourceIds.includes(sourceId)
+    ).length,
+  }))
+  const strongestMechanismMatch = Math.max(
+    0,
+    ...mechanismMatches.map(({ count }) => count)
+  )
+
+  if (!activeHouseSourceId) {
+    const sourceMatches = records.filter((record) =>
+      record.sourceIds.some(
+        (sourceId) =>
+          primaryMechanismSourceIds.includes(sourceId) ||
+          backgroundSignSourceIds.includes(sourceId)
+      )
+    )
+
+    if (sourceMatches.length > 0) {
+      const prompt = selectByStableHash(sourceMatches, seed)
+      return {
+        prompt,
+        provenance: prompt.sourceIds.some((sourceId) =>
+          primaryMechanismSourceIds.includes(sourceId)
+        )
+          ? 'primaryTransitMechanism'
+          : 'backgroundSignContext',
+      }
+    }
+
+    const tagMatches = records.filter((record) =>
+      record.tags.some((tag) => tags.includes(tag))
+    )
+    if (tagMatches.length > 0) {
+      return {
+        prompt: selectByStableHash(tagMatches, seed),
+        provenance: 'tagFallback',
+      }
+    }
+
+    return {
+      prompt: selectByStableHash(records, seed),
+      provenance: 'fullLibraryFallback',
+    }
+  }
+
+  if (strongestMechanismMatch >= 2) {
+    return {
+      prompt: selectByStableHash(
+        mechanismMatches
+          .filter(({ count }) => count === strongestMechanismMatch)
+          .map(({ record }) => record),
+        seed
+      ),
+      provenance: 'primaryTransitMechanism',
+    }
+  }
+
+  const houseMatches = activeHouseSourceId
+    ? records.filter((record) =>
+        record.sourceIds.includes(activeHouseSourceId)
+      )
+    : []
+  if (houseMatches.length > 0) {
+    return {
+      prompt: selectByStableHash(houseMatches, seed),
+      provenance: 'activeHouseContext',
+    }
+  }
+
+  if (strongestMechanismMatch === 1) {
+    return {
+      prompt: selectByStableHash(
+        mechanismMatches
+          .filter(({ count }) => count === strongestMechanismMatch)
+          .map(({ record }) => record),
+        seed
+      ),
+      provenance: 'primaryTransitMechanism',
+    }
+  }
+
+  if (backgroundMatches.length > 0) {
+    return {
+      prompt: selectByStableHash(backgroundMatches, seed),
+      provenance: 'backgroundSignContext',
+    }
+  }
+
+  const tagMatches = records.filter((record) =>
+    record.tags.some((tag) => tags.includes(tag))
+  )
+  if (tagMatches.length > 0) {
+    return {
+      prompt: selectByStableHash(tagMatches, seed),
+      provenance: 'tagFallback',
+    }
+  }
+
+  return {
+    prompt: selectByStableHash(records, seed),
+    provenance: 'fullLibraryFallback',
+  }
 }
 
 function buildPrimaryTransit(
@@ -267,6 +411,10 @@ export function buildDailyGuidance(
   const activeSourceIds = unique(
     activeRecords.map((record) => record.id)
   )
+  const backgroundSignSourceIds = unique([
+    moonSign?.id ?? moonTransit.id,
+    sunSign?.id ?? sunTransit.id,
+  ])
   const selectionSeed = [
     date,
     todayEnergy.transitMoonSign ?? 'unknown-moon',
@@ -277,12 +425,14 @@ export function buildDailyGuidance(
     chartSeed(input),
   ].join('|')
 
-  const reflectionPrompt: ReflectionPrompt = selectDeterministically(
-    REFLECTION_PROMPTS,
-    activeTags,
-    activeSourceIds,
-    `${selectionSeed}|prompt`
-  )
+  const { prompt: reflectionPrompt } = selectDailyReflectionPrompt({
+    records: REFLECTION_PROMPTS,
+    primaryMechanismSourceIds: primary?.result.sourceIds ?? [],
+    activeHouseSourceId: transitHouse?.guidance.id ?? null,
+    backgroundSignSourceIds,
+    tags: activeTags,
+    seed: `${selectionSeed}|prompt`,
+  })
   const suggestedPractice: SuggestedPractice = selectDeterministically(
     SUGGESTED_PRACTICES,
     activeTags,

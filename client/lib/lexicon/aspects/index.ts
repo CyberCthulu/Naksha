@@ -49,6 +49,7 @@ export function getNatalAspectMeaning(
   type: string
 ): Interpretation | null {
   if (!isPlanetKey(firstBody) || !isPlanetKey(secondBody)) return null
+  if (firstBody === secondBody) return null
   if (!Object.prototype.hasOwnProperty.call(ASPECT_MEANINGS, type)) {
     return null
   }

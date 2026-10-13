@@ -627,9 +627,11 @@ Runtime selection is recorded separately from interpretation coverage. Daily cal
 
 Transit aspect classification, Daily primary selection, and Weekly filtering, significance, and orb tie-breaking retain full precision. Rounding at presentation and saved-chart compatibility boundaries must not alter selection behavior.
 
-Legacy saved aspects may hydrate defensively, but only the canonical ten bodies are eligible for Naksha interpretation. Daily primary selection skips unsupported natal identities before ranking supported contacts, so malformed legacy data cannot suppress a valid personal transit.
+Legacy saved aspects may hydrate defensively, but natal interpretation requires two distinct identities from the canonical ten bodies. Daily primary selection skips unsupported natal identities before ranking supported contacts, so malformed legacy data cannot suppress a valid personal transit.
 
-Known conformance work remains explicitly deferred: connect five house-only prompts to relevant house context without outranking the transit mechanism; define the product epoch and reject future birth dates by the birth location's local civil date; narrow rising-sign doctrine-test patterns before rising-sign content work; remove benchmark meta-commentary before benchmark-derived authoring; clean up dignity language; and calibrate outer-planet sign content.
+Daily prompt relevance follows the doctrine hierarchy: the transit mechanism is evaluated first, and a prompt strongly matched to multiple active mechanism sources leads. When no such prompt exists, the exact active Whole Sign house may supply the more specific life-area context before single-primitive and background fallbacks.
+
+Known conformance work remains explicitly deferred: define the product epoch and reject future birth dates by the birth location's local civil date; narrow rising-sign doctrine-test patterns before rising-sign content work; remove benchmark meta-commentary before benchmark-derived authoring; clean up dignity language; and calibrate outer-planet sign content.
 
 ## 20. C1.2C contract-hardening clarifications
 
@@ -637,4 +639,4 @@ Cycle class is a qualitative temporal-scale and context label. It does not encod
 
 Editorial acceptance requires an explicit review-evidence entry in the TypeScript contract. The current accepted-cell count is zero. Conservative Sun–Mercury, Sun–Venus, and Mercury–Venus separation bounds guard the eleven-cell impossibility assumption against future orb-window changes; those bounds are contract checks rather than ephemeris calculations.
 
-Daily source-match provenance includes both the headline transit mechanism and Sun/Moon sign background context. Twenty-two practices are source candidates through the primary transit mechanism. `tidy-one-area` and `rest-window` are source candidates only through background sign records. All selection tiers still render without a visible provenance distinction.
+Daily prompt provenance distinguishes primary transit mechanism, exact active-house context, Sun/Moon sign background, tag fallback, and full-library fallback. Five house-only prompts now participate through their declared active-house sources. Practice selection is unchanged: twenty-two practices are source candidates through the primary transit mechanism, while `tidy-one-area` and `rest-window` are source candidates only through background sign records. Selection provenance still has no separate UI treatment.

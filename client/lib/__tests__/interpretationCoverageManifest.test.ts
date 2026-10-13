@@ -777,6 +777,9 @@ describe("selection and prompt/practice contracts", () => {
     const backgroundSignSourceIds = new Set(
       Object.values(SIGN_GUIDANCE).map(({ id }) => id),
     );
+    const houseSourceIds = new Set(
+      Object.values(HOUSE_GUIDANCE).map(({ id }) => id),
+    );
     const sourceCandidateIds = (
       records: readonly { id: string; sourceIds: readonly string[] }[],
       sourceIds: ReadonlySet<string>,
@@ -801,6 +804,14 @@ describe("selection and prompt/practice contracts", () => {
     const backgroundOnlyPromptIds = sourceCandidateIds(
       REFLECTION_PROMPTS.filter(({ id }) => !primaryPromptIds.includes(id)),
       backgroundSignSourceIds,
+    );
+    const housePromptIds = sourceCandidateIds(
+      REFLECTION_PROMPTS,
+      houseSourceIds,
+    );
+    const houseOnlyPromptIds = sourceCandidateIds(
+      REFLECTION_PROMPTS.filter(({ id }) => !primaryPromptIds.includes(id)),
+      houseSourceIds,
     );
 
     expect(REFLECTION_PROMPTS).toHaveLength(
@@ -828,21 +839,45 @@ describe("selection and prompt/practice contracts", () => {
       PROMPT_PRACTICE_REACHABILITY.prompts
         .sourceCandidatesThroughBackgroundSignContextOnly,
     );
+    expect(housePromptIds).toHaveLength(
+      PROMPT_PRACTICE_REACHABILITY.prompts
+        .sourceCandidatesThroughActiveHouseContext,
+    );
+    expect(houseOnlyPromptIds.sort()).toEqual(
+      [...HOUSE_ONLY_PROMPT_IDS].sort(),
+    );
+    expect(houseOnlyPromptIds).toHaveLength(
+      PROMPT_PRACTICE_REACHABILITY.prompts
+        .sourceCandidatesExclusivelyThroughActiveHouseContext,
+    );
+    expect(
+      PROMPT_PRACTICE_REACHABILITY.prompts
+        .houseContextCandidatesDisconnected,
+    ).toEqual([]);
     expect(PROMPT_PRACTICE_REACHABILITY.prompts.tagFallbackPool).toBe(
       REFLECTION_PROMPTS.length,
     );
     expect(PROMPT_PRACTICE_REACHABILITY.practices.tagFallbackPool).toBe(
       SUGGESTED_PRACTICES.length,
     );
-    expect(
-      PROMPT_PRACTICE_REACHABILITY.dailySelection.sourceMatchOrigins,
-    ).toEqual([
-      "transitingPlanet",
-      "natalTarget",
-      "aspectDynamic",
-      "transitingSunSignBackground",
-      "transitingMoonSignBackground",
-    ]);
+    expect(PROMPT_PRACTICE_REACHABILITY.dailySelection).toEqual(
+      expect.objectContaining({
+        strongMechanismMinimumSourceMatches: 2,
+        primaryTransitMechanismOrigins: [
+          "transitingPlanet",
+          "natalTarget",
+          "aspectDynamic",
+        ],
+        activeHouseContextOrigins: ["transitWholeSignHouse"],
+        backgroundSignContextOrigins: [
+          "transitingSunSignBackground",
+          "transitingMoonSignBackground",
+        ],
+      }),
+    );
+    expect(KNOWN_CONFORMANCE_FOLLOW_UPS).not.toContain(
+      "house-only-prompt-eligibility",
+    );
   });
 
   it("names the five house-only prompts without classifying them as dead", () => {

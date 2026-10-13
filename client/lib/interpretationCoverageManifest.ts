@@ -418,8 +418,11 @@ export const PROMPT_PRACTICE_REACHABILITY = {
   prompts: {
     total: 34,
     sourceCandidatesThroughPrimaryTransitMechanism: 29,
+    sourceCandidatesThroughActiveHouseContext: 6,
+    sourceCandidatesExclusivelyThroughActiveHouseContext: 5,
+    houseContextOnlyIds: HOUSE_ONLY_PROMPT_IDS,
     sourceCandidatesThroughBackgroundSignContextOnly: 0,
-    houseOnlyDisconnectedFromDailyPrimarySource: HOUSE_ONLY_PROMPT_IDS,
+    houseContextCandidatesDisconnected: [],
     tagFallbackPool: 34,
     fullLibraryFallbackPool: 34,
     allStructurallyReachableThroughBroaderPaths: true,
@@ -430,26 +433,36 @@ export const PROMPT_PRACTICE_REACHABILITY = {
     sourceCandidatesThroughPrimaryTransitMechanism: 22,
     sourceCandidatesThroughBackgroundSignContextOnly: 2,
     backgroundSignContextOnlyIds: DAILY_BACKGROUND_ONLY_PRACTICE_IDS,
+    activeHouseContextParticipatesInSelection: false,
     tagFallbackPool: 24,
     fullLibraryFallbackPool: 24,
     allStructurallyReachableThroughBroaderPaths: true,
     dead: 0,
   },
   dailySelection: {
-    tiers: ["sourceMatch", "tagMatch", "fullLibraryFallback"],
-    sourceMatchOrigins: [
+    tiers: [
+      "strongPrimaryTransitMechanismSourceMatch",
+      "activeHouseSourceMatch",
+      "primaryTransitMechanismSourceMatch",
+      "backgroundSignSourceMatch",
+      "tagMatch",
+      "fullLibraryFallback",
+    ],
+    provenance: [
+      "primaryTransitMechanism",
+      "activeHouseContext",
+      "backgroundSignContext",
+      "tagFallback",
+      "fullLibraryFallback",
+    ],
+    strongMechanismMinimumSourceMatches: 2,
+    primaryTransitMechanismOrigins: [
       "transitingPlanet",
       "natalTarget",
       "aspectDynamic",
-      "transitingSunSignBackground",
-      "transitingMoonSignBackground",
     ],
-    headlineTransitMechanismOrigins: [
-      "transitingPlanet",
-      "natalTarget",
-      "aspectDynamic",
-    ],
-    backgroundContextOrigins: [
+    activeHouseContextOrigins: ["transitWholeSignHouse"],
+    backgroundSignContextOrigins: [
       "transitingSunSignBackground",
       "transitingMoonSignBackground",
     ],
@@ -625,10 +638,11 @@ export const SAVED_CHART_BODY_CONTRACT = {
     "Noncanonical body names may remain readable in legacy persisted chart data.",
   dailyPrimarySelection:
     "Unsupported natal identities are excluded before ranking; the highest-ranked supported canonical contact becomes primary.",
+  natalPairEligibility:
+    "Natal aspect interpretation requires two distinct canonical body identities and a supported aspect key.",
 } as const;
 
 export const KNOWN_CONFORMANCE_FOLLOW_UPS = [
-  "house-only-prompt-eligibility",
   "product-epoch-undecided",
   "future-birth-date-policy",
   "rising-sign-doctrine-test-pattern-narrowing",

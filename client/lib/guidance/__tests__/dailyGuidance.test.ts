@@ -49,6 +49,15 @@ function wholeSignHouses(firstCusp: number): HouseCusp[] {
   }))
 }
 
+function housesWithTransitInHouse(
+  transitPlanet: string,
+  house: number
+): HouseCusp[] {
+  const transitSign = Math.floor(transitLongitude(transitPlanet) / 30)
+  const firstHouseSign = (transitSign - (house - 1) + 12) % 12
+  return wholeSignHouses(firstHouseSign * 30)
+}
+
 function chartWithoutTransitAspects(): PlanetPos[] {
   const transits = computeTransitPlanets(FIXED_DATE)
 
@@ -270,6 +279,80 @@ describe('buildDailyGuidance', () => {
     expect(guidance.opportunity.body).toContain(
       ASPECT_DYNAMIC_GUIDANCE.trine.opportunityModifier
     )
+  })
+
+  it('uses an exact active-house source when no prompt strongly matches the mechanism', () => {
+    const natalPlanets = chartForMoonAspect('Mars', 90)
+    const withoutHouses = buildDailyGuidance({
+      natalPlanets,
+      evaluatedAt: FIXED_DATE,
+    })
+    const withSecondHouse = buildDailyGuidance({
+      natalPlanets,
+      natalHouses: housesWithTransitInHouse('Moon', 2),
+      evaluatedAt: FIXED_DATE,
+    })
+
+    expect(withSecondHouse.transitHouse?.house).toBe(2)
+    expect(withSecondHouse.reflectionPrompt.id).toBe(
+      'guidance.prompt.resource-stewardship'
+    )
+    expect(withSecondHouse.reflectionPrompt.sourceIds).toEqual([
+      'guidance.house.2',
+    ])
+    expect(withSecondHouse.reflectionPrompt.id).not.toBe(
+      withoutHouses.reflectionPrompt.id
+    )
+    expect(withSecondHouse.suggestedPractice.id).toBe(
+      withoutHouses.suggestedPractice.id
+    )
+  })
+
+  it('does not give a house-only prompt relevance for the wrong active house', () => {
+    const guidance = buildDailyGuidance({
+      natalPlanets: chartForMoonAspect('Mars', 90),
+      natalHouses: housesWithTransitInHouse('Moon', 3),
+      evaluatedAt: FIXED_DATE,
+    })
+
+    expect(guidance.transitHouse?.house).toBe(3)
+    expect(guidance.reflectionPrompt.id).not.toBe(
+      'guidance.prompt.resource-stewardship'
+    )
+  })
+
+  it('keeps a strong mechanism prompt ahead of a house-only match', () => {
+    const guidance = buildDailyGuidance({
+      natalPlanets: chartForMoonAspect('Moon', 0),
+      natalHouses: housesWithTransitInHouse('Moon', 2),
+      evaluatedAt: FIXED_DATE,
+    })
+
+    expect(guidance.transitHouse?.house).toBe(2)
+    expect(guidance.reflectionPrompt.id).toBe(
+      'guidance.prompt.emotional-need'
+    )
+    expect(guidance.reflectionPrompt.sourceIds).toEqual([
+      'guidance.transit.moon',
+      'guidance.target.moon',
+    ])
+  })
+
+  it('preserves prompt selection when house data is absent or incomplete', () => {
+    const natalPlanets = chartForMoonAspect('Mars', 90)
+    const absent = buildDailyGuidance({
+      natalPlanets,
+      evaluatedAt: FIXED_DATE,
+    })
+    const incomplete = buildDailyGuidance({
+      natalPlanets,
+      natalHouses: [{ house: 1, lon: 0 }],
+      evaluatedAt: FIXED_DATE,
+    })
+
+    expect(absent.transitHouse).toBeNull()
+    expect(incomplete.transitHouse).toBeNull()
+    expect(incomplete.reflectionPrompt).toEqual(absent.reflectionPrompt)
   })
 
   it('uses one planet-specific constructive fragment for a same-planet conjunction', () => {

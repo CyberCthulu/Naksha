@@ -45,4 +45,8 @@ describe('natal aspect interpretation eligibility', () => {
       getNatalAspectMeaning('Moon', 'Saturn', 'quincunx')
     ).toBeNull()
   })
+
+  it('does not interpret malformed identical natal endpoints', () => {
+    expect(getNatalAspectMeaning('Moon', 'Moon', 'square')).toBeNull()
+  })
 })
