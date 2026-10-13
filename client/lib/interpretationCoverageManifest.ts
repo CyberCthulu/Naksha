@@ -409,7 +409,22 @@ export const HOUSE_ONLY_PROMPT_IDS = [
   "guidance.prompt.gentle-release",
 ] as const;
 
+export const EXACT_NATAL_TARGET_PROMPT_IDS = [
+  "guidance.prompt.flexible-change",
+  "guidance.prompt.ground-the-vision",
+  "guidance.prompt.power-and-choice",
+] as const;
+
 export const DAILY_BACKGROUND_ONLY_PRACTICE_IDS = [
+  "guidance.practice.tidy-one-area",
+  "guidance.practice.rest-window",
+] as const;
+
+export const HOUSE_SOURCE_PRACTICE_IDS = [
+  "guidance.practice.single-task-reset",
+  "guidance.practice.values-check",
+  "guidance.practice.boundary-review",
+  "guidance.practice.creative-free-write",
   "guidance.practice.tidy-one-area",
   "guidance.practice.rest-window",
 ] as const;
@@ -418,6 +433,8 @@ export const PROMPT_PRACTICE_REACHABILITY = {
   prompts: {
     total: 34,
     sourceCandidatesThroughPrimaryTransitMechanism: 29,
+    sourceCandidatesThroughCompleteExactNatalTarget: 3,
+    completeExactNatalTargetIds: EXACT_NATAL_TARGET_PROMPT_IDS,
     sourceCandidatesThroughActiveHouseContext: 6,
     sourceCandidatesExclusivelyThroughActiveHouseContext: 5,
     houseContextOnlyIds: HOUSE_ONLY_PROMPT_IDS,
@@ -433,7 +450,10 @@ export const PROMPT_PRACTICE_REACHABILITY = {
     sourceCandidatesThroughPrimaryTransitMechanism: 22,
     sourceCandidatesThroughBackgroundSignContextOnly: 2,
     backgroundSignContextOnlyIds: DAILY_BACKGROUND_ONLY_PRACTICE_IDS,
+    declaredHouseSourceCount: 6,
+    declaredHouseSourceIds: HOUSE_SOURCE_PRACTICE_IDS,
     activeHouseContextParticipatesInSelection: false,
+    houseSourceDeclarersReachableThroughOtherDeclaredSources: true,
     tagFallbackPool: 24,
     fullLibraryFallbackPool: 24,
     allStructurallyReachableThroughBroaderPaths: true,
@@ -442,6 +462,7 @@ export const PROMPT_PRACTICE_REACHABILITY = {
   dailySelection: {
     tiers: [
       "strongPrimaryTransitMechanismSourceMatch",
+      "completeExactNatalTargetSourceMatch",
       "activeHouseSourceMatch",
       "primaryTransitMechanismSourceMatch",
       "backgroundSignSourceMatch",
@@ -449,13 +470,21 @@ export const PROMPT_PRACTICE_REACHABILITY = {
       "fullLibraryFallback",
     ],
     provenance: [
-      "primaryTransitMechanism",
+      "multiSourcePrimaryTransitMechanism",
+      "exactNatalTarget",
       "activeHouseContext",
+      "singleSourcePrimaryTransitMechanism",
       "backgroundSignContext",
       "tagFallback",
       "fullLibraryFallback",
     ],
     strongMechanismMinimumSourceMatches: 2,
+    directionalCellHighestAvailableTierCounts: {
+      multiSourcePrimaryTransitMechanism: 80,
+      completeExactNatalTarget: 60,
+      otherSingleSourcePrimaryTransitMechanism: 110,
+      total: 250,
+    },
     primaryTransitMechanismOrigins: [
       "transitingPlanet",
       "natalTarget",
@@ -468,6 +497,16 @@ export const PROMPT_PRACTICE_REACHABILITY = {
     ],
     renderedProvenanceDistinction: "none",
     fullLibraryOrdinarilyReachableWithValidCurrentRecords: false,
+    houseAwarePrimaryTransitBranch: {
+      dormantWithCurrentMetadata: [
+        "backgroundSignSourceMatch",
+        "tagMatch",
+        "fullLibraryFallback",
+      ],
+      reason:
+        "Every supported aspect has a directly sourced prompt, so a valid primary transit always resolves before these lower tiers.",
+      retainedAsDefensiveFallbacks: true,
+    },
   },
   weeklySelection: {
     model: "weightedScore",

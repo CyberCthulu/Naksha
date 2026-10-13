@@ -338,6 +338,53 @@ describe('buildDailyGuidance', () => {
     ])
   })
 
+  it('keeps a multi-source mechanism prompt ahead of exact-target and house matches', () => {
+    const guidance = buildDailyGuidance({
+      natalPlanets: chartForMoonAspect('Neptune', 180),
+      natalHouses: housesWithTransitInHouse('Moon', 2),
+      evaluatedAt: FIXED_DATE,
+    })
+
+    expect(guidance.primaryTransit).toEqual(
+      expect.objectContaining({
+        transitPlanet: 'Moon',
+        natalPlanet: 'Neptune',
+        aspect: 'opp',
+      })
+    )
+    expect(guidance.transitHouse?.house).toBe(2)
+    expect(guidance.reflectionPrompt.id).toBe(
+      'guidance.prompt.emotional-response-space'
+    )
+    expect(guidance.reflectionPrompt.sourceIds).toEqual([
+      'guidance.transit.moon',
+      'guidance.aspect.opp',
+    ])
+  })
+
+  it('keeps a complete exact natal-target prompt ahead of a house-only match', () => {
+    const guidance = buildDailyGuidance({
+      natalPlanets: chartForMoonAspect('Neptune', 90),
+      natalHouses: housesWithTransitInHouse('Moon', 2),
+      evaluatedAt: FIXED_DATE,
+    })
+
+    expect(guidance.primaryTransit).toEqual(
+      expect.objectContaining({
+        transitPlanet: 'Moon',
+        natalPlanet: 'Neptune',
+        aspect: 'square',
+      })
+    )
+    expect(guidance.transitHouse?.house).toBe(2)
+    expect(guidance.reflectionPrompt.id).toBe(
+      'guidance.prompt.ground-the-vision'
+    )
+    expect(guidance.reflectionPrompt.sourceIds).toEqual([
+      'guidance.target.neptune',
+    ])
+  })
+
   it('preserves prompt selection when house data is absent or incomplete', () => {
     const natalPlanets = chartForMoonAspect('Mars', 90)
     const absent = buildDailyGuidance({

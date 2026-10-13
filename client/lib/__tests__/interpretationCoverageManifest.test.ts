@@ -26,8 +26,10 @@ import {
   DAILY_TRANSITING_BODIES,
   DAILY_TRANSIT_CELLS,
   EDITORIAL_ACCEPTANCE_EVIDENCE,
+  EXACT_NATAL_TARGET_PROMPT_IDS,
   FALLBACK_CONTRACT,
   HOUSE_ONLY_PROMPT_IDS,
+  HOUSE_SOURCE_PRACTICE_IDS,
   IMPOSSIBLE_SAME_MOMENT_CELLS,
   KNOWN_CONFORMANCE_FOLLOW_UPS,
   NATAL_ASPECT_CELLS,
@@ -813,6 +815,10 @@ describe("selection and prompt/practice contracts", () => {
       REFLECTION_PROMPTS.filter(({ id }) => !primaryPromptIds.includes(id)),
       houseSourceIds,
     );
+    const houseSourcePracticeIds = sourceCandidateIds(
+      SUGGESTED_PRACTICES,
+      houseSourceIds,
+    );
 
     expect(REFLECTION_PROMPTS).toHaveLength(
       PROMPT_PRACTICE_REACHABILITY.prompts.total,
@@ -850,6 +856,22 @@ describe("selection and prompt/practice contracts", () => {
       PROMPT_PRACTICE_REACHABILITY.prompts
         .sourceCandidatesExclusivelyThroughActiveHouseContext,
     );
+    expect(houseSourcePracticeIds.sort()).toEqual(
+      [...HOUSE_SOURCE_PRACTICE_IDS].sort(),
+    );
+    expect(houseSourcePracticeIds).toHaveLength(
+      PROMPT_PRACTICE_REACHABILITY.practices.declaredHouseSourceCount,
+    );
+    for (const id of houseSourcePracticeIds) {
+      const practice = SUGGESTED_PRACTICES.find((record) => record.id === id);
+      expect(
+        practice?.sourceIds.some(
+          (sourceId) =>
+            primaryMechanismSourceIds.has(sourceId) ||
+            backgroundSignSourceIds.has(sourceId),
+        ),
+      ).toBe(true);
+    }
     expect(
       PROMPT_PRACTICE_REACHABILITY.prompts
         .houseContextCandidatesDisconnected,
@@ -877,6 +899,104 @@ describe("selection and prompt/practice contracts", () => {
     );
     expect(KNOWN_CONFORMANCE_FOLLOW_UPS).not.toContain(
       "house-only-prompt-eligibility",
+    );
+  });
+
+  it("derives the refined prompt tiers across all 250 Daily identities", () => {
+    const exactTargetPromptIds = new Set<string>();
+    const counts = {
+      multiSourcePrimaryTransitMechanism: 0,
+      completeExactNatalTarget: 0,
+      otherSingleSourcePrimaryTransitMechanism: 0,
+      total: 0,
+    };
+    const isMechanismSource = (sourceId: string) =>
+      /^guidance\.(transit|target|aspect)\./.test(sourceId);
+
+    for (const cell of DAILY_TRANSIT_CELLS) {
+      const transitSourceId = Object.values(TRANSIT_PLANET_GUIDANCE).find(
+        ({ planet }) => planet === cell.transitingBody,
+      )?.id;
+      expect(transitSourceId).toBeDefined();
+      if (!transitSourceId) throw new Error("Missing transit guidance source");
+
+      const targetSourceId = NATAL_TARGET_GUIDANCE[cell.natalTarget].id;
+      const activeMechanismSourceIds = [
+        transitSourceId,
+        targetSourceId,
+        ASPECT_DYNAMIC_GUIDANCE[cell.aspect].id,
+      ];
+      const sourceMatchCounts = REFLECTION_PROMPTS.map((prompt) => ({
+        prompt,
+        count: prompt.sourceIds.filter((sourceId) =>
+          activeMechanismSourceIds.includes(sourceId),
+        ).length,
+      }));
+      const strongestSourceMatch = Math.max(
+        ...sourceMatchCounts.map(({ count }) => count),
+      );
+      const exactTargetMatches = sourceMatchCounts.filter(({ prompt }) => {
+        const declaredMechanismSourceIds = prompt.sourceIds.filter(
+          isMechanismSource,
+        );
+        return (
+          declaredMechanismSourceIds.some(
+            (sourceId) => sourceId === targetSourceId,
+          ) &&
+          declaredMechanismSourceIds.every((sourceId) =>
+            activeMechanismSourceIds.includes(sourceId)
+          )
+        );
+      });
+
+      counts.total += 1;
+      if (strongestSourceMatch >= 2) {
+        counts.multiSourcePrimaryTransitMechanism += 1;
+      } else if (exactTargetMatches.length > 0) {
+        counts.completeExactNatalTarget += 1;
+        exactTargetMatches.forEach(({ prompt }) =>
+          exactTargetPromptIds.add(prompt.id),
+        );
+      } else {
+        counts.otherSingleSourcePrimaryTransitMechanism += 1;
+      }
+    }
+
+    expect(counts).toEqual(
+      PROMPT_PRACTICE_REACHABILITY.dailySelection
+        .directionalCellHighestAvailableTierCounts,
+    );
+    expect([...exactTargetPromptIds].sort()).toEqual(
+      [...EXACT_NATAL_TARGET_PROMPT_IDS].sort(),
+    );
+    for (const id of EXACT_NATAL_TARGET_PROMPT_IDS) {
+      const prompt = REFLECTION_PROMPTS.find((record) => record.id === id);
+      expect(prompt?.sourceIds).toHaveLength(1);
+      expect(prompt?.sourceIds[0]).toMatch(/^guidance\.target\./);
+    }
+  });
+
+  it("records lower house-aware tiers as defensive but currently dormant", () => {
+    for (const aspect of Object.values(ASPECT_DYNAMIC_GUIDANCE)) {
+      expect(
+        REFLECTION_PROMPTS.some((prompt) =>
+          prompt.sourceIds.some((sourceId) => sourceId === aspect.id),
+        ),
+      ).toBe(true);
+    }
+
+    expect(
+      PROMPT_PRACTICE_REACHABILITY.dailySelection
+        .houseAwarePrimaryTransitBranch,
+    ).toEqual(
+      expect.objectContaining({
+        dormantWithCurrentMetadata: [
+          "backgroundSignSourceMatch",
+          "tagMatch",
+          "fullLibraryFallback",
+        ],
+        retainedAsDefensiveFallbacks: true,
+      }),
     );
   });
 

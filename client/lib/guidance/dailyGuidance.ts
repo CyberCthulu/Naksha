@@ -32,8 +32,10 @@ type SelectableGuidance = Pick<
 }
 
 type DailyPromptSelectionProvenance =
-  | 'primaryTransitMechanism'
+  | 'multiSourcePrimaryTransitMechanism'
+  | 'exactNatalTarget'
   | 'activeHouseContext'
+  | 'singleSourcePrimaryTransitMechanism'
   | 'backgroundSignContext'
   | 'tagFallback'
   | 'fullLibraryFallback'
@@ -102,6 +104,7 @@ function selectDeterministically<T extends SelectableGuidance>(
 function selectDailyReflectionPrompt({
   records,
   primaryMechanismSourceIds,
+  activeNatalTargetSourceId,
   activeHouseSourceId,
   backgroundSignSourceIds,
   tags,
@@ -109,6 +112,7 @@ function selectDailyReflectionPrompt({
 }: {
   records: readonly ReflectionPrompt[]
   primaryMechanismSourceIds: readonly string[]
+  activeNatalTargetSourceId: string | null
   activeHouseSourceId: string | null
   backgroundSignSourceIds: readonly string[]
   tags: readonly GuidanceTag[]
@@ -144,13 +148,17 @@ function selectDailyReflectionPrompt({
 
     if (sourceMatches.length > 0) {
       const prompt = selectByStableHash(sourceMatches, seed)
+      const mechanismSourceMatchCount = prompt.sourceIds.filter((sourceId) =>
+        primaryMechanismSourceIds.includes(sourceId)
+      ).length
       return {
         prompt,
-        provenance: prompt.sourceIds.some((sourceId) =>
-          primaryMechanismSourceIds.includes(sourceId)
-        )
-          ? 'primaryTransitMechanism'
-          : 'backgroundSignContext',
+        provenance:
+          mechanismSourceMatchCount >= 2
+            ? 'multiSourcePrimaryTransitMechanism'
+            : mechanismSourceMatchCount === 1
+            ? 'singleSourcePrimaryTransitMechanism'
+            : 'backgroundSignContext',
       }
     }
 
@@ -178,7 +186,31 @@ function selectDailyReflectionPrompt({
           .map(({ record }) => record),
         seed
       ),
-      provenance: 'primaryTransitMechanism',
+      provenance: 'multiSourcePrimaryTransitMechanism',
+    }
+  }
+
+  const exactNatalTargetMatches = activeNatalTargetSourceId
+    ? records.filter((record) => {
+        const declaredMechanismSourceIds = record.sourceIds.filter(
+          (sourceId) =>
+            sourceId.startsWith('guidance.transit.') ||
+            sourceId.startsWith('guidance.target.') ||
+            sourceId.startsWith('guidance.aspect.')
+        )
+
+        return (
+          declaredMechanismSourceIds.includes(activeNatalTargetSourceId) &&
+          declaredMechanismSourceIds.every((sourceId) =>
+            primaryMechanismSourceIds.includes(sourceId)
+          )
+        )
+      })
+    : []
+  if (exactNatalTargetMatches.length > 0) {
+    return {
+      prompt: selectByStableHash(exactNatalTargetMatches, seed),
+      provenance: 'exactNatalTarget',
     }
   }
 
@@ -202,7 +234,7 @@ function selectDailyReflectionPrompt({
           .map(({ record }) => record),
         seed
       ),
-      provenance: 'primaryTransitMechanism',
+      provenance: 'singleSourcePrimaryTransitMechanism',
     }
   }
 
@@ -428,6 +460,7 @@ export function buildDailyGuidance(
   const { prompt: reflectionPrompt } = selectDailyReflectionPrompt({
     records: REFLECTION_PROMPTS,
     primaryMechanismSourceIds: primary?.result.sourceIds ?? [],
+    activeNatalTargetSourceId: primary?.target.id ?? null,
     activeHouseSourceId: transitHouse?.guidance.id ?? null,
     backgroundSignSourceIds,
     tags: activeTags,
