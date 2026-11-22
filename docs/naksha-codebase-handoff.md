@@ -25,11 +25,13 @@ The post-R3 local baseline is:
 
 The post-R5 repository gate is **69/69 Jest suites and 843/843 tests**, with TypeScript and lint passing. Android JavaScript export, Expo dependency validation, XML parsing, and Expo config introspection remain at their post-R4 passing baseline. Expo Doctor remains at the known 17/18 non-CNG result. Native manifest merging and AAB generation remain unverified because the installed environment lacks Android SDK 36/NDK 27 and production signing credentials.
 
-R4 is repository-complete: auth recovery, local-only sign-out, revoked refresh-token recovery, Android identity/security configuration, approved branding, and first-run Login/Signup/Guest Chart polish are committed. R5 is complete: the high-latitude Ascendant branch inversion is corrected and persisted calculation-version compatibility is explicit. R6.1 runtime freshness, R6.2 accessibility/motion, and R6.3 release infrastructure are complete. R6.4 final repository hardening is implemented pending independent review and the complete R6 gate. Accountable production signing, signed-AAB inspection, real-device acceptance, and the remaining R6 engineering work are still open. Content review C1–C4 and a signed release-candidate cycle follow R6.
+R4 is repository-complete: auth recovery, local-only sign-out, revoked refresh-token recovery, Android identity/security configuration, approved branding, and first-run Login/Signup/Guest Chart polish are committed. R5 is complete: the high-latitude Ascendant branch inversion is corrected and persisted calculation-version compatibility is explicit. R6.1 runtime freshness, R6.2 accessibility/motion, and R6.3 release infrastructure are complete. R6.4 final repository hardening is implemented pending independent review and the complete R6 gate. C1's interpretation foundation is committed through C1.3D; dignity language, outer-planet calibration, two narrow doctrine/test cleanups, and the final capability-preservation audit remain before C1 closes. Accountable production signing, signed-AAB inspection, real-device acceptance, and the signed release-candidate cycle are still open.
 
 ## Source-of-truth hierarchy
 
 - [release-hardening-plan.md](release-hardening-plan.md): current R1–R6, content, release-candidate, and launch roadmap.
+- [naksha-c1-interpretation-system-status.md](naksha-c1-interpretation-system-status.md): current C1 implementation status, verified coverage, remaining exit work, and C2 entry boundary.
+- [naksha-interpretation-standard.md](naksha-interpretation-standard.md): governing astrology doctrine and editorial acceptance contract.
 - [Feature-List.md](Feature-List.md): current implemented product behavior and known limits.
 - This handoff: current code structure, invariants, and operating notes.
 - [release-operations.md](release-operations.md): release environments, backup/recovery boundaries, diagnostics, public destinations, and operational ownership.
@@ -99,7 +101,7 @@ Dashboard guidance is deterministic and local:
 - Weekly Forecast builds a Monday–Sunday local week from seven local-noon snapshots, handles DST boundaries, deduplicates highlights, and incorporates natal Whole Sign house context.
 - Sky Now computes the ten current bodies, current-to-current aspects, and uses a separate current-sky interpretation lexicon.
 
-The guidance and interpretation libraries remain deterministic; AI is not required. The content phase after engineering hardening must address missing entries, repetition, generic phrasing, tonal balance, prompt relevance, Today's Energy repetition, and Weekly Forecast composition.
+The guidance and interpretation libraries remain deterministic; AI is not required. C1 now records the supported ten-body/five-aspect contract, 214 reachable natal and Sky Now cells, 250 Daily directional cells, 350 Weekly-highlight cells, explicit provenance/fallback state, full-precision transit selection, strict interpretation eligibility around tolerant legacy hydration, and context-aware Daily prompt selection. The committed C1.3D checkpoint passes 78 Jest suites / 989 tests. C1 exit work and C2–C4 must still address dignity shorthand, outer-planet calibration, pair-specific natal interpretation, repetition, generic phrasing, Today's Energy synthesis, and Weekly Forecast composition.
 
 R6.1 now refreshes time-sensitive guidance and Current Sky across focus/resume and local rollover without repeating chart/database work or running background timers. R6.2 provides semantic Sky Now aspect selection, contextual chart labels, inactive-route motion control, modal semantics, and reduced-motion handling. Signed-candidate lifecycle and TalkBack behavior still require device acceptance.
 
@@ -167,7 +169,7 @@ Approved Naksha launcher, adaptive foreground, splash, logo, and wordmark assets
 ## Current release blockers and sequence
 
 1. **R6 — final review/gate:** R6.1–R6.3 are complete. R6.4 source hardening is implemented pending independent review and one complete repository gate. External environments, destinations, backup, signing, device acceptance, dependency artifact inspection, and Play work are tracked in the Release Candidate checklist.
-2. **C1–C4:** lexicon completeness, editorial quality, composition quality, and astrology editorial review.
+2. **C1 exit → C2–C4:** finish the remaining C1 cleanup and capability-preservation audit, then complete editorial quality, composition quality, and astrology editorial review. See the [C1 status](naksha-c1-interpretation-system-status.md).
 3. **Release candidate:** freeze, production configuration, accountable signing, signed AAB, real-device acceptance, backend verification, Play testing, and store submission.
 4. **Launch:** Android launch and narrow stabilization fixes.
 5. **Later:** iOS, relationships/synastry, deeper transit intelligence, optional AI, and optional social features.

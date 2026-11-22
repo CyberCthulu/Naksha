@@ -1,6 +1,6 @@
 # Naksha release-hardening plan
 
-Updated **30 September 2026 (Pacific)** after R5 completion through **`88c5d2adbc66b945f7e72a773bf969c456acc9ce`**, branch **`ui/v2-redesign`**. This is the canonical current roadmap. The [12 September readiness review](release-readiness-2026-09-12.md) remains a historical snapshot.
+Updated **12 October 2026 (Pacific)** after C1.3D through **`073b5b5fb0d48abb7b480836fe72b451b9807a8d`**, branch **`ui/v2-redesign`**. This is the canonical current roadmap. The [12 September readiness review](release-readiness-2026-09-12.md) remains a historical snapshot.
 
 ## Release decision and scope
 
@@ -20,8 +20,9 @@ The V1 scope remains accounts/profile, Tropical/Whole Sign natal and guest chart
 | R4 | ✅ **COMPLETE** | Authentication recovery and Android security/identity |
 | R5 | ✅ **COMPLETE** | Astrology calculation correctness |
 | R6 | 🔵 **IN PROGRESS** | Remaining engineering release readiness |
+| C1 | 🔵 **IN PROGRESS — FOUNDATION COMPLETE** | Interpretation doctrine, coverage contract, behavioral integrity, and remaining exit cleanup |
 
-After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → Android launch → stabilization → iOS → post-launch expansion**.
+Remaining sequence: **R6 close → C1 exit → C2 → C3 → C4 → Release Candidate → Play testing → Android launch → stabilization → iOS → post-launch expansion**.
 
 ## R1 — Relational ownership and database integrity
 
@@ -184,9 +185,13 @@ After R6: **C1 → C2 → C3 → C4 → Release Candidate → Play testing → A
 
 Completing R6 does not make Naksha automatically launch-ready. Deterministic astrology content requires a dedicated freeze and review, especially Weekly Forecast composition, which can sound robotic or assembled even when its underlying astrology data is correct. AI is not required.
 
-### C1 — Lexicon completeness
+### C1 — Interpretation foundation and completeness
 
-Find missing or inconsistent lexicon entries and prove every supported deterministic combination has an intentional fallback.
+**Status: IN PROGRESS — foundation complete through C1.3D; exit cleanup remains.**
+
+C1 now has a governing [interpretation standard](naksha-interpretation-standard.md), a machine-readable coverage contract, calculation-derived reachability, canonical-body interpretation boundaries, full-precision Daily/Weekly selection, safe legacy-data behavior, and a deterministic Daily prompt hierarchy that distinguishes mechanism, exact natal target, active house, background, and fallback relevance. The committed checkpoint passes **78 Jest suites / 989 tests**, TypeScript, lint, and `git diff --check`.
+
+Remaining C1 exit work is dignity-language cleanup, outer-planet sign calibration, the rising-sign doctrine-test and benchmark-meta cleanup, and an exhaustive capability-preservation audit. See the [C1 interpretation-system status](naksha-c1-interpretation-system-status.md) for verified counts, current limitations, and the C2 entry boundary.
 
 ### C2 — Editorial quality
 

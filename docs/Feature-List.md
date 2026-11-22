@@ -28,7 +28,7 @@ A quick index of every section below, grouped into four buckets. Each section st
 * R1 relational ownership, R2 civil birth-time correctness, R3 journal/client write-surface integrity, R4 authentication recovery/Android identity, and R5 Ascendant correctness are repository-complete
 * Production signing, signed-artifact inspection, and device acceptance remain release-candidate gates
 * R6 remaining engineering readiness is in progress; R6.1 and R6.2 are repository-complete
-* C1–C4 content/editorial review remains required before release-candidate freeze
+* The C1 interpretation foundation is committed through C1.3D; C1 exit work and C2–C4 content/editorial review remain required before release-candidate freeze. See the [C1 status](naksha-c1-interpretation-system-status.md).
 * Signed Android candidate, production-backend verification, Play testing, privacy/support/store material, and real-device acceptance remain open
 * iOS and post-V1 features remain after Android launch
 
@@ -613,7 +613,7 @@ Those are roadmap tracks.
 The remaining V1 work is release work, not another major feature program:
 
 1. Complete R6 remaining engineering readiness
-2. Complete C1–C4 lexicon, editorial, composition, and astrology-content review
+2. Complete C1 exit work and the C2–C4 lexicon, editorial, composition, and astrology-content review
 3. Freeze features/content; verify the production backend and produce a signed Android AAB
 4. Run recorded real-device acceptance, Play testing-track installation, store preparation, and submission
 

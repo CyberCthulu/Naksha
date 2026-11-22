@@ -208,7 +208,7 @@ Ensure deep-link scheme in Expo config and Supabase redirect URLs match your aut
 
 ## Roadmap
 
-R1–R5 are complete. R6 remaining engineering readiness is in progress, followed by C1–C4 content review, signed-candidate QA, and Play testing. See the [current plan and acceptance gates](docs/release-hardening-plan.md). AI and subscriptions are not V1 release-hardening requirements.
+R1–R5 are complete. R6 remaining engineering readiness is in progress. The C1 interpretation foundation is committed through C1.3D, with narrow exit cleanup and a final capability audit remaining before C2–C4 editorial/composition review, signed-candidate QA, and Play testing. See the [current plan and acceptance gates](docs/release-hardening-plan.md) and [C1 status](docs/naksha-c1-interpretation-system-status.md). AI and subscriptions are not V1 release-hardening requirements.
 
 ## License
 This project is currently closed-source.
