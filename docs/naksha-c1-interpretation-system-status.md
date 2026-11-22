@@ -1,6 +1,6 @@
 # Naksha C1 interpretation-system status
 
-Updated **22 November 2026 (Pacific)** on branch `ui/v2-redesign`. The committed C1.3D documentation baseline is `5ee0905f5452807c0509dbe8f10e419706f1ba9a`; the independently approved C1.4A dignity cleanup is complete in the working tree and awaits its final commit.
+Updated **22 November 2026 (Pacific)** on branch `ui/v2-redesign`. The C1.3D documentation baseline is `5ee0905f5452807c0509dbe8f10e419706f1ba9a`; the independently approved C1.4A dignity cleanup is committed as `214b2dbe995a829e3cc858e775b28008b5dbca1e`.
 
 This document is the concise status and handoff for C1. The governing editorial doctrine remains [naksha-interpretation-standard.md](naksha-interpretation-standard.md). The canonical machine-readable coverage source is `client/lib/interpretationCoverageManifest.ts`; counts in this document summarize that contract rather than replace it.
 
@@ -227,5 +227,7 @@ The committed C1.3D checkpoint passes:
 - TypeScript;
 - ESLint;
 - `git diff --check`.
+
+The independently accepted C1.4A checkpoint passes **78 Jest suites / 992 tests**, TypeScript, ESLint, and `git diff --check`. Its 120 canonical planet-sign lookups remain nonblank.
 
 This proves structural and behavioral integrity. It does not prove editorial acceptance. The manifest currently contains no accepted-cell evidence; later human review must move content to `accepted` deliberately.

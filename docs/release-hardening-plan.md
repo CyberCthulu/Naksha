@@ -1,6 +1,6 @@
 # Naksha release-hardening plan
 
-Updated **12 October 2026 (Pacific)** after C1.3D through **`073b5b5fb0d48abb7b480836fe72b451b9807a8d`**, branch **`ui/v2-redesign`**. This is the canonical current roadmap. The [12 September readiness review](release-readiness-2026-09-12.md) remains a historical snapshot.
+Updated **22 November 2026 (Pacific)** after C1.4A through **`214b2dbe995a829e3cc858e775b28008b5dbca1e`**, branch **`ui/v2-redesign`**. This is the canonical current roadmap. The [12 September readiness review](release-readiness-2026-09-12.md) remains a historical snapshot.
 
 ## Release decision and scope
 
@@ -187,11 +187,11 @@ Completing R6 does not make Naksha automatically launch-ready. Deterministic ast
 
 ### C1 — Interpretation foundation and completeness
 
-**Status: IN PROGRESS — foundation complete through C1.3D; exit cleanup remains.**
+**Status: IN PROGRESS — foundation and C1.4A dignity cleanup complete; exit cleanup remains.**
 
-C1 now has a governing [interpretation standard](naksha-interpretation-standard.md), a machine-readable coverage contract, calculation-derived reachability, canonical-body interpretation boundaries, full-precision Daily/Weekly selection, safe legacy-data behavior, and a deterministic Daily prompt hierarchy that distinguishes mechanism, exact natal target, active house, background, and fallback relevance. The committed checkpoint passes **78 Jest suites / 989 tests**, TypeScript, lint, and `git diff --check`.
+C1 now has a governing [interpretation standard](naksha-interpretation-standard.md), a machine-readable coverage contract, calculation-derived reachability, canonical-body interpretation boundaries, full-precision Daily/Weekly selection, safe legacy-data behavior, and a deterministic Daily prompt hierarchy that distinguishes mechanism, exact natal target, active house, background, and fallback relevance. The C1.4A checkpoint passes **78 Jest suites / 992 tests**, TypeScript, lint, and `git diff --check`.
 
-Remaining C1 exit work is dignity-language cleanup, outer-planet sign calibration, the rising-sign doctrine-test and benchmark-meta cleanup, and an exhaustive capability-preservation audit. See the [C1 interpretation-system status](naksha-c1-interpretation-system-status.md) for verified counts, current limitations, and the C2 entry boundary.
+The independently approved C1.4A slice completed dignity-language cleanup and is committed. Remaining C1 exit work is outer-planet sign calibration, the rising-sign doctrine-test and benchmark-meta cleanup, and an exhaustive capability-preservation audit. See the [C1 interpretation-system status](naksha-c1-interpretation-system-status.md) for verified counts, current limitations, and the C2 entry boundary.
 
 ### C2 — Editorial quality
 

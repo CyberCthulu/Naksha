@@ -1,6 +1,6 @@
 # Naksha Codebase Handoff
 
-Last reviewed: 2026-09-30 during R6.4 final repository hardening (`ui/v2-redesign`)
+Last reviewed: 2026-11-22 through C1.4A (`ui/v2-redesign`)
 
 This document is the current engineering handoff. Use [Feature-List.md](Feature-List.md) for implemented product scope and [release-hardening-plan.md](release-hardening-plan.md) for the active release sequence. Dated audits and implementation plans under `docs/` are historical evidence; their baselines and instructions do not override these current documents.
 
@@ -25,7 +25,7 @@ The post-R3 local baseline is:
 
 The post-R5 repository gate is **69/69 Jest suites and 843/843 tests**, with TypeScript and lint passing. Android JavaScript export, Expo dependency validation, XML parsing, and Expo config introspection remain at their post-R4 passing baseline. Expo Doctor remains at the known 17/18 non-CNG result. Native manifest merging and AAB generation remain unverified because the installed environment lacks Android SDK 36/NDK 27 and production signing credentials.
 
-R4 is repository-complete: auth recovery, local-only sign-out, revoked refresh-token recovery, Android identity/security configuration, approved branding, and first-run Login/Signup/Guest Chart polish are committed. R5 is complete: the high-latitude Ascendant branch inversion is corrected and persisted calculation-version compatibility is explicit. R6.1 runtime freshness, R6.2 accessibility/motion, and R6.3 release infrastructure are complete. R6.4 final repository hardening is implemented pending independent review and the complete R6 gate. C1's interpretation foundation is committed through C1.3D; dignity language, outer-planet calibration, two narrow doctrine/test cleanups, and the final capability-preservation audit remain before C1 closes. Accountable production signing, signed-AAB inspection, real-device acceptance, and the signed release-candidate cycle are still open.
+R4 is repository-complete: auth recovery, local-only sign-out, revoked refresh-token recovery, Android identity/security configuration, approved branding, and first-run Login/Signup/Guest Chart polish are committed. R5 is complete: the high-latitude Ascendant branch inversion is corrected and persisted calculation-version compatibility is explicit. R6.1 runtime freshness, R6.2 accessibility/motion, and R6.3 release infrastructure are complete. R6.4 final repository hardening is implemented pending independent review and the complete R6 gate. C1's interpretation foundation and independently approved C1.4A dignity cleanup are committed; outer-planet calibration, two narrow doctrine/test cleanups, and the final capability-preservation audit remain before C1 closes. Accountable production signing, signed-AAB inspection, real-device acceptance, and the signed release-candidate cycle are still open.
 
 ## Source-of-truth hierarchy
 
@@ -101,7 +101,7 @@ Dashboard guidance is deterministic and local:
 - Weekly Forecast builds a Monday–Sunday local week from seven local-noon snapshots, handles DST boundaries, deduplicates highlights, and incorporates natal Whole Sign house context.
 - Sky Now computes the ten current bodies, current-to-current aspects, and uses a separate current-sky interpretation lexicon.
 
-The guidance and interpretation libraries remain deterministic; AI is not required. C1 now records the supported ten-body/five-aspect contract, 214 reachable natal and Sky Now cells, 250 Daily directional cells, 350 Weekly-highlight cells, explicit provenance/fallback state, full-precision transit selection, strict interpretation eligibility around tolerant legacy hydration, and context-aware Daily prompt selection. The committed C1.3D checkpoint passes 78 Jest suites / 989 tests. C1 exit work and C2–C4 must still address dignity shorthand, outer-planet calibration, pair-specific natal interpretation, repetition, generic phrasing, Today's Energy synthesis, and Weekly Forecast composition.
+The guidance and interpretation libraries remain deterministic; AI is not required. C1 now records the supported ten-body/five-aspect contract, 214 reachable natal and Sky Now cells, 250 Daily directional cells, 350 Weekly-highlight cells, explicit provenance/fallback state, full-precision transit selection, strict interpretation eligibility around tolerant legacy hydration, and context-aware Daily prompt selection. The committed C1.4A checkpoint passes 78 Jest suites / 992 tests and corrects selective dignity shorthand. C1 exit work and C2–C4 must still address outer-planet calibration, pair-specific natal interpretation, repetition, generic phrasing, Today's Energy synthesis, and Weekly Forecast composition.
 
 R6.1 now refreshes time-sensitive guidance and Current Sky across focus/resume and local rollover without repeating chart/database work or running background timers. R6.2 provides semantic Sky Now aspect selection, contextual chart labels, inactive-route motion control, modal semantics, and reduced-motion handling. Signed-candidate lifecycle and TalkBack behavior still require device acceptance.
 
