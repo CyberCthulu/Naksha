@@ -759,9 +759,12 @@ describe("selection and prompt/practice contracts", () => {
     );
   });
 
-  it("closes dignity cleanup without dropping unrelated C1 follow-ups", () => {
+  it("keeps completed editorial follow-ups closed without dropping outstanding C1 work", () => {
     expect(KNOWN_CONFORMANCE_FOLLOW_UPS).not.toContain(
       "dignity-language-cleanup",
+    );
+    expect(KNOWN_CONFORMANCE_FOLLOW_UPS).not.toContain(
+      "outer-planet-calibration",
     );
     expect(KNOWN_CONFORMANCE_FOLLOW_UPS).toEqual(
       expect.arrayContaining([
@@ -769,7 +772,6 @@ describe("selection and prompt/practice contracts", () => {
         "future-birth-date-policy",
         "rising-sign-doctrine-test-pattern-narrowing",
         "benchmark-meta-commentary-cleanup",
-        "outer-planet-calibration",
       ]),
     );
   });

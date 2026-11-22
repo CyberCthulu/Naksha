@@ -224,3 +224,43 @@ describe('Planet-sign dignity doctrine', () => {
     }
   })
 })
+
+describe('Outer-planet sign context', () => {
+  const outerPlanets = ['Uranus', 'Neptune', 'Pluto'] as const
+  const unsupportedSignAloneClaims = [
+    /\byou(?:’re|'re| are)\s+(?:wired|naturally|destined)\b/i,
+    /\byou(?:’re|'re| are)\s+here to\b/i,
+    /\byou possess an innate\b/i,
+    /\byour life\s+(?:pushes|challenges)\b/i,
+    /\byour (?:gift|role|path|transformation)\s+(?:is|lies|involves|comes|centers|occurs|unfolds|happens)\b/i,
+    /\byou may (?:inherit intense emotional patterns|experience (?:loss|sudden shifts))\b/i,
+    /\byou may absorb feelings\b/i,
+    /\byou(?:’re|'re| are) deeply intuitive\b/i,
+  ]
+
+  it('keeps all 36 outer-planet sign readings resolvable in both lengths', () => {
+    const meanings = outerPlanets.flatMap((planet) =>
+      ZODIAC_FULL.map((sign) => getPlanetSignMeaning(planet, sign))
+    )
+
+    expect(meanings).toHaveLength(36)
+    meanings.forEach((meaning) => {
+      expect(meaning).not.toBeNull()
+      expect(meaning?.short.trim()).not.toBe('')
+      expect(meaning?.long.trim()).not.toBe('')
+    })
+  })
+
+  it('does not infer destiny, innate identity, or private history from an outer-planet sign alone', () => {
+    for (const planet of outerPlanets) {
+      for (const sign of ZODIAC_FULL) {
+        const meaning = getPlanetSignMeaning(planet, sign)
+        const text = `${meaning?.short ?? ''} ${meaning?.long ?? ''}`
+
+        unsupportedSignAloneClaims.forEach((claim) => {
+          expect(text).not.toMatch(claim)
+        })
+      }
+    }
+  })
+})

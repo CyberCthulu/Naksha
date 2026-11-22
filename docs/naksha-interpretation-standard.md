@@ -32,7 +32,7 @@ The following conclusions remain true at current HEAD:
 |---|---|
 | Natal aspects | The UI labels the planet pair but resolves interpretation through one of five generic aspect-type records. There is no planet-pair-specific natal aspect interpretation. |
 | Sky Now | All 45 unordered planet pairs have authored pair themes. For 44 pairs, conjunction/trine/sextile share one `potential` meaning and opposition/square share one `friction` meaning; the practice and reflection are also shared across all five aspects. Moon–Saturn alone has five aspect-specific meaning/practice overrides. |
-| Planet × sign | 120 of 120 keys resolve to authored entries, but content quality and personalness vary, especially for Uranus, Neptune, and Pluto signs. |
+| Planet × sign | 120 of 120 keys resolve to authored entries. C1.4B calibrated the 36 outer-planet sign records as shared symbolism; full natal prose and rendered-reading acceptance remain later work. |
 | Planet × house | 120 of 120 keys resolve, but all 120 long entries use the same “Growth comes through…” closing structure. |
 | House × sign | 144 of 144 keys resolve. The current source uses “Growth comes through…” in 134 of 144 long entries. |
 | Planet summaries | `buildPlanetSummary` joins a planet-sign short meaning to a planet-house short meaning with a fixed bridge. The detail view then presents the two long meanings as separate blocks. It does not synthesize the placement. |
@@ -99,6 +99,8 @@ Planetary “at home” phrasing is not a supported interpretive mechanism and m
 Uranus, Neptune, and Pluto remain part of V1. Their functions can be personally relevant through chart-specific evidence, especially house placement and aspects to personal planets when those factors are actually supported.
 
 Their sign placements span cohorts and must first be framed as shared or generational symbolism. An outer-planet sign alone must not be presented as a unique personality, private history, mission, or destiny. Aspects solely between slow outer planets also require collective and generational calibration.
+
+C1.4B calibrated all 36 Uranus, Neptune, and Pluto sign readings to this sign-only boundary after independent editorial review. This establishes doctrinal framing, not acceptance of complete natal readings or their composition with house and aspect layers.
 
 Future outer-planet authoring must follow this evidence ladder:
 
@@ -463,12 +465,12 @@ This is temporary and directional. It does not predict an argument, and it is no
 
 Before the relevant rewrites begin, the standard’s benchmark set must add:
 
-- an outer-planet context ladder comparing sign alone, sign plus house, and an aspect to a personal planet;
+- a C1.4C outer-planet evidence-ladder benchmark comparing sign alone, sign plus house, and an aspect to a personal natal planet;
 - a Sky Now collective reading;
 - a guest-chart reading with subject-safe language;
 - a fully composed Daily reading.
 
-These are benchmark requirements for later C1–C3 work, not content to author during C1.1 closure.
+C1.4C must establish the outer-planet evidence-ladder benchmark before benchmark-derived natal authoring. The other examples remain requirements for the relevant later C1–C3 work.
 
 ## 12. Rendering expectations
 
@@ -518,6 +520,8 @@ A composed reading fails when:
 - the reader must perform the final synthesis.
 
 Composition should be reviewed with actual end-to-end fixtures, including natal placement pages, specific natal aspects, Sky Now aspect detail, expanded Today’s Energy, and expanded Weekly Forecast.
+
+C2 natal-composition acceptance must include outer-planet placements. The current planet summary can join a collective sign statement to a personal house statement with “This tends to show up most clearly when…”. That bridge can imply a personal conclusion the sign alone does not support. The complete reading must instead connect sign, house, and supported aspect evidence as distinct astrological layers, with the house locating and aspects qualifying the shared sign theme where present.
 
 ## 14. Testing philosophy
 
@@ -592,7 +596,7 @@ C1.1 completed the following narrow corrections without changing calculation, ke
 - `client/lib/lexicon/houses/index.ts`: replaced dormant “on the cusp of this house” fallback language with Whole Sign house language;
 - `client/lib/lexicon/__tests__/doctrineIntegrity.test.ts`: protects the doctrine across generic houses, planet-house content, house-sign content, and the fallback.
 
-At the C1.1 closure, `client/lib/lexicon/planets/index.ts` still needed generational calibration for all 36 Uranus, Neptune, and Pluto sign entries, and selective “at home” dignity shorthand remained. C1.4A subsequently corrected the dignity shorthand; outer-planet calibration remains separate work.
+At the C1.1 closure, `client/lib/lexicon/planets/index.ts` still needed generational calibration for all 36 Uranus, Neptune, and Pluto sign entries, and selective “at home” dignity shorthand remained. C1.4A corrected the dignity shorthand; independently reviewed C1.4B completed the sign-only generational calibration.
 
 ## 18. C1.1 closure and C1.2 audit boundary
 
@@ -608,7 +612,7 @@ C1.1 closed when the correction record above and its regression tests passed. Th
 
 C1.2A inspected the live calculation and product constraints. It did not infer a birth window, author the aspect rewrite, or change verified astronomy merely to simplify the coverage matrix. C1.2B encodes those reviewed findings in the machine-readable contract below.
 
-Outer-planet sign calibration, natal aspect architecture, and the large lexicon rewrite remain later C1–C3 work. C1.4A completed the narrow dignity-language cleanup.
+Natal aspect architecture and the large lexicon rewrite remain later C2–C3 work. C1.4A completed the narrow dignity-language cleanup, and C1.4B completed outer-planet sign calibration.
 
 ## 19. C1.2B machine-readable coverage contract
 
@@ -631,7 +635,7 @@ Legacy saved aspects may hydrate defensively, but natal interpretation requires 
 
 Daily prompt relevance follows the doctrine hierarchy: the transit mechanism is evaluated first, and a prompt strongly matched to multiple active mechanism sources leads. A complete prompt written for the exact active natal target may also lead before house context; generic aspect-only or transiting-planet-only matches need not. The exact active Whole Sign house then supplies the life-area context before broader single-primitive and background fallbacks.
 
-Known conformance work remains explicitly deferred: define the product epoch and reject future birth dates by the birth location's local civil date; narrow rising-sign doctrine-test patterns before rising-sign content work; remove benchmark meta-commentary before benchmark-derived authoring; and calibrate outer-planet sign content. C1.4A completed the dignity-language cleanup after independent editorial acceptance.
+Known conformance work remains explicitly deferred: define the product epoch and reject future birth dates by the birth location's local civil date; narrow rising-sign doctrine-test patterns before rising-sign content work; and remove benchmark meta-commentary before benchmark-derived authoring. C1.4A completed dignity-language cleanup, and independently reviewed C1.4B completed the 36-record outer-planet sign calibration. Neither completion marks all natal readings editorially accepted.
 
 ## 20. C1.2C contract-hardening clarifications
 

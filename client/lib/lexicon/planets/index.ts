@@ -682,87 +682,87 @@ With time, you develop spiritual strength and emotional boundaries, allowing emp
 
 Uranus: {
   Aries: {
-    short: 'You’re wired to initiate change boldly and independently.',
-    long: `With Uranus in Aries, innovation comes through action. You’re instinctively driven to break new ground, take risks, and act on sudden inspiration.
+    short: 'A shared urge to break patterns through bold, independent action.',
+    long: `Uranus in Aries places disruption in the realm of initiative: established ideas about who gets to act first, take risks, or claim independence come under pressure. Sudden beginnings can open possibilities that caution would miss.
 
-Your challenge is pacing yourself. When grounded, your courage becomes a catalyst for powerful new beginnings—not just impulsive rebellion.`
+The same urgency can make revolt an end in itself. Its constructive form pairs courage with enough patience to see a new direction through.`
   },
 
   Taurus: {
-    short: 'You’re here to revolutionize values, security, and material systems.',
-    long: `Uranus in Taurus disrupts comfort zones around stability, money, and self-worth. You may experience sudden shifts in what you rely on or value.
+    short: 'Innovation presses against inherited ideas of security and value.',
+    long: `Uranus in Taurus brings change to the systems people count on for stability: money, resources, ownership, and the material habits of everyday life. A shared attachment to what feels solid meets an impulse to make it work differently.
 
-Over time, you learn that true security comes from adaptability. Your ability to innovate within practical systems can reshape how stability itself is defined.`
+Practical invention can widen access and resilience; change pursued only for shock can unsettle what people need. The deeper question is which foundations deserve protection and which can be rebuilt.`
   },
 
   Gemini: {
-    short: 'Your mind is fast, unconventional, and naturally inventive.',
-    long: `With Uranus in Gemini, your thinking style is electric and original. You may process information differently than others or jump between ideas rapidly.
+    short: 'Disruption reshapes how information is learned and exchanged.',
+    long: `Uranus in Gemini unsettles familiar channels of thought, language, and exchange. New ways of connecting ideas can make learning more open and communication more inventive, especially when established categories feel too narrow.
 
-Your gift is mental innovation—new ways of communicating, learning, or connecting ideas. Structure helps turn flashes of insight into lasting contributions.`
+The pace can also reward novelty over understanding. A flash of insight gains force when it is tested, explained, and made useful to others.`
   },
 
   Cancer: {
-    short: 'You’re here to redefine emotional safety and belonging.',
-    long: `Uranus in Cancer brings change to family patterns, emotional bonds, and ideas of home. You may feel different from your roots or experience sudden emotional shifts.
+    short: 'Shared ideas of home and care make room for new forms of belonging.',
+    long: `Uranus in Cancer challenges inherited models of family, shelter, and emotional security. New forms of care can allow more freedom than familiar roles or domestic arrangements permit.
 
-Your path involves creating new models of care and connection—ones that honor individuality without sacrificing emotional truth.`
+The tension is between protecting bonds and refusing constraints that have become stifling. A new meaning of home still needs room for dependable care.`
   },
 
   Leo: {
-    short: 'Your self-expression is unique, bold, and impossible to ignore.',
-    long: `With Uranus in Leo, creativity and identity are infused with originality. You’re not here to perform a role—you’re here to reinvent it.
+    short: 'Creative conventions meet a collective appetite for originality.',
+    long: `Uranus in Leo questions who gets to be seen and which forms of art or performance count as authentic. Instead of merely performing inherited roles, creative experiments can remake the roles themselves and open space for unfamiliar voices.
 
-Learning to own your uniqueness without needing constant reaction or shock value allows your authentic brilliance to shine.`
+Visibility can become its own demand, though, and shock can replace substance. The creative impulse gains depth when the work matters beyond the reaction it provokes.`
   },
 
   Virgo: {
-    short: 'You innovate through systems, work, and practical problem-solving.',
-    long: `Uranus in Virgo awakens new ways of being useful, efficient, and precise. You may question traditional routines or feel called to improve systems that others accept.
+    short: 'Everyday systems become a field for practical innovation.',
+    long: `Uranus in Virgo brings experimentation to work, routines, and the methods used to solve ordinary problems. A cohort may question whether established measures of efficiency actually serve the people who live with them.
 
-Your gift is practical innovation—bringing fresh solutions into everyday life without losing attention to detail.`
+Careful redesign can make useful systems more adaptable. Constant optimization, however, can make daily life feel like a problem that never ends. A useful change gives people more room to work, not just a higher standard they must meet.`
   },
 
   Libra: {
-    short: 'You’re here to challenge norms around relationships and fairness.',
-    long: `With Uranus in Libra, partnerships may feel unconventional or unpredictable. You seek equality, freedom, and authenticity in connection.
+    short: 'Relationship norms are tested against freedom and fairness.',
+    long: `Uranus in Libra questions the social agreements that define partnership, reciprocity, and what counts as fair. A cohort may experiment with new ways of relating when familiar roles leave too little room for equality or independence.
 
-Your growth comes from balancing independence with commitment, creating relationships that evolve rather than conform.`
+Change can make connection more honest, but treating every commitment as a limit can weaken trust. Freedom in a relationship still has to make room for mutual consideration.`
   },
 
   Scorpio: {
-    short: 'You awaken through deep transformation and emotional truth.',
-    long: `Uranus in Scorpio brings sudden insights around power, intimacy, and control. You may experience intense emotional shifts that force growth and renewal.
+    short: 'Unsettling insights challenge old rules around power and intimacy.',
+    long: `Uranus in Scorpio disrupts what a culture keeps private about desire, dependency, control, and loss. Sudden exposure of a hidden arrangement can invite greater honesty about how power moves between people.
 
-Your strength lies in your ability to face taboo or hidden truths and emerge transformed, helping others do the same.`
+Breaking secrecy is not the same as earning trust; revelation without care can become another form of control. Its insight is most useful when paired with respect for boundaries.`
   },
 
   Sagittarius: {
-    short: 'You’re here to revolutionize belief systems and worldviews.',
-    long: `With Uranus in Sagittarius, your ideas challenge tradition, dogma, and outdated philosophies. You may feel driven to explore beyond accepted truths.
+    short: 'A shared challenge to settled beliefs opens new horizons.',
+    long: `Uranus in Sagittarius puts innovation into belief, education, travel, and the stories people use to explain the world. A cohort may cross inherited boundaries in search of a wider view.
 
-Your role is expanding perspectives—grounding freedom in wisdom rather than rebellion for its own sake.`
+An open horizon can sharpen inquiry, while reflexively rejecting every tradition can make novelty another dogma. Exploration has more depth when it risks revising its own assumptions, not only those it inherited.`
   },
 
   Capricorn: {
-    short: 'You’re here to disrupt outdated structures and redefine success.',
-    long: `Uranus in Capricorn shakes up authority, ambition, and institutions. You may feel tension between tradition and innovation in your career or life path.
+    short: 'Established structures face pressure to become more adaptable.',
+    long: `Uranus in Capricorn brings disruption to institutions, authority, and inherited measures of success. A system built to endure may become too rigid to meet present needs.
 
-Your gift is modernizing systems—introducing change that makes structures more humane, flexible, and future-ready.`
+Reform can make structures more humane and durable; rebellion without a workable replacement can leave people unsupported. Lasting innovation has to carry responsibility as well as break with the past.`
   },
 
   Aquarius: {
-    short: 'You’re naturally ahead of your time and wired for innovation.',
-    long: `Uranus in Aquarius can challenge the habits and rules that shape groups, institutions, and shared futures. You think in systems, futures, and collective progress. You may feel different, detached, or misunderstood early on.
+    short: 'Collective systems invite experiments in freedom and belonging.',
+    long: `Uranus in Aquarius can challenge the habits and rules that shape groups, institutions, and shared futures. Networks may create new forms of participation when membership no longer has to mean conformity.
 
-Embracing your originality while staying connected allows your ideas to genuinely improve the world around you.`
+The same distance that makes a system easier to question can make its human costs easier to miss. If this placement is personally emphasized, originality works best when it remains accountable to the people affected by change.`
   },
 
   Pisces: {
-    short: 'You awaken through intuition, spirituality, and imagination.',
-    long: `With Uranus in Pisces, insight comes through dreams, symbolism, and subtle perception. You may experience sudden spiritual awakenings or emotional revelations.
+    short: 'Unconventional visions unsettle fixed ideas of faith and imagination.',
+    long: `Uranus in Pisces brings change to shared spiritual language, artistic imagination, and ways of understanding experiences that resist literal explanation. Unusual images or intuitions can open a culture to possibilities it had dismissed.
 
-Grounding intuition in reality helps transform inspiration into meaningful creative or healing work.`
+Insight still needs discernment: a startling feeling is not proof on its own. Grounding inspiration in observation or craft helps make an unusual vision communicable.`
   },
 },
 
@@ -773,87 +773,87 @@ Grounding intuition in reality helps transform inspiration into meaningful creat
 
 Neptune: {
   Aries: {
-    short: 'Your dreams push you toward action and self-discovery.',
-    long: `With Neptune in Aries, inspiration comes in flashes of courage and personal vision. You may idealize independence or feel called to pursue a dream through bold action.
+    short: 'A shared ideal of courage gives inspiration a forward edge.',
+    long: `Neptune in Aries gives a cohort images of the brave initiator: someone who acts before certainty arrives. That vision can inspire needed beginnings, especially when people have been taught to wait for permission.
 
-The challenge is clarity—learning when to act on intuition versus impulse. When aligned, you become a pioneer for inspired, purpose-driven change.`
+It can also blur the line between conviction and impulse, or turn independence into an ideal no one can live up to. The useful question is what a bold vision asks people to do in practice.`
   },
 
   Taurus: {
-    short: 'You seek spiritual meaning through stability, beauty, and the senses.',
-    long: `Neptune in Taurus blends imagination with the material world. You may idealize comfort, security, or physical pleasure, finding peace in nature, art, or routine.
+    short: 'Beauty and material security become vessels for shared longing.',
+    long: `Neptune in Taurus blends imagination with the tangible: land, food, art, money, and the comforts people hope will make life feel safe. Sensory experience can seem transcendent, and a more generous material order can feel imaginable.
 
-Your growth comes from grounding dreams in reality—so inspiration nourishes your life rather than blurring your sense of value or worth.`
+Beauty can restore attention to what sustains life. It can also make possessions stand in for peace, especially when comfort is asked to answer needs it cannot meet.`
   },
 
   Gemini: {
-    short: 'Your imagination flows through thoughts, words, and ideas.',
-    long: `With Neptune in Gemini, intuition and intellect intertwine. You may feel inspired by language, storytelling, symbolism, or abstract ideas—but also prone to mental fog.
+    short: 'Language carries shared dreams, symbols, and elusive meanings.',
+    long: `Neptune in Gemini places collective ideals in language, media, and the exchange of ideas. Metaphor and storytelling can carry meanings that plain facts alone struggle to hold.
 
-Learning to slow down and listen beneath the noise helps you translate inspiration into meaningful communication.`
+The same openness can let suggestion pass for evidence or blur what was actually said. Imaginative communication benefits from checking a compelling impression against clear information.`
   },
 
   Cancer: {
-    short: 'You’re deeply intuitive and emotionally sensitive to your surroundings.',
-    long: `Neptune in Cancer heightens empathy and emotional perception. You may absorb feelings from family, environments, or collective moods without realizing it.
+    short: 'Collective images of home and care carry powerful longing.',
+    long: `Neptune in Cancer invests home, family, and belonging with an ideal of unconditional shelter. This can widen compassion for people who lack safety or a place to belong.
 
-Developing emotional boundaries allows your compassion to become a source of strength rather than emotional overwhelm.`
+An imagined perfect home can also hide the ordinary limits and negotiations that real care requires. Warmth is more sustainable when it does not ask one person to carry every feeling nearby.`
   },
 
   Leo: {
-    short: 'You dream of expressing your true self creatively and authentically.',
-    long: `With Neptune in Leo, imagination fuels creativity, romance, and self-expression. You may idealize recognition or feel called to inspire others through art or presence.
+    short: 'Art and visibility become screens for collective ideals.',
+    long: `Neptune in Leo lends glamour to creativity, performance, romance, and the figure who seems to shine effortlessly. Shared images of artistic greatness can stir people to make something expressive and generous.
 
-Staying connected to your authentic self—rather than an idealized image—helps your creativity shine without distortion.`
+The spell can fade when admiration replaces attention to the work itself, or when an image of authenticity becomes another role to perform. Personal expression gains clarity when inspiration has room for imperfection.`
   },
 
   Virgo: {
-    short: 'You seek meaning through service, healing, and refinement.',
-    long: `Neptune in Virgo brings sensitivity into the realm of work, health, and usefulness. You may feel called to help, heal, or improve systems—but struggle with perfectionism or burnout.
+    short: 'The ideal of being useful meets the limits of imperfect systems.',
+    long: `Neptune in Virgo places a shared longing for care inside work, health, and everyday service. It can inspire thoughtful attention to people whom efficient systems overlook.
 
-Compassion for yourself is key. When grounded, your intuition becomes practical wisdom and gentle service.`
+It can also romanticize self-sacrifice or promise a purity that no routine can deliver. Practical compassion helps with what is possible without treating every flaw as a failure to care.`
   },
 
   Libra: {
-    short: 'You idealize harmony, connection, and relational balance.',
-    long: `With Neptune in Libra, relationships are infused with romance, empathy, and idealism. You may see the best in others—sometimes to your own detriment.
+    short: 'Harmony and fairness become compelling shared ideals.',
+    long: `Neptune in Libra gives partnership and social balance an almost luminous promise: people might meet one another without domination or needless conflict. That ideal can deepen empathy and diplomacy.
 
-Learning to maintain clarity and self-definition allows your love and diplomacy to flourish without self-sacrifice.`
+It can also make a polished agreement look fair when someone's needs remain unspoken. The wish for harmony needs the support of clear terms and honest disagreement.`
   },
 
   Scorpio: {
-    short: 'You’re drawn to mystery, transformation, and emotional depth.',
-    long: `Neptune in Scorpio intensifies intuition around power, intimacy, and hidden truths. You may feel magnetically pulled toward deep emotional or spiritual experiences.
+    short: 'A shared fascination with hidden motives complicates intimacy.',
+    long: `Neptune in Scorpio gives mystery to questions of trust, desire, secrecy, and power. Cultural images of profound intimacy can make people more willing to explore what is usually kept private.
 
-The work lies in discernment—learning when to surrender and when to protect your emotional boundaries.`
+The same longing can mistake intensity for honesty or surrender for safety. When this theme is personally active, discernment matters as much as openness: what is felt deeply still needs to be tested against how someone behaves.`
   },
 
   Sagittarius: {
-    short: 'You dream of truth, freedom, and higher meaning.',
-    long: `With Neptune in Sagittarius, spirituality and philosophy are central themes. You may idealize belief systems, teachers, or distant horizons.
+    short: 'Belief and exploration carry shared visions of freedom.',
+    long: `Neptune in Sagittarius reaches toward distant horizons, teachers, and stories that promise a larger meaning. This can open a cohort to unfamiliar philosophies and a more generous sense of possibility.
 
-Grounding faith in lived experience helps transform inspiration into wisdom rather than blind optimism or escapism.`
+It can also place too much faith in a guide or an answer that seems to explain everything. The constructive expression keeps wonder alive while allowing experience and evidence to revise belief.`
   },
 
   Capricorn: {
-    short: 'You seek to merge dreams with responsibility and achievement.',
-    long: `Neptune in Capricorn blurs the line between ambition and meaning. You may idealize success or feel disillusioned with traditional definitions of authority and status.
+    short: 'Dreams of meaningful authority meet the reality of institutions.',
+    long: `Neptune in Capricorn places collective hopes in achievement, leadership, and durable structures. Institutions may promise not only order but meaning, making disillusionment sharp when their actions fail that ideal.
 
-Your path involves redefining success in soulful terms—building structures that support purpose, not just productivity.`
+The placement can inspire structures that serve a real purpose instead of only projecting prestige. It also invites scrutiny of what success asks people to overlook.`
   },
 
   Aquarius: {
-    short: 'You dream of collective progress and a more compassionate future.',
-    long: `With Neptune in Aquarius, imagination extends to humanity as a whole. You may feel inspired by social change, innovation, or visionary ideals.
+    short: 'Collective progress becomes an object of hope and projection.',
+    long: `With Neptune in Aquarius, imagination extends to humanity as a whole. Shared visions of networks, innovation, and social change can make cooperation across distance seem possible.
 
-Staying grounded helps ensure your hopes translate into real-world impact rather than remaining abstract or detached.`
+The danger is loving the idea of a better future more than the people living in the present. A vision gains substance when a group can name whose needs it serves and how its promises will be tested.`
   },
 
   Pisces: {
-    short: 'You’re deeply intuitive, imaginative, and spiritually sensitive.',
-    long: `Neptune in Pisces can express imagination and spiritual longing through empathy, art, and a sensitivity to what is hard to name. You may feel connected to unseen realms, emotions, or collective suffering.
+    short: 'Shared imagination turns toward empathy, art, and the unseen.',
+    long: `Neptune in Pisces can express collective imagination and spiritual longing through empathy, art, and sensitivity to what is hard to name. A culture may find new language for grief, compassion, or experiences that resist neat categories.
 
-Learning boundaries is essential. When grounded, your sensitivity becomes a powerful channel for healing, art, and compassion.`
+Porous boundaries can foster care, but they can also blur the difference between helping and being overwhelmed. A compelling vision of compassion needs discernment about what can actually be offered without erasing limits.`
   },
 },
 
@@ -864,87 +864,87 @@ Learning boundaries is essential. When grounded, your sensitivity becomes a powe
 
 Pluto: {
   Aries: {
-    short: 'Your transformation comes through reclaiming personal power.',
-    long: `With Pluto in Aries, your life pushes you to confront issues of independence, anger, and self-assertion. You may experience intense struggles around identity or the right to act freely.
+    short: 'Autonomy and the right to act become questions of power.',
+    long: `Pluto in Aries brings deep questions of power into independence, assertion, and conflict. Struggles over who is allowed to initiate change can expose whose anger is treated as legitimate.
 
-Through facing conflict and courageously redefining yourself, you learn that true power comes from conscious action rather than force or reaction.`
+Courage can challenge coercion, but force can also disguise itself as freedom. Where personally emphasized in a chart, this pattern may ask for action that is deliberate enough to avoid repeating the control it resists.`
   },
 
   Taurus: {
-    short: 'Your transformation centers on security, values, and self-worth.',
-    long: `Pluto in Taurus brings deep change around money, possessions, and stability. You may experience loss or upheaval that forces you to redefine what truly matters.
+    short: 'Shared assumptions about wealth and security face deep scrutiny.',
+    long: `Pluto in Taurus puts power into money, land, resources, and the systems that decide who can feel materially secure. Pressure on these foundations can reveal where ownership has been confused with worth.
 
-By learning to let go of attachment and fear, you discover an unshakable sense of inner value that no external change can take away.`
+Repair may require patient stewardship rather than either hoarding or destroying what people depend on. An individual chart can locate where questions of possession, dependence, and value become personally consequential.`
   },
 
   Gemini: {
-    short: 'Your transformation happens through thought, communication, and truth.',
-    long: `With Pluto in Gemini, words and ideas carry enormous power. You may experience mental intensity, obsession with understanding, or transformative conversations.
+    short: 'Information and language become sites of power and contest.',
+    long: `With Pluto in Gemini, words and ideas carry enormous power. Control of stories, education, and channels of communication shapes what can be known or said.
 
-Your growth lies in using language consciously—speaking truth without manipulation and learning when silence is just as powerful as speech.`
+Language can expose a hidden truth or manipulate an audience into accepting one. The choice to speak or remain silent can itself shift power; inquiry becomes more useful when it does not turn every exchange into a struggle for control.`
   },
 
   Cancer: {
-    short: 'Your transformation runs through emotional security and family patterns.',
-    long: `Pluto in Cancer brings deep healing around family, ancestry, and emotional safety. You may inherit intense emotional patterns or feel responsible for holding others together.
+    short: 'Power beneath ideas of home, kinship, and safety comes into view.',
+    long: `Pluto in Cancer draws attention to the structures that define family, protection, and belonging. A culture may have to examine whose homes are secure, whose needs are called private, and who sets the terms of belonging.
 
-Reclaiming your emotional autonomy allows you to nurture from strength rather than survival, transforming inherited wounds into resilience.`
+Protection can conceal control when questioning an inherited role is treated as betrayal. Care becomes more honest when it makes room for autonomy as well as attachment.`
   },
 
   Leo: {
-    short: 'Your transformation centers on identity, creativity, and self-expression.',
-    long: `With Pluto in Leo, issues of recognition, pride, and authenticity are profound. You may experience power struggles around being seen or validated.
+    short: 'Creative visibility raises questions of influence and control.',
+    long: `Pluto in Leo intensifies the power of performance, celebrity, leadership, and the desire to be seen. A cohort may both elevate charismatic figures and ask whose creativity is overlooked when attention gathers around them.
 
-True empowerment comes when you express yourself from the heart—creating not to dominate, but to inspire and lead with integrity.`
+Expression can bring life to shared possibilities, or become a contest for admiration. Making something honest can matter more than controlling the response to it.`
   },
 
   Virgo: {
-    short: 'Your transformation unfolds through service, healing, and self-improvement.',
-    long: `Pluto in Virgo intensifies themes around work, health, and usefulness. You may feel driven to fix, purify, or control systems—sometimes turning that intensity inward.
+    short: 'Work and health systems expose the power hidden in standards.',
+    long: `Pluto in Virgo intensifies questions of labor, health, usefulness, and who defines a task as done well. Demands for efficiency or purity can give one group control over another's daily life.
 
-Learning compassion for imperfection allows your desire to help and heal to become a source of empowerment rather than self-criticism.`
+Close attention can repair neglected systems; relentless correction can make people feel reduced to their flaws. The same scrutiny can turn inward when people measure themselves against impossible standards. Useful reform leaves room for the imperfect people who have to live with it.`
   },
 
   Libra: {
-    short: 'Your transformation occurs through relationships and balance of power.',
-    long: `With Pluto in Libra, relationships become arenas for deep psychological change. You may encounter intense partnerships, power struggles, or lessons around equality.
+    short: 'The terms of partnership reveal hidden imbalances of power.',
+    long: `Pluto in Libra draws power into agreements, alliances, and ideas of fairness. A cohort may question relationships that look balanced on the surface while one side holds the ability to set the terms.
 
-By confronting dependency and control, you learn to form connections rooted in mutual respect and shared strength.`
+Confronting dependency can make reciprocity more real; turning every difference into a contest can make negotiation impossible. House and aspect context can show whether this shared pattern becomes a prominent personal theme.`
   },
 
   Scorpio: {
-    short: 'You are wired for profound emotional and psychological transformation.',
-    long: `Pluto in Scorpio brings questions of power, loss, and renewal into the intimate territory of trust and what people keep hidden. You’re naturally attuned to what others avoid—truth, pain, and emotional depth.
+    short: 'Hidden arrangements of trust and control invite deep scrutiny.',
+    long: `Pluto in Scorpio brings questions of power, loss, and renewal into the intimate territory of trust and what people keep hidden. A cohort may bring taboo subjects into view and question who benefits from secrecy.
 
-Your power lies in your capacity to face darkness without being consumed by it, emerging again and again renewed and wiser.`
+Facing a difficult truth can loosen control; exposing someone else's vulnerability can also become a misuse of power. Personal meaning depends on where and how this placement connects with the rest of the chart.`
   },
 
   Sagittarius: {
-    short: 'Your transformation comes through belief, truth, and expanded understanding.',
-    long: `With Pluto in Sagittarius, your life challenges belief systems, philosophies, and moral truths. You may experience intense shifts in worldview or confront dogma—your own or others’.
+    short: 'Belief and moral certainty become instruments of power.',
+    long: `Pluto in Sagittarius reveals how belief systems, education, and claims to universal truth can organize power. A cohort may challenge dogma while discovering how easily a liberating idea can become another absolute.
 
-True growth arises when you seek truth with humility, allowing wisdom to evolve rather than clinging to absolute certainty.`
+Inquiry grows stronger when it can revise its own conclusions. The constructive expression makes room for many lived horizons without pretending that every claim is equally sound.`
   },
 
   Capricorn: {
-    short: 'Your transformation centers on authority, ambition, and responsibility.',
-    long: `Pluto in Capricorn brings deep restructuring around power, success, and control. You may encounter intense pressure to achieve or dismantle outdated definitions of authority.
+    short: 'Institutions confront the costs of concentrated authority.',
+    long: `Pluto in Capricorn brings deep restructuring around power, success, and control. A cohort may see where institutions preserve order by demanding too much from the people inside them.
 
-Your empowerment comes from redefining success on your own terms—building structures that reflect integrity, not fear.`
+Changing a structure takes more than rejecting its leaders: durable reform also asks who will carry responsibility and how power can be checked. In an individual chart, this shared pressure may intersect with personal commitments or authority.`
   },
 
   Aquarius: {
-    short: 'Your transformation unfolds through society, innovation, and collective change.',
-    long: `With Pluto in Aquarius, power dynamics around groups, technology, and social systems come into focus. You may feel driven to challenge outdated structures or imagine radical futures.
+    short: 'Networks and group ideals reveal new forms of collective power.',
+    long: `With Pluto in Aquarius, power dynamics around groups, technology, and social systems come into focus. Challenges to inherited institutions can create new networks that concentrate influence of their own.
 
-Learning to balance individuality with collective responsibility allows your vision to catalyze meaningful change.`
+Collective change can broaden participation, or let a group's vision override the people it claims to serve. Personal chart context determines where this wider struggle for freedom and accountability is felt.`
   },
 
   Pisces: {
-    short: 'Your transformation occurs through surrender, compassion, and spiritual depth.',
-    long: `Pluto in Pisces dissolves illusions around control, inviting deep spiritual and emotional rebirth. You may confront themes of loss, sacrifice, or collective suffering.
+    short: 'Shared ideals of compassion expose where care and control blur.',
+    long: `Pluto in Pisces puts pressure on collective beliefs about sacrifice, spirituality, and what people owe one another in suffering. An ideal of boundless compassion may reveal hidden forms of power inside institutions that claim to heal or save.
 
-Through surrender and grounded compassion, you discover a profound inner strength rooted in faith, empathy, and transcendence.`
+Renewal is possible when care respects limits and agency instead of asking anyone to disappear into a cause. A collective ideal is stronger when it can offer help without demanding a savior or a sacrifice.`
   },
 },
 })

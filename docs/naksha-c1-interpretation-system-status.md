@@ -1,6 +1,6 @@
 # Naksha C1 interpretation-system status
 
-Updated **22 November 2026 (Pacific)** on branch `ui/v2-redesign`. The C1.3D documentation baseline is `5ee0905f5452807c0509dbe8f10e419706f1ba9a`; the independently approved C1.4A dignity cleanup is committed as `214b2dbe995a829e3cc858e775b28008b5dbca1e`.
+Updated **22 November 2026 (Pacific)** on branch `ui/v2-redesign`. The C1.3D documentation baseline is `5ee0905f5452807c0509dbe8f10e419706f1ba9a`; the independently approved C1.4A dignity cleanup is committed as `214b2dbe995a829e3cc858e775b28008b5dbca1e`. C1.4B outer-planet sign calibration has independent editorial approval and awaits its final commit.
 
 This document is the concise status and handoff for C1. The governing editorial doctrine remains [naksha-interpretation-standard.md](naksha-interpretation-standard.md). The canonical machine-readable coverage source is `client/lib/interpretationCoverageManifest.ts`; counts in this document summarize that contract rather than replace it.
 
@@ -10,7 +10,7 @@ C1 establishes the correctness boundary beneath Naksha's deterministic interpret
 
 `calculation → structured astrology data → curated interpretation → deterministic composition → UI`
 
-The completed work through C1.4A makes supported identities, physical reachability, content provenance, selection precision, fallback behavior, legacy-data boundaries, Daily prompt relevance, and dignity-language integrity explicit and testable. It preserves the supported V1 astrology surfaces while removing false interpretive claims and selection errors.
+The completed work through C1.4B makes supported identities, physical reachability, content provenance, selection precision, fallback behavior, legacy-data boundaries, Daily prompt relevance, dignity-language integrity, and outer-planet sign context explicit and testable. It preserves the supported V1 astrology surfaces while removing false interpretive claims and selection errors.
 
 **Verdict:** the interpretation foundation is materially stronger and ready for the remaining narrow C1 exit work. C1 is not yet closed, and C2's broad prose rewrite should not start until the exit work listed below and the final capability-preservation audit pass.
 
@@ -42,6 +42,10 @@ These were prose and doctrine corrections. No new angle, ruler, dignity, or hous
 ### Dignity-language integrity (C1.4A)
 
 After independent editorial acceptance, C1.4A replaced eight selective planet-sign “at home” claims with explanations of how the planetary function operates through the sign. It also clarified Venus in Libra's relational mechanism and replaced guaranteed social-success language in Saturn in Capricorn with possible development through mastery and accountability. Naksha still does not calculate or interpret essential dignity.
+
+### Outer-planet sign context (C1.4B)
+
+After independent editorial review, C1.4B calibrated all 36 Uranus, Neptune, and Pluto sign records as shared or generational symbolism. The revised readings retain sign-specific mechanisms and constructive and difficult expressions while avoiding unsupported individual biography or destiny. House placement and supported aspects remain the evidence that can locate or qualify a shared sign theme more personally. This doctrinal correction does not accept the complete natal reading, its current composition, or all 36 entries as final C2/C4 editorial content.
 
 ### Calculation-derived reachability
 
@@ -87,7 +91,7 @@ Generic natal aspect prose still appears beneath specific pair labels. That is a
 
 Same-moment Uranus–Neptune–Pluto pairs are classified as generational. Other same-moment pairs where both bodies are Jupiter-or-slower are cohort or long-cycle configurations. Directional Jupiter or Saturn contacts to a natal body remain slow personal transits.
 
-Outer-planet sign placements remain substantially generational. House placement and supported aspects may locate a shared signature more personally. The prose calibration needed to express that distinction consistently remains C1 exit work.
+Outer-planet sign placements remain substantially generational. C1.4B calibrated their sign-only prose; house placement and supported aspects may locate a shared signature more personally. The final composed reading still needs C2 review.
 
 ### Full-precision transit selection
 
@@ -186,7 +190,7 @@ The major audit conclusions still hold:
 - placement summaries concatenate components rather than synthesizing them;
 - Daily composition still combines broad primitives rather than fully explaining many transit relationships;
 - Weekly ranks and groups evidence but does not yet form a consistently coherent week-level narrative;
-- outer-planet sign prose needs generational calibration;
+- outer-planet sign prose now has generational framing, but natal sign-house-aspect composition still needs review;
 - prompts and practices can still render without a visible provenance-strength distinction.
 
 The next phases should add interpretation, not padding. Longer prose is warranted only when it contributes a distinct mechanism, lived expression, constructive range, difficult range, contextual limitation, or useful reflection.
@@ -195,7 +199,7 @@ The next phases should add interpretation, not padding. Longer prose is warrante
 
 C1 should close only after these narrow tasks are complete:
 
-1. **Outer-planet sign calibration.** Frame Uranus, Neptune, and Pluto sign placements as shared/generational and locate personal expression through supported house/aspect evidence.
+1. **C1.4C outer-planet evidence-ladder benchmark.** Show the difference between sign alone, sign plus house, and an aspect to a personal natal planet before using the benchmark for C2 authoring.
 2. **Rising-sign doctrine-test cleanup.** Narrow the known overbroad test pattern before rising-sign content work.
 3. **Benchmark cleanup.** Remove reviewer/meta commentary from authoring benchmarks while retaining the doctrine they establish.
 4. **Final capability-preservation audit.** Exhaustively verify planet-sign, planet-house, house-sign, natal, Sky Now, Daily, Weekly, prompts, practices, generated charts, and canonical saved charts against the committed contract.
@@ -219,6 +223,8 @@ C2 should deepen interpretation rather than merely lengthen it. A successful ent
 
 The immediate C2 priority remains pair-specific natal aspect interpretation, followed by the other high-severity families identified in the independent editorial audits.
 
+C2 natal-composition acceptance must also inspect the complete outer-planet placement reading. Today, `buildPlanetSummary` can attach a personal planet-house short meaning to a collective outer-planet sign short meaning with “This tends to show up most clearly when…”. The future reading should make the sign's shared style, the house's personal life area, and any supported aspect mechanism work together without treating the sign alone as personal evidence. C1.4B does not change that runtime composer.
+
 ## Verification baseline
 
 The committed C1.3D checkpoint passes:
@@ -229,5 +235,7 @@ The committed C1.3D checkpoint passes:
 - `git diff --check`.
 
 The independently accepted C1.4A checkpoint passes **78 Jest suites / 992 tests**, TypeScript, ESLint, and `git diff --check`. Its 120 canonical planet-sign lookups remain nonblank.
+
+The independently reviewed C1.4B calibration retains **36/36** outer-planet and **120/120** canonical planet-sign short and long readings. The final uncommitted C1.4B diff passes **78 Jest suites / 994 tests**, TypeScript, ESLint, and `git diff --check`.
 
 This proves structural and behavioral integrity. It does not prove editorial acceptance. The manifest currently contains no accepted-cell evidence; later human review must move content to `accepted` deliberately.
