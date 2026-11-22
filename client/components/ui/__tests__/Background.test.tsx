@@ -4,6 +4,8 @@ import TestRenderer from 'react-test-renderer'
 import { Circle, Rect } from 'react-native-svg'
 
 import { Background, type BackgroundVariant } from '../Background'
+import { CosmicSky } from '../CosmicSky'
+import { useScreenActivity } from '../ScreenActivity'
 import { theme } from '../theme'
 
 let mockInsets = { top: 24, right: 0, bottom: 48, left: 0 }
@@ -28,6 +30,9 @@ function mockReducedMotion(enabled: boolean, resolve = true) {
   const addListener = jest
     .spyOn(AccessibilityInfo, 'addEventListener')
     .mockReturnValue({ remove: removeListener } as never)
+
+  isEnabled.mockClear()
+  addListener.mockClear()
 
   return { isEnabled, addListener }
 }
@@ -121,6 +126,46 @@ describe('Background', () => {
     expect(screen.root.findAllByType(Rect)).toHaveLength(0)
   })
 
+  it('shares route visibility with loaders in its content', async () => {
+    function ActivityProbe() {
+      return <Text>{useScreenActivity() ? 'active' : 'inactive'}</Text>
+    }
+
+    for (const enabled of [true, false, true]) {
+      await act(async () => {
+        const tree = (
+          <Background motionEnabled={enabled}>
+            <ActivityProbe />
+          </Background>
+        )
+        if (renderer) renderer.update(tree)
+        else renderer = create(tree)
+      })
+
+      expect(renderer!.root.findByType(Text).props.children).toBe(
+        enabled ? 'active' : 'inactive'
+      )
+    }
+  })
+
+  it('keeps a contained static sky without window protection or star animations', async () => {
+    const screen = await renderBackground('atmospheric', {
+      protectSystemBars: false,
+      motionEnabled: false,
+    })
+
+    expect(stars(screen).length).toBeGreaterThan(12)
+    expect(screen.root.findByType(CosmicSky).props.enabled).toBe(false)
+    for (const testID of [
+      'background-status-bar-protection',
+      'background-navigation-bar-protection',
+      'background-glimmer',
+      'background-shooting-star',
+    ]) {
+      expect(screen.root.findAll((node) => node.props?.testID === testID)).toHaveLength(0)
+    }
+  })
+
   it('renders the gradient but no stars for the quiet variant', async () => {
     const screen = await renderBackground('quiet')
 
@@ -128,17 +173,27 @@ describe('Background', () => {
     expect(stars(screen)).toHaveLength(0)
   })
 
-  it('renders twelve stars for the atmospheric variant', async () => {
+  it('spreads a bounded star field across the viewport and reading gutters', async () => {
     const screen = await renderBackground('atmospheric')
 
     expect(screen.root.findAllByType(Rect)).toHaveLength(1)
-    expect(stars(screen)).toHaveLength(12)
+    const field = stars(screen)
+    expect(field.length).toBeGreaterThan(96)
+    expect(field.length).toBeLessThanOrEqual(240)
+    for (let quarter = 0; quarter < 4; quarter++) {
+      const region = field.filter(
+        ({ props }) => props.cy >= quarter * 200 && props.cy < (quarter + 1) * 200
+      )
+      expect(region.length).toBeGreaterThan(0)
+      expect(region.some(({ props }) => props.cx < theme.space.xl)).toBe(true)
+      expect(region.some(({ props }) => props.cx > 360 - theme.space.xl)).toBe(true)
+    }
   })
 
   it('adds a single restrained planet-tinted glow for the hero variant', async () => {
     const screen = await renderBackground('hero', { planet: 'Mars' })
 
-    expect(stars(screen)).toHaveLength(12)
+    expect(stars(screen).length).toBeGreaterThan(12)
 
     const glow = screen.root
       .findAllByType(Circle)
@@ -146,7 +201,7 @@ describe('Background', () => {
     expect(glow).toHaveLength(1)
 
     const stops = screen.root.findAll(
-      (node) => node.props?.stopColor === theme.planet.Mars
+      (node) => node.props?.stopColor === theme.planetGlow.Mars
     )
     expect(stops.length).toBeGreaterThan(0)
     expect(stops[0].props.stopOpacity).toBe('0.08')
@@ -162,7 +217,7 @@ describe('Background', () => {
     const secondPositions = stars(second).map((s) => [s.props.cx, s.props.cy])
 
     expect(secondPositions).toEqual(firstPositions)
-    expect(firstPositions).toHaveLength(12)
+    expect(firstPositions.length).toBeGreaterThan(12)
   })
 
   it('never calls Math.random while rendering', async () => {
@@ -201,34 +256,37 @@ describe('Background reduced-motion behavior', () => {
     jest.restoreAllMocks()
   })
 
-  it('falls back to flat when reduced motion is enabled', async () => {
+  it('keeps the static sky when reduced motion is enabled', async () => {
     mockReducedMotion(true)
     const screen = await renderBackground('hero', { planet: 'Sun' })
 
-    expect(decoration(screen)).toHaveLength(0)
+    expect(decoration(screen).length).toBeGreaterThan(0)
+    expect(stars(screen).length).toBeGreaterThan(12)
     expect(screen.root.findAllByType(Text)).toHaveLength(1)
   })
 
-  it('holds decoration until the preference resolves', async () => {
-    // Unresolved must not flash decoration in and then snatch it away.
+  it('shows the static sky without waiting for a motion preference', async () => {
     mockReducedMotion(false, false)
     const screen = await renderBackground('atmospheric')
 
-    expect(decoration(screen)).toHaveLength(0)
+    expect(stars(screen).length).toBeGreaterThan(12)
   })
 
-  it('removes its listener on unmount', async () => {
-    mockReducedMotion(false)
+  it('checks motion preferences for the quiet background color drift', async () => {
+    const { isEnabled, addListener } = mockReducedMotion(false)
     const screen = await renderBackground('quiet')
 
-    expect(removeListener).not.toHaveBeenCalled()
+    expect(isEnabled).toHaveBeenCalled()
+    expect(addListener).toHaveBeenCalled()
+    expect(screen.root.findByType(CosmicSky).props.enabled).toBe(true)
+    expect(stars(screen)).toHaveLength(0)
 
     act(() => {
       screen.unmount()
     })
     renderer = null
 
-    expect(removeListener).toHaveBeenCalledTimes(1)
+    expect(removeListener).toHaveBeenCalled()
   })
 
   it('treats an unavailable platform setting as no preference', async () => {
@@ -242,7 +300,7 @@ describe('Background reduced-motion behavior', () => {
 
     const screen = await renderBackground('atmospheric')
 
-    expect(stars(screen)).toHaveLength(12)
+    expect(stars(screen).length).toBeGreaterThan(12)
   })
 })
 
@@ -365,8 +423,7 @@ describe('Background status-bar protection', () => {
   })
 
   it('falls back to the flat environment colour when decoration is off', async () => {
-    mockReducedMotion(true)
-    const screen = await renderBackground('hero')
+    const screen = await renderBackground('flat')
 
     expect(protectionStyle(screen).backgroundColor).toBe(theme.background.base)
   })

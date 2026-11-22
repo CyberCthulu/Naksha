@@ -4,14 +4,34 @@ import TestRenderer from 'react-test-renderer'
 
 import ResetPasswordScreen from '../ResetPasswordScreen'
 import supabase from '../../lib/supabase'
+import { signOut } from '../../lib/auth'
 
 const mockNavigation = {
   reset: jest.fn(),
+}
+const mockClearPostAuthRoute = jest.fn()
+const mockForceSignedOut = jest.fn()
+let mockAuthSession = {
+  status: 'authenticated',
+  user: { id: 'user-1' } as { id: string } | null,
 }
 
 jest.mock('../../components/auth/AuthContainer', () => ({
   __esModule: true,
   default: ({ children }: { children: unknown }) => children,
+}))
+
+
+jest.mock('../../lib/authSession', () => ({
+  useAuthSession: () => ({
+    ...mockAuthSession,
+    clearPostAuthRoute: mockClearPostAuthRoute,
+    forceSignedOut: mockForceSignedOut,
+  }),
+}))
+
+jest.mock('../../lib/auth', () => ({
+  signOut: jest.fn(),
 }))
 
 jest.mock('../../lib/supabase', () => ({
@@ -127,13 +147,14 @@ describe('ResetPasswordScreen', () => {
       error: null,
     })
     mockedSupabase().auth.getSession.mockResolvedValue({
-      data: {
-        session: {
-          user: { id: 'user-1' },
-        },
-      },
+      data: { session: { user: { id: 'user-1' } } },
       error: null,
     })
+    ;(signOut as jest.Mock).mockResolvedValue(undefined)
+    mockAuthSession = {
+      status: 'authenticated',
+      user: { id: 'user-1' },
+    }
   })
 
   afterEach(() => {
@@ -191,22 +212,46 @@ describe('ResetPasswordScreen', () => {
     })
   })
 
-  it('routes to Login after success when no session exists', async () => {
-    mockedSupabase().auth.getSession.mockResolvedValueOnce({
-      data: {
-        session: null,
-      },
-      error: null,
-    })
+  it('does not target Login after update when the recovery session is missing', async () => {
+    mockAuthSession = { status: 'unauthenticated', user: null }
     const screen = await renderScreen()
 
     await fillPasswords(screen, '123456', '123456')
     await press(screen, 'Update Password')
 
-    expect(mockNavigation.reset).toHaveBeenCalledWith({
-      index: 0,
-      routes: [{ name: 'Login' }],
-    })
+    expectText(
+      screen,
+      'Your recovery session has expired. Request a new password reset email.'
+    )
+    expect(mockNavigation.reset).not.toHaveBeenCalled()
+  })
+
+  it('recovers from an unexpected rejected password update and permits retry', async () => {
+    mockedSupabase().auth.updateUser
+      .mockRejectedValueOnce(new Error('network unavailable'))
+      .mockResolvedValueOnce({ data: null, error: null })
+    const screen = await renderScreen()
+
+    await fillPasswords(screen, '123456', '123456')
+    await press(screen, 'Update Password')
+
+    expectText(
+      screen,
+      'Could not update your password. Check your connection and try again.'
+    )
+    await press(screen, 'Update Password')
+    expect(mockedSupabase().auth.updateUser).toHaveBeenCalledTimes(2)
+  })
+
+  it('signs out before returning an active recovery session to Login', async () => {
+    const screen = await renderScreen()
+
+    await press(screen, 'Back to Login')
+
+    expect(signOut).toHaveBeenCalledTimes(1)
+    expect(mockClearPostAuthRoute).toHaveBeenCalledTimes(1)
+    expect(mockForceSignedOut).toHaveBeenCalledTimes(1)
+    expect(mockNavigation.reset).not.toHaveBeenCalled()
   })
 
   it('shows updateUser failures', async () => {

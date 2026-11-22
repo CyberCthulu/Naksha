@@ -1,21 +1,15 @@
 // screens/ProfileScreen.tsx
 import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from 'react-native'
+import { ScrollView, Alert } from 'react-native'
 import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import supabase from '../lib/supabase'
+import supabase, { clearPersistedAuthSession } from '../lib/supabase'
 import { signOut } from '../lib/auth'
 import { deleteAccount } from '../lib/accountDeletion'
+import { useAuthSession } from '../lib/authSession'
 
-import { uiStyles } from '../components/ui/uiStyles'
+import { ErrorState } from '../components/ui/ErrorState'
 import { theme } from '../components/ui/theme'
 import { formatShortTimeFromHHMM } from '../lib/time'
 import type { PurchaseRow, SubscriptionRow, UserRow } from '../lib/domainTypes'
@@ -76,6 +70,7 @@ export default function ProfileScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList, 'Profile'>>()
   const insets = useSafeAreaInsets()
+  const { forceSignedOut } = useAuthSession()
 
   // ✅ prevent “double header” clash (stack header + in-screen header)
   useLayoutEffect(() => {
@@ -224,24 +219,39 @@ export default function ProfileScreen() {
     }
   }
 
-  const onExportData = () => {
-    Alert.alert(
-      'Export Data',
-      'In a future version, this will generate an export of your charts, journals, and usage. For now, please reach out to support to request an export.',
-      [{ text: 'OK' }]
-    )
-  }
-
   const confirmDeleteAccount = async () => {
+    setDeletingAccount(true)
+
     try {
-      setDeletingAccount(true)
       await deleteAccount()
-      await signOut()
     } catch (e: any) {
       setDeletingAccount(false)
       Alert.alert(
         'Account deletion failed',
         e?.message ?? 'Could not delete your account. Please try again.'
+      )
+      return
+    }
+
+    try {
+      await signOut()
+      setDeletingAccount(false)
+      forceSignedOut()
+    } catch {
+      let localSessionCleared = true
+      try {
+        await clearPersistedAuthSession()
+      } catch {
+        localSessionCleared = false
+      }
+
+      setDeletingAccount(false)
+      forceSignedOut()
+      Alert.alert(
+        'Account deleted',
+        localSessionCleared
+          ? 'Your account was deleted, but Naksha could not finish signing out normally. The saved session on this device was cleared.'
+          : 'Your account was deleted, but Naksha could not fully clear saved session data on this device. Restart the app before signing in again.'
       )
     }
   }
@@ -272,17 +282,17 @@ export default function ProfileScreen() {
   }
 
   if (loading) {
-    return <LoadingState />
+    return <LoadingState label="Loading your profile" />
   }
 
   if (error) {
     return (
-      <View style={uiStyles.center}>
-        <Text style={uiStyles.errorText}>{error}</Text>
-        <TouchableOpacity onPress={load}>
-          <Text style={styles.link}>Retry</Text>
-        </TouchableOpacity>
-      </View>
+      <ErrorState
+        testID="profile-error"
+        title="Could not load your profile"
+        description={error}
+        action={{ label: 'Retry', onPress: load }}
+      />
     )
   }
 
@@ -290,9 +300,9 @@ export default function ProfileScreen() {
     <ScrollView
       style={{ flex: 1 }}
       contentContainerStyle={{
-        padding: theme.spacing.screen,
+        paddingHorizontal: theme.space.xl,
         paddingTop: insets.top + theme.space.xs,
-        paddingBottom: insets.bottom + 32,
+        paddingBottom: insets.bottom + theme.space.xxl,
       }}
     >
       <ProfileHeader
@@ -322,7 +332,6 @@ export default function ProfileScreen() {
       <PurchasesCard purchases={purchases} />
 
       <AccountActionsCard
-        onExportData={onExportData}
         onDeleteAccount={onDeleteAccount}
         onSignOut={onSignOut}
         deletingAccount={deletingAccount}
@@ -330,7 +339,3 @@ export default function ProfileScreen() {
     </ScrollView>
   )
 }
-
-const styles = StyleSheet.create({
-  link: { fontWeight: '700', color: '#007AFF' },
-})

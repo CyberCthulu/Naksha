@@ -1,6 +1,6 @@
 // components/charts/ChartHero.tsx
 import React from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import { AppText } from '../ui/AppText'
 import { Button } from '../ui/Button'
@@ -45,59 +45,9 @@ export function ChartHero({
         </AppText>
       ) : null}
 
-      {/*
-        Keyed on the title so the Text remounts when the placement changes.
-
-        Android reuses a Text view's cached measurement when only its content
-        changes, and a custom font makes that stale width bite: moving from
-        "Uranus in Aquarius" to the one-character-longer "Jupiter in Aquarius"
-        laid the new string out in the old width and dropped the last word.
-        The string was always correct -- only the measurement was not.
-      */}
-      <AppText key={title} variant="display" style={styles.title}>
+      <AppText variant="display" style={styles.title}>
         {title}
       </AppText>
-
-      {/* TEMPORARY A/B DIAGNOSTIC — remove before committing.
-          Same string, one suspect property changed per row. Whichever rows
-          show the full title identify the property eating the last word. */}
-      <View style={{ alignSelf: 'stretch', marginTop: 12 }}>
-        <Text style={{ color: '#6FBF8B', fontSize: 11 }}>
-          {`A: as-is  |  string=${JSON.stringify(title)}`}
-        </Text>
-        <Text style={{ color: '#6FBF8B', fontSize: 11, marginTop: 6 }}>B: no letterSpacing</Text>
-        <Text
-          key={`b-${title}`}
-          style={[theme.typography.display, styles.title, { letterSpacing: 0 }]}
-        >
-          {title}
-        </Text>
-        <Text style={{ color: '#6FBF8B', fontSize: 11, marginTop: 6 }}>C: includeFontPadding true</Text>
-        <Text
-          key={`c-${title}`}
-          style={[theme.typography.display, styles.title, { includeFontPadding: true }]}
-        >
-          {title}
-        </Text>
-        <Text style={{ color: '#6FBF8B', fontSize: 11, marginTop: 6 }}>D: stretched full width</Text>
-        <Text
-          key={`d-${title}`}
-          style={[theme.typography.display, styles.title, { alignSelf: 'stretch' }]}
-        >
-          {title}
-        </Text>
-        <Text style={{ color: '#6FBF8B', fontSize: 11, marginTop: 6 }}>E: no lineHeight</Text>
-        <Text
-          key={`e-${title}`}
-          style={[
-            theme.typography.display,
-            styles.title,
-            { lineHeight: undefined },
-          ]}
-        >
-          {title}
-        </Text>
-      </View>
 
       {house ? (
         <AppText variant="eyebrow" style={styles.house}>
@@ -136,6 +86,23 @@ const styles = StyleSheet.create({
     marginBottom: theme.space.xs,
   },
   title: {
+    /*
+      Laid out at the container's full width rather than shrinking to fit.
+
+      `hero` centres its children, so without this the Text would be sized by
+      its own measured width. On Android that measurement and the layout that
+      follows it disagree by a fraction of a pixel for some strings -- the
+      serif display face carries negative letterSpacing, so glyph advances are
+      fractional -- and the paragraph re-wraps inside a box measured for a
+      single line. The overflowing word lands on a second line the view has no
+      height for, which is how "Jupiter in Aquarius" rendered as "Jupiter in"
+      while the longer "Neptune in Capricorn" was fine.
+
+      Stretching removes the disagreement: the width comes from the container,
+      so there is nothing for the re-wrap to round against. `textAlign` keeps
+      the line centred, which is all the centring was ever doing here.
+    */
+    alignSelf: 'stretch',
     color: theme.text.primary,
     textAlign: 'center',
   },

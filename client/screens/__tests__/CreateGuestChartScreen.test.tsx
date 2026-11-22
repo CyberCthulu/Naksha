@@ -21,14 +21,18 @@ jest.mock('../../components/auth/AuthContainer', () => ({
 
 jest.mock('../../components/auth/DateField', () => ({
   __esModule: true,
-  default: ({ onChange }: { onChange: (date: Date) => void }) => {
+  default: ({
+    onChange,
+  }: {
+    onChange: (date: { year: number; month: number; day: number }) => void
+  }) => {
     const React = require('react')
     const { Pressable, Text } = require('react-native')
 
     return React.createElement(
       Pressable,
       {
-        onPress: () => onChange(new Date('2001-02-03T12:00:00.000Z')),
+        onPress: () => onChange({ year: 2001, month: 2, day: 3 }),
       },
       React.createElement(Text, null, 'Pick Date')
     )
@@ -37,14 +41,18 @@ jest.mock('../../components/auth/DateField', () => ({
 
 jest.mock('../../components/auth/TimeField', () => ({
   __esModule: true,
-  default: ({ onChange }: { onChange: (date: Date) => void }) => {
+  default: ({
+    onChange,
+  }: {
+    onChange: (time: { hour: number; minute: number }) => void
+  }) => {
     const React = require('react')
     const { Pressable, Text } = require('react-native')
 
     return React.createElement(
       Pressable,
       {
-        onPress: () => onChange(new Date(2001, 1, 3, 14, 45, 0)),
+        onPress: () => onChange({ hour: 14, minute: 45 }),
       },
       React.createElement(Text, null, 'Pick Time')
     )
@@ -207,6 +215,16 @@ describe('CreateGuestChartScreen', () => {
     jest.restoreAllMocks()
   })
 
+  it('groups person, birth moment, and birth place under accessible headings', async () => {
+    const screen = await renderScreen()
+
+    for (const label of ['Person', 'Birth moment', 'Birth place']) {
+      expect(screen.root.findAllByType(Text).some((node) =>
+        node.props.accessibilityRole === 'header' && node.props.children === label
+      )).toBe(true)
+    }
+  })
+
   it('validates missing required fields', async () => {
     const screen = await renderScreen()
 
@@ -245,6 +263,7 @@ describe('CreateGuestChartScreen', () => {
         last_name: null,
         birth_date: '2001-02-03',
         birth_time: '14:45:00',
+        birth_utc_offset_minutes: null,
         birth_location: 'London, UK',
         time_zone: 'Europe/London',
         birth_lat: 51.5072,
@@ -279,6 +298,7 @@ describe('CreateGuestChartScreen', () => {
         last_name: null,
         birth_date: '2001-02-03',
         birth_time: '14:45:00',
+        birth_utc_offset_minutes: null,
         birth_location: 'Unknown Place',
         time_zone: 'Europe/London',
         birth_lat: null,
@@ -286,5 +306,40 @@ describe('CreateGuestChartScreen', () => {
       },
       chartMode: 'guest',
     })
+  })
+
+  it('clears location confirmation and saved coordinates when the place is edited', async () => {
+    const screen = await renderScreen()
+    await act(async () => {
+      textInputByPlaceholder(screen, 'Name').props.onChangeText('Grace Hopper')
+    })
+    await press(screen, 'Pick Date')
+    await press(screen, 'Pick Time')
+    await press(screen, 'Select Location')
+
+    const visibleText = () => screen.root.findAllByType(Text)
+      .map((node) => textValue(node.props.children)).join(' ')
+    expect(visibleText()).toContain('Location resolved')
+    expect(visibleText()).not.toContain('51.5072')
+    expect(visibleText()).not.toContain('-0.1276')
+
+    await act(async () => {
+      textInputByPlaceholder(screen, 'City, State/Country').props.onChangeText('')
+    })
+    expect(visibleText()).not.toContain('Location resolved')
+
+    await act(async () => {
+      textInputByPlaceholder(screen, 'City, State/Country').props.onChangeText('Another Place')
+    })
+    await press(screen, 'Create Chart')
+
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('Chart', expect.objectContaining({
+      chartMode: 'guest',
+      profile: expect.objectContaining({
+        birth_location: 'Another Place',
+        birth_lat: null,
+        birth_lon: null,
+      }),
+    }))
   })
 })

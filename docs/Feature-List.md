@@ -2,7 +2,7 @@
 
 Personalized astrology, deterministic forecasts, journaling, and guided reflection. Naksha is a functioning V1 application with comprehensive natal charts, daily and weekly transit guidance with transit-house personalization, and journaling.
 
-This document separates implemented V1 functionality from planned roadmap features. It should not be read as a list of completed features unless an item is marked **DONE**. Last reviewed for accuracy: 2026-08-29 (V1 Architecture Pass D0–D6.3 complete, feature freeze for UI/UX redesign and Android production hardening).
+This document separates implemented V1 functionality from planned roadmap features. It should not be read as a list of completed features unless an item is marked **DONE**. Last reviewed for accuracy: 2026-09-30 during R6.4. Active UI and Sky Now are implemented; release-hardening R1–R5 are repository-complete and [R6 is in progress](release-hardening-plan.md#r6--remaining-engineering-release-readiness). Implemented does not mean deployed or production-qualified.
 
 ## Status Overview
 
@@ -19,16 +19,18 @@ A quick index of every section below, grouped into four buckets. Each section st
 * Deterministic Guidance Primitives (transit planets, natal targets, aspects, signs, houses)
 * Daily Guidance / Today's Energy (timezone-aware, deterministic, with transit-house personalization)
 * Weekly Forecast (Monday–Sunday local weeks, seven snapshots, DST-aware, with transit-house context)
+* Sky Now above the dashboard tabs: current planetary positions, five calculated aspect types, and pair-specific reflective readings
 * Typed Navigation and Chart Versioning (backward-compatible schema with legacy support)
-* Comprehensive Test Suite (25 suites, 183 tests covering all core flows)
+* Regression Test Suite (69 suites / 843 tests plus 131 combined R1/R2/R3 pgTAP assertions; native release QA and production-backend verification remain open)
 
-**Current Phase: UI/UX Redesign & Android Production Hardening**
+**Current Phase: Release Hardening & Final Native Acceptance**
 
-* Visual Design System (premium/celestial direction, Android-first)
-* Screen Refinement and Component Polish
-* Android Release Configuration and Production Build
-* Privacy Policy and Support Documentation
-* Post-Redesign: iOS and Post-V1 Features
+* R1 relational ownership, R2 civil birth-time correctness, R3 journal/client write-surface integrity, R4 authentication recovery/Android identity, and R5 Ascendant correctness are repository-complete
+* Production signing, signed-artifact inspection, and device acceptance remain release-candidate gates
+* R6 remaining engineering readiness is in progress; R6.1 and R6.2 are repository-complete
+* The C1 interpretation foundation is committed through C1.3D; C1 exit work and C2–C4 content/editorial review remain required before release-candidate freeze. See the [C1 status](naksha-c1-interpretation-system-status.md).
+* Signed Android candidate, production-backend verification, Play testing, privacy/support/store material, and real-device acceptance remain open
+* iOS and post-V1 features remain after Android launch
 
 **Partial / Foundation**
 
@@ -67,10 +69,16 @@ Status: **DONE**
 * Email verification / OTP callback flow
 * Password reset / forgot-password flow
 * Profile completion and editing
-* Birth date, birth time, birth location, time zone, latitude, and longitude storage
+* Birth date, birth time, birth location, time zone, latitude, longitude, and an optional selected DST-fold offset
+* Civil dates/times serialize directly without UTC date conversion; invalid values and nonexistent DST times are rejected
+* Ambiguous DST-fold times require an explicit occurrence and reproduce the same instant after reload
 * Invalid non-empty stored time zones route to profile correction rather than silently falling back to UTC
-* Account deletion through deployed Supabase Edge Function
+* Account deletion through the Supabase Edge Function (historically deployed and manually QA'd; release-candidate deployment must be reverified)
 * Destructive confirmation before account deletion
+* Startup session failure reaches a retryable error state instead of an indefinite loading screen
+* Auth identity changes remount the full navigation container, discarding account A route history and private route parameters before account B renders
+* Verification and password-recovery callbacks follow central auth state; recovery intent is preserved without racing navigator registration
+* Successful server-side account deletion remains reported as successful even if local sign-out needs fallback session cleanup
 
 ### Chart Preferences
 
@@ -110,6 +118,7 @@ Current limitations:
 * Tropical only
 * Whole Sign only
 * Medium-orb aspect mode only
+* High-latitude Ascendant rising-versus-setting behavior is corrected; new charts use calculation V2 while historical V1 results remain readable without silent recalculation
 * No Vedic, Chinese, Hellenistic timing, astrocartography, or other systems yet
 
 ### Chart UI & Interpretation
@@ -118,7 +127,7 @@ Status: **DONE / PARTIAL**
 
 Implemented:
 
-* Visual SVG astrology chart wheel
+* Visual SVG astrology chart wheel with tap selection, pinch zoom, pan, and reset
 * Zodiac signs, houses, planets, and aspect lines
 * Placement list
 * House list
@@ -133,9 +142,7 @@ Implemented:
 
 Partial / future:
 
-* Direct wheel tap/selection behavior
-* Dedicated aspect interpretation pages by planet pair
-* Zoom or advanced wheel interaction
+* Dedicated natal aspect interpretation pages by planet pair (Sky Now has its own current-sky pair readings)
 * Custom chart themes / skins
 
 ### Saved Charts & Guest Charts
@@ -174,7 +181,9 @@ Implemented:
 * Fixed read-only source, prompt, and practice context in guided create mode
 * Editable response-only content for guided entries
 * Stable `prompt_template` persistence for selected guidance prompts
-* Existing saved journal content takes precedence in edit mode
+* Existing edits load the authoritative owned database row; route content is never trusted as persisted content
+* Creation and patch update are separate operations, so content-only edits preserve chart, prompt, title, owner, and creation metadata
+* Missing, foreign, malformed, or deleted IDs remain non-editable, and failed saves preserve typed text
 
 Not yet done:
 
@@ -261,6 +270,20 @@ Current limitations:
 * No saved weekly forecast history
 * No AI-generated longform weekly synthesis
 * No multi-week or monthly forecasting yet
+
+## Sky Now
+
+Status: **IMPLEMENTED; native accessibility and release acceptance remain open**
+
+* Current Sun, Moon, and eight other chart bodies above the dashboard's Today/This Week tabs.
+* Local geocentric Tropical longitude calculation, with current-to-current aspects and no natal houses.
+* One-minute refresh only while the app/dashboard is active; immediate resume/manual refresh and stale-snapshot error handling.
+* Shared rules with unrounded classification; JPL regression reference for all ten positions at one timestamp.
+* Forty-five authored planet-pair themes combined with five aspect dynamics; distinct Moon–Saturn readings for each type.
+* Pair meaning, practical suggestion, reflection, and a secondary calculation-details disclosure.
+* Accessible planet list exists; equivalent aspect-reading selection is still a release task.
+
+These shared-sky interpretations do not replace personalized daily/weekly guidance. See [Sky Now behavior](ui-redesign/current-sky-compass.md) and [release gates](release-hardening-plan.md).
 
 ## AI Features
 
@@ -497,10 +520,12 @@ Implemented:
 * Server-side authenticated delete flow
 * App-owned row deletion before auth-user deletion
 * Manual disposable-account QA completed
+* Database-enforced same-owner parent/child relationships for journals, conversations, reports, and messages
+* Authenticated clients cannot choose or update server-generated journal/chart IDs; unused `usage_events` client writes are disabled
 
 Not yet done:
 
-* Data export
+* Data export or monitored data-request process; the unavailable in-app action is hidden
 * Retention policy
 * External billing cancellation/refund policy
 * Delete-data-without-deleting-account flow
@@ -512,23 +537,29 @@ Not yet done:
 
 Status: **ACTIVE**
 
-Current verified baseline:
+Current verified post-R5 repository baseline:
 
 * Typecheck passes
-* Jest passes: 25 suites / 183 tests
+* Jest passes: 69 suites / 843 tests
 * Lint passes
 * `git diff --check` passes
-* Focused regression coverage includes auth, chart persistence and hydration, ChartData compatibility, typed navigation flows, journals, account deletion, guidance primitives, daily guidance, weekly forecast, transit-house resolution, and Dashboard rendering/error behavior
+* R3 pgTAP passes 47/47; combined R1/R2/R3 pgTAP passes 131/131
+* Clean database replay and pre-R3 → R3 upgrade replay pass
+* Focused regression coverage includes civil birth-time and device-time-zone behavior, auth, chart persistence and hydration, ChartData compatibility, typed navigation flows, journal ownership/editing, account deletion, guidance primitives, daily guidance, weekly forecast, transit-house resolution, and Dashboard rendering/error behavior
 
 ### CI / Release Readiness
 
-Status: **NOT COMPLETE**
+Status: **IN PROGRESS**
+
+Completed during R6.3:
+
+* GitHub Actions gate for typecheck, lint, Jest, changed-line whitespace validation, clean migration replay, and all pgTAP suites
+* Generated Supabase types refreshed from the linked authoritative public schema
 
 Not yet done:
 
-* CI workflow
-* Automated schema reset/diff validation
-* Release checklist
+* Signed-artifact configuration/manifest inspection and production-service verification
+* Signed-candidate execution of the [release-candidate sequence](release-hardening-plan.md#release-candidate-sequence)
 * Production build QA record
 * Store metadata
 * Privacy policy and support URLs
@@ -537,6 +568,8 @@ Not yet done:
 ### Analytics / Usage Events
 
 Status: **NOT IMPLEMENTED**
+
+Authenticated V1 client writes to `usage_events` were removed in R3 because there are no active consumers. Any future analytics path requires a newly reviewed privacy and database-write design.
 
 Planned:
 
@@ -562,7 +595,7 @@ Naksha V1 is currently best described as:
 
 **A functioning Western/Tropical astrology application with authenticated profiles, natal chart generation, local interpretations, saved and guest charts, deterministic daily and weekly transit guidance, transit-house personalization, guided reflection, and journaling.**
 
-The D0–D6.3 V1 depth and architecture pass is complete. The application is entering final UI/UX redesign and Android production hardening; it is not yet production-ready or released.
+The D0–D6.3 V1 depth and architecture pass is complete. The active UI and Sky Now are implemented. Release-hardening R1–R5 are repository-complete, R6 is in progress, and native release-candidate acceptance remains open. The application is not yet production-ready or released.
 
 Naksha is not yet:
 
@@ -579,10 +612,9 @@ Those are roadmap tracks.
 
 The remaining V1 work is release work, not another major feature program:
 
-1. Controlled UI/UX redesign while preserving the tested product loops
-2. Android production identity, configuration, and signing
-3. Signed release build and release-candidate QA on representative devices
-4. Privacy, retention, support, and store-listing requirements
-5. Google Play testing tracks and submission
+1. Complete R6 remaining engineering readiness
+2. Complete C1 exit work and the C2–C4 lexicon, editorial, composition, and astrology-content review
+3. Freeze features/content; verify the production backend and produce a signed Android AAB
+4. Run recorded real-device acceptance, Play testing-track installation, store preparation, and submission
 
-iOS is intentionally later. Synastry, AI chat, notifications, additional astrology systems, outer planets as moving transit candidates, retrogrades, and lunar phases are post-V1 possibilities rather than Android V1 blockers.
+iOS is intentionally later. Synastry, AI chat, notifications, additional astrology systems, outer planets in personalized forecast selection, retrogrades, and lunar phases are post-V1 possibilities rather than Android V1 blockers.

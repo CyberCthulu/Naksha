@@ -2,6 +2,7 @@ import React from 'react'
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native'
 import { AppText } from './AppText'
 import { theme } from './theme'
+import { useFormAppearance } from './FormAppearance'
 
 type Props = {
   label: string
@@ -22,11 +23,17 @@ export default function FormField({
   disabled = false,
   style,
 }: Props) {
+  const soft = useFormAppearance() === 'soft'
+
   return (
     <View style={[styles.section, style]}>
       <AppText
-        variant="subheading"
-        style={[styles.label, disabled && styles.disabledLabel]}
+        variant={soft ? 'bodySmall' : 'subheading'}
+        style={[
+          styles.label,
+          soft && styles.softLabel,
+          disabled && styles.disabledLabel,
+        ]}
       >
         {label}
       </AppText>
@@ -59,6 +66,9 @@ const styles = StyleSheet.create({
   label: {
     color: theme.text.primary,
     marginBottom: theme.space.sm,
+  },
+  softLabel: {
+    color: theme.text.secondary,
   },
   disabledLabel: {
     color: theme.text.disabled,

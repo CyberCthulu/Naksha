@@ -135,7 +135,7 @@ describe('AppText semantic variants', () => {
 
     expect(style.fontSize).toBe(13)
     expect(style.lineHeight).toBe(20)
-    expect(style.color).toBe(theme.colors.muted)
+    expect(style.color).toBe(theme.text.secondary)
   })
 
   it('lets a caller style still override a variant', () => {

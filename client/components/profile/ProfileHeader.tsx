@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
+import { AppText, MutedText } from '../ui/AppText'
 import { ScreenHeader } from '../ui/ScreenHeader'
 import { theme } from '../ui/theme'
 
@@ -29,15 +30,21 @@ export default function ProfileHeader({
         style={styles.header}
       />
 
-      <View style={styles.headerRow}>
+      {/* The identity block, read as one thing rather than three fragments. */}
+      <View accessible style={styles.identity}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
+          <AppText variant="title" style={styles.avatarText}>
             {prettyName.charAt(0).toUpperCase()}
-          </Text>
+          </AppText>
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.name}>{prettyName}</Text>
-          <Text style={styles.email}>{email ?? '—'}</Text>
+
+        <View style={styles.identityText}>
+          <AppText variant="title" style={styles.name}>
+            {prettyName}
+          </AppText>
+          <MutedText variant="bodySmall" style={styles.email}>
+            {email ?? '—'}
+          </MutedText>
         </View>
       </View>
     </>
@@ -46,25 +53,35 @@ export default function ProfileHeader({
 
 const styles = StyleSheet.create({
   header: {
-    marginBottom: 14,
+    marginBottom: theme.space.lg,
   },
-  headerRow: {
-    flexDirection: 'row',
+  identity: {
     alignItems: 'center',
-    marginBottom: 16,
+    columnGap: theme.space.md,
+    flexDirection: 'row',
+    marginBottom: theme.space.xl,
   },
   avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     alignItems: 'center',
+    backgroundColor: theme.accent.muted,
+    borderColor: theme.accent.border,
+    borderRadius: 28,
+    borderWidth: 1,
+    height: 56,
     justifyContent: 'center',
-    marginRight: 12,
+    width: 56,
   },
-  avatarText: { color: theme.colors.text, fontSize: 22, fontWeight: '700' },
-  name: { fontSize: 20, fontWeight: '700', color: theme.colors.text },
-  email: { color: theme.colors.sub, marginTop: 2 },
+  avatarText: {
+    color: theme.accent.base,
+  },
+  identityText: {
+    flex: 1,
+  },
+  name: {
+    color: theme.text.primary,
+  },
+  email: {
+    color: theme.text.secondary,
+    marginTop: theme.space.hair,
+  },
 })

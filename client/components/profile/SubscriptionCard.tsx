@@ -1,7 +1,8 @@
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 
 import type { SubscriptionRow } from '../../lib/domainTypes'
-import { uiStyles } from '../ui/uiStyles'
+import { AppText, MutedText } from '../ui/AppText'
+import { Card } from '../ui/Card'
 import { theme } from '../ui/theme'
 import InfoRow from './InfoRow'
 
@@ -11,30 +12,46 @@ type Props = {
 
 export default function SubscriptionCard({ subscription }: Props) {
   return (
-    <View style={uiStyles.card}>
-      <Text style={uiStyles.cardTitle}>Subscription</Text>
+    <Card>
+      <AppText variant="heading" style={styles.title}>
+        Subscription
+      </AppText>
+
       {subscription ? (
         <>
           <InfoRow label="Plan" value={subscription.plan} />
           <InfoRow label="Status" value={subscription.status} />
           <InfoRow label="Started" value={subscription.start_date} />
           <InfoRow label="Ends" value={subscription.end_date ?? '—'} />
-          <Text style={styles.cardHint}>
+          <MutedText variant="caption" style={styles.hint}>
             Manage or upgrade your plan from the billing portal (coming soon).
-          </Text>
+          </MutedText>
         </>
       ) : (
         <>
-          <Text style={uiStyles.text}>You’re currently on the free plan.</Text>
-          <Text style={styles.cardHint}>
-            In future versions, you’ll see your premium status and manage your subscription here.
-          </Text>
+          <AppText variant="body" style={styles.body}>
+            You’re currently on the free plan.
+          </AppText>
+          <MutedText variant="caption" style={styles.hint}>
+            In future versions, you’ll see your premium status and manage your
+            subscription here.
+          </MutedText>
         </>
       )}
-    </View>
+    </Card>
   )
 }
 
 const styles = StyleSheet.create({
-  cardHint: { marginTop: 6, fontSize: 12, color: theme.colors.muted },
+  title: {
+    color: theme.text.primary,
+  },
+  body: {
+    color: theme.text.primary,
+    marginTop: theme.space.md,
+  },
+  hint: {
+    color: theme.text.tertiary,
+    marginTop: theme.space.lg,
+  },
 })

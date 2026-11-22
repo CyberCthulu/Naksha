@@ -18,11 +18,12 @@ describe('root providers', () => {
   it('does not gate rendering on the motion preference or fonts', () => {
     // Only the auth bootstrap may hold the tree back.
     expect(appSource).not.toMatch(/if\s*\(\s*!?\s*reduceMotion/)
-    expect(appSource).toMatch(/if \(!authReady\)/)
+    expect(appSource).toContain("status === 'initializing'")
+    expect(appSource).toContain("status === 'bootstrap-error'")
   })
 
-  it('keeps a light status bar in both the boot and main branches', () => {
-    expect(appSource.match(/<StatusBar style="light" \/>/g)).toHaveLength(2)
+  it('keeps a light status bar in every bootstrap and main branch', () => {
+    expect(appSource.match(/<StatusBar style="light" \/>/g)).toHaveLength(3)
   })
 
   it('falls back to the V2 environment colour rather than pure black', () => {
@@ -33,16 +34,16 @@ describe('root providers', () => {
 
 describe('route background mapping', () => {
   const mapping: Record<string, 'quiet' | 'atmospheric' | 'hero'> = {
-    Login: 'quiet',
-    Signup: 'quiet',
-    CheckEmail: 'quiet',
-    ForgotPassword: 'quiet',
-    ResetPassword: 'quiet',
-    AuthCallback: 'quiet',
-    CompleteProfile: 'quiet',
-    CreateGuestChart: 'quiet',
-    JournalList: 'quiet',
-    JournalEditor: 'quiet',
+    Login: 'atmospheric',
+    Signup: 'atmospheric',
+    CheckEmail: 'atmospheric',
+    ForgotPassword: 'atmospheric',
+    ResetPassword: 'atmospheric',
+    AuthCallback: 'atmospheric',
+    CompleteProfile: 'atmospheric',
+    CreateGuestChart: 'atmospheric',
+    JournalList: 'atmospheric',
+    JournalEditor: 'atmospheric',
     Dashboard: 'atmospheric',
     MyCharts: 'atmospheric',
     Profile: 'atmospheric',
@@ -69,7 +70,9 @@ describe('route background mapping', () => {
   })
 
   it('wraps each route exactly once, so backgrounds never nest', () => {
-    expect(appSource.match(/<Background variant=\{variant\}>/g)).toHaveLength(1)
+    expect(
+      appSource.match(/<Background variant=\{variant\} motionEnabled=\{isFocused\}>/g)
+    ).toHaveLength(1)
   })
 
   it('defines the wrappers at module scope so screens are not remounted', () => {

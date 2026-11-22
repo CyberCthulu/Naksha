@@ -1,20 +1,25 @@
 //screens/SignupScreen.tsx
 import React, { useEffect, useState } from 'react'
-import { View, Alert } from 'react-native'
+import { View, Alert, StyleSheet } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { signUpWithEmail } from '../lib/auth'
 import { normalizeZone, getDeviceTimeZoneNormalized } from '../lib/timezones'
-import { formatDateForDb, formatTimeForDb } from '../lib/time'
+import {
+  prepareBirthMoment,
+  type CivilDate,
+  type CivilTime,
+} from '../lib/time'
 
 import AuthContainer from '../components/auth/AuthContainer'
+import { AuthFormSection } from '../components/auth/AuthFormSection'
 import EmailField from '../components/auth/EmailField'
 import PasswordField from '../components/auth/PasswordField'
 import ProfileFields from '../components/auth/ProfileFields'
 
-import { uiStyles } from '../components/ui/uiStyles'
-import { AppText } from '../components/ui/AppText'
+import { AppText, MutedText } from '../components/ui/AppText'
 import { Button } from '../components/ui/Button'
+import { theme } from '../components/ui/theme'
 import type { RootStackParamList } from '../navigation/types'
 
 export default function SignupScreen() {
@@ -28,8 +33,11 @@ export default function SignupScreen() {
 
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  const [birthDate, setBirthDate] = useState<Date | null>(null)
-  const [birthTime, setBirthTime] = useState<Date | null>(null)
+  const [birthDate, setBirthDate] = useState<CivilDate | null>(null)
+  const [birthTime, setBirthTime] = useState<CivilTime | null>(null)
+  const [birthUtcOffsetMinutes, setBirthUtcOffsetMinutes] = useState<number | null>(
+    null
+  )
   const [birthLocation, setBirthLocation] = useState('')
   const [timeZone, setTimeZone] = useState('Etc/UTC')
   const [birthLat, setBirthLat] = useState<number | null>(null)
@@ -58,99 +66,151 @@ export default function SignupScreen() {
       return
     }
 
-    setError('')
-    setSubmitting(true)
-
-    const formattedDate = formatDateForDb(birthDate)
-    const formattedTime = formatTimeForDb(birthTime)
-
-    const { error } = await signUpWithEmail(email.trim(), password, {
-      first_name: firstName || undefined,
-      last_name: lastName || undefined,
-      birth_date: formattedDate,
-      birth_time: formattedTime,
-      birth_location: birthLocation || undefined,
-      time_zone: normalized,
-      birth_lat: birthLat ?? undefined,
-      birth_lon: birthLon ?? undefined,
-    })
-
-    setSubmitting(false)
-
-    if (error) {
-      setError(error.message)
+    let birthMoment
+    try {
+      birthMoment = prepareBirthMoment(
+        birthDate,
+        birthTime,
+        normalized,
+        birthUtcOffsetMinutes
+      )
+    } catch (e: any) {
+      setError(e?.message ?? 'Enter a valid birth date and time.')
       return
     }
 
-    navigation.replace('CheckEmail', {
-      email: email.trim(),
-      profile: {
-        first_name: firstName || null,
-        last_name: lastName || null,
-        birth_date: formattedDate,
-        birth_time: formattedTime,
-        birth_location: birthLocation || null,
+    setError('')
+    setSubmitting(true)
+
+    try {
+      const { error } = await signUpWithEmail(email.trim(), password, {
+        first_name: firstName || undefined,
+        last_name: lastName || undefined,
+        birth_date: birthMoment.birthDate,
+        birth_time: birthMoment.birthTime,
+        birth_utc_offset_minutes: birthMoment.birthUtcOffsetMinutes ?? undefined,
+        birth_location: birthLocation || undefined,
         time_zone: normalized,
-        birth_lat: birthLat ?? null,
-        birth_lon: birthLon ?? null,
-      },
-    })
+        birth_lat: birthLat ?? undefined,
+        birth_lon: birthLon ?? undefined,
+      })
+
+      if (error) {
+        setError(error.message)
+        return
+      }
+
+      navigation.replace('CheckEmail', {
+        email: email.trim(),
+        profile: {
+          first_name: firstName || null,
+          last_name: lastName || null,
+          birth_date: birthMoment.birthDate,
+          birth_time: birthMoment.birthTime,
+          birth_utc_offset_minutes: birthMoment.birthUtcOffsetMinutes,
+          birth_location: birthLocation || null,
+          time_zone: normalized,
+          birth_lat: birthLat ?? null,
+          birth_lon: birthLon ?? null,
+        },
+      })
+    } catch {
+      setError(
+        'Could not create your account. Check your connection and try again.'
+      )
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
-    <AuthContainer>
-      <View style={{ marginBottom: 18 }}>
-        <AppText style={uiStyles.h1}>Create your account</AppText>
-        <AppText style={[uiStyles.sub, { marginBottom: 0 }]}>
-          Add your birth details to generate your natal chart.
+    <AuthContainer formAppearance="soft">
+      <View style={styles.introduction}>
+        <AppText variant="display" accessibilityRole="header">
+          Create your account
         </AppText>
+        <MutedText variant="body" style={styles.subtitle}>
+          Your natal chart begins with your birth details.
+        </MutedText>
       </View>
 
-      <EmailField value={email} onChange={setEmail} />
-      <PasswordField value={password} onChange={setPassword} />
+      <AuthFormSection title="Account">
+        <EmailField value={email} onChange={setEmail} />
+        <PasswordField value={password} onChange={setPassword} />
+      </AuthFormSection>
 
-      <ProfileFields
-        firstName={firstName}
-        setFirstName={setFirstName}
-        lastName={lastName}
-        setLastName={setLastName}
-        birthDate={birthDate}
-        setBirthDate={setBirthDate}
-        birthTime={birthTime}
-        setBirthTime={setBirthTime}
-        birthLocation={birthLocation}
-        setBirthLocation={setBirthLocation}
-        timeZone={timeZone}
-        setTimeZone={setTimeZone}
-        birthLat={birthLat}
-        birthLon={birthLon}
-        setBirthLat={setBirthLat}
-        setBirthLon={setBirthLon}
-      />
+      <AuthFormSection title="Your birth details">
+        <ProfileFields
+          firstName={firstName}
+          setFirstName={setFirstName}
+          lastName={lastName}
+          setLastName={setLastName}
+          birthDate={birthDate}
+          setBirthDate={setBirthDate}
+          birthTime={birthTime}
+          setBirthTime={setBirthTime}
+          birthUtcOffsetMinutes={birthUtcOffsetMinutes}
+          setBirthUtcOffsetMinutes={setBirthUtcOffsetMinutes}
+          birthLocation={birthLocation}
+          setBirthLocation={setBirthLocation}
+          timeZone={timeZone}
+          setTimeZone={setTimeZone}
+          birthLat={birthLat}
+          birthLon={birthLon}
+          setBirthLat={setBirthLat}
+          setBirthLon={setBirthLon}
+        />
+      </AuthFormSection>
 
       {error !== '' && (
-        <AppText style={[uiStyles.errorText, { marginTop: 4, marginBottom: 4 }]}>
+        <AppText
+          variant="bodySmall"
+          accessibilityLiveRegion="polite"
+          style={styles.error}
+        >
           {error}
         </AppText>
       )}
 
-      <View style={{ height: 12 }} />
-
       <Button
         title={submitting ? 'Signing Up…' : 'Sign Up'}
-        variant="ghost"
+        variant="primary"
         onPress={handleSignup}
         disabled={submitting}
       />
 
-      <View style={{ height: 10 }} />
-
-      <Button
-        title="Already have an account? Log In"
-        variant="ghost"
-        onPress={() => navigation.replace('Login')}
-        disabled={submitting}
-      />
+      <View style={styles.footer}>
+        <MutedText variant="bodySmall">Already have an account?</MutedText>
+        <Button
+          title="Log In"
+          variant="tertiary"
+          size="sm"
+          onPress={() => navigation.replace('Login')}
+          disabled={submitting}
+        />
+      </View>
     </AuthContainer>
   )
 }
+
+const styles = StyleSheet.create({
+  introduction: {
+    paddingTop: theme.space.xxl,
+    marginBottom: theme.space.xxxl,
+  },
+  subtitle: {
+    marginTop: theme.space.sm,
+  },
+  error: {
+    color: theme.state.danger,
+    marginBottom: theme.space.lg,
+  },
+  footer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    columnGap: theme.space.xs,
+    marginTop: theme.space.md,
+  },
+})

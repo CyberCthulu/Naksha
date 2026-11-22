@@ -1,7 +1,9 @@
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 
 import type { UserRow } from '../../lib/domainTypes'
-import { uiStyles } from '../ui/uiStyles'
+import { formatBirthDate } from '../../lib/time'
+import { AppText, MutedText } from '../ui/AppText'
+import { Card } from '../ui/Card'
 import { theme } from '../ui/theme'
 import InfoRow from './InfoRow'
 
@@ -15,25 +17,39 @@ export default function BirthDetailsCard({
   prettyBirthTime,
 }: Props) {
   return (
-    <View style={uiStyles.card}>
-      <Text style={uiStyles.cardTitle}>Birth Details</Text>
-      <InfoRow label="Date" value={userProfile?.birth_date ?? '—'} />
+    <Card>
+      <AppText variant="heading" style={styles.title}>
+        Birth Details
+      </AppText>
+
+      {/*
+        Coordinates are gone from the presentation, not from the record. They
+        are still stored and still drive every calculation; three decimal
+        places of latitude simply tell a reader nothing their birth place does
+        not. The time zone stays, as secondary birth information: it is the
+        one field here that changes what the chart computes.
+      */}
+      <InfoRow
+        label="Date"
+        value={formatBirthDate(userProfile?.birth_date) ?? '—'}
+      />
       <InfoRow label="Time" value={prettyBirthTime} />
       <InfoRow label="Location" value={userProfile?.birth_location ?? '—'} />
-      <InfoRow label="Time Zone" value={userProfile?.time_zone ?? '—'} />
-      {userProfile?.birth_lat != null && userProfile?.birth_lon != null && (
-        <InfoRow
-          label="Coordinates"
-          value={`${userProfile.birth_lat.toFixed(3)}, ${userProfile.birth_lon.toFixed(3)}`}
-        />
-      )}
-      <Text style={styles.cardHint}>
+      <InfoRow label="Time zone" value={userProfile?.time_zone ?? '—'} />
+
+      <MutedText variant="caption" style={styles.hint}>
         Edit these details in “Complete Profile” to update your natal chart.
-      </Text>
-    </View>
+      </MutedText>
+    </Card>
   )
 }
 
 const styles = StyleSheet.create({
-  cardHint: { marginTop: 6, fontSize: 12, color: theme.colors.muted },
+  title: {
+    color: theme.text.primary,
+  },
+  hint: {
+    color: theme.text.tertiary,
+    marginTop: theme.space.lg,
+  },
 })

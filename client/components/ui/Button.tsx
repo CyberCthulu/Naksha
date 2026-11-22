@@ -1,7 +1,6 @@
 // components/ui/Button.tsx
 import React from 'react'
 import {
-  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
@@ -9,11 +8,13 @@ import {
   type ViewStyle,
 } from 'react-native'
 import { theme } from './theme'
+import { CelestialLoader } from './CelestialLoader'
 
 export type ButtonVariant =
   | 'primary'
   | 'secondary'
   | 'tertiary'
+  | 'quiet'
   | 'destructive'
   | 'destructiveSolid'
   /** Backward-compatible alias for `secondary`. */
@@ -77,9 +78,9 @@ export function Button({
         ]}
       >
         {loading ? (
-          <ActivityIndicator
+          <CelestialLoader
             testID="button-spinner"
-            size="small"
+            size={20}
             color={labelStyles[resolved].color}
             style={styles.spinner}
           />
@@ -152,6 +153,9 @@ const surfaceStyles = StyleSheet.create({
   tertiary: {
     backgroundColor: 'transparent',
   },
+  quiet: {
+    backgroundColor: 'transparent',
+  },
   destructive: {
     backgroundColor: 'transparent',
     borderWidth: 1,
@@ -166,6 +170,7 @@ const labelStyles = StyleSheet.create({
   primary: { color: theme.text.onAccent },
   secondary: { color: theme.text.primary },
   tertiary: { color: theme.accent.base },
+  quiet: { color: theme.text.secondary },
   destructive: { color: theme.state.danger },
   destructiveSolid: { color: theme.text.onAccent },
 })

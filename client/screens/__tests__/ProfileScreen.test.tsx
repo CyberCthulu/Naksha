@@ -1,18 +1,21 @@
 import React from 'react'
-import { Alert, Text } from 'react-native'
+import { Alert, StyleSheet, Text } from 'react-native'
 import TestRenderer from 'react-test-renderer'
 
 import ProfileScreen from '../ProfileScreen'
 import { deleteAccount } from '../../lib/accountDeletion'
 import { signOut } from '../../lib/auth'
-import supabase from '../../lib/supabase'
+import supabase, { clearPersistedAuthSession } from '../../lib/supabase'
 import type { UserRow } from '../../lib/domainTypes'
+import { Button } from '../../components/ui/Button'
+import { theme } from '../../components/ui/theme'
 
 const mockNavigation = {
   goBack: jest.fn(),
   navigate: jest.fn(),
   setOptions: jest.fn(),
 }
+const mockForceSignedOut = jest.fn()
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => mockNavigation,
@@ -21,6 +24,10 @@ jest.mock('@react-navigation/native', () => ({
 
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 24, left: 0 }),
+}))
+
+jest.mock('../../lib/authSession', () => ({
+  useAuthSession: () => ({ forceSignedOut: mockForceSignedOut }),
 }))
 
 jest.mock('../../lib/accountDeletion', () => ({
@@ -35,6 +42,7 @@ jest.mock('../../lib/auth', () => ({
 
 jest.mock('../../lib/supabase', () => ({
   __esModule: true,
+  clearPersistedAuthSession: jest.fn(),
   default: {
     auth: {
       getUser: jest.fn(),
@@ -54,6 +62,7 @@ const userRow: UserRow = {
   last_name: 'Lovelace',
   birth_date: '1815-12-10',
   birth_time: '12:00:00',
+  birth_utc_offset_minutes: null,
   birth_location: 'London, UK',
   time_zone: 'Europe/London',
   birth_lat: 51.5072,
@@ -215,7 +224,8 @@ describe('ProfileScreen account deletion', () => {
 
     mockProfileQueries()
     mockedDeleteAccount().mockResolvedValue()
-    mockedSignOut().mockResolvedValue({ error: null } as any)
+    mockedSignOut().mockResolvedValue(undefined)
+    ;(clearPersistedAuthSession as jest.Mock).mockResolvedValue(undefined)
   })
 
   afterEach(() => {
@@ -268,6 +278,31 @@ describe('ProfileScreen account deletion', () => {
 
     expect(mockedDeleteAccount()).toHaveBeenCalledTimes(1)
     expect(mockedSignOut()).toHaveBeenCalledTimes(1)
+    expect(mockForceSignedOut).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not report deletion failure when only local sign out fails', async () => {
+    mockedSignOut().mockRejectedValueOnce(new Error('network unavailable'))
+    const screen = await renderScreen()
+
+    await pressDeleteAccount(screen)
+    await act(async () => {
+      confirmationButtons()[1].onPress?.()
+      await settleAsyncWork()
+    })
+
+    expect(mockedDeleteAccount()).toHaveBeenCalledTimes(1)
+    expect(mockedSignOut()).toHaveBeenCalledTimes(1)
+    expect(clearPersistedAuthSession).toHaveBeenCalledTimes(1)
+    expect(mockForceSignedOut).toHaveBeenCalledTimes(1)
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Account deleted',
+      expect.stringContaining('could not finish signing out normally')
+    )
+    expect(Alert.alert).not.toHaveBeenCalledWith(
+      'Account deletion failed',
+      expect.anything()
+    )
   })
 
   it('shows a safe error and stays signed in when deletion fails', async () => {
@@ -287,5 +322,165 @@ describe('ProfileScreen account deletion', () => {
       'Could not delete account.'
     )
     expect(mockedSignOut()).not.toHaveBeenCalled()
+  })
+})
+
+function hostTexts(screen: TestRenderer.ReactTestRenderer) {
+  return screen.root
+    .findAll((node) => String(node.type) === 'Text')
+    .map((node) => textValue(node.props.children))
+}
+
+/**
+ * One entry per option.
+ *
+ * Pressable is a memo around a forwardRef, so a single control surfaces twice
+ * in the tree with identical props. Options are deduped by what they announce,
+ * which is unique per row.
+ */
+function radios(screen: TestRenderer.ReactTestRenderer) {
+  const seen = new Map<string, TestRenderer.ReactTestInstance>()
+
+  for (const node of screen.root.findAll(
+    (n) => typeof n.type !== 'string' && n.props?.accessibilityRole === 'radio'
+  )) {
+    const label = String(node.props.accessibilityLabel)
+    if (!seen.has(label)) seen.set(label, node)
+  }
+
+  return [...seen.values()]
+}
+
+function flatStyle(node: TestRenderer.ReactTestInstance) {
+  return StyleSheet.flatten(
+    typeof node.props.style === 'function'
+      ? node.props.style({ pressed: false })
+      : node.props.style
+  ) as Record<string, unknown>
+}
+
+describe('ProfileScreen presentation', () => {
+  beforeEach(() => {
+    ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
+    jest.clearAllMocks()
+    jest.spyOn(Alert, 'alert').mockImplementation(jest.fn())
+    renderer = null
+    mockProfileQueries()
+    mockedDeleteAccount().mockResolvedValue()
+    mockedSignOut().mockResolvedValue(undefined)
+    ;(clearPersistedAuthSession as jest.Mock).mockResolvedValue(undefined)
+  })
+
+  afterEach(() => {
+    if (renderer) {
+      const mounted = renderer
+      act(() => {
+        mounted.unmount()
+      })
+    }
+    renderer = null
+    jest.restoreAllMocks()
+  })
+
+  it('shows the birth record without the database around it', async () => {
+    const screen = await renderScreen()
+    const texts = hostTexts(screen)
+
+    // The place and the zone stay: the zone is the one field here that
+    // changes what the chart computes.
+    expect(texts).toContain('London, UK')
+    expect(texts).toContain('Europe/London')
+
+    // Coordinates are still stored and still drive the calculation. They are
+    // simply not something a reader needs to see.
+    expect(texts.some((t) => t.includes('51.507'))).toBe(false)
+    expect(texts.some((t) => t.includes('-0.128'))).toBe(false)
+    expect(texts.some((t) => t.includes('0.1276'))).toBe(false)
+
+    // And the date reads as a date, not as a stored field.
+    expect(texts.some((t) => t.includes('1815-12-10'))).toBe(false)
+    expect(texts).toContain('10 Dec 1815')
+  })
+
+  it('gives every preference option a real target and radio semantics', async () => {
+    const screen = await renderScreen()
+    const options = radios(screen)
+
+    expect(options.length).toBeGreaterThan(0)
+
+    for (const option of options) {
+      const style = flatStyle(option)
+      expect(style.minHeight).toBeGreaterThanOrEqual(48)
+      expect(typeof option.props.accessibilityLabel).toBe('string')
+      expect(option.props.accessibilityState).toEqual(
+        expect.objectContaining({
+          selected: expect.any(Boolean),
+          disabled: expect.any(Boolean),
+        })
+      )
+    }
+  })
+
+  it('keeps every "Coming soon" option unselectable', async () => {
+    const screen = await renderScreen()
+    const soon = radios(screen).filter((node) =>
+      String(node.props.accessibilityLabel).includes('Coming soon')
+    )
+
+    expect(soon.length).toBeGreaterThan(0)
+
+    for (const option of soon) {
+      expect(option.props.accessibilityState.disabled).toBe(true)
+      expect(option.props.accessibilityState.selected).toBe(false)
+      expect(option.props.disabled).toBe(true)
+    }
+  })
+
+  it('marks exactly one option selected per group', async () => {
+    const screen = await renderScreen()
+    const selected = radios(screen).filter(
+      (node) => node.props.accessibilityState.selected
+    )
+
+    // Whole Sign, Tropical, standard orbs -- the three the engine actually
+    // uses, and nothing else.
+    expect(selected).toHaveLength(3)
+  })
+
+  it('carries selection with shape, not colour alone', async () => {
+    const screen = await renderScreen()
+    const rendered = JSON.stringify(screen.toJSON())
+
+    // A filled core is rendered only for the selected option, so the state
+    // survives a monochrome or colour-blind view.
+    expect(rendered).not.toContain('#007AFF')
+    expect(rendered).toContain(theme.accent.base)
+  })
+
+  it('weights the account actions by what they do', async () => {
+    const screen = await renderScreen()
+    const buttons = screen.root.findAllByType(Button)
+
+    function variantOf(title: string) {
+      const match = buttons.find((node) =>
+        String(node.props.title).startsWith(title)
+      )
+      if (!match) throw new Error(`no button titled ${title}`)
+      return match.props.variant
+    }
+
+    expect(buttons.some((node) => node.props.title === 'Export my data')).toBe(
+      false
+    )
+    expect(variantOf('Sign out')).toBe('tertiary')
+    expect(variantOf('Delete account')).toBe('destructive')
+  })
+
+  it('lays labelled facts out without a fixed column', async () => {
+    const screen = await renderScreen()
+    const rendered = JSON.stringify(screen.toJSON())
+
+    // The 110pt label column clipped as soon as the font scale grew.
+    expect(rendered).not.toContain('"width":110')
   })
 })

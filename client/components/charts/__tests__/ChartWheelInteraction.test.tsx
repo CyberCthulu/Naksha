@@ -19,12 +19,16 @@ import ChartWheel, {
   wheelPlanetPoints,
 } from '../ChartWheel'
 import {
+  ASPECT_BAND_TOLERANCE,
   ASPECT_HIT_TOLERANCE,
+  distanceToSegment,
   houseAtPoint,
   inverseTransformPoint,
+  nearestPlanetIndex,
   nearestPointIndex,
   nearestSegmentIndex,
   PLANET_HIT_RADIUS,
+  resolveWheelTap,
 } from '../chartWheelInteraction'
 import useChartData from '../../../hooks/useChartData'
 
@@ -206,13 +210,17 @@ describe('Wheel zoom', () => {
     expect(hosts('chart-wheel-transform')).toHaveLength(1)
   })
 
-  it('offers zoom and reset as accessibility actions instead of controls', () => {
+  it('offers zoom and reset on a labelled accessibility element', () => {
     const frame = renderChart().root.findAll(
       (n) =>
         typeof n.type === 'string' &&
-        n.props?.testID === 'interactive-chart-wheel'
+        n.props?.testID === 'chart-wheel-accessibility'
     )[0]
 
+    expect(frame.props.accessible).toBe(true)
+    expect(frame.props.importantForAccessibility).toBe('yes')
+    expect(frame.props.accessibilityLabel).toBe('Interactive astrology chart')
+    expect(frame.props.accessibilityValue).toEqual({ text: '1.0 times zoom' })
     expect(frame.props.accessibilityActions).toEqual([
       { name: 'zoomIn', label: 'Zoom into chart' },
       { name: 'zoomOut', label: 'Zoom out of chart' },
@@ -221,16 +229,29 @@ describe('Wheel zoom', () => {
     expect(typeof frame.props.onAccessibilityAction).toBe('function')
   })
 
-  it('accepts every accessibility zoom action without throwing', () => {
-    const frame = renderChart().root.findAll(
-      (n) =>
-        typeof n.type === 'string' &&
-        n.props?.testID === 'interactive-chart-wheel'
-    )[0]
+  it('updates the exposed zoom value and accepts every accessibility action', () => {
+    const screen = renderChart()
+    const accessibilityElement = () =>
+      screen.root.findAll(
+        (n) =>
+          typeof n.type === 'string' &&
+          n.props?.testID === 'chart-wheel-accessibility'
+      )[0]
 
-    for (const actionName of ['zoomIn', 'zoomOut', 'resetZoom', 'unknown']) {
+    act(() =>
+      accessibilityElement().props.onAccessibilityAction({
+        nativeEvent: { actionName: 'zoomIn' },
+      })
+    )
+    expect(accessibilityElement().props.accessibilityValue).toEqual({
+      text: '1.5 times zoom',
+    })
+
+    for (const actionName of ['zoomOut', 'resetZoom', 'unknown']) {
       act(() =>
-        frame.props.onAccessibilityAction({ nativeEvent: { actionName } })
+        accessibilityElement().props.onAccessibilityAction({
+          nativeEvent: { actionName },
+        })
       )
     }
   })
@@ -646,9 +667,16 @@ describe('Selection path parity', () => {
     )[0]
   }
 
+  function interpretationModal(screen: ReturnType<typeof create>) {
+    return screen.root.findAll(
+      (n) =>
+        n.props?.transparent === true &&
+        typeof n.props?.onRequestClose === 'function'
+    )[0]
+  }
+
   function modalVisible(screen: ReturnType<typeof create>) {
-    const modals = screen.root.findAll((n) => n.props?.animationType === 'slide')
-    return modals.some((m) => m.props.visible === true)
+    return interpretationModal(screen)?.props.visible === true
   }
 
   it('produces identical state from the wheel and the Positions row', () => {
@@ -737,9 +765,7 @@ describe('Selection path parity', () => {
     act(() => positionsRow(screen, 'Mars').props.onPress())
     expect(modalVisible(screen)).toBe(true)
 
-    const modal = screen.root.findAll(
-      (n) => n.props?.animationType === 'slide'
-    )[0]
+    const modal = interpretationModal(screen)
     act(() => modal.props.onRequestClose())
 
     expect(wheel(screen).props.selection).toEqual(before)
@@ -944,6 +970,341 @@ describe('House selection on the wheel', () => {
     expect(
       screen.root.findAll((n) => n.props?.testID === 'chart-house-detail')
     ).toHaveLength(0)
+  })
+})
+
+describe('Tap arbitration in the house band', () => {
+  const SIZE = 320
+
+  function targets() {
+    return {
+      planetPoints: wheelPlanetPoints(SIZE, PLANETS),
+      aspectSegments: wheelAspectSegments(SIZE, PLANETS, ASPECTS),
+      houseBand: wheelHouseBand(SIZE),
+      houses: HOUSES,
+    }
+  }
+
+  function radiusOf(point: { x: number; y: number }) {
+    const { center } = wheelHouseBand(SIZE)
+    return Math.hypot(point.x - center.x, point.y - center.y)
+  }
+
+  function pointAt(lon: number, radius: number) {
+    const { center } = wheelHouseBand(SIZE)
+    const angle = ((90 - lon) * Math.PI) / 180
+    return {
+      x: center.x + Math.cos(angle) * radius,
+      y: center.y + Math.sin(angle) * radius,
+    }
+  }
+
+  function nearestAspectDistance(point: { x: number; y: number }) {
+    return Math.min(
+      ...wheelAspectSegments(SIZE, PLANETS, ASPECTS).map((segment) =>
+        distanceToSegment(point, segment)
+      )
+    )
+  }
+
+  it('ends every aspect line inside the house band, which is the cause', () => {
+    // rAspect sits between rHouseInner and rHouseOuter, so an aspect endpoint
+    // is not merely near the ring -- it is in it. That is why the corridor has
+    // to tighten there: at full width each endpoint claims the band around its
+    // own planet's longitude. If the wheel ever moves rAspect clear of the
+    // band, the tightening below is no longer buying anything.
+    const band = wheelHouseBand(SIZE)
+
+    wheelAspectSegments(SIZE, PLANETS, ASPECTS).forEach((segment) => {
+      ;[segment.a, segment.b].forEach((end) => {
+        expect(radiusOf(end)).toBeGreaterThan(band.innerRadius)
+        expect(radiusOf(end)).toBeLessThan(band.outerRadius)
+      })
+    })
+  })
+
+  it('keeps the band corridor tighter than the open-field one', () => {
+    expect(ASPECT_BAND_TOLERANCE).toBeLessThan(ASPECT_HIT_TOLERANCE)
+  })
+
+  it('gives the wedge to the house when a tap is only near a line', () => {
+    const band = wheelHouseBand(SIZE)
+    const radius = radiusOf(wheelAspectSegments(SIZE, PLANETS, ASPECTS)[0].a)
+    const planetPoints = wheelPlanetPoints(SIZE, PLANETS)
+
+    // Points on the ring that the old full corridor would have claimed for an
+    // aspect, while sitting nowhere near enough to be a deliberate line tap.
+    const nearMisses = []
+    for (let lon = 0; lon < 360; lon += 0.5) {
+      const point = pointAt(lon, radius)
+      const distance = nearestAspectDistance(point)
+
+      if (
+        distance > ASPECT_BAND_TOLERANCE + 2 &&
+        distance < ASPECT_HIT_TOLERANCE - 2 &&
+        nearestPointIndex(point, planetPoints, PLANET_HIT_RADIUS) == null &&
+        houseAtPoint(point, band, HOUSES) != null
+      ) {
+        nearMisses.push(point)
+      }
+    }
+
+    expect(nearMisses.length).toBeGreaterThan(0)
+
+    nearMisses.forEach((point) => {
+      // What used to happen: the aspect took it.
+      expect(
+        nearestSegmentIndex(
+          point,
+          wheelAspectSegments(SIZE, PLANETS, ASPECTS),
+          ASPECT_HIT_TOLERANCE
+        )
+      ).not.toBeNull()
+
+      expect(resolveWheelTap(point, targets())).toEqual({
+        kind: 'house',
+        house: expect.any(Number),
+      })
+    })
+  })
+
+  it('still takes an aspect from a tap placed on the line in the band', () => {
+    // A conjunction's whole chord lies in the band, so a precise tap there has
+    // to keep working. Walk in from the endpoint to the first point that is
+    // past the planet's own control and still inside the ring.
+    const band = wheelHouseBand(SIZE)
+    const segment = wheelAspectSegments(SIZE, PLANETS, ASPECTS)[0]
+    const planetPoints = wheelPlanetPoints(SIZE, PLANETS)
+
+    let onLine: { x: number; y: number } | null = null
+    for (let t = 0; t <= 0.25; t += 0.002) {
+      const point = {
+        x: segment.a.x + (segment.b.x - segment.a.x) * t,
+        y: segment.a.y + (segment.b.y - segment.a.y) * t,
+      }
+      if (
+        nearestPointIndex(point, planetPoints, PLANET_HIT_RADIUS) == null &&
+        houseAtPoint(point, band, HOUSES) != null
+      ) {
+        onLine = point
+        break
+      }
+    }
+
+    expect(onLine).not.toBeNull()
+    expect(resolveWheelTap(onLine!, targets())).toEqual({
+      kind: 'aspect',
+      index: expect.any(Number),
+    })
+  })
+
+  it('leaves the open-field corridor alone', () => {
+    const segments = wheelAspectSegments(SIZE, PLANETS, ASPECTS)
+    const segment = segments[0]
+    const mid = {
+      x: (segment.a.x + segment.b.x) / 2,
+      y: (segment.a.y + segment.b.y) / 2,
+    }
+    const dx = segment.b.x - segment.a.x
+    const dy = segment.b.y - segment.a.y
+    const length = Math.hypot(dx, dy)
+    const offset = ASPECT_HIT_TOLERANCE - 6
+    const off = {
+      x: mid.x + (-dy / length) * offset,
+      y: mid.y + (dx / length) * offset,
+    }
+
+    // Well inside the ring, so the tightening must not reach it.
+    expect(houseAtPoint(off, wheelHouseBand(SIZE), HOUSES)).toBeNull()
+    expect(resolveWheelTap(off, targets())).toEqual({
+      kind: 'aspect',
+      index: expect.any(Number),
+    })
+  })
+
+  it('holds slop steady on screen as the wheel is zoomed', () => {
+    const segments = wheelAspectSegments(SIZE, PLANETS, ASPECTS)
+    const segment = segments[0]
+    const mid = {
+      x: (segment.a.x + segment.b.x) / 2,
+      y: (segment.a.y + segment.b.y) / 2,
+    }
+    const dx = segment.b.x - segment.a.x
+    const dy = segment.b.y - segment.a.y
+    const length = Math.hypot(dx, dy)
+    const offset = ASPECT_HIT_TOLERANCE - 6
+    const off = {
+      x: mid.x + (-dy / length) * offset,
+      y: mid.y + (dx / length) * offset,
+    }
+
+    // Fitted, this offset is a hit. Magnified three times it is three times
+    // further from the line on screen, so it must stop being one -- otherwise
+    // zooming in to separate crowded targets would widen the corridors along
+    // with the drawing and make them harder to tell apart, not easier.
+    expect(resolveWheelTap(off, targets(), 1)).toEqual({
+      kind: 'aspect',
+      index: expect.any(Number),
+    })
+    expect(resolveWheelTap(off, targets(), 3)).toBeNull()
+  })
+
+  it('leaves planets winning outright, at any zoom', () => {
+    const planetPoints = wheelPlanetPoints(SIZE, PLANETS)
+
+    planetPoints.forEach((point, index) => {
+      expect(resolveWheelTap(point, targets(), 1)).toEqual({
+        kind: 'planet',
+        index,
+      })
+      expect(resolveWheelTap(point, targets(), 3)).toEqual({
+        kind: 'planet',
+        index,
+      })
+    })
+  })
+
+  it('selects nothing in empty chart space', () => {
+    expect(resolveWheelTap({ x: 2, y: 2 }, targets())).toBeNull()
+  })
+})
+
+describe('Planet controls over the house band', () => {
+  const SIZE = 320
+
+  function targets() {
+    return {
+      planetPoints: wheelPlanetPoints(SIZE, PLANETS),
+      aspectSegments: wheelAspectSegments(SIZE, PLANETS, ASPECTS),
+      houseBand: wheelHouseBand(SIZE),
+      houses: HOUSES,
+    }
+  }
+
+  function radiusOf(point: { x: number; y: number }) {
+    const { center } = wheelHouseBand(SIZE)
+    return Math.hypot(point.x - center.x, point.y - center.y)
+  }
+
+  it('overhangs the band, which is the whole reason for the boundary', () => {
+    const band = wheelHouseBand(SIZE)
+    const ring = radiusOf(wheelPlanetPoints(SIZE, PLANETS)[0])
+
+    // The marker sits clear of the band; its 48dp control does not.
+    expect(ring).toBeGreaterThan(band.outerRadius)
+    expect(ring - PLANET_HIT_RADIUS).toBeLessThan(band.outerRadius)
+  })
+
+  it('gives a touch on the ring to the house, not to the nearer planet', () => {
+    const band = wheelHouseBand(SIZE)
+    const planetPoints = wheelPlanetPoints(SIZE, PLANETS)
+    const segments = wheelAspectSegments(SIZE, PLANETS, ASPECTS)
+
+    // Every point on the ring that a planet's control used to claim. Points
+    // sitting on an aspect line are excluded rather than asserted about: an
+    // aspect ends inside the band and a precise tap on one still takes it.
+    const contested = []
+    for (let lon = 0; lon < 360; lon += 0.5) {
+      for (
+        let radius = band.innerRadius + 1;
+        radius < band.outerRadius;
+        radius += 1
+      ) {
+        const angle = ((90 - lon) * Math.PI) / 180
+        const point = {
+          x: band.center.x + Math.cos(angle) * radius,
+          y: band.center.y + Math.sin(angle) * radius,
+        }
+
+        const onALine = segments.some(
+          (segment) => distanceToSegment(point, segment) <= ASPECT_BAND_TOLERANCE
+        )
+
+        if (
+          !onALine &&
+          nearestPointIndex(point, planetPoints, PLANET_HIT_RADIUS) != null
+        ) {
+          contested.push(point)
+        }
+      }
+    }
+
+    expect(contested.length).toBeGreaterThan(0)
+
+    contested.forEach((point) => {
+      // The band-aware test declines where the plain disc test did not.
+      expect(
+        nearestPlanetIndex(point, planetPoints, band, PLANET_HIT_RADIUS)
+      ).toBeNull()
+      expect(resolveWheelTap(point, targets())).toEqual({
+        kind: 'house',
+        house: expect.any(Number),
+      })
+    })
+  })
+
+  it('leaves the marker and its outward slop fully selectable', () => {
+    const band = wheelHouseBand(SIZE)
+    const planetPoints = wheelPlanetPoints(SIZE, PLANETS)
+
+    planetPoints.forEach((point, index) => {
+      expect(nearestPlanetIndex(point, planetPoints, band)).toBe(index)
+
+      // Outward, away from the band, nothing is given up.
+      const angle = Math.atan2(point.y - band.center.y, point.x - band.center.x)
+      const out = {
+        x: point.x + Math.cos(angle) * (PLANET_HIT_RADIUS - 2),
+        y: point.y + Math.sin(angle) * (PLANET_HIT_RADIUS - 2),
+      }
+      expect(nearestPlanetIndex(out, planetPoints, band)).toBe(index)
+    })
+  })
+
+  it('declines the press itself, so the tap is not simply swallowed', () => {
+    // The Pressable and the gesture layer both see this touch. If only the
+    // gesture layer applied the boundary the control would still fire and
+    // select the planet, so the two have to resolve it the same way.
+    const screen = renderChart()
+    const size = wheel(screen).props.size
+    const band = wheelHouseBand(size)
+    const origin = wheelPlanetPoints(size, PLANETS)[2]
+    const angle = Math.atan2(origin.y - band.center.y, origin.x - band.center.x)
+    const onRing = {
+      x: band.center.x + Math.cos(angle) * (band.outerRadius - 2),
+      y: band.center.y + Math.sin(angle) * (band.outerRadius - 2),
+    }
+
+    const before = wheel(screen).props.focusedPlanet
+
+    act(() =>
+      control(screen, 'wheel-planet-Mars')[0].props.onPress({
+        nativeEvent: {
+          locationX: onRing.x - origin.x + PLANET_HIT_SIZE / 2,
+          locationY: onRing.y - origin.y + PLANET_HIT_SIZE / 2,
+        },
+      })
+    )
+
+    expect(wheel(screen).props.focusedPlanet).toBe(before)
+
+    // The same control, pressed on the marker, still selects.
+    act(() =>
+      control(screen, 'wheel-planet-Mars')[0].props.onPress({
+        nativeEvent: {
+          locationX: PLANET_HIT_SIZE / 2,
+          locationY: PLANET_HIT_SIZE / 2,
+        },
+      })
+    )
+    expect(wheel(screen).props.focusedPlanet).toBe('Mars')
+  })
+
+  it('still takes an assistive activation with no touch location', () => {
+    const screen = renderChart()
+
+    act(() => control(screen, 'wheel-planet-Moon')[0].props.onPress())
+
+    expect(wheel(screen).props.focusedPlanet).toBe('Moon')
   })
 })
 

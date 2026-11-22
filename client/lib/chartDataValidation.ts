@@ -3,6 +3,7 @@ import type { ChartData, ChartMeta } from './charts'
 import {
   CURRENT_CHART_CALCULATION_VERSION,
   CURRENT_CHART_SCHEMA_VERSION,
+  HISTORICAL_CHART_CALCULATION_VERSION,
 } from './chartDataVersions'
 
 const VALID_ASPECT_TYPES = new Set(['conj', 'opp', 'trine', 'square', 'sextile'])
@@ -13,7 +14,7 @@ export const UNSUPPORTED_CHART_DATA_MESSAGE =
 export type ChartDataValidationResult =
   | {
       status: 'valid'
-      compatibility: 'legacy-v1' | 'current'
+      compatibility: 'legacy-v1' | 'historical-v1' | 'current'
       data: ChartData
     }
   | {
@@ -41,6 +42,13 @@ function isNumber(value: unknown): value is number {
 
 function isNullableNumber(value: unknown): value is number | null {
   return value === null || isNumber(value)
+}
+
+function isNullableOffset(value: unknown): value is number | null {
+  return (
+    value === null ||
+    (isNumber(value) && Number.isInteger(value) && value >= -840 && value <= 840)
+  )
 }
 
 function isVersionNumber(value: unknown): value is number {
@@ -117,7 +125,10 @@ export function validateChartData(value: unknown): ChartDataValidationResult {
       }
     }
 
-    if (calculationVersion !== CURRENT_CHART_CALCULATION_VERSION) {
+    if (
+      calculationVersion !== HISTORICAL_CHART_CALCULATION_VERSION &&
+      calculationVersion !== CURRENT_CHART_CALCULATION_VERSION
+    ) {
       return {
         status: 'unsupported',
         field: 'calculation_version',
@@ -132,10 +143,12 @@ export function validateChartData(value: unknown): ChartDataValidationResult {
   }
 
   const meta = value.meta
+  const birthUtcOffsetMinutes = meta.birth_utc_offset_minutes ?? null
   if (
     !isString(meta.birth_date) ||
     !isString(meta.birth_time) ||
     !isString(meta.time_zone) ||
+    !isNullableOffset(birthUtcOffsetMinutes) ||
     !isNullableNumber(meta.birth_lat) ||
     !isNullableNumber(meta.birth_lon)
   ) {
@@ -167,6 +180,7 @@ export function validateChartData(value: unknown): ChartDataValidationResult {
     name: isString(meta.name) ? meta.name : 'Natal Chart',
     birth_date: meta.birth_date,
     birth_time: meta.birth_time,
+    birth_utc_offset_minutes: birthUtcOffsetMinutes,
     time_zone: meta.time_zone,
     birth_lat: meta.birth_lat,
     birth_lon: meta.birth_lon,
@@ -190,9 +204,15 @@ export function validateChartData(value: unknown): ChartDataValidationResult {
     data.calculation_version = value.calculation_version as number
   }
 
+  const compatibility = isLegacy
+    ? 'legacy-v1'
+    : data.calculation_version === HISTORICAL_CHART_CALCULATION_VERSION
+      ? 'historical-v1'
+      : 'current'
+
   return {
     status: 'valid',
-    compatibility: isLegacy ? 'legacy-v1' : 'current',
+    compatibility,
     data,
   }
 }

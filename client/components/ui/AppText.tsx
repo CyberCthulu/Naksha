@@ -57,7 +57,10 @@ export function MutedText({ variant, style, ...rest }: AppTextProps) {
     <Text
       maxFontSizeMultiplier={variant ? variantScaleCap(variant) : undefined}
       {...rest}
-      style={[variant ? theme.typography[variant] : null, styles.muted, style]}
+      style={[
+        variant ? [theme.typography[variant], styles.variantMuted] : styles.muted,
+        style,
+      ]}
     />
   )
 }
@@ -90,5 +93,8 @@ const styles = StyleSheet.create({
   // === V2 ===
   variantColor: {
     color: theme.text.primary,
+  },
+  variantMuted: {
+    color: theme.text.secondary,
   },
 })

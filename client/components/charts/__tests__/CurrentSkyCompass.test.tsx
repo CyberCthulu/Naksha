@@ -1,0 +1,198 @@
+import React from 'react'
+import { AccessibilityInfo } from 'react-native'
+import TestRenderer from 'react-test-renderer'
+import { CurrentSkyCompass } from '../CurrentSkyCompass'
+import { InteractiveChartWheel } from '../InteractiveChartWheel'
+import { useCurrentSky } from '../../../hooks/useCurrentSky'
+import { Button } from '../../ui/Button'
+import { theme } from '../../ui/theme'
+import type { CurrentSky } from '../../../lib/currentSky'
+import { buildCurrentSky } from '../../../lib/currentSky'
+
+jest.mock('../../../hooks/useCurrentSky', () => ({ useCurrentSky: jest.fn() }))
+jest.mock('../InteractiveChartWheel', () => ({
+  InteractiveChartWheel: () => null,
+}))
+
+const { act, create } = TestRenderer
+let renderer: ReturnType<typeof create>
+let sky: CurrentSky
+let hook: ReturnType<typeof useCurrentSky>
+const mockedHook = jest.mocked(useCurrentSky)
+const text = () => JSON.stringify(renderer.toJSON())
+const wheel = () => renderer.root.findByType(InteractiveChartWheel)
+const press = (testID: string) =>
+  act(() =>
+    renderer.root
+      .findAll(
+        (node) =>
+          node.props.testID === testID &&
+          typeof node.props.onPress === 'function'
+      )[0]
+      .props.onPress()
+  )
+
+beforeEach(() => {
+  sky = {
+    evaluatedAt: new Date('2026-09-12T12:00:00Z'),
+    planets: [
+      { name: 'Sun', lon: 170 },
+      { name: 'Moon', lon: 350 },
+      { name: 'Mars', lon: 80 },
+    ],
+    aspects: [
+      { a: 'Sun', b: 'Moon', type: 'opp', orb: 0 },
+      { a: 'Sun', b: 'Mars', type: 'square', orb: 0 },
+    ],
+  }
+  hook = { sky, error: false, active: true, refresh: jest.fn() }
+  mockedHook.mockImplementation(() => hook)
+  act(() => {
+    renderer = create(<CurrentSkyCompass />)
+  })
+})
+
+afterEach(() => act(() => renderer.unmount()))
+
+it('shows the current sky with no natal houses and a dated position readout', () => {
+  expect(wheel().props.planets).toBe(sky.planets)
+  expect(wheel().props.houses).toBeNull()
+  expect(wheel().props.accessibilityLabel).toBe('Current sky chart')
+  expect(text()).toContain('2026')
+  expect(text()).toContain('Sun · 20°00′ Virgo')
+  expect(text()).not.toContain('birth')
+})
+
+it('exposes exact positions and selects planets through the accessible list', () => {
+  press('current-sky-positions-toggle')
+  press('current-sky-planet-Moon')
+  expect(wheel().props.selection).toEqual({ kind: 'planet', planet: 'Moon' })
+  expect(text()).toContain('Moon · 20°00′ Pisces')
+  act(() => wheel().props.onSelectPlanet('Mars'))
+  expect(text()).toContain('Mars · 20°00′ Gemini')
+  press('current-sky-positions-toggle')
+  expect(text()).not.toContain('current-sky-planet-Moon')
+})
+
+it('exposes labelled aspect controls that select the same interpretation', () => {
+  const positionsToggle = renderer.root.find(
+    (node) => node.props.testID === 'current-sky-positions-toggle'
+  )
+  const aspectsToggle = renderer.root.find(
+    (node) => node.props.testID === 'current-sky-aspects-toggle'
+  )
+  const rulesToggle = renderer.root.find(
+    (node) => node.props.testID === 'current-sky-rules-toggle'
+  )
+
+  expect(positionsToggle.props.accessibilityLabel).toBe('Planet positions')
+  expect(aspectsToggle.props.accessibilityLabel).toBe('Current sky aspects')
+  expect(aspectsToggle.props.accessibilityState).toEqual({ expanded: false })
+  expect(rulesToggle.props.accessibilityLabel).toBe('Calculation details')
+  expect(aspectsToggle.props.style({ pressed: false })[0].minHeight).toBe(
+    theme.touchTarget.min
+  )
+
+  press('current-sky-aspects-toggle')
+  const opposition = renderer.root.find(
+    (node) => node.props.testID === 'current-sky-aspect-Sun:opp:Moon'
+  )
+  expect(opposition.props.accessibilityRole).toBe('button')
+  expect(opposition.props.accessibilityLabel).toBe(
+    'Sun and Moon, Opposition, 0.00 degrees orb'
+  )
+  expect(opposition.props.accessibilityState).toEqual({ selected: false })
+  expect(opposition.props.style({ pressed: false })[0].minHeight).toBe(
+    theme.touchTarget.min
+  )
+
+  const announce = jest
+    .spyOn(AccessibilityInfo, 'announceForAccessibility')
+    .mockImplementation(() => {})
+
+  press('current-sky-aspect-Sun:opp:Moon')
+  expect(announce).toHaveBeenCalledWith(
+    'Sun and Moon opposition. Interpretation shown above.'
+  )
+  announce.mockRestore()
+  expect(wheel().props.selection).toEqual({ kind: 'aspect', index: 0 })
+  expect(text()).toContain('Purpose and belonging')
+  expect(
+    renderer.root.find(
+      (node) => node.props.testID === 'current-sky-aspect-Sun:opp:Moon'
+    ).props.accessibilityState
+  ).toEqual({ selected: true })
+})
+
+it('preserves the selected aspect across refresh reordering and clears removed aspects', () => {
+  act(() => wheel().props.onSelectAspect(0))
+  expect(text()).toContain('Opposition')
+  hook = { ...hook, sky: { ...sky, aspects: [...sky.aspects].reverse() } }
+  act(() => renderer.update(<CurrentSkyCompass />))
+  expect(wheel().props.selection).toEqual({ kind: 'aspect', index: 1 })
+  expect(text()).toContain('Opposition')
+  hook = { ...hook, sky: { ...sky, aspects: [sky.aspects[1]] } }
+  act(() => renderer.update(<CurrentSkyCompass />))
+  expect(wheel().props.selection).toBeNull()
+  expect(text()).toContain('Tap a planet or aspect')
+})
+
+it('leads with Moon–Saturn meaning and keeps calculations in a secondary disclosure', () => {
+  const realSky = buildCurrentSky(new Date('2026-09-13T01:13:00Z'))
+  hook = { ...hook, sky: realSky }
+  act(() => renderer.update(<CurrentSkyCompass />))
+  const index = realSky.aspects.findIndex(
+    (aspect) => aspect.a === 'Moon' && aspect.b === 'Saturn'
+  )
+  act(() => wheel().props.onSelectAspect(index))
+  expect(text()).toContain('Care and responsibility')
+  expect(text()).toContain('wanting reassurance')
+  expect(text()).toContain('Work with it')
+  expect(text()).toContain('Reflect')
+  expect(text()).toContain('1.15° orb')
+  expect(text()).not.toContain('178.85° zodiac separation')
+  press('current-sky-rules-toggle')
+  expect(text()).toContain('178.85° zodiac separation')
+  expect(text()).toContain('1.15° from exact 180°')
+  expect(text()).toContain('Conjunction: 0° · up to 6° orb')
+  expect(text()).toContain('Opposition: 180° · up to 6° orb')
+  expect(text()).toContain('Trine: 120° · up to 5° orb')
+  expect(text()).toContain('Square: 90° · up to 5° orb')
+  expect(text()).toContain('Sextile: 60° · up to 4° orb')
+  expect(text()).toContain('2026-09-13T01:13:00.000Z')
+  press('current-sky-rules-toggle')
+  expect(text()).not.toContain('current-sky-rules\"')
+})
+
+it('changes the reading with the selected pairing and removes it when the aspect disappears', () => {
+  act(() => wheel().props.onSelectAspect(0))
+  expect(text()).toContain('Purpose and belonging')
+  act(() => wheel().props.onSelectAspect(1))
+  expect(text()).toContain('Purpose in motion')
+  expect(text()).not.toContain('Purpose and belonging')
+  hook = { ...hook, sky: { ...sky, aspects: [sky.aspects[0]] } }
+  act(() => renderer.update(<CurrentSkyCompass />))
+  expect(text()).not.toContain('Purpose in motion')
+  expect(text()).not.toContain('current-sky-interpretation')
+})
+
+it('keeps the snapshot visible if refresh fails and allows a retry', () => {
+  hook = { ...hook, error: true }
+  act(() => renderer.update(<CurrentSkyCompass />))
+  expect(text()).toContain('Showing the last update')
+  expect(wheel().props.planets).toBe(sky.planets)
+  act(() => renderer.root.findByType(Button).props.onPress())
+  expect(hook.refresh).toHaveBeenCalledTimes(1)
+})
+
+it('pauses wheel motion while inactive and handles an initial calculation failure', () => {
+  hook = { ...hook, active: false }
+  act(() => renderer.update(<CurrentSkyCompass />))
+  expect(wheel().props.motionEnabled).toBe(false)
+  expect(renderer.root.findByType(Button).props.disabled).toBe(true)
+  hook = { ...hook, active: true, sky: null, error: true }
+  act(() => renderer.update(<CurrentSkyCompass />))
+  expect(text()).toContain('Couldn’t calculate the current sky')
+  expect(renderer.root.findAllByType(InteractiveChartWheel)).toHaveLength(0)
+  expect(renderer.root.findByType(Button).props.title).toBe('Try again')
+})

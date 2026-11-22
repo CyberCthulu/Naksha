@@ -5,6 +5,7 @@ import {
 import {
   CURRENT_CHART_CALCULATION_VERSION,
   CURRENT_CHART_SCHEMA_VERSION,
+  HISTORICAL_CHART_CALCULATION_VERSION,
 } from '../chartDataVersions'
 
 const validChartData = {
@@ -12,6 +13,7 @@ const validChartData = {
     name: 'Ada Natal Chart',
     birth_date: '1815-12-10',
     birth_time: '12:00:00',
+    birth_utc_offset_minutes: null,
     time_zone: 'Europe/London',
     birth_lat: 51.5072,
     birth_lon: -0.1276,
@@ -34,19 +36,26 @@ describe('parseChartData', () => {
     expect(parseChartData(validChartData)).toEqual(validChartData)
   })
 
-  it('accepts explicit current schema and calculation versions', () => {
-    const currentChartData = {
+  it.each([
+    [
+      'historical V1',
+      HISTORICAL_CHART_CALCULATION_VERSION,
+      'historical-v1',
+    ],
+    ['current V2', CURRENT_CHART_CALCULATION_VERSION, 'current'],
+  ])('accepts explicit %s chart data', (_, calculationVersion, compatibility) => {
+    const chartData = {
       ...validChartData,
       schema_version: CURRENT_CHART_SCHEMA_VERSION,
-      calculation_version: CURRENT_CHART_CALCULATION_VERSION,
+      calculation_version: calculationVersion,
     }
 
-    expect(validateChartData(currentChartData)).toEqual({
+    expect(validateChartData(chartData)).toEqual({
       status: 'valid',
-      compatibility: 'current',
-      data: currentChartData,
+      compatibility,
+      data: chartData,
     })
-    expect(parseChartData(currentChartData)).toEqual(currentChartData)
+    expect(parseChartData(chartData)).toEqual(chartData)
   })
 
   it('detects an unsupported future schema version before shape parsing', () => {
@@ -125,6 +134,21 @@ describe('parseChartData', () => {
     expect(parsed?.meta.birth_lat).toBeNull()
     expect(parsed?.houses).toBeNull()
     expect(parsed?.planet_houses).toBeNull()
+  })
+
+  it('keeps legacy noncanonical aspect identities readable', () => {
+    const legacyAspect = {
+      a: 'UnknownBody',
+      b: 'Moon',
+      type: 'square',
+      orb: 1.25,
+    }
+    const parsed = parseChartData({
+      ...validChartData,
+      aspects: [legacyAspect],
+    })
+
+    expect(parsed?.aspects).toEqual([legacyAspect])
   })
 
   it('returns null for malformed chart data', () => {

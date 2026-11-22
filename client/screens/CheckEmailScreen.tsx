@@ -1,13 +1,5 @@
 import React, { useLayoutEffect, useMemo, useState } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-  TouchableOpacity,
-  ActivityIndicator,
-  TextInput,
-} from 'react-native'
+import { StyleSheet, Alert } from 'react-native'
 import {
   useRoute,
   useNavigation,
@@ -16,19 +8,19 @@ import {
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import supabase from '../lib/supabase'
 import { resendSignupEmail, verifySignupOtp } from '../lib/auth'
-import {
-  isProfileComplete,
-  type ProfileCompletionData,
-} from '../lib/profileCompletion'
+import { useAuthSession } from '../lib/authSession'
 import type { RootStackParamList } from '../navigation/types'
 
 import AuthContainer from '../components/auth/AuthContainer'
 import { ScreenHeader } from '../components/ui/ScreenHeader'
-import { uiStyles } from '../components/ui/uiStyles'
+import { AppText, MutedText } from '../components/ui/AppText'
+import { Button } from '../components/ui/Button'
+import { Card } from '../components/ui/Card'
+import TextField from '../components/ui/TextField'
 import { theme } from '../components/ui/theme'
 
 const PROFILE_SELECT =
-  'first_name,last_name,birth_date,birth_time,birth_location,time_zone'
+  'first_name,last_name,birth_date,birth_time,birth_utc_offset_minutes,birth_location,time_zone'
 
 export default function CheckEmailScreen() {
   const navigation =
@@ -36,6 +28,8 @@ export default function CheckEmailScreen() {
       NativeStackNavigationProp<RootStackParamList, 'CheckEmail'>
     >()
   const route = useRoute<RouteProp<RootStackParamList, 'CheckEmail'>>()
+  const { status, user } = useAuthSession()
+  const authenticated = status === 'authenticated' && Boolean(user)
 
   useLayoutEffect(() => {
     navigation.setOptions?.({ headerShown: false })
@@ -47,7 +41,6 @@ export default function CheckEmailScreen() {
   const [code, setCode] = useState('')
   const [resending, setResending] = useState(false)
   const [verifying, setVerifying] = useState(false)
-
   const initialMessage = useMemo(() => {
     if (!email) {
       return 'We sent you a confirmation code. Enter it below to verify your email and continue.'
@@ -57,7 +50,16 @@ export default function CheckEmailScreen() {
 
   const [message, setMessage] = useState(initialMessage)
 
+  const handleBack = () => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: authenticated ? 'Dashboard' : 'Login' }],
+    })
+  }
+
   const handleResend = async () => {
+    if (resending || verifying) return
+
     if (!email) {
       Alert.alert('Missing email', 'We could not find an email to resend to.')
       return
@@ -72,12 +74,19 @@ export default function CheckEmailScreen() {
       } else {
         setMessage('Confirmation code resent. Please check your inbox again.')
       }
+    } catch {
+      Alert.alert(
+        'Resend Failed',
+        'Could not resend the confirmation email. Check your connection and try again.'
+      )
     } finally {
       setResending(false)
     }
   }
 
   const handleVerify = async () => {
+    if (verifying || resending) return
+
     const trimmedCode = code.trim()
 
     if (!email) {
@@ -110,7 +119,6 @@ export default function CheckEmailScreen() {
           'Verification incomplete',
           'Your email was verified, but we could not start your session. Please log in.'
         )
-        navigation.replace('Login')
         return
       }
 
@@ -124,15 +132,13 @@ export default function CheckEmailScreen() {
           'Verification incomplete',
           'Your email was verified, but we could not start your session. Please log in.'
         )
-        navigation.replace('Login')
         return
       }
 
       const profile = params.profile
-      let savedProfile: ProfileCompletionData | null = null
 
       if (profile) {
-        const { data: upsertedProfile, error: upsertErr } = await supabase
+        const { error: upsertErr } = await supabase
           .from('users')
           .upsert(
             {
@@ -142,6 +148,7 @@ export default function CheckEmailScreen() {
               last_name: profile.last_name,
               birth_date: profile.birth_date,
               birth_time: profile.birth_time,
+              birth_utc_offset_minutes: profile.birth_utc_offset_minutes,
               birth_location: profile.birth_location,
               time_zone: profile.time_zone,
               birth_lat: profile.birth_lat,
@@ -156,34 +163,17 @@ export default function CheckEmailScreen() {
           Alert.alert('Save Failed', upsertErr.message)
           return
         }
-
-        savedProfile = upsertedProfile as ProfileCompletionData | null
-      } else {
-        const { data: existingProfile, error: profileErr } = await supabase
-          .from('users')
-          .select(PROFILE_SELECT)
-          .eq('id', user.id)
-          .maybeSingle()
-
-        if (profileErr) {
-          Alert.alert('Profile Load Failed', profileErr.message)
-          return
-        }
-
-        savedProfile = existingProfile as ProfileCompletionData | null
       }
 
+      // Supabase's auth event is the navigation boundary. App remounts the
+      // navigator for the authenticated identity; Dashboard then makes the
+      // authoritative complete-profile decision from public.users.
       setMessage('Email Verified.')
-      navigation.reset({
-        index: 0,
-        routes: [
-          {
-            name: isProfileComplete(savedProfile)
-              ? 'Dashboard'
-              : 'CompleteProfile',
-          },
-        ],
-      })
+    } catch {
+      Alert.alert(
+        'Verification Failed',
+        'Could not verify the code. Check your connection and try again.'
+      )
     } finally {
       setVerifying(false)
     }
@@ -193,19 +183,25 @@ export default function CheckEmailScreen() {
     <AuthContainer>
       <ScreenHeader
         title="Check Email"
-        onBack={() => navigation.replace('Login')}
-        backAccessibilityLabel="Back to login"
+        onBack={handleBack}
+        backAccessibilityLabel={
+          authenticated ? 'Back to dashboard' : 'Back to login'
+        }
       />
 
-      <View style={uiStyles.card}>
-        <Text style={styles.title}>Enter your confirmation code</Text>
-        <Text style={styles.message}>{message}</Text>
+      <Card>
+        <AppText variant="heading" style={styles.title}>
+          Enter your confirmation code
+        </AppText>
+        <MutedText variant="body" style={styles.message}>
+          {message}
+        </MutedText>
 
-        <TextInput
+        <TextField
+          accessibilityLabel="Confirmation code"
           value={code}
           onChangeText={setCode}
           placeholder="123456"
-          placeholderTextColor={theme.colors.muted}
           keyboardType="number-pad"
           autoCapitalize="none"
           autoCorrect={false}
@@ -213,136 +209,48 @@ export default function CheckEmailScreen() {
           style={styles.codeInput}
         />
 
-        <TouchableOpacity
-          style={[styles.primaryBtn, verifying && { opacity: 0.7 }]}
+        <Button
+          title={verifying ? 'Verifying your code…' : 'Verify Code'}
           onPress={handleVerify}
-          disabled={verifying}
-        >
-          {verifying ? (
-             <Text style={styles.primaryBtnText}>Verifying your code…</Text>
-          ) : (
-             <Text style={styles.primaryBtnText}>Verify Code</Text>
-          )}
-        </TouchableOpacity>
-
-        <View style={{ height: 10 }} />
-
-        <TouchableOpacity
-          style={[styles.secondaryBtn, resending && { opacity: 0.7 }]}
-          onPress={handleResend}
+          loading={verifying}
           disabled={resending}
-        >
-          {resending ? (
-            <ActivityIndicator />
-          ) : (
-            <Text style={styles.secondaryBtnText}>Resend Email</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.linkBtn}
-          onPress={() => navigation.replace('Login')}
+        />
+        <Button
+          title="Resend Email"
+          variant="secondary"
+          onPress={handleResend}
+          loading={resending}
+          disabled={verifying}
+          style={styles.secondaryAction}
+        />
+        <Button
+          title={authenticated ? 'Back to Dashboard' : 'Back to Login'}
+          variant="tertiary"
+          onPress={handleBack}
           disabled={verifying || resending}
-        >
-          <Text style={styles.linkBtnText}>Back to Login</Text>
-        </TouchableOpacity>
-      </View>
+          style={styles.secondaryAction}
+        />
+      </Card>
     </AuthContainer>
   )
 }
 
 const styles = StyleSheet.create({
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  iconBtn: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconText: {
-    fontSize: 30,
-    color: theme.colors.text,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '800',
-    color: theme.colors.text,
-  },
-
   title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: theme.colors.text,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: theme.space.sm,
   },
   message: {
-    fontSize: 14,
-    color: theme.colors.sub,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 14,
+    marginBottom: theme.space.lg,
   },
-
   codeInput: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.card,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-    color: theme.colors.text,
+    ...theme.typography.numeric,
     textAlign: 'center',
-    fontSize: 22,
     letterSpacing: 6,
-    backgroundColor: theme.colors.cardBg,
+    marginBottom: theme.space.md,
   },
-
-  primaryBtn: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.card,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: theme.colors.cardBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryBtnText: {
-    color: theme.colors.text,
-    fontWeight: '800',
-    fontSize: 16,
-  },
-
-  secondaryBtn: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.card,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryBtnText: {
-    color: theme.colors.text,
-    fontWeight: '800',
-    fontSize: 16,
-  },
-
-  linkBtn: {
-    marginTop: 10,
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  linkBtnText: {
-    color: theme.colors.sub,
-    fontWeight: '700',
+  secondaryAction: {
+    marginTop: theme.space.sm,
   },
 })

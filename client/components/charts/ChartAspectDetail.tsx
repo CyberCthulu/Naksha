@@ -34,13 +34,7 @@ export function ChartAspectDetail({ aspect, label, summary, testID }: Props) {
         {label}
       </AppText>
 
-      {/* Keyed for the same reason as the hero: a changing title on a
-          reused Text view can be laid out in the previous string's width. */}
-      <AppText
-        key={`${aspect.a}-${aspect.b}`}
-        variant="heading"
-        style={styles.pair}
-      >
+      <AppText variant="heading" style={styles.pair}>
         {glyphA ? `${glyphA} ` : ''}
         {aspect.a}
         <AppText style={styles.join}> · </AppText>
@@ -70,7 +64,9 @@ const styles = StyleSheet.create({
   eyebrow: {
     color: theme.accent.base,
   },
+  // Full width, not shrink-to-fit -- see the note on ChartHero's title.
   pair: {
+    alignSelf: 'stretch',
     color: theme.text.primary,
     marginTop: theme.space.xs,
     textAlign: 'center',

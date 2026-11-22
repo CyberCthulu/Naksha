@@ -3,10 +3,20 @@
 
 import { listTimeZones } from 'timezone-support'
 
-export const TIMEZONES: string[] = listTimeZones()
+const IANA_TIME_ZONES = listTimeZones()
+const IANA_TIME_ZONE_SET = new Set(IANA_TIME_ZONES)
 
-export function isValidTimeZone(tz: string | null | undefined): tz is string {
-  return !!tz && TIMEZONES.includes(tz)
+// The picker offers geographic zones plus UTC. Short fixed-offset names and
+// POSIX/Etc aliases are valid for historical calculation, but are too easy to
+// confuse with geographic zones that observe different daylight-saving rules.
+export const TIMEZONES: string[] = IANA_TIME_ZONES.filter(
+  (zone) =>
+    zone === 'Etc/UTC' ||
+    (zone.includes('/') && !zone.startsWith('Etc/GMT'))
+)
+
+export function isValidTimeZone(tz: string | null | undefined): boolean {
+  return !!tz && IANA_TIME_ZONE_SET.has(tz)
 }
 
 const ABBR_TO_IANA: Record<string, string> = {
@@ -26,9 +36,10 @@ const ABBR_TO_IANA: Record<string, string> = {
 export function normalizeZone(raw:string | null | undefined): string | null {
   if (!raw) return null;
   const z = raw.trim();
+  if (isValidTimeZone(z)) return z;
   const mapped = ABBR_TO_IANA[z.toUpperCase()];
   if (mapped) return mapped;
-  return isValidTimeZone(z) ? z : null;
+  return null;
 }
 
 export function getDeviceTimeZoneNormalized(): string {

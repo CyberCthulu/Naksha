@@ -20,14 +20,13 @@ The app is built with **Expo + React Native** in the `client/` directory and use
 10. [Run Commands](#run-commands)
 11. [Known Notes](#known-notes)
 12. [Roadmap](#roadmap)
-13. [Contributing](#contributing)
-14. [License](#license)
+13. [License](#license)
 
 ---
 
 ## Project Overview
 
-**Naksha** (Sanskrit: map / blueprint) is designed to combine traditional astrological structure with modern mobile UX and AI-assisted interpretation workflows.
+**Naksha** (Sanskrit: map / blueprint) is designed to combine traditional astrological structure with modern mobile UX and deterministic interpretation and guided-reflection workflows.
 
 Core product goals:
 
@@ -41,16 +40,14 @@ Core product goals:
 
 ## Current Status
 
-This project is actively in development and already includes a functioning mobile app with:
+Updated 30 September 2026 during R6 release hardening. Core free V1 and the active celestial UI are implemented. R1–R5 and R6.1–R6.3 are repository-complete; R6.4 final source hardening is pending independent review and the complete R6 gate. Signed native candidate acceptance remains outstanding.
 
-- Email/password auth flow
-- Profile completion (birth details + timezone + location geocoding)
-- Natal chart generation and display
-- Saved charts list with delete/open
-- Journal list and editor
-- Profile settings and preferences scaffolding
+- Accounts/profile, natal and guest charts, saved charts, daily/weekly guidance, and journaling.
+- Interactive chart wheel, chart tabs, shared starry backgrounds, translucent cards, and celestial loading.
+- Sky Now above the dashboard tabs with current positions and authored aspect-pair readings.
+- Post-R5 repository verification: 69 Jest suites / 843 tests, TypeScript, lint, and whitespace pass. New charts use calculation V2 while unversioned and explicit V1 charts remain readable historical results. R1/R2/R3 database replay and combined pgTAP verification remain the latest database baseline. These checks do not qualify a signed store release.
 
-Some modules are intentionally still in-progress or placeholder-only.
+Start with the [release-hardening plan](docs/release-hardening-plan.md), [feature list](docs/Feature-List.md), and [engineering handoff](docs/naksha-codebase-handoff.md). AI chat, subscriptions, compatibility, notifications, and extra astrology systems are future work.
 
 ---
 
@@ -106,11 +103,15 @@ Some modules are intentionally still in-progress or placeholder-only.
 │  ├─ lib/                  # Domain/business logic + Supabase + helpers
 │  ├─ assets/
 │  └─ android/
+├─ docs/                    # Product, engineering, and release documentation
+├─ supabase/                # Local config, forward migrations, functions, and DB tests
+├─ package.json             # Repository-local Supabase CLI
 ├─ README.md
 └─ COPYRIGHT.txt
+```
 
-Features
-Authentication
+## Features
+### Authentication
 Sign up with email/password
 
 Check-email confirmation flow
@@ -119,14 +120,14 @@ Deep-link callback handling for auth completion
 
 Sign in/out session support
 
-Profile
+### Profile
 First/last name, birth date/time/location, timezone
 
 Timezone normalization helpers
 
 Location geocoding (OpenCage)
 
-Charting
+### Charting
 Natal planetary positions
 
 Aspect computation
@@ -137,21 +138,21 @@ Interactive chart view + interpretation modal
 
 Save chart data to Supabase
 
-Journaling
+### Journaling
 Create/edit/delete journal entries
 
 Journal list with timestamps
 
 Lightweight personal reflection workflow
 
-Account Area
+### Account Area
 Profile view/edit routing
 
 Preferences scaffolding (house system/zodiac/orb modes)
 
 Subscription/purchase display scaffolding
 
-Supabase Backend
+## Supabase Backend
 Naksha currently relies on Supabase for:
 
 User authentication/session handling
@@ -164,20 +165,9 @@ Journal entries
 
 Subscription/purchase records (where available)
 
-Suggested backend repo hygiene (recommended)
-If you want reproducible DB evolution in Git, add:
+Database evolution is source-controlled under `supabase/`, including forward migrations, Edge Functions, local configuration, and pgTAP database tests. Production deployment state must still be verified explicitly; committed migrations alone do not prove the hosted project is current.
 
-supabase/ directory
-
-SQL migrations
-
-seed scripts
-
-RLS policy definitions
-
-Right now, SQL may exist only in your Supabase project unless explicitly checked into this repo.
-
-Environment Variables
+## Environment Variables
 Set these in your Expo environment for client/:
 
 EXPO_PUBLIC_SUPABASE_URL
@@ -191,47 +181,36 @@ Example (conceptual):
 EXPO_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
 EXPO_PUBLIC_OPENCAGE_KEY=<opencage-key>
-Getting Started
-Prerequisites
+## Getting Started
+### Prerequisites
 Node.js 18+
 
 npm
 
 Expo CLI via npx expo ...
 
-Install
+### Install
 cd client
 npm install
-Run Commands
+## Run Commands
 From client/:
 
 npm run start     # Expo dev server
 npm run android   # Android
 npm run ios       # iOS
 npm run web       # Web
-Known Notes
+## Known Notes
 Some files/modules are placeholders for upcoming features.
 
 Some profile preferences are UI-first scaffolding and may be expanded in later chart engine updates.
 
 Ensure deep-link scheme in Expo config and Supabase redirect URLs match your auth flow.
 
-Roadmap
-Potential near-term improvements:
+## Roadmap
 
-Commit Supabase migrations + RLS policies into repo
+R1–R5 are complete. R6 remaining engineering readiness is in progress. The C1 interpretation foundation is committed through C1.3D, with narrow exit cleanup and a final capability audit remaining before C2–C4 editorial/composition review, signed-candidate QA, and Play testing. See the [current plan and acceptance gates](docs/release-hardening-plan.md) and [C1 status](docs/naksha-c1-interpretation-system-status.md). AI and subscriptions are not V1 release-hardening requirements.
 
-Fully typed navigation params across all screens
-
-Remove duplicate helper logic and centralize in shared libs
-
-Add test coverage (unit + integration)
-
-Add CI checks (lint/typecheck/tests)
-
-Expand chat/subscription modules from scaffold to production
-
-License
+## License
 This project is currently closed-source.
 All rights reserved to the creators.
 No copying, distribution, or commercial use without explicit permission.

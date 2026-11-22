@@ -1,8 +1,9 @@
 import React from 'react'
-import { Alert, Text, TextInput, TouchableOpacity } from 'react-native'
+import { Alert, Text, TextInput } from 'react-native'
 import TestRenderer from 'react-test-renderer'
 
 import CheckEmailScreen from '../CheckEmailScreen'
+import { Button } from '../../components/ui/Button'
 import supabase from '../../lib/supabase'
 import { resendSignupEmail, verifySignupOtp } from '../../lib/auth'
 import type { UserProfileFields } from '../../lib/domainTypes'
@@ -13,10 +14,18 @@ const mockNavigation = {
   reset: jest.fn(),
 }
 let mockRouteParams: Record<string, unknown> = {}
+let mockAuthSession = {
+  status: 'unauthenticated',
+  user: null as { id: string } | null,
+}
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => mockNavigation,
   useRoute: () => ({ params: mockRouteParams }),
+}))
+
+jest.mock('../../lib/authSession', () => ({
+  useAuthSession: () => mockAuthSession,
 }))
 
 jest.mock('../../components/auth/AuthContainer', () => ({
@@ -50,6 +59,7 @@ const completeProfile: UserProfileFields = {
   last_name: 'Lovelace',
   birth_date: '1815-12-10',
   birth_time: '12:00:00',
+  birth_utc_offset_minutes: null,
   birth_location: 'London, UK',
   time_zone: 'Europe/London',
   birth_lat: 51.5072,
@@ -57,7 +67,7 @@ const completeProfile: UserProfileFields = {
 }
 
 const PROFILE_SELECT =
-  'first_name,last_name,birth_date,birth_time,birth_location,time_zone'
+  'first_name,last_name,birth_date,birth_time,birth_utc_offset_minutes,birth_location,time_zone'
 
 async function settleAsyncWork() {
   for (let i = 0; i < 10; i += 1) {
@@ -102,10 +112,8 @@ function textValue(value: unknown): string {
 }
 
 function findButtonByText(root: TestRenderer.ReactTestRenderer, label: string) {
-  const button = root.root.findAllByType(TouchableOpacity).find((node) =>
-    node.findAllByType(Text).some((textNode) =>
-      textValue(textNode.props.children).includes(label)
-    )
+  const button = root.root.findAllByType(Button).find((node) =>
+    node.props.title.includes(label)
   )
 
   if (!button) throw new Error(`Could not find button: ${label}`)
@@ -169,6 +177,7 @@ describe('CheckEmailScreen', () => {
 
     renderer = null
     mockRouteParams = {}
+    mockAuthSession = { status: 'unauthenticated', user: null }
 
     mockedVerifySignupOtp().mockResolvedValue({ data: null, error: null } as any)
     mockedResendSignupEmail().mockResolvedValue({ data: null, error: null } as any)
@@ -185,6 +194,34 @@ describe('CheckEmailScreen', () => {
     }
     renderer = null
     jest.restoreAllMocks()
+  })
+
+  it('returns a signed-out user to Login without targeting private routes', async () => {
+    const screen = await renderScreen({ email: 'ada@example.com' })
+
+    await pressButton(screen, 'Back to Login')
+
+    expect(mockNavigation.reset).toHaveBeenCalledWith({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    })
+    expect(mockNavigation.replace).not.toHaveBeenCalled()
+  })
+
+  it('returns an authenticated user to Dashboard without targeting Login', async () => {
+    mockAuthSession = {
+      status: 'authenticated',
+      user: { id: 'user-1' },
+    }
+    const screen = await renderScreen({ email: 'ada@example.com' })
+
+    await pressButton(screen, 'Back to Dashboard')
+
+    expect(mockNavigation.reset).toHaveBeenCalledWith({
+      index: 0,
+      routes: [{ name: 'Dashboard' }],
+    })
+    expect(mockNavigation.replace).not.toHaveBeenCalled()
   })
 
   it('shows missing email validation before verifying', async () => {
@@ -240,7 +277,60 @@ describe('CheckEmailScreen', () => {
     expect(Alert.alert).toHaveBeenCalledWith('Resend Failed', 'rate limited')
   })
 
-  it('resets to Dashboard after OTP verification with a complete profile', async () => {
+  it('handles an unexpected resend rejection and permits retry', async () => {
+    mockedResendSignupEmail()
+      .mockRejectedValueOnce(new Error('network unavailable'))
+      .mockResolvedValueOnce({ data: null, error: null } as any)
+    const screen = await renderScreen({ email: 'ada@example.com' })
+
+    await pressButton(screen, 'Resend Email')
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Resend Failed',
+      'Could not resend the confirmation email. Check your connection and try again.'
+    )
+    await pressButton(screen, 'Resend Email')
+    expect(mockedResendSignupEmail()).toHaveBeenCalledTimes(2)
+  })
+
+  it('handles an unexpected verification rejection and permits retry', async () => {
+    mockedVerifySignupOtp()
+      .mockRejectedValueOnce(new Error('network unavailable'))
+      .mockResolvedValueOnce({ data: null, error: null } as any)
+    const screen = await renderScreen({
+      email: 'ada@example.com',
+      profile: completeProfile,
+    })
+    enterCode(screen, '123456')
+
+    await pressButton(screen, 'Verify Code')
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Verification Failed',
+      'Could not verify the code. Check your connection and try again.'
+    )
+    await pressButton(screen, 'Verify Code')
+    expect(mockedVerifySignupOtp()).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not target a signed-out route when session confirmation fails', async () => {
+    mockedSupabase().auth.getSession.mockResolvedValueOnce({
+      data: { session: null },
+      error: { message: 'network unavailable' },
+    })
+    const screen = await renderScreen({ email: 'ada@example.com' })
+    enterCode(screen, '123456')
+
+    await pressButton(screen, 'Verify Code')
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Verification incomplete',
+      'Your email was verified, but we could not start your session. Please log in.'
+    )
+    expect(mockNavigation.replace).not.toHaveBeenCalled()
+  })
+
+  it('persists the signup profile without racing the authenticated navigator', async () => {
     const query = mockUsersUpsert(completeProfile)
     const screen = await renderScreen({
       email: 'ada@example.com',
@@ -265,6 +355,7 @@ describe('CheckEmailScreen', () => {
         last_name: completeProfile.last_name,
         birth_date: completeProfile.birth_date,
         birth_time: completeProfile.birth_time,
+        birth_utc_offset_minutes: completeProfile.birth_utc_offset_minutes,
         birth_location: completeProfile.birth_location,
         time_zone: completeProfile.time_zone,
         birth_lat: completeProfile.birth_lat,
@@ -273,13 +364,10 @@ describe('CheckEmailScreen', () => {
       { onConflict: 'id' }
     )
     expect(query.select).toHaveBeenCalledWith(PROFILE_SELECT)
-    expect(mockNavigation.reset).toHaveBeenCalledWith({
-      index: 0,
-      routes: [{ name: 'Dashboard' }],
-    })
+    expect(mockNavigation.reset).not.toHaveBeenCalled()
   })
 
-  it('resets to CompleteProfile after OTP verification with an incomplete profile', async () => {
+  it('leaves the incomplete-profile decision to the authenticated Dashboard', async () => {
     mockUsersUpsert({
       ...completeProfile,
       birth_location: null,
@@ -292,9 +380,6 @@ describe('CheckEmailScreen', () => {
     enterCode(screen, '123456')
     await pressButton(screen, 'Verify Code')
 
-    expect(mockNavigation.reset).toHaveBeenCalledWith({
-      index: 0,
-      routes: [{ name: 'CompleteProfile' }],
-    })
+    expect(mockNavigation.reset).not.toHaveBeenCalled()
   })
 })

@@ -1,6 +1,6 @@
 import {
   computeTransitPlanets,
-  findAspects,
+  findAspectsWithFullPrecision,
   type Aspect,
   type AspectOrbMode,
   type PlanetPos,
@@ -39,13 +39,22 @@ type PlanetIdentity = TransitIdentity | NatalIdentity
 type SampledTransit = Omit<
   WeeklyTransitHighlight,
   'activeDays' | 'significanceScore'
->
+> & {
+  selectionOrb: number
+}
+
+type RankedWeeklyTransitHighlight = WeeklyTransitHighlight & {
+  selectionOrb: number
+}
 
 const WEEKLY_TRANSIT_PLANET_SET = new Set<string>(
   GUIDANCE_TRANSIT_PLANETS
 )
 
-const PLANET_RELEVANCE: Record<GuidanceTransitPlanet, number> = {
+export const WEEKLY_PLANET_RELEVANCE: Record<
+  GuidanceTransitPlanet,
+  number
+> = {
   Moon: 0,
   Sun: 16,
   Mercury: 14,
@@ -55,7 +64,7 @@ const PLANET_RELEVANCE: Record<GuidanceTransitPlanet, number> = {
   Saturn: 32,
 }
 
-const ASPECT_RELEVANCE: Record<AspectType, number> = {
+export const WEEKLY_ASPECT_RELEVANCE: Record<AspectType, number> = {
   conj: 10,
   opp: 9,
   square: 9,
@@ -63,7 +72,7 @@ const ASPECT_RELEVANCE: Record<AspectType, number> = {
   sextile: 5,
 }
 
-const FAST_WEEKLY_ORB_LIMIT: Record<AspectType, number> = {
+export const FAST_WEEKLY_ORB_LIMIT: Record<AspectType, number> = {
   conj: 3,
   opp: 3,
   square: 2.5,
@@ -71,7 +80,7 @@ const FAST_WEEKLY_ORB_LIMIT: Record<AspectType, number> = {
   sextile: 2,
 }
 
-const SLOW_WEEKLY_ORB_LIMIT: Record<AspectType, number> = {
+export const SLOW_WEEKLY_ORB_LIMIT: Record<AspectType, number> = {
   conj: 1.5,
   opp: 1.5,
   square: 1.25,
@@ -79,8 +88,23 @@ const SLOW_WEEKLY_ORB_LIMIT: Record<AspectType, number> = {
   sextile: 1,
 }
 
-const MAX_WEEKLY_HIGHLIGHTS = 5
-const MAX_HIGHLIGHTS_PER_PLANET = 2
+export const MAX_WEEKLY_HIGHLIGHTS = 5
+export const MAX_HIGHLIGHTS_PER_PLANET = 2
+export const MAX_WEEKLY_MOON_HIGHLIGHTS = 1
+export const WEEKLY_SIGNIFICANCE_RANKING_POLICY = {
+  orbClosenessWeight: 20,
+  activeDayCap: 3,
+  activeDayWeight: 2,
+  scoreDecimalPlaces: 2,
+  orbInputPrecision: 'fullPrecision',
+  ordering: [
+    'significanceScoreDescending',
+    'planetRelevanceDescending',
+    'orbAscending',
+    'directionalIdentityAscending',
+    'dateAscending',
+  ],
+} as const
 
 function unique(values: readonly string[]): string[] {
   return [...new Set(values)]
@@ -124,6 +148,14 @@ function orbLimit(
     : FAST_WEEKLY_ORB_LIMIT[aspect]
 }
 
+export function isWithinWeeklyOrbLimit(
+  planet: GuidanceTransitPlanet,
+  aspect: AspectType,
+  orb: number
+): boolean {
+  return orb <= orbLimit(planet, aspect)
+}
+
 function toSampledTransit(
   aspect: Aspect,
   identitiesById: Map<string, PlanetIdentity>,
@@ -150,7 +182,7 @@ function toSampledTransit(
   if (
     !transit ||
     !natal ||
-    aspect.orb > orbLimit(transit.name, aspect.type)
+    !isWithinWeeklyOrbLimit(transit.name, aspect.type, aspect.orb)
   ) {
     return null
   }
@@ -163,7 +195,8 @@ function toSampledTransit(
     transitPlanet: transit.name,
     natalPlanet: natal.name,
     aspect: aspect.type,
-    orb: aspect.orb,
+    orb: +aspect.orb.toFixed(2),
+    selectionOrb: aspect.orb,
     tone: dynamic.tone,
     intensity: dynamic.intensity,
     sourceIds: unique([
@@ -215,15 +248,21 @@ function sampleSnapshot(
     identities.map((identity) => [identity.id, identity])
   )
 
-  return findAspects(identities.map(toAspectPlanet), orbMode)
+  return findAspectsWithFullPrecision(
+    identities.map(toAspectPlanet),
+    orbMode
+  )
     .map((aspect) =>
       toSampledTransit(aspect, identitiesById, snapshot.date)
     )
     .filter((transit): transit is SampledTransit => transit != null)
 }
 
-function significanceScore(
-  transit: SampledTransit,
+export function calculateWeeklySignificanceScore(
+  transit: Pick<
+    WeeklyTransitHighlight,
+    'transitPlanet' | 'aspect' | 'orb'
+  >,
   activeDays: number
 ): number {
   const transitOrbLimit = orbLimit(
@@ -237,38 +276,42 @@ function significanceScore(
 
   return Number(
     (
-      PLANET_RELEVANCE[transit.transitPlanet] +
-      ASPECT_RELEVANCE[transit.aspect] +
-      orbCloseness * 20 +
-      Math.min(activeDays, 3) * 2
-    ).toFixed(2)
+      WEEKLY_PLANET_RELEVANCE[transit.transitPlanet] +
+      WEEKLY_ASPECT_RELEVANCE[transit.aspect] +
+      orbCloseness *
+        WEEKLY_SIGNIFICANCE_RANKING_POLICY.orbClosenessWeight +
+      Math.min(
+        activeDays,
+        WEEKLY_SIGNIFICANCE_RANKING_POLICY.activeDayCap
+      ) * WEEKLY_SIGNIFICANCE_RANKING_POLICY.activeDayWeight
+    ).toFixed(WEEKLY_SIGNIFICANCE_RANKING_POLICY.scoreDecimalPlaces)
   )
 }
 
-function compareHighlights(
-  a: WeeklyTransitHighlight,
-  b: WeeklyTransitHighlight
+export function compareWeeklyHighlights(
+  a: WeeklyTransitHighlight & { selectionOrb?: number },
+  b: WeeklyTransitHighlight & { selectionOrb?: number }
 ): number {
   return (
     b.significanceScore - a.significanceScore ||
-    PLANET_RELEVANCE[b.transitPlanet] -
-      PLANET_RELEVANCE[a.transitPlanet] ||
-    a.orb - b.orb ||
+    WEEKLY_PLANET_RELEVANCE[b.transitPlanet] -
+      WEEKLY_PLANET_RELEVANCE[a.transitPlanet] ||
+    (a.selectionOrb ?? a.orb) - (b.selectionOrb ?? b.orb) ||
     transitKey(a).localeCompare(transitKey(b)) ||
     a.date.localeCompare(b.date)
   )
 }
 
 function limitHighlights(
-  highlights: readonly WeeklyTransitHighlight[]
-): WeeklyTransitHighlight[] {
-  const selected: WeeklyTransitHighlight[] = []
+  highlights: readonly RankedWeeklyTransitHighlight[]
+): RankedWeeklyTransitHighlight[] {
+  const selected: RankedWeeklyTransitHighlight[] = []
   const counts = new Map<GuidanceTransitPlanet, number>()
 
   for (const highlight of highlights) {
     const planetLimit =
       highlight.transitPlanet === 'Moon'
-        ? 1
+        ? MAX_WEEKLY_MOON_HIGHLIGHTS
         : MAX_HIGHLIGHTS_PER_PLANET
     const count = counts.get(highlight.transitPlanet) ?? 0
 
@@ -312,8 +355,8 @@ export function buildWeeklyTransitHighlights({
 
         existing.dates.add(candidate.date)
         if (
-          candidate.orb < existing.best.orb ||
-          (candidate.orb === existing.best.orb &&
+          candidate.selectionOrb < existing.best.selectionOrb ||
+          (candidate.selectionOrb === existing.best.selectionOrb &&
             candidate.date < existing.best.date)
         ) {
           existing.best = candidate
@@ -322,7 +365,9 @@ export function buildWeeklyTransitHighlights({
     )
   })
 
-  const highlights = [...byTransit.values()].map(
+  const highlights: RankedWeeklyTransitHighlight[] = [
+    ...byTransit.values(),
+  ].map(
     ({ best, dates }) => {
       const activeDays = dates.size
 
@@ -330,10 +375,19 @@ export function buildWeeklyTransitHighlights({
         ...best,
         sourceIds: [...best.sourceIds],
         activeDays,
-        significanceScore: significanceScore(best, activeDays),
+        significanceScore: calculateWeeklySignificanceScore(
+          {
+            transitPlanet: best.transitPlanet,
+            aspect: best.aspect,
+            orb: best.selectionOrb,
+          },
+          activeDays
+        ),
       }
     }
   )
 
-  return limitHighlights(highlights.sort(compareHighlights))
+  return limitHighlights(highlights.sort(compareWeeklyHighlights)).map(
+    ({ selectionOrb: _selectionOrb, ...highlight }) => highlight
+  )
 }

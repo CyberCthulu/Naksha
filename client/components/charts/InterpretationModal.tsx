@@ -11,7 +11,9 @@ import PagerView from 'react-native-pager-view'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { AppText } from '../ui/AppText'
 import { Icon } from '../ui/Icon'
+import { SkySurface } from '../ui/SkySurface'
 import { theme } from '../ui/theme'
+import { useReducedMotion } from '../ui/useReducedMotion'
 import InterpretationCard from './InterpretationCard'
 import { Interpretation } from '../../lib/lexicon'
 
@@ -71,6 +73,7 @@ export default function InterpretationModal({
    */
   const currentPagerIndexRef = useRef<number | null>(null)
   const insets = useSafeAreaInsets()
+  const reduceMotion = useReducedMotion()
 
   const normalizedCurrentIndex =
     pages.length > 0
@@ -219,21 +222,24 @@ export default function InterpretationModal({
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType={reduceMotion === false ? 'slide' : 'none'}
       transparent
       onRequestClose={onClose}
     >
       {/* Full-screen backdrop — tap outside the sheet to close */}
       <Pressable
         testID="interpretation-backdrop"
+        accessible={false}
+        importantForAccessibility="no"
         style={styles.backdrop}
         onPress={onClose}
       />
 
       {/* Reading sheet — absolutely positioned so its height is never
           derived from a fragile percentage calculation */}
-      <View
+      <SkySurface
         testID="interpretation-sheet"
+        accessibilityViewIsModal
         style={[styles.sheet, { top: sheetTop }]}
       >
         {/* Fixed header row */}
@@ -344,7 +350,7 @@ export default function InterpretationModal({
             </PagerView>
           )}
         </View>
-      </View>
+      </SkySurface>
     </Modal>
   )
 }
@@ -359,7 +365,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: theme.surface.raised,
+    backgroundColor: theme.background.base,
+    overflow: 'hidden',
     borderTopLeftRadius: theme.radius.xl,
     borderTopRightRadius: theme.radius.xl,
     borderTopWidth: 1,

@@ -1,8 +1,16 @@
 import { useState } from 'react'
-import { View, Text, Platform, Pressable } from 'react-native'
+import { Alert, Platform, Pressable } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
-import { uiStyles } from '../ui/uiStyles'
+import { AppText } from '../ui/AppText'
+import FormField from '../ui/FormField'
+import { formStyles } from '../ui/formStyles'
+import { useFormAppearance } from '../ui/FormAppearance'
 import { theme } from '../ui/theme'
+import {
+  civilDateFromPicker,
+  civilDateToPicker,
+  type CivilDate,
+} from '../../lib/time'
 
 export default function DateField({
   label,
@@ -10,43 +18,63 @@ export default function DateField({
   onChange,
 }: {
   label: string
-  value: Date | null
-  onChange: (d: Date) => void
+  value: CivilDate | null
+  onChange: (d: CivilDate) => void
 }) {
   const [open, setOpen] = useState(false)
+  const appearance = useFormAppearance()
+  const displayValue = value
+    ? `${String(value.year).padStart(4, '0')}-${String(value.month).padStart(2, '0')}-${String(value.day).padStart(2, '0')}`
+    : 'Select Date'
+
+  const openPicker = () => {
+    if (value) {
+      try {
+        civilDateToPicker(value)
+      } catch (error) {
+        Alert.alert(
+          'Date picker unavailable',
+          error instanceof Error
+            ? error.message
+            : 'This date cannot be shown by the device date picker.'
+        )
+        return
+      }
+    }
+
+    setOpen(true)
+  }
 
   return (
-    <View>
-      <Text style={[uiStyles.text, { marginBottom: 8, fontWeight: '600' }]}>
-        {label}
-      </Text>
-
+    <FormField label={label}>
       <Pressable
-        onPress={() => setOpen(true)}
-        style={{
-          borderWidth: 1,
-          borderColor: theme.colors.border,
-          borderRadius: theme.radius.card,
-          paddingVertical: 14,
-          paddingHorizontal: 12,
-        }}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityValue={{ text: displayValue }}
+        onPress={openPicker}
+        style={[formStyles.input, appearance === 'soft' && formStyles.softInput]}
       >
-        <Text style={value ? [uiStyles.text, { fontSize: 16 }] : [uiStyles.muted, { fontSize: 16 }]}>
-          {value ? value.toDateString() : 'Select Date'}
-        </Text>
+        <AppText
+          variant="body"
+          style={{ color: value ? theme.text.primary : theme.text.tertiary }}
+        >
+          {displayValue}
+        </AppText>
       </Pressable>
 
       {open && (
         <DateTimePicker
-          value={value || new Date()}
+          value={value ? civilDateToPicker(value) : new Date()}
           mode="date"
+          themeVariant="dark"
+          accentColor={theme.accent.base}
           display={Platform.OS === 'ios' ? 'compact' : 'calendar'}
           onChange={(_, d) => {
             setOpen(false)
-            if (d) onChange(d)
+            if (d) onChange(civilDateFromPicker(d))
           }}
         />
       )}
-    </View>
+    </FormField>
   )
 }

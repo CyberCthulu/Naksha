@@ -14,9 +14,7 @@ export type AuthCallbackParams = {
 }
 
 export type JournalEditorParams = {
-  id?: number
-  title?: string
-  content?: string
+  id?: number | string
   initialTitle?: string
   initialContent?: string
   promptTemplateId?: string | null

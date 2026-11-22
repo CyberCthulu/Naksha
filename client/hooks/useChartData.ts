@@ -21,6 +21,7 @@ import {
   validateChartData,
 } from '../lib/chartDataValidation'
 import type { ChartMode, ChartProfile } from '../lib/domainTypes'
+import { safeErrorDiagnostic } from '../lib/diagnostics'
 
 type UseChartDataArgs = {
   profile: ChartProfile
@@ -78,6 +79,7 @@ export default function useChartData({
 
   const birthDate = profile.birth_date!
   const birthTime = profile.birth_time!
+  const birthUtcOffsetMinutes = profile.birth_utc_offset_minutes ?? null
   const chartName = `${profile.first_name ?? 'My'} Natal Chart`
   const birthLat = profile.birth_lat ?? null
   const birthLon = profile.birth_lon ?? null
@@ -108,11 +110,12 @@ export default function useChartData({
         chartData,
         birthDate,
         birthTime,
+        birthUtcOffsetMinutes,
         timeZone: tz,
         birthLat,
         birthLon,
       }),
-    [birthDate, birthTime, tz, birthLat, birthLon]
+    [birthDate, birthTime, birthUtcOffsetMinutes, tz, birthLat, birthLon]
   )
 
   const loadChart = useCallback(async () => {
@@ -175,6 +178,7 @@ export default function useChartData({
             name: chartName,
             birth_date: birthDate,
             birth_time: birthTime,
+            birth_utc_offset_minutes: birthUtcOffsetMinutes,
             time_zone: tz,
             birth_lat: null,
             birth_lon: null,
@@ -201,6 +205,14 @@ export default function useChartData({
         .eq('time_zone', tz)
         .eq('birth_lat', birthLat)
         .eq('birth_lon', birthLon)
+
+      existingQuery =
+        birthUtcOffsetMinutes == null
+          ? existingQuery.is('birth_utc_offset_minutes', null)
+          : existingQuery.eq(
+              'birth_utc_offset_minutes',
+              birthUtcOffsetMinutes
+            )
 
       const { data: existing, error } = await existingQuery.maybeSingle()
 
@@ -238,6 +250,7 @@ export default function useChartData({
           name: chartName,
           birth_date: birthDate,
           birth_time: birthTime,
+          birth_utc_offset_minutes: birthUtcOffsetMinutes,
           time_zone: tz,
           birth_lat: birthLat,
           birth_lon: birthLon,
@@ -259,6 +272,8 @@ export default function useChartData({
             name: payload.meta.name,
             birth_date: payload.meta.birth_date,
             birth_time: payload.meta.birth_time,
+            birth_utc_offset_minutes:
+              payload.meta.birth_utc_offset_minutes,
             time_zone: payload.meta.time_zone,
             birth_lat: payload.meta.birth_lat,
             birth_lon: payload.meta.birth_lon,
@@ -272,7 +287,7 @@ export default function useChartData({
         } catch (e) {
           if (!isCurrentLoad()) return
 
-          console.warn('Auto-save failed:', e)
+          console.warn('Auto-save failed:', safeErrorDiagnostic(e))
           setIsSaved(false)
           setSaveWarning(
             'This chart is ready to view, but it was not saved automatically. Tap Save Chart Data to try again.'
@@ -294,6 +309,7 @@ export default function useChartData({
     chartMode,
     birthDate,
     birthTime,
+    birthUtcOffsetMinutes,
     tz,
     birthLat,
     birthLon,
@@ -363,6 +379,7 @@ export default function useChartData({
           name: chartName,
           birth_date: birthDate,
           birth_time: birthTime,
+          birth_utc_offset_minutes: birthUtcOffsetMinutes,
           time_zone: tz,
           birth_lat: birthLat,
           birth_lon: birthLon,
@@ -374,6 +391,7 @@ export default function useChartData({
         name: payload.meta.name,
         birth_date: payload.meta.birth_date,
         birth_time: payload.meta.birth_time,
+        birth_utc_offset_minutes: payload.meta.birth_utc_offset_minutes,
         time_zone: payload.meta.time_zone,
         birth_lat: payload.meta.birth_lat,
         birth_lon: payload.meta.birth_lon,
@@ -402,6 +420,7 @@ export default function useChartData({
     chartName,
     birthDate,
     birthTime,
+    birthUtcOffsetMinutes,
     tz,
     birthLat,
     birthLon,

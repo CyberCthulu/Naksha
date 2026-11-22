@@ -102,7 +102,7 @@ There can be emotional sensitivity around communication and environment. You may
     },
     4: {
       short: 'Your emotions are deeply rooted in home, family, and your inner foundation.',
-      long: `With the Moon in the 4th House, this is a natural placement, as the Moon rules this house. Your emotional life tends to be deeply connected to your roots, family, and sense of home.
+      long: `With the Moon in the 4th House, your emotional life tends to be deeply connected to your roots, family, and sense of home.
 
 You may have strong emotional memory and a deep need for safety, comfort, and belonging. Your inner world is rich and influential. Growth comes through building emotional security within yourself, so your foundation remains stable regardless of external circumstances.`,
     },
@@ -171,7 +171,7 @@ There can be skill in managing money, organizing resources, or making thoughtful
     },
     3: {
       short: 'Your thinking and communication are quick, curious, and highly active.',
-      long: `With Mercury in the 3rd House, this is a natural placement, as Mercury rules this house. Your mind tends to be fast, adaptable, and engaged with learning, communication, and information exchange.
+      long: `With Mercury in the 3rd House, your mind tends to be fast, adaptable, and engaged with learning, communication, and information exchange.
 
 You may excel in speaking, writing, teaching, or connecting ideas. There is often a strong curiosity and desire to understand many things. Growth comes through cultivating focus and depth, so your intelligence becomes structured knowledge rather than scattered information.`,
     },
@@ -270,7 +270,7 @@ There can be a desire for balance and harmony within daily routines and work env
     },
     7: {
       short: 'You naturally seek harmony, balance, and connection within relationships and partnerships.',
-      long: `With Venus in the 7th House, this is a natural placement, as Venus rules this house. Your approach to love and connection is centered around partnership, harmony, and mutual understanding.
+      long: `With Venus in the 7th House, your approach to love and connection is centered around partnership, harmony, and mutual understanding.
 
 You may value relationships highly and seek balance, fairness, and cooperation in your connections. There is often a natural ability to attract partners and maintain harmony. Growth comes through maintaining your individuality, so connection enhances rather than defines your identity.`,
     },
@@ -432,7 +432,7 @@ There can be opportunities for growth through joint ventures or transformative e
     },
     9: {
       short: 'You grow through philosophy, travel, higher learning, and the search for truth.',
-      long: `With Jupiter in the 9th House, this is a natural placement, as Jupiter rules this house. Your expansion is strongly tied to learning, belief systems, travel, and the pursuit of meaning.
+      long: `With Jupiter in the 9th House, your expansion is strongly tied to learning, belief systems, travel, and the pursuit of meaning.
 
 You may feel drawn to explore different cultures, philosophies, or spiritual paths. There is often a natural optimism and desire for understanding. Growth comes through grounding your beliefs, so your expansion becomes lived wisdom rather than abstraction.`,
     },
@@ -513,7 +513,7 @@ There can be a gradual development of wisdom over time. Growth comes through rem
     },
     10: {
       short: 'Your career and public path develop through discipline, responsibility, and long-term achievement.',
-      long: `With Saturn in the 10th House, this is a natural placement, as Saturn rules this house. Your career path often involves responsibility, ambition, and a strong drive to achieve.
+      long: `With Saturn in the 10th House, your career path often involves responsibility, ambition, and a strong drive to achieve.
 
 You may take your public role seriously and work steadily toward long-term goals. There can be pressure or delay, but also the potential for significant success through persistence. Growth comes through aligning ambition with purpose, so achievement becomes meaningful rather than burdensome.`,
     },
@@ -594,7 +594,7 @@ There can be sudden shifts in direction or unexpected opportunities. Your public
     },
     11: {
       short: 'Your connections and goals are shaped by innovation, independence, and progressive ideals.',
-      long: `With Uranus in the 11th House, this is a natural placement, as Uranus rules this house. Your approach to friendships, groups, and future vision tends to be progressive, innovative, and forward-thinking.
+      long: `With Uranus in the 11th House, your approach to friendships, groups, and future vision tends to be progressive, innovative, and forward-thinking.
 
 You may be drawn to unconventional communities or causes that align with your ideals. There is often a strong sense of individuality within the collective. Growth comes through grounding your vision, so your ideas lead to real-world impact.`,
     },
@@ -675,7 +675,7 @@ There can be inspiration in collective work, but also blurred boundaries within 
     },
     12: {
       short: 'Your inner world is deeply intuitive, spiritual, and connected to the unseen and subconscious.',
-      long: `With Neptune in the 12th House, this is a natural placement, as Neptune rules this house. Your inner world tends to be highly sensitive, intuitive, and connected to deeper layers of experience.
+      long: `With Neptune in the 12th House, your inner world tends to be highly sensitive, intuitive, and connected to deeper layers of experience.
 
 You may have strong imagination, empathy, or spiritual awareness. There can also be difficulty distinguishing between intuition and illusion. Growth comes through grounding your inner awareness, so your sensitivity becomes a source of clarity and healing rather than confusion.`,
     },
@@ -726,7 +726,7 @@ There can be themes of control, trust, and vulnerability within connection. Grow
     },
     8: {
       short: 'Your experience of transformation, intimacy, and power is profound, intense, and deeply evolutionary.',
-      long: `With Pluto in the 8th House, this is a natural placement, as Pluto rules this house. Your life may involve deep transformation, emotional intensity, and profound experiences of change.
+      long: `With Pluto in the 8th House, your life may involve deep transformation, emotional intensity, and profound experiences of change.
 
 You may be drawn to understanding power, psychology, and what lies beneath the surface. There is often strong resilience and capacity for rebirth. Growth comes through embracing transformation consciously, so your depth becomes a source of empowerment rather than overwhelm.`,
     },

@@ -1,4 +1,4 @@
-package com.anonymous.client
+package com.naksha.app
 
 import android.os.Build
 import android.os.Bundle

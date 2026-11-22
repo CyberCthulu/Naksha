@@ -7,6 +7,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
+    "validate:public-env": "node ./scripts/validate-public-env.js",
+    "eas-build-pre-install": "npm run validate:public-env",
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "lint": "eslint ."
@@ -19,14 +21,13 @@
     "@expo-google-fonts/inter": "^0.4.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
-    "@react-native-picker/picker": "2.11.1",
+    "@react-native-picker/picker": "2.11.3",
     "@react-native/virtualized-lists": "^0.81.0",
     "@react-navigation/native": "^7.1.10",
     "@react-navigation/native-stack": "^7.3.14",
     "@react-three/fiber": "9.5.0",
     "@supabase/supabase-js": "^2.49.8",
     "astronomy-engine": "^2.1.19",
-    "axios": "^1.9.0",
     "expo": "~54.0.37",
     "expo-asset": "~12.0.13",
     "expo-dev-client": "~6.0.21",
@@ -67,5 +68,12 @@
     "prettier": "^3.5.3",
     "typescript": "~5.9.2"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "install": {
+      "exclude": [
+        "@react-native-picker/picker"
+      ]
+    }
+  }
 }

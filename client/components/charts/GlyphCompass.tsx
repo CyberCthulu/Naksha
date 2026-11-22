@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { AppText } from '../ui/AppText'
 import { Icon } from '../ui/Icon'
+import { SkySurface } from '../ui/SkySurface'
 import { theme } from '../ui/theme'
 import { GlyphCompassContent } from './ChartCompass'
 
@@ -106,7 +107,7 @@ export function GlyphCompass({ hidden = false }: Props) {
       ) : null}
 
       {open ? (
-        <View
+        <SkySurface
           testID="glyph-compass-panel"
           accessibilityLabel="Glyph Compass"
           // Normal handling inside the panel; the wrapper above stays box-none.
@@ -146,7 +147,7 @@ export function GlyphCompass({ hidden = false }: Props) {
           >
             <GlyphCompassContent />
           </ScrollView>
-        </View>
+        </SkySurface>
       ) : null}
     </View>
   )
@@ -187,7 +188,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    backgroundColor: theme.surface.raised,
+    backgroundColor: theme.background.base,
+    overflow: 'hidden',
     borderTopLeftRadius: theme.radius.xl,
     borderTopRightRadius: theme.radius.xl,
     borderTopWidth: 1,

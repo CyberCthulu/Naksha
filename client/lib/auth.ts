@@ -11,6 +11,7 @@ export type ProfileMeta = {
   last_name?: string
   birth_date?: string
   birth_time?: string
+  birth_utc_offset_minutes?: number
   birth_location?: string
   time_zone?: string
   birth_lat?: number
@@ -61,7 +62,8 @@ export async function requestPasswordResetEmail(email: string) {
 }
 
 export async function signOut() {
-  return supabase.auth.signOut()
+  const { error } = await supabase.auth.signOut({ scope: 'local' })
+  if (error) throw error
 }
 
 export async function getUser() {

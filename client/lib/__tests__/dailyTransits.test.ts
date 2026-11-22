@@ -111,6 +111,100 @@ describe('daily transit helpers', () => {
     expect(strongest?.natal.name).toBe('Venus')
   })
 
+  it('uses full precision before transit priority when displayed orbs tie', () => {
+    const natalPlanets = [planet('Mars', 0)]
+    const transitPlanets = [
+      planet('Moon', 1.004),
+      planet('Sun', 1.001),
+    ]
+
+    const aspects = findDailyTransitAspects(
+      natalPlanets,
+      transitPlanets
+    )
+    const strongest = findStrongestDailyTransitAspect(
+      natalPlanets,
+      transitPlanets
+    )
+
+    expect(aspects.map(({ orb }) => orb)).toEqual([1, 1])
+    expect(aspects.map(({ transit }) => transit.name)).toEqual([
+      'Sun',
+      'Moon',
+    ])
+    expect(strongest?.transit.name).toBe('Sun')
+  })
+
+  it('retains transit priority when true orbs are equal', () => {
+    const natalPlanets = [planet('Mars', 0)]
+    const transitPlanets = [
+      planet('Sun', 1.001),
+      planet('Moon', 1.001),
+    ]
+
+    const strongest = findStrongestDailyTransitAspect(
+      natalPlanets,
+      transitPlanets
+    )
+
+    expect(strongest).toEqual(
+      expect.objectContaining({
+        orb: 1,
+        transit: expect.objectContaining({ name: 'Moon' }),
+      })
+    )
+  })
+
+  it('skips a tighter noncanonical target and selects the next canonical contact', () => {
+    const transitPlanets = [planet('Moon', 0)]
+    const natalPlanets = [
+      planet('UnknownBody', 0.1),
+      planet('Mars', 0.2),
+    ]
+
+    const aspects = findDailyTransitAspects(
+      natalPlanets,
+      transitPlanets
+    )
+    const strongest = findStrongestDailyTransitAspect(
+      natalPlanets,
+      transitPlanets
+    )
+
+    expect(aspects).toHaveLength(1)
+    expect(strongest).toEqual(
+      expect.objectContaining({
+        orb: 0.2,
+        transit: expect.objectContaining({ name: 'Moon' }),
+        natal: expect.objectContaining({ name: 'Mars' }),
+      })
+    )
+  })
+
+  it('returns no primary contact when every natal target is noncanonical', () => {
+    expect(
+      findStrongestDailyTransitAspect(
+        [planet('UnknownBody', 0.1)],
+        [planet('Moon', 0)]
+      )
+    ).toBeNull()
+  })
+
+  it('keeps canonical same-planet returns eligible', () => {
+    expect(
+      findStrongestDailyTransitAspect(
+        [planet('Sun', 0)],
+        [planet('Sun', 0)]
+      )
+    ).toEqual(
+      expect.objectContaining({
+        type: 'conj',
+        transit: expect.objectContaining({ name: 'Sun' }),
+        natal: expect.objectContaining({ name: 'Sun' }),
+      })
+    )
+  })
+
   it('builds today energy with Sun/Moon signs and generic aspect meaning', () => {
     const transitPlanets = computeTransitPlanets(FIXED_DATE)
     const transitSun = transitPlanets.find((item) => item.name === 'Sun')

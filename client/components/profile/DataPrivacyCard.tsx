@@ -1,41 +1,49 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 
-import { uiStyles } from '../ui/uiStyles'
+import { AppText } from '../ui/AppText'
+import { Button } from '../ui/Button'
+import { Card } from '../ui/Card'
 import { theme } from '../ui/theme'
 
 type Props = {
-  onExportData: () => void
   onDeleteAccount: () => void
   deletingAccount?: boolean
 }
 
+/**
+ * Data and privacy actions.
+ *
+ * Account deletion remains a destructive button with confirmation. Data export
+ * stays hidden until a real export or monitored request destination exists.
+ */
 export default function DataPrivacyCard({
-  onExportData,
   onDeleteAccount,
   deletingAccount = false,
 }: Props) {
   return (
-    <View style={uiStyles.card}>
-      <Text style={uiStyles.cardTitle}>Data & Privacy</Text>
-      <TouchableOpacity style={styles.actionRow} onPress={onExportData}>
-        <Text style={styles.link}>Export my data</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.actionRow}
+    <Card>
+      <AppText variant="heading" style={styles.title}>
+        Data &amp; Privacy
+      </AppText>
+
+      <Button
+        title={deletingAccount ? 'Deleting account…' : 'Delete account'}
+        variant="destructive"
         onPress={onDeleteAccount}
         disabled={deletingAccount}
-      >
-        <Text style={[styles.link, { color: theme.colors.danger }]}>
-          {deletingAccount ? 'Deleting account…' : 'Delete account'}
-        </Text>
-      </TouchableOpacity>
-    </View>
+        loading={deletingAccount}
+        style={styles.action}
+      />
+    </Card>
   )
 }
 
 const styles = StyleSheet.create({
-  link: { fontWeight: '700', color: '#007AFF' },
-  actionRow: {
-    paddingVertical: 8,
+  title: {
+    color: theme.text.primary,
+    marginBottom: theme.space.sm,
+  },
+  action: {
+    marginTop: theme.space.sm,
   },
 })

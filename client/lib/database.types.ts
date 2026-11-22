@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -58,6 +58,7 @@ export type Database = {
           birth_lat: number | null
           birth_lon: number | null
           birth_time: string | null
+          birth_utc_offset_minutes: number | null
           chart_data: Json
           created_at: string | null
           id: number
@@ -71,6 +72,7 @@ export type Database = {
           birth_lat?: number | null
           birth_lon?: number | null
           birth_time?: string | null
+          birth_utc_offset_minutes?: number | null
           chart_data: Json
           created_at?: string | null
           id?: number
@@ -84,6 +86,7 @@ export type Database = {
           birth_lat?: number | null
           birth_lon?: number | null
           birth_time?: string | null
+          birth_utc_offset_minutes?: number | null
           chart_data?: Json
           created_at?: string | null
           id?: number
@@ -126,11 +129,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "conversations_chart_id_fkey"
-            columns: ["chart_id"]
+            foreignKeyName: "conversations_chart_owner_fkey"
+            columns: ["chart_id", "user_id"]
             isOneToOne: false
             referencedRelation: "charts"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "user_id"]
           },
           {
             foreignKeyName: "conversations_user_id_fkey"
@@ -174,11 +177,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "journals_chart_id_fkey"
-            columns: ["chart_id"]
+            foreignKeyName: "journals_chart_owner_fkey"
+            columns: ["chart_id", "user_id"]
             isOneToOne: false
             referencedRelation: "charts"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "user_id"]
           },
           {
             foreignKeyName: "journals_user_id_fkey"
@@ -219,11 +222,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "messages_conversation_id_fkey"
-            columns: ["conversation_id"]
+            foreignKeyName: "messages_conversation_owner_fkey"
+            columns: ["conversation_id", "user_id"]
             isOneToOne: false
             referencedRelation: "conversations"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "user_id"]
           },
           {
             foreignKeyName: "messages_user_id_fkey"
@@ -343,11 +346,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "reports_chart_id_fkey"
-            columns: ["chart_id"]
+            foreignKeyName: "reports_chart_owner_fkey"
+            columns: ["chart_id", "user_id"]
             isOneToOne: false
             referencedRelation: "charts"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "user_id"]
           },
           {
             foreignKeyName: "reports_user_id_fkey"
@@ -438,6 +441,7 @@ export type Database = {
           birth_location: string | null
           birth_lon: number | null
           birth_time: string | null
+          birth_utc_offset_minutes: number | null
           created_at: string | null
           email: string
           first_name: string | null
@@ -452,6 +456,7 @@ export type Database = {
           birth_location?: string | null
           birth_lon?: number | null
           birth_time?: string | null
+          birth_utc_offset_minutes?: number | null
           created_at?: string | null
           email: string
           first_name?: string | null
@@ -466,6 +471,7 @@ export type Database = {
           birth_location?: string | null
           birth_lon?: number | null
           birth_time?: string | null
+          birth_utc_offset_minutes?: number | null
           created_at?: string | null
           email?: string
           first_name?: string | null
@@ -500,12 +506,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -529,11 +535,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -554,11 +560,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -579,11 +585,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -596,11 +602,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

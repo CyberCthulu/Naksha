@@ -17,6 +17,7 @@ import {
 import {
   CURRENT_CHART_CALCULATION_VERSION,
   CURRENT_CHART_SCHEMA_VERSION,
+  HISTORICAL_CHART_CALCULATION_VERSION,
 } from '../../lib/chartDataVersions'
 import { UNSUPPORTED_CHART_DATA_MESSAGE } from '../../lib/chartDataValidation'
 
@@ -50,6 +51,7 @@ const validProfile: ChartProfile = {
   last_name: 'Lovelace',
   birth_date: '1815-12-10',
   birth_time: '12:00:00',
+  birth_utc_offset_minutes: null,
   birth_location: 'London, UK',
   time_zone: 'Europe/London',
   birth_lat: 51.5072,
@@ -62,6 +64,7 @@ function makeChartData(overrides: Partial<ChartData> = {}): ChartData {
       name: 'Ada Natal Chart',
       birth_date: '1815-12-10',
       birth_time: '12:00:00',
+      birth_utc_offset_minutes: null,
       time_zone: 'Europe/London',
       birth_lat: 51.5072,
       birth_lon: -0.1276,
@@ -139,6 +142,7 @@ function mockChartLookup(data: unknown = null, error: unknown = null) {
   const query: any = {
     select: jest.fn(() => query),
     eq: jest.fn(() => query),
+    is: jest.fn(() => query),
     maybeSingle,
   }
 
@@ -205,8 +209,10 @@ describe('useChartData', () => {
     expect(saved.calculation_version).toBeUndefined()
   })
 
-  it('hydrates missing legacy houses through the shared chart path', async () => {
+  it('loads explicit V1 with missing houses without V2 hydration or overwrite', async () => {
     const saved = makeChartData({
+      schema_version: CURRENT_CHART_SCHEMA_VERSION,
+      calculation_version: HISTORICAL_CHART_CALCULATION_VERSION,
       houses: null,
       planet_houses: null,
     })
@@ -218,11 +224,14 @@ describe('useChartData', () => {
       tz: 'Europe/London',
     })
 
-    expect(result.houses).toHaveLength(12)
-    expect(result.planetHouses).toHaveLength(saved.planets.length)
-    expect(saved.houses).toBeNull()
-    expect(saved.planet_houses).toBeNull()
+    expect(result.loading).toBe(false)
+    expect(result.planets).toEqual(saved.planets)
+    expect(result.houses).toBeNull()
+    expect(result.planetHouses).toBeNull()
+    expect(result.isSaved).toBe(true)
+    expect(mockedSupabase().auth.getUser).not.toHaveBeenCalled()
     expect(mockedBuildChartData()).not.toHaveBeenCalled()
+    expect(mockedGetChartCalculationPreferences()).not.toHaveBeenCalled()
     expect(mockedSaveChart()).not.toHaveBeenCalled()
   })
 
@@ -309,6 +318,7 @@ describe('useChartData', () => {
         name: 'Ada Natal Chart',
         birth_date: '1815-12-10',
         birth_time: '12:00:00',
+        birth_utc_offset_minutes: null,
         time_zone: 'Europe/London',
         birth_lat: null,
         birth_lon: null,
@@ -356,7 +366,12 @@ describe('useChartData', () => {
   })
 
   it('sets a save warning and leaves self charts unsaved when auto-save fails', async () => {
-    mockedSaveChart().mockRejectedValueOnce(new Error('network down'))
+    mockedSaveChart().mockRejectedValueOnce({
+      code: 'PGRST500',
+      message: 'Network down',
+      details: 'private chart detail',
+      hint: 'private hint',
+    })
 
     const result = await renderUseChartData({
       profile: validProfile,
@@ -369,10 +384,10 @@ describe('useChartData', () => {
     expect(result.saveWarning).toBe(
       'This chart is ready to view, but it was not saved automatically. Tap Save Chart Data to try again.'
     )
-    expect(console.warn).toHaveBeenCalledWith(
-      'Auto-save failed:',
-      expect.any(Error)
-    )
+    expect(console.warn).toHaveBeenCalledWith('Auto-save failed:', {
+      code: 'PGRST500',
+      message: 'Network down',
+    })
   })
 
   it('clears saveWarning and marks saved after successful manual save', async () => {

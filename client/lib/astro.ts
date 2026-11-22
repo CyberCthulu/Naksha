@@ -1,5 +1,6 @@
 // lib/astro.ts
 import * as Astro from 'astronomy-engine'
+import { calculateAspects } from './aspects'
 
 // Normalize angle into 0..360
 const norm = (deg: number) => ((deg % 360) + 360) % 360
@@ -48,47 +49,25 @@ export type Aspect = {
 
 export type AspectOrbMode = 'medium'
 
-const ASPECTS = [
-  { type: 'conj',    angle: 0,   orb: 6 },
-  { type: 'opp',     angle: 180, orb: 6 },
-  { type: 'trine',   angle: 120, orb: 5 },
-  { type: 'square',  angle: 90,  orb: 5 },
-  { type: 'sextile', angle: 60,  orb: 4 },
-] as const
-
-function supportedAspectDefinitions(orbMode: AspectOrbMode) {
+export function findAspectsWithFullPrecision(
+  planets: PlanetPos[],
+  orbMode: AspectOrbMode = 'medium'
+): Aspect[] {
   if (orbMode !== 'medium') {
     throw new Error('Unsupported aspect orb mode. Only medium is implemented.')
   }
-
-  return ASPECTS
+  return calculateAspects(planets)
 }
 
+/** Preserve the existing two-decimal saved-chart representation. */
 export function findAspects(
   planets: PlanetPos[],
   orbMode: AspectOrbMode = 'medium'
 ): Aspect[] {
-  const aspectDefinitions = supportedAspectDefinitions(orbMode)
-  const res: Aspect[] = []
-  for (let i = 0; i < planets.length; i++) {
-    for (let j = i + 1; j < planets.length; j++) {
-      const a = planets[i], b = planets[j]
-      // smallest angular distance 0..180
-      const sep = Math.abs(((a.lon - b.lon + 540) % 360) - 180)
-      for (const asp of aspectDefinitions) {
-        const diff = Math.abs(sep - asp.angle)
-        if (diff <= asp.orb) {
-          res.push({
-            a: a.name,
-            b: b.name,
-            type: asp.type,
-            orb: +diff.toFixed(2),
-          })
-        }
-      }
-    }
-  }
-  return res
+  return findAspectsWithFullPrecision(planets, orbMode).map(aspect => ({
+    ...aspect,
+    orb: +aspect.orb.toFixed(2),
+  }))
 }
 
 // -------- House cusps (Whole Sign) --------
@@ -195,9 +174,38 @@ export function assignPlanetsToWholeSignHouses(
   })
 }
 
+export function computeAscendantLongitude(
+  jsDate: Date,
+  latDeg: number,
+  lonDeg: number
+): number {
+  const jd = toJulianDate(jsDate)
+  const eps = meanObliquity(jd) * DEG2RAD
+  const phi = latDeg * DEG2RAD
+  const lst = localSiderealDegrees(jd, lonDeg) * DEG2RAD
+
+  const num = Math.cos(lst)
+  const den =
+    -Math.sin(lst) * Math.cos(eps) - Math.tan(phi) * Math.sin(eps)
+  let lambdaAsc = norm360(Math.atan2(num, den) * RAD2DEG)
+
+  // The ecliptic intersects the horizon at antipodal points. At high
+  // latitudes, atan2 can select the western (setting) intersection. As local
+  // sidereal time advances, the eastern (rising) point has increasing altitude.
+  const altitudeRate =
+    Math.cos(phi) *
+    (-Math.cos(lambdaAsc * DEG2RAD) * Math.sin(lst) +
+      Math.sin(lambdaAsc * DEG2RAD) * Math.cos(eps) * Math.cos(lst))
+  if (altitudeRate < 0) {
+    lambdaAsc = norm360(lambdaAsc + 180)
+  }
+
+  return lambdaAsc
+}
+
 /**
  * Compute Whole-Sign house cusps from birth date/time and location.
- * - Uses an approximate Ascendant formula (good enough for UX)
+ * - Selects the eastern (rising) ecliptic-horizon intersection
  * - House 1 starts at 0° of the Ascendant’s sign
  * - Each subsequent house is the next sign (30° steps)
  */
@@ -206,16 +214,7 @@ export function computeWholeSignHouses(
   latDeg: number,
   lonDeg: number
 ): HouseCusp[] {
-  const jd = toJulianDate(jsDate)
-  const eps = meanObliquity(jd) * DEG2RAD
-  const phi = latDeg * DEG2RAD
-  const lst = localSiderealDegrees(jd, lonDeg) * DEG2RAD
-
-  // Ascendant longitude (approx Meeus-style formula)
-  const num = Math.cos(lst)
-  const den = -Math.sin(lst) * Math.cos(eps) - Math.tan(phi) * Math.sin(eps)
-  let lambdaAsc = Math.atan2(num, den) * RAD2DEG
-  lambdaAsc = norm360(lambdaAsc)
+  const lambdaAsc = computeAscendantLongitude(jsDate, latDeg, lonDeg)
 
   // Whole-sign: 1st house cusp at 0° of Ascendant's sign
   const ascSign = Math.floor(lambdaAsc / 30)

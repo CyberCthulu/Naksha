@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react'
 import {
   View,
   TouchableOpacity,
-  ActivityIndicator,
   StyleSheet,
 } from 'react-native'
 
@@ -10,8 +9,10 @@ import { geocodePlace, type GeocodeResult } from '../../lib/geocode'
 import FormField from '../ui/FormField'
 import TextField from '../ui/TextField'
 import { AppText, MutedText } from '../ui/AppText'
+import { CelestialLoader } from '../ui/CelestialLoader'
 import { uiStyles } from '../ui/uiStyles'
 import { theme } from '../ui/theme'
+import { useFormAppearance } from '../ui/FormAppearance'
 
 type Props = {
   label?: string
@@ -32,15 +33,15 @@ export default function LocationAutocompleteField({
   value,
   onChange,
   onSelectLocation,
-  placeholder = 'City, State/Country',
+  placeholder,
 }: Props) {
+  const soft = useFormAppearance() === 'soft'
   const [query, setQuery] = useState(value)
   const [results, setResults] = useState<GeocodeResult[]>([])
   const [loading, setLoading] = useState(false)
   const [showResults, setShowResults] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const requestIdRef = useRef(0)
 
   useEffect(() => {
@@ -48,33 +49,37 @@ export default function LocationAutocompleteField({
   }, [value])
 
   useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-
+    const requestId = ++requestIdRef.current
     const trimmed = query.trim()
+    let controller: AbortController | null = null
+
+    setResults([])
+    setLoading(false)
 
     if (trimmed.length < 3) {
-      setResults([])
-      setLoading(false)
       setError(null)
+      setShowResults(false)
       return
     }
 
-    debounceRef.current = setTimeout(async () => {
-      const requestId = ++requestIdRef.current
+    const debounce = setTimeout(async () => {
+      controller = new AbortController()
       setLoading(true)
       setError(null)
 
       try {
-        const next = await geocodePlace(trimmed)
+        const next = await geocodePlace(trimmed, {
+          signal: controller.signal,
+        })
 
         if (requestId !== requestIdRef.current) return
 
         setResults(next)
         setShowResults(true)
       } catch {
-        if (requestId !== requestIdRef.current) return
+        if (controller.signal.aborted || requestId !== requestIdRef.current) return
         setResults([])
-        setError('Could not load location suggestions.')
+        setError('Could not load location suggestions. Please try again.')
       } finally {
         if (requestId === requestIdRef.current) {
           setLoading(false)
@@ -83,7 +88,11 @@ export default function LocationAutocompleteField({
     }, 400)
 
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
+      clearTimeout(debounce)
+      controller?.abort()
+      if (requestId === requestIdRef.current) {
+        requestIdRef.current += 1
+      }
     }
   }, [query])
 
@@ -106,20 +115,32 @@ export default function LocationAutocompleteField({
       <TextField
         value={query}
         onChangeText={handleChangeText}
-        placeholder={placeholder}
+        placeholder={
+          placeholder ?? (soft ? 'Search city or birthplace' : 'City, State/Country')
+        }
         autoCorrect={false}
         autoCapitalize="words"
       />
 
       {loading && (
-        <View style={styles.loadingRow}>
-          <ActivityIndicator size="small" />
-          <MutedText style={styles.loadingText}>Searching locations…</MutedText>
+        <View
+          style={styles.loadingRow}
+          accessible
+          accessibilityRole="progressbar"
+          accessibilityLabel="Searching locations…"
+          accessibilityState={{ busy: true }}
+        >
+          <CelestialLoader size={20} color={theme.accent.base} />
+          <MutedText variant="bodySmall" style={styles.loadingText}>
+            Searching locations…
+          </MutedText>
         </View>
       )}
 
       {!!error && (
-        <AppText style={[uiStyles.errorText, styles.errorText]}>{error}</AppText>
+        <AppText variant="bodySmall" style={[uiStyles.errorText, styles.errorText]}>
+          {error}
+        </AppText>
       )}
 
       {showResults && results.length > 0 && (
@@ -136,9 +157,11 @@ export default function LocationAutocompleteField({
                   index < results.length - 1 && styles.resultDivider,
                 ]}
               >
-                <AppText style={styles.resultTitle}>{item.name}</AppText>
-                {!!coords && (
-                  <MutedText style={styles.resultCoords}>{coords}</MutedText>
+                <AppText variant="body">{item.name}</AppText>
+                {!!coords && !soft && (
+                  <MutedText variant="caption" style={styles.resultCoords}>
+                    {coords}
+                  </MutedText>
                 )}
               </TouchableOpacity>
             )
@@ -166,9 +189,9 @@ const styles = StyleSheet.create({
   dropdown: {
     marginTop: 8,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.card,
-    backgroundColor: theme.colors.cardBg,
+    borderColor: theme.border.strong,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.surface.raised,
     overflow: 'hidden',
   },
   resultRow: {
@@ -177,14 +200,9 @@ const styles = StyleSheet.create({
   },
   resultDivider: {
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  resultTitle: {
-    color: theme.colors.text,
-    fontSize: 14,
+    borderBottomColor: theme.border.base,
   },
   resultCoords: {
     marginTop: 4,
-    fontSize: 12,
   },
 })

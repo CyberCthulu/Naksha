@@ -1,7 +1,6 @@
 // components/ui/ScreenHeader.tsx
 import React from 'react'
 import {
-  ActivityIndicator,
   Pressable,
   StyleSheet,
   View,
@@ -10,6 +9,7 @@ import {
 } from 'react-native'
 
 import { AppText } from './AppText'
+import { CelestialLoader } from './CelestialLoader'
 import { Icon } from './Icon'
 import { theme } from './theme'
 
@@ -20,6 +20,11 @@ export type ScreenHeaderAction = {
   disabled?: boolean
   /** Defaults to `label`. */
   accessibilityLabel?: string
+  /**
+   * Why the action is unavailable, when it is. A disabled control that does
+   * not say what would enable it is a dead end for a screen-reader user.
+   */
+  accessibilityHint?: string
 }
 
 type Props = {
@@ -88,6 +93,7 @@ export function ScreenHeader({
             accessibilityLabel={
               rightAction.accessibilityLabel ?? rightAction.label
             }
+            accessibilityHint={rightAction.accessibilityHint}
             accessibilityState={{
               disabled: !!rightAction.disabled || !!rightAction.loading,
               busy: !!rightAction.loading,
@@ -102,9 +108,9 @@ export function ScreenHeader({
             ]}
           >
             {rightAction.loading ? (
-              <ActivityIndicator
+              <CelestialLoader
                 testID="screen-header-action-spinner"
-                size="small"
+                size={20}
                 color={theme.accent.base}
               />
             ) : (

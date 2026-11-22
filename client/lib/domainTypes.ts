@@ -5,6 +5,7 @@ export type UserProfileFields = {
   last_name: string | null
   birth_date: string | null
   birth_time: string | null
+  birth_utc_offset_minutes: number | null
   birth_location: string | null
   time_zone: string | null
   birth_lat: number | null
@@ -84,7 +85,12 @@ export type ChartProfile = Pick<
   Partial<
     Pick<
       UserProfileFields,
-      'birth_lat' | 'birth_lon' | 'birth_location' | 'first_name' | 'last_name'
+      | 'birth_lat'
+      | 'birth_lon'
+      | 'birth_location'
+      | 'first_name'
+      | 'last_name'
+      | 'birth_utc_offset_minutes'
     >
   >
 

@@ -1,11 +1,20 @@
 import React from 'react'
-import { Alert, TouchableOpacity } from 'react-native'
+import { Alert, StyleSheet } from 'react-native'
 import TestRenderer from 'react-test-renderer'
 
 import MyChartsScreen from '../MyCharts'
+import ChartWheel from '../../components/charts/ChartWheel'
+import { ChartMark } from '../../components/charts/ChartMark'
+import { Circle as SvgCircle, Line as SvgLine } from 'react-native-svg'
+import { theme } from '../../components/ui/theme'
 import { Button } from '../../components/ui/Button'
 import { deleteChart, listCharts } from '../../lib/charts'
 import { validateChartData } from '../../lib/chartDataValidation'
+import {
+  CURRENT_CHART_CALCULATION_VERSION,
+  CURRENT_CHART_SCHEMA_VERSION,
+  HISTORICAL_CHART_CALCULATION_VERSION,
+} from '../../lib/chartDataVersions'
 import supabase from '../../lib/supabase'
 
 const mockNavigation = {
@@ -14,9 +23,21 @@ const mockNavigation = {
   setOptions: jest.fn(),
 }
 
-jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => mockNavigation,
-}))
+let focusCallback: (() => void) | null = null
+
+jest.mock('@react-navigation/native', () => {
+  const React = require('react')
+
+  return {
+    useNavigation: () => mockNavigation,
+    useFocusEffect: (callback: () => void) => {
+      React.useEffect(() => {
+        focusCallback = callback
+        return callback()
+      }, [callback])
+    },
+  }
+})
 
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
@@ -95,9 +116,23 @@ const LEGACY_DATA = {
   planet_houses: null,
 }
 
-const CURRENT_DATA = { ...LEGACY_DATA, schema_version: 1, calculation_version: 1 }
+const HISTORICAL_DATA = {
+  ...LEGACY_DATA,
+  schema_version: CURRENT_CHART_SCHEMA_VERSION,
+  calculation_version: HISTORICAL_CHART_CALCULATION_VERSION,
+}
 
-const FUTURE_DATA = { ...LEGACY_DATA, schema_version: 2, calculation_version: 1 }
+const CURRENT_DATA = {
+  ...LEGACY_DATA,
+  schema_version: CURRENT_CHART_SCHEMA_VERSION,
+  calculation_version: CURRENT_CHART_CALCULATION_VERSION,
+}
+
+const FUTURE_DATA = {
+  ...LEGACY_DATA,
+  schema_version: CURRENT_CHART_SCHEMA_VERSION + 1,
+  calculation_version: CURRENT_CHART_CALCULATION_VERSION,
+}
 
 const MALFORMED_DATA = { meta: { birth_date: 5 }, planets: 'nope' }
 
@@ -130,14 +165,28 @@ function hostTexts(screen: ReturnType<typeof create>): string[] {
     .map((node) => node.children.filter((c) => typeof c === 'string').join(''))
 }
 
+/**
+ * Controls are matched by what they announce, not by which component renders
+ * them. The open control's label now carries the row's summary after the
+ * name, so the match is on the leading identity rather than the whole string.
+ */
 function findByAccessibilityLabel(
   screen: ReturnType<typeof create>,
   label: string
 ) {
-  return screen.root.find(
+  const matches = screen.root.findAll(
     (node) =>
-      node.type === TouchableOpacity && node.props.accessibilityLabel === label
+      typeof node.type !== 'string' &&
+      typeof node.props?.accessibilityLabel === 'string' &&
+      node.props.accessibilityLabel.startsWith(label) &&
+      typeof node.props?.onPress === 'function'
   )
+
+  if (matches.length === 0) {
+    throw new Error(`no control announcing "${label}"`)
+  }
+
+  return matches[0]
 }
 
 describe('MyCharts row interactions', () => {
@@ -258,25 +307,32 @@ describe('MyCharts row interactions', () => {
   it('preserves legacy, current, unsupported, malformed and no-coordinate rows', async () => {
     mockedListCharts.mockResolvedValue([
       chartRow(1, 'Legacy', LEGACY_DATA),
-      chartRow(2, 'Current', CURRENT_DATA),
-      chartRow(3, 'Future', FUTURE_DATA),
-      chartRow(4, 'Broken', MALFORMED_DATA),
-      chartRow(5, 'NoCoords', NO_COORDS_DATA),
+      chartRow(2, 'Historical', HISTORICAL_DATA),
+      chartRow(3, 'Current', CURRENT_DATA),
+      chartRow(4, 'Future', FUTURE_DATA),
+      chartRow(5, 'Broken', MALFORMED_DATA),
+      chartRow(6, 'NoCoords', NO_COORDS_DATA),
     ])
 
     const screen = await renderScreen()
     const texts = hostTexts(screen)
 
-    // Legacy (unversioned) and current both render their birth summary.
+    // Legacy (unversioned), historical V1, current V2 and no-coordinate rows render their
+    // birth moment. The date is built from the stored 'YYYY-MM-DD' fields, so
+    // it reads as the 15th on every device rather than shifting westward.
     expect(
-      texts.filter((t) =>
-        t.startsWith('1997-09-15 · 13:55:00 · America/Los_Angeles')
-      )
-    ).toHaveLength(3)
-    // Coordinates appear only where both are present.
-    expect(
-      texts.filter((t) => t.includes('(37.49, -122.23)'))
-    ).toHaveLength(2)
+      texts.filter((t) => t.startsWith('15 Sep 1997 · '))
+    ).toHaveLength(4)
+
+    // The row used to print the whole database record. None of it survives:
+    // the zone and the coordinates are still stored and still drive every
+    // calculation, they are simply not what tells two saved charts apart.
+    expect(texts.some((t) => t.includes('(37.49, -122.23)'))).toBe(false)
+    expect(texts.some((t) => t.includes('America/Los_Angeles'))).toBe(false)
+    expect(texts.some((t) => t.includes('13:55:00'))).toBe(false)
+    expect(texts.some((t) => t.includes('1997-09-15'))).toBe(false)
+
+    // Unreadable rows still say so, and still say which kind of unreadable.
     expect(texts).toContain('Update Naksha to view this chart')
     expect(texts).toContain('Chart data unavailable')
   })
@@ -367,7 +423,7 @@ describe('MyCharts row interactions', () => {
     // D-04 regression guard: the error branch used to render text only, with
     // no retry and no header, leaving system back as the only way out.
     expect(texts).toContain('Retry')
-    expect(texts).toContain('Go Back')
+    expect(texts).toContain('Go back')
 
     mockedListCharts.mockResolvedValueOnce([CHART_ROW])
 
@@ -384,5 +440,469 @@ describe('MyCharts row interactions', () => {
     expect(
       findByAccessibilityLabel(screen, 'Open Vinal Natal Chart')
     ).toBeTruthy()
+  })
+})
+
+describe('MyCharts chart mark', () => {
+  beforeEach(() => {
+    ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
+    jest.clearAllMocks()
+    jest.spyOn(Alert, 'alert').mockImplementation(jest.fn())
+    renderer = null
+    mockedValidate.mockClear()
+    mockedGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
+    mockedListCharts.mockResolvedValue([CHART_ROW])
+    mockedDeleteChart.mockResolvedValue(undefined)
+  })
+
+  afterEach(() => {
+    if (renderer) {
+      const mounted = renderer
+      act(() => {
+        mounted.unmount()
+      })
+    }
+    renderer = null
+    jest.restoreAllMocks()
+  })
+
+  it('mounts no chart wheel at all, however many rows are saved', async () => {
+    const rows = Array.from({ length: 12 }, (_, i) =>
+      chartRow(i + 1, `Chart ${i + 1}`, CURRENT_DATA)
+    )
+    mockedListCharts.mockResolvedValue(rows)
+
+    const screen = await renderScreen()
+
+    // The whole point of the mark. A real wheel at this size destroyed its
+    // own detail, and twelve of them put twelve full charts in a scrolling
+    // list. Not fewer wheels -- none.
+    expect(screen.root.findAllByType(ChartWheel)).toHaveLength(0)
+
+    // Every row the list actually rendered carries a mark. Counted against
+    // rendered rows, not saved rows, because FlatList windows the tail.
+    // Host nodes only: Card passes the testID down, so a composite match
+    // counts the same row three times.
+    const renderedRows = screen.root.findAll(
+      (node) =>
+        typeof node.type === 'string' &&
+        typeof node.props?.testID === 'string' &&
+        /^chart-row-\d+$/.test(node.props.testID)
+    )
+    expect(renderedRows.length).toBeGreaterThan(0)
+    expect(screen.root.findAllByType(ChartMark)).toHaveLength(
+      renderedRows.length
+    )
+
+    // And no wheel machinery reached the list by another route.
+    expect(
+      screen.root.findAll(
+        (node) =>
+          typeof node.props?.testID === 'string' &&
+          node.props.testID.startsWith('wheel-planet-')
+      )
+    ).toHaveLength(0)
+  })
+
+  it('marks only rows whose data is readable', async () => {
+    mockedListCharts.mockResolvedValue([
+      chartRow(1, 'Current', CURRENT_DATA),
+      chartRow(3, 'Future', FUTURE_DATA),
+      chartRow(4, 'Broken', MALFORMED_DATA),
+    ])
+
+    const screen = await renderScreen()
+
+    // Unsupported and malformed rows still get the plain placeholder. Showing
+    // them a natal emblem would claim a chart the validator just rejected.
+    expect(screen.root.findAllByType(ChartMark)).toHaveLength(1)
+  })
+
+  it('takes no chart data, so it cannot depend on one', async () => {
+    const screen = await renderScreen()
+    const mark = screen.root.findByType(ChartMark)
+
+    // Size is the only input. Nothing chart-specific, no Sun-sign tint --
+    // which is what lets a synastry or composite mark exist later without
+    // reworking the row.
+    expect(Object.keys(mark.props)).toEqual(['size'])
+
+    for (const forbidden of [
+      'planets',
+      'aspects',
+      'houses',
+      'chart',
+      'data',
+      'selection',
+      'focusedPlanet',
+      'onSelectPlanet',
+      'onSelectAspect',
+    ]) {
+      expect(mark.props).not.toHaveProperty(forbidden)
+    }
+  })
+
+  it('draws the emblem the design calls for', async () => {
+    const screen = await renderScreen()
+    const mark = screen.root.findByType(ChartMark)
+
+    const circles = mark.findAllByType(SvgCircle)
+    const lines = mark.findAllByType(SvgLine)
+
+    // Twelve readable ticks, and a centre point.
+    expect(lines).toHaveLength(12)
+    // Seated disc, outer ring, inner ring, core.
+    expect(circles).toHaveLength(4)
+  })
+
+  it('renders no chart-specific colour', async () => {
+    const screen = await renderScreen()
+    const mark = screen.root.findByType(ChartMark)
+
+    // Read the raw props off the Svg components, not the host nodes:
+    // react-native-svg processes a colour into {type, payload} on the way
+    // down, so a host node's `stroke` is no longer the string we passed.
+    const paint = [
+      ...mark.findAllByType(SvgCircle),
+      ...mark.findAllByType(SvgLine),
+    ]
+      .flatMap((node) => [node.props.stroke, node.props.fill])
+      .filter((value): value is string => typeof value === 'string')
+
+    expect(paint.length).toBeGreaterThan(0)
+
+    // Gold and navy only. A planet hue here would make the mark data-driven
+    // through the back door.
+    const planetHues = [
+      ...Object.values(theme.planet),
+      ...Object.values(theme.planetGlow),
+    ]
+    for (const value of paint) {
+      expect(planetHues).not.toContain(value)
+    }
+
+    // And it is positively drawn from the accent, not merely not-planetary.
+    expect(paint).toContain(theme.accent.base)
+  })
+
+  it('hides the mark from assistive technology', async () => {
+    const screen = await renderScreen()
+    const wrapper = screen.root.findByType(ChartMark).parent
+
+    expect(wrapper?.props.accessible).toBe(false)
+    expect(wrapper?.props.accessibilityElementsHidden).toBe(true)
+    expect(wrapper?.props.importantForAccessibility).toBe(
+      'no-hide-descendants'
+    )
+  })
+
+  it('still validates once per load, and not again on re-render', async () => {
+    const rows = Array.from({ length: 12 }, (_, i) =>
+      chartRow(i + 1, `Chart ${i + 1}`, CURRENT_DATA)
+    )
+    mockedListCharts.mockResolvedValue(rows)
+
+    const screen = await renderScreen()
+    expect(mockedValidate).toHaveBeenCalledTimes(rows.length)
+
+    const after = mockedValidate.mock.calls.length
+    act(() => {
+      screen.update(<MyChartsScreen />)
+    })
+    expect(mockedValidate).toHaveBeenCalledTimes(after)
+  })
+})
+
+describe('MyCharts creation action', () => {
+  beforeEach(() => {
+    ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
+    jest.clearAllMocks()
+    jest.spyOn(Alert, 'alert').mockImplementation(jest.fn())
+    renderer = null
+    mockedGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
+    mockedListCharts.mockResolvedValue([CHART_ROW])
+    mockedDeleteChart.mockResolvedValue(undefined)
+  })
+
+  afterEach(() => {
+    if (renderer) {
+      const mounted = renderer
+      act(() => {
+        mounted.unmount()
+      })
+    }
+    renderer = null
+    jest.restoreAllMocks()
+  })
+
+  function creationControls(screen: ReturnType<typeof create>) {
+    return screen.root.findAll(
+      (node) =>
+        typeof node.type !== 'string' &&
+        typeof node.props?.onPress === 'function' &&
+        (node.props?.accessibilityLabel === 'Create a new chart' ||
+          node.props?.title === 'Create a chart')
+    )
+  }
+
+  it('offers the header action when the list has entries, and only that', async () => {
+    const screen = await renderScreen()
+
+    expect(hostTexts(screen)).toContain('New')
+    expect(hostTexts(screen)).not.toContain('Create a chart')
+    expect(creationControls(screen)).toHaveLength(1)
+  })
+
+  it('offers the empty-state action when the list is empty, and only that', async () => {
+    mockedListCharts.mockResolvedValue([])
+    const screen = await renderScreen()
+
+    expect(hostTexts(screen)).toContain('Create a chart')
+    expect(hostTexts(screen)).not.toContain('New')
+    expect(creationControls(screen)).toHaveLength(1)
+  })
+
+  it('sends both to the same place', async () => {
+    const populated = await renderScreen()
+    await act(async () => {
+      creationControls(populated)[0].props.onPress()
+      await settleAsyncWork()
+    })
+    const fromHeader = [...mockNavigation.navigate.mock.calls]
+
+    act(() => populated.unmount())
+    renderer = null
+    mockNavigation.navigate.mockClear()
+
+    mockedListCharts.mockResolvedValue([])
+    const empty = await renderScreen()
+    await act(async () => {
+      creationControls(empty)[0].props.onPress()
+      await settleAsyncWork()
+    })
+
+    expect(fromHeader).toEqual([['CreateGuestChart']])
+    expect(mockNavigation.navigate.mock.calls).toEqual(fromHeader)
+  })
+
+  it('fetches once on arrival, not twice', async () => {
+    await renderScreen()
+
+    // Focus fires on mount as well as on return, so pairing it with a mount
+    // effect would load the list twice on the way in.
+    expect(mockedListCharts).toHaveBeenCalledTimes(1)
+  })
+
+  it('reloads when the screen is focused again', async () => {
+    await renderScreen()
+    expect(mockedListCharts).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      focusCallback?.()
+      await settleAsyncWork()
+    })
+
+    expect(mockedListCharts).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('MyCharts deletion routes', () => {
+  beforeEach(() => {
+    ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
+    jest.clearAllMocks()
+    jest.spyOn(Alert, 'alert').mockImplementation(jest.fn())
+    renderer = null
+    mockedGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
+    mockedListCharts.mockResolvedValue([CHART_ROW])
+    mockedDeleteChart.mockResolvedValue(undefined)
+  })
+
+  afterEach(() => {
+    if (renderer) {
+      const mounted = renderer
+      act(() => {
+        mounted.unmount()
+      })
+    }
+    renderer = null
+    jest.restoreAllMocks()
+  })
+
+  /*
+   * Three ways in, one confirmation.
+   *
+   * The trailing icon, the long press and the assistive action all reach the
+   * same function, so no route into deleting a saved chart can skip the
+   * prompt -- the arrangement the Journal list uses.
+   */
+  it('confirms through the trailing icon', async () => {
+    const screen = await renderScreen()
+
+    await act(async () => {
+      findByAccessibilityLabel(
+        screen,
+        'Delete Vinal Natal Chart'
+      ).props.onPress()
+      await settleAsyncWork()
+    })
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Delete chart?',
+      'Vinal Natal Chart',
+      expect.any(Array)
+    )
+    expect(mockedDeleteChart).not.toHaveBeenCalled()
+  })
+
+  it('confirms through a long press on the row', async () => {
+    const screen = await renderScreen()
+
+    await act(async () => {
+      findByAccessibilityLabel(
+        screen,
+        'Open Vinal Natal Chart'
+      ).props.onLongPress()
+      await settleAsyncWork()
+    })
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Delete chart?',
+      'Vinal Natal Chart',
+      expect.any(Array)
+    )
+    expect(mockNavigation.navigate).not.toHaveBeenCalled()
+  })
+
+  it('confirms through the assistive delete action', async () => {
+    const screen = await renderScreen()
+    const row = findByAccessibilityLabel(screen, 'Open Vinal Natal Chart')
+
+    expect(row.props.accessibilityActions).toEqual([
+      { name: 'delete', label: 'Delete chart' },
+    ])
+
+    await act(async () => {
+      row.props.onAccessibilityAction({
+        nativeEvent: { actionName: 'delete' },
+      })
+      await settleAsyncWork()
+    })
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Delete chart?',
+      'Vinal Natal Chart',
+      expect.any(Array)
+    )
+  })
+
+  it('ignores assistive actions it does not own', async () => {
+    const screen = await renderScreen()
+
+    await act(async () => {
+      findByAccessibilityLabel(
+        screen,
+        'Open Vinal Natal Chart'
+      ).props.onAccessibilityAction({
+        nativeEvent: { actionName: 'activate' },
+      })
+      await settleAsyncWork()
+    })
+
+    expect(Alert.alert).not.toHaveBeenCalled()
+  })
+
+  it('keeps the row when the delete itself fails', async () => {
+    mockedDeleteChart.mockRejectedValueOnce(new Error('Network unreachable'))
+    const screen = await renderScreen()
+
+    await act(async () => {
+      findByAccessibilityLabel(
+        screen,
+        'Delete Vinal Natal Chart'
+      ).props.onPress()
+      await settleAsyncWork()
+    })
+
+    const [, , buttons] = (Alert.alert as jest.Mock).mock.calls[0]
+    const confirm = buttons.find((b: any) => b.style === 'destructive')
+
+    await act(async () => {
+      await confirm.onPress()
+      await settleAsyncWork()
+    })
+
+    expect(Alert.alert).toHaveBeenLastCalledWith(
+      'Delete failed',
+      'Network unreachable'
+    )
+    // Still listed: a failed delete must not look like a successful one.
+    expect(
+      findByAccessibilityLabel(screen, 'Open Vinal Natal Chart')
+    ).toBeTruthy()
+  })
+
+  it('gives the delete control a real touch target', async () => {
+    const screen = await renderScreen()
+    const del = findByAccessibilityLabel(screen, 'Delete Vinal Natal Chart')
+    const style = StyleSheet.flatten(
+      typeof del.props.style === 'function'
+        ? del.props.style({ pressed: false })
+        : del.props.style
+    ) as Record<string, number>
+
+    expect(style.minHeight).toBeGreaterThanOrEqual(48)
+    expect(style.minWidth).toBeGreaterThanOrEqual(48)
+  })
+})
+
+describe('MyCharts list cost', () => {
+  beforeEach(() => {
+    ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
+    jest.clearAllMocks()
+    jest.spyOn(Alert, 'alert').mockImplementation(jest.fn())
+    renderer = null
+    mockedGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
+    mockedListCharts.mockResolvedValue([CHART_ROW])
+    mockedDeleteChart.mockResolvedValue(undefined)
+  })
+
+  afterEach(() => {
+    if (renderer) {
+      const mounted = renderer
+      act(() => {
+        mounted.unmount()
+      })
+    }
+    renderer = null
+    jest.restoreAllMocks()
+  })
+
+  /*
+   * The mark removed the reason this bound existed.
+   *
+   * 9A rendered a real wheel per row and leaned on FlatList windowing to keep
+   * the mounted count at six. There is nothing to bound now: the emblem is a
+   * handful of static strokes with no chart data, so row count cannot
+   * introduce chart work. Asserted at 100 rows because that is where the old
+   * implementation would have shown it.
+   */
+  it('introduces no chart rendering however many charts are saved', async () => {
+    for (const count of [10, 50, 100]) {
+      mockedListCharts.mockResolvedValue(
+        Array.from({ length: count }, (_, i) =>
+          chartRow(i + 1, `Chart ${i + 1}`, CURRENT_DATA)
+        )
+      )
+
+      const screen = await renderScreen()
+
+      expect(screen.root.findAllByType(ChartWheel)).toHaveLength(0)
+      expect(screen.root.findAllByType(ChartMark).length).toBeGreaterThan(0)
+
+      act(() => {
+        screen.unmount()
+      })
+      renderer = null
+    }
   })
 })

@@ -3,10 +3,12 @@ import React from 'react'
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native'
 
 import { AppText } from '../ui/AppText'
+import { CelestialMark, type CelestialMotif } from '../ui/CelestialMark'
 import { theme } from '../ui/theme'
 
 type Props = {
   title: string
+  motif?: CelestialMotif
   /** Small uppercase label above the title. */
   eyebrow?: string
   /** Supporting line under the title, e.g. a house-system note. */
@@ -26,6 +28,7 @@ type Props = {
  */
 export function ChartSection({
   title,
+  motif,
   eyebrow,
   note,
   children,
@@ -40,9 +43,12 @@ export function ChartSection({
         </AppText>
       ) : null}
 
-      <AppText variant="heading" style={styles.title} accessibilityRole="header">
-        {title}
-      </AppText>
+      <View style={styles.titleRow}>
+        {motif ? <CelestialMark motif={motif} /> : null}
+        <AppText variant="heading" style={styles.title} accessibilityRole="header">
+          {title}
+        </AppText>
+      </View>
 
       {note ? (
         <AppText variant="caption" style={styles.note}>
@@ -67,6 +73,12 @@ const styles = StyleSheet.create({
   },
   title: {
     color: theme.text.primary,
+    flexShrink: 1,
+  },
+  titleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    columnGap: theme.space.sm,
   },
   note: {
     color: theme.text.tertiary,

@@ -1,6 +1,6 @@
 # Naksha Forecast + Guidance Library v1 — Plan (Claude)
 
-> **Historical implementation plan.** This document captures the original forecast/guidance proposal and its early implementation updates. Current code has since completed D0-D6.3, including journal fixed-context handoff, weekly Jupiter/Saturn events, transit-house context, content expansion, shared hydration, typed navigation, and ChartData versioning. Use `docs/naksha-codebase-handoff.md` and `docs/Feature-List.md` for current behavior. The current recorded baseline is 25 suites / 183 tests.
+> **Historical implementation plan.** This captures the original forecast/guidance proposal and early implementation updates. Current code has since completed D0-D6.3 and release hardening R1–R3. Its baselines and deferred-work statements remain historical. Use [naksha-codebase-handoff.md](naksha-codebase-handoff.md) and [Feature-List.md](Feature-List.md) for current behavior, and [release-hardening-plan.md](release-hardening-plan.md) for current sequencing. The post-R3 repository baseline is 62 suites / 793 tests plus 131 combined R1–R3 pgTAP assertions.
 
 Generated: 2026-06-20
 Author: Claude (Opus) — read-only planning. No code changed.

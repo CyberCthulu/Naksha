@@ -18,22 +18,20 @@ import ChartWheel, {
   wheelPlanetPoints,
 } from './ChartWheel'
 import {
-  ASPECT_HIT_TOLERANCE,
   clampScale,
   clampTranslation,
   focalTranslation,
-  houseAtPoint,
   inverseTransformPoint,
   MAX_WHEEL_SCALE,
   MIN_WHEEL_SCALE,
-  nearestPointIndex,
-  nearestSegmentIndex,
-  PLANET_HIT_RADIUS,
+  resolveWheelTap,
 } from './chartWheelInteraction'
 
 type PlanetAccentName = keyof typeof theme.planet
 
 type Props = {
+  motionEnabled?: boolean
+  accessibilityLabel?: string
   size: number
   planets: PlanetPos[]
   aspects: Aspect[]
@@ -69,6 +67,8 @@ export const TAP_MAX_DURATION = 260
  *   - the tap gesture is exclusive with pinch, so pinching cannot select.
  */
 export function InteractiveChartWheel({
+  motionEnabled = true,
+  accessibilityLabel = 'Interactive astrology chart',
   size,
   planets,
   aspects,
@@ -116,8 +116,8 @@ export function InteractiveChartWheel({
    *
    * The gesture detector is attached to the untransformed frame, so the touch
    * has to be pushed back through the current zoom and pan before it can be
-   * compared with wheel-space geometry. Planets are tested first and win
-   * outright inside their radius, even when an aspect passes through them.
+   * compared with wheel-space geometry. Which target that point belongs to is
+   * `resolveWheelTap`'s decision; this only dispatches it.
    */
   const handleTap = useCallback(
     (x: number, y: number) => {
@@ -129,13 +129,13 @@ export function InteractiveChartWheel({
         center
       )
 
-      const planetIndex = nearestPointIndex(
+      const hit = resolveWheelTap(
         local,
-        planetPoints,
-        PLANET_HIT_RADIUS
+        { planetPoints, aspectSegments, houseBand, houses },
+        view.scale
       )
 
-      if (planetIndex != null) {
+      if (hit?.kind === 'planet') {
         // The planet's own 48dp control already handled this touch and
         // resolved it to the nearest planet. Selecting again here fired a
         // second, differently-resolved selection, which is what made a tap in
@@ -143,28 +143,13 @@ export function InteractiveChartWheel({
         return
       }
 
-      /*
-       * Aspects before houses.
-       *
-       * The aspect corridor is narrow and its endpoints sit just inside the
-       * house band, so testing lines first keeps them reachable; the house
-       * band then catches everything else in the ring, which is most of it.
-       */
-      const aspectIndex = nearestSegmentIndex(
-        local,
-        aspectSegments,
-        ASPECT_HIT_TOLERANCE
-      )
-
-      if (aspectIndex != null) {
-        onSelectAspect(aspectIndex)
+      if (hit?.kind === 'aspect') {
+        onSelectAspect(hit.index)
         return
       }
 
-      const house = houseAtPoint(local, houseBand, houses)
-
-      if (house != null) {
-        onSelectHouse(house)
+      if (hit?.kind === 'house') {
+        onSelectHouse(hit.house)
         return
       }
 
@@ -346,23 +331,37 @@ export function InteractiveChartWheel({
     <View
       testID="interactive-chart-wheel"
       style={[styles.frame, { width: size, height: size }]}
-      accessibilityActions={[
-        { name: 'zoomIn', label: 'Zoom into chart' },
-        { name: 'zoomOut', label: 'Zoom out of chart' },
-        { name: 'resetZoom', label: 'Reset chart to fitted size' },
-      ]}
-      onAccessibilityAction={(event) => {
-        const action = event.nativeEvent.actionName
-
-        if (action === 'zoomIn') {
-          applyScale(savedScale.value + ACCESSIBILITY_ZOOM_STEP)
-        } else if (action === 'zoomOut') {
-          applyScale(savedScale.value - ACCESSIBILITY_ZOOM_STEP)
-        } else if (action === 'resetZoom') {
-          reset()
-        }
-      }}
     >
+      {/* A sibling of the interactive planet controls, rather than an
+          accessible parent around them. That gives TalkBack a labelled chart
+          context and working zoom actions without grouping the planet buttons
+          into one inaccessible element. */}
+      <View
+        testID="chart-wheel-accessibility"
+        accessible
+        importantForAccessibility="yes"
+        pointerEvents="none"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint="Use accessibility actions to zoom the chart"
+        accessibilityValue={{ text: `${view.scale.toFixed(1)} times zoom` }}
+        accessibilityActions={[
+          { name: 'zoomIn', label: 'Zoom into chart' },
+          { name: 'zoomOut', label: 'Zoom out of chart' },
+          { name: 'resetZoom', label: 'Reset chart to fitted size' },
+        ]}
+        onAccessibilityAction={(event) => {
+          const action = event.nativeEvent.actionName
+
+          if (action === 'zoomIn') {
+            applyScale(savedScale.value + ACCESSIBILITY_ZOOM_STEP)
+          } else if (action === 'zoomOut') {
+            applyScale(savedScale.value - ACCESSIBILITY_ZOOM_STEP)
+          } else if (action === 'resetZoom') {
+            reset()
+          }
+        }}
+        style={StyleSheet.absoluteFill}
+      />
       <GestureDetector gesture={composed}>
         {/* Untransformed. Tap coordinates therefore arrive in frame space and
             are inverted explicitly, rather than depending on how the platform
@@ -370,12 +369,13 @@ export function InteractiveChartWheel({
         <View testID="chart-wheel-gesture-surface" style={styles.surface}>
           <Animated.View testID="chart-wheel-transform" style={wheelStyle}>
             <ChartWheel
-            size={size}
-            planets={planets}
-            aspects={aspects}
-            houses={houses}
-            focusedPlanet={focusedPlanet}
-            selection={selection}
+              motionEnabled={motionEnabled}
+              size={size}
+              planets={planets}
+              aspects={aspects}
+              houses={houses}
+              focusedPlanet={focusedPlanet}
+              selection={selection}
               onSelectPlanet={onSelectPlanet}
               onSelectAspect={onSelectAspect}
             />

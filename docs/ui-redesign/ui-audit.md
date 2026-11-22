@@ -1,6 +1,8 @@
 # Naksha Current UI Audit
 
-Status: complete — awaiting review
+> **Historical pre-redesign audit.** This describes the UI at `deaae7e6` on 2026-09-02. The design system and visual migration referenced as future work below were subsequently implemented. Use [README.md](README.md) for the delivered visual status and [../release-hardening-plan.md](../release-hardening-plan.md) for remaining release work.
+
+Status: complete historical audit
 Audit date: 2026-09-02
 Audited commit: `deaae7e6` ("updated docs to reflect codebase")
 Working tree at audit time: clean except untracked redesign documentation
@@ -73,33 +75,33 @@ change.
 
 | # | Route | Screen file | Stack | Navigator header | In-screen header |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `Login` | [LoginScreen.tsx](client/screens/LoginScreen.tsx) | Unauthenticated | Hidden | None (centered form) |
-| 2 | `Signup` | [SignupScreen.tsx](client/screens/SignupScreen.tsx) | Unauthenticated | Hidden | None (title in body) |
-| 3 | `ForgotPassword` | [ForgotPasswordScreen.tsx](client/screens/ForgotPasswordScreen.tsx) | Unauthenticated | Hidden | None (title in body) |
-| 4 | `CheckEmail` | [CheckEmailScreen.tsx](client/screens/CheckEmailScreen.tsx) | Unauthenticated | Hidden | Custom top row |
-| 5 | `ResetPassword` | [ResetPasswordScreen.tsx](client/screens/ResetPasswordScreen.tsx) | Both | Hidden | None (title in body) |
-| 6 | `AuthCallback` | [AuthCallbackScreen.tsx](client/screens/AuthCallbackScreen.tsx) | Both | Hidden | None (spinner only) |
-| 7 | `Dashboard` | [DashboardScreen.tsx](client/screens/DashboardScreen.tsx) | Authenticated | Hidden | None (title in body) |
-| 8 | `CompleteProfile` | [CompleteProfileScreen.tsx](client/screens/CompleteProfileScreen.tsx) | Authenticated | Configured, then **overridden off** | Custom top row |
-| 9 | `CreateGuestChart` | [CreateGuestChartScreen.tsx](client/screens/CreateGuestChartScreen.tsx) | Authenticated | Configured, then **overridden off** | Custom top row |
-| 10 | `Chart` | [ChartScreen.tsx](client/screens/ChartScreen.tsx) -> [ChartScreenContent.tsx](client/components/charts/ChartScreenContent.tsx) | Authenticated | Configured, then **overridden off** | `ChartHeader` |
-| 11 | `MyCharts` | [MyCharts.tsx](client/screens/MyCharts.tsx) | Authenticated | Configured, then **overridden off** | Custom top row |
-| 12 | `JournalList` | [JournalListScreen.tsx](client/screens/JournalListScreen.tsx) | Authenticated | Configured, then **overridden off** | Custom top row |
-| 13 | `JournalEditor` | [JournalEditorScreen.tsx](client/screens/JournalEditorScreen.tsx) | Authenticated | Configured, then **overridden off** | Custom top row |
-| 14 | `Profile` | [ProfileScreen.tsx](client/screens/ProfileScreen.tsx) | Authenticated | Configured, then **overridden off** | `ProfileHeader` |
+| 1 | `Login` | [LoginScreen.tsx](../../client/screens/LoginScreen.tsx) | Unauthenticated | Hidden | None (centered form) |
+| 2 | `Signup` | [SignupScreen.tsx](../../client/screens/SignupScreen.tsx) | Unauthenticated | Hidden | None (title in body) |
+| 3 | `ForgotPassword` | [ForgotPasswordScreen.tsx](../../client/screens/ForgotPasswordScreen.tsx) | Unauthenticated | Hidden | None (title in body) |
+| 4 | `CheckEmail` | [CheckEmailScreen.tsx](../../client/screens/CheckEmailScreen.tsx) | Unauthenticated | Hidden | Custom top row |
+| 5 | `ResetPassword` | [ResetPasswordScreen.tsx](../../client/screens/ResetPasswordScreen.tsx) | Both | Hidden | None (title in body) |
+| 6 | `AuthCallback` | [AuthCallbackScreen.tsx](../../client/screens/AuthCallbackScreen.tsx) | Both | Hidden | None (spinner only) |
+| 7 | `Dashboard` | [DashboardScreen.tsx](../../client/screens/DashboardScreen.tsx) | Authenticated | Hidden | None (title in body) |
+| 8 | `CompleteProfile` | [CompleteProfileScreen.tsx](../../client/screens/CompleteProfileScreen.tsx) | Authenticated | Configured, then **overridden off** | Custom top row |
+| 9 | `CreateGuestChart` | [CreateGuestChartScreen.tsx](../../client/screens/CreateGuestChartScreen.tsx) | Authenticated | Configured, then **overridden off** | Custom top row |
+| 10 | `Chart` | [ChartScreen.tsx](../../client/screens/ChartScreen.tsx) -> [ChartScreenContent.tsx](../../client/components/charts/ChartScreenContent.tsx) | Authenticated | Configured, then **overridden off** | `ChartHeader` |
+| 11 | `MyCharts` | [MyCharts.tsx](../../client/screens/MyCharts.tsx) | Authenticated | Configured, then **overridden off** | Custom top row |
+| 12 | `JournalList` | [JournalListScreen.tsx](../../client/screens/JournalListScreen.tsx) | Authenticated | Configured, then **overridden off** | Custom top row |
+| 13 | `JournalEditor` | [JournalEditorScreen.tsx](../../client/screens/JournalEditorScreen.tsx) | Authenticated | Configured, then **overridden off** | Custom top row |
+| 14 | `Profile` | [ProfileScreen.tsx](../../client/screens/ProfileScreen.tsx) | Authenticated | Configured, then **overridden off** | `ProfileHeader` |
 
 Plus one full-screen overlay that is not a route:
 
 | Overlay | File | Mechanism |
 | --- | --- | --- |
-| Interpretation sheet | [InterpretationModal.tsx](client/components/charts/InterpretationModal.tsx) | RN `Modal` + `PagerView` |
+| Interpretation sheet | [InterpretationModal.tsx](../../client/components/charts/InterpretationModal.tsx) | RN `Modal` + `PagerView` |
 
 ### 2.2 Inactive / excluded from redesign
 
 `ChatScreen.tsx` and `SubscriptionScreen.tsx` are empty stub files, are not
 registered in `App.tsx`, and are not in the linking config. **Out of scope.**
 `SpaceBackground.tsx` is implemented but commented out at
-[App.tsx:15](client/App.tsx#L15) and [App.tsx:129](client/App.tsx#L129);
+[App.tsx:15](../../client/App.tsx#L15) and [App.tsx:129](../../client/App.tsx#L129);
 see section 6.
 
 ### 2.3 Shared UI components (46 files)
@@ -159,7 +161,7 @@ radius:  { card: 12 }
 ### Findings
 
 - **No background token.** The app background is hardcoded `'#000'` twice in
-  `App.tsx` ([L118](client/App.tsx#L118), [L127](client/App.tsx#L127)). No
+  `App.tsx` ([L118](../../client/App.tsx#L118), [L127](../../client/App.tsx#L127)). No
   screen can reference the environment color.
 - **No accent token.** There is no gold, no primary action color, and no
   planet-accent concept. The direction requires restrained warm gold plus
@@ -208,7 +210,7 @@ better than typical. They cluster into four groups:
 ### Inline style objects
 
 Inline object literals are allocated per render in
-[ChartScreenContent.tsx](client/components/charts/ChartScreenContent.tsx)
+[ChartScreenContent.tsx](../../client/components/charts/ChartScreenContent.tsx)
 (9 sites: `{flex:1}`, `{alignItems:'center', marginBottom:10}`,
 `{height:16}` x2, `{marginBottom:12}`, the whole `contentContainerStyle`),
 plus `{height:8..12}` spacer views in `LoginScreen`, `SignupScreen`,
@@ -533,14 +535,14 @@ so the redesign does not absorb them silently, and so fixing them is a
 deliberate, reviewable choice.
 
 **D-01 — Invisible text on the auth callback screen.**
-[AuthCallbackScreen.tsx:214](client/screens/AuthCallbackScreen.tsx#L214) renders
+[AuthCallbackScreen.tsx:214](../../client/screens/AuthCallbackScreen.tsx#L214) renders
 `<Text>Verifying your account…</Text>` with **no color style**. React Native's
 default text color is black; the app background is `#000`. The user sees a bare
 spinner with invisible text during every deep-link verification and password
 recovery. Severity: high (it is on the recovery path).
 
 **D-02 — Primary button fails contrast.**
-[Button.tsx](client/components/ui/Button.tsx) sets
+[Button.tsx](../../client/components/ui/Button.tsx) sets
 `primary.backgroundColor = theme.colors.text` (`#fff`) and
 `primaryText.color = theme.colors.cardBg` (`rgba(0,0,0,0.35)`) — 35%-opacity
 black text on white, roughly a light grey on white. This is live on the two
@@ -557,7 +559,7 @@ component sets bar style anywhere. Severity: high (first-impression and
 store-screenshot blocker).
 
 **D-04 — MyCharts error state has no recovery.**
-[MyCharts.tsx](client/screens/MyCharts.tsx) renders the error text with no
+[MyCharts.tsx](../../client/screens/MyCharts.tsx) renders the error text with no
 retry and no back control, and the in-screen header is not rendered in the
 error branch — the user cannot leave the screen except via system back.
 Severity: medium. The same pattern applies to Chart's invalid-timezone branch.

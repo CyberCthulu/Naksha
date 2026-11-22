@@ -1,18 +1,19 @@
 // client/screens/CompleteProfileScreen.tsx
 import React, { useEffect, useLayoutEffect, useState } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-  TouchableOpacity,
-} from 'react-native'
+import { View, StyleSheet, Alert } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 
 import supabase from '../lib/supabase'
 import { normalizeZone, getDeviceTimeZoneNormalized } from '../lib/timezones'
-import { formatDateForDb, formatTimeForDb } from '../lib/time'
+import { markDashboardDataStale } from '../lib/dashboardFreshness'
+import {
+  parseCivilDate,
+  parseCivilTime,
+  prepareBirthMoment,
+  type CivilDate,
+  type CivilTime,
+} from '../lib/time'
 import { geocodePlace } from '../lib/geocode'
 import type { UserRow } from '../lib/domainTypes'
 
@@ -22,6 +23,8 @@ import ProfileFields from '../components/auth/ProfileFields'
 
 // Shared UI theme
 import { theme } from '../components/ui/theme'
+import { AppText } from '../components/ui/AppText'
+import { Button } from '../components/ui/Button'
 import { ScreenHeader } from '../components/ui/ScreenHeader'
 import { uiStyles } from '../components/ui/uiStyles'
 import { LoadingState } from '../components/ui/LoadingState'
@@ -39,8 +42,11 @@ export default function CompleteProfileScreen() {
 
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  const [birthDate, setBirthDate] = useState<Date | null>(null)
-  const [birthTime, setBirthTime] = useState<Date | null>(null)
+  const [birthDate, setBirthDate] = useState<CivilDate | null>(null)
+  const [birthTime, setBirthTime] = useState<CivilTime | null>(null)
+  const [birthUtcOffsetMinutes, setBirthUtcOffsetMinutes] = useState<number | null>(
+    null
+  )
   const [birthLocation, setBirthLocation] = useState('')
   const [timeZone, setTimeZone] = useState('Etc/UTC')
   const [birthLat, setBirthLat] = useState<number | null>(null)
@@ -96,16 +102,12 @@ export default function CompleteProfileScreen() {
           setBirthLon(data.birth_lon ?? null)
 
           if (data.birth_date) {
-            setBirthDate(new Date(`${data.birth_date}T12:00:00`))
+            setBirthDate(parseCivilDate(data.birth_date))
           }
           if (data.birth_time) {
-            const [h, m, s] = String(data.birth_time)
-              .split(':')
-              .map((v) => parseInt(v || '0', 10))
-            const t = new Date()
-            t.setHours(h || 0, m || 0, s || 0, 0)
-            setBirthTime(t)
+            setBirthTime(parseCivilTime(data.birth_time))
           }
+          setBirthUtcOffsetMinutes(data.birth_utc_offset_minutes ?? null)
         }
       } catch (e: any) {
         setError(e?.message ?? 'Failed to load profile.')
@@ -138,9 +140,6 @@ export default function CompleteProfileScreen() {
 
     setSaving(true)
     try {
-      const formattedDate = formatDateForDb(birthDate)
-      const formattedTime = formatTimeForDb(birthTime)
-
       const {
         data: { user },
       } = await supabase.auth.getUser()
@@ -169,13 +168,30 @@ export default function CompleteProfileScreen() {
         }
       }
 
+      let birthMoment
+      try {
+        birthMoment = prepareBirthMoment(
+          birthDate,
+          birthTime,
+          normalized,
+          birthUtcOffsetMinutes
+        )
+      } catch (e: any) {
+        Alert.alert(
+          'Birth time needs attention',
+          e?.message ?? 'Enter a valid birth date and time.'
+        )
+        return
+      }
+
       const { error: upErr } = await supabase
         .from('users')
         .update({
           first_name: firstName.trim(),
           last_name: lastName.trim(),
-          birth_date: formattedDate,
-          birth_time: formattedTime,
+          birth_date: birthMoment.birthDate,
+          birth_time: birthMoment.birthTime,
+          birth_utc_offset_minutes: birthMoment.birthUtcOffsetMinutes,
           birth_location: birthLocation.trim(),
           time_zone: normalized,
           birth_lat: lat,
@@ -184,6 +200,7 @@ export default function CompleteProfileScreen() {
         .eq('id', user.id)
       if (upErr) throw upErr
 
+      markDashboardDataStale()
       navigation.goBack()
     } catch (e: any) {
       Alert.alert('Save failed', e?.message ?? 'Unknown error')
@@ -197,7 +214,7 @@ export default function CompleteProfileScreen() {
   if (loading) {
     return (
       <AuthContainer>
-        <LoadingState />
+        <LoadingState label="Loading your details" />
       </AuthContainer>
     )
   }
@@ -216,7 +233,7 @@ export default function CompleteProfileScreen() {
         }}
       />
 
-      {error && <Text style={[uiStyles.errorText, { marginBottom: 10 }]}>{error}</Text>}
+      {error && <AppText variant="bodySmall" style={uiStyles.errorText}>{error}</AppText>}
 
       <ProfileFields
         firstName={firstName}
@@ -227,6 +244,8 @@ export default function CompleteProfileScreen() {
         setBirthDate={setBirthDate}
         birthTime={birthTime}
         setBirthTime={setBirthTime}
+        birthUtcOffsetMinutes={birthUtcOffsetMinutes}
+        setBirthUtcOffsetMinutes={setBirthUtcOffsetMinutes}
         birthLocation={birthLocation}
         setBirthLocation={setBirthLocation}
         timeZone={timeZone}
@@ -240,83 +259,24 @@ export default function CompleteProfileScreen() {
       <View style={{ height: 12 }} />
 
       {/* Footer actions */}
-      <TouchableOpacity
+      <Button
+        title={saving ? 'Saving…' : 'Save & Continue'}
         onPress={onSave}
+        loading={saving}
+      />
+      <Button
+        title="Skip for now"
+        variant="tertiary"
+        onPress={onSkip}
         disabled={saving}
-        style={[styles.primaryBtn, saving && { opacity: 0.7 }]}
-      >
-        <Text style={styles.primaryBtnText}>{saving ? 'Saving…' : 'Save & Continue'}</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={onSkip} disabled={saving} style={styles.secondaryBtn}>
-        <Text style={styles.secondaryBtnText}>Skip for now</Text>
-      </TouchableOpacity>
+        style={styles.secondaryAction}
+      />
     </AuthContainer>
   )
 }
 
 const styles = StyleSheet.create({
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  iconBtn: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconText: {
-    fontSize: 30,
-    color: theme.colors.text,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '800',
-    color: theme.colors.text,
-  },
-  savePill: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 999,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    backgroundColor: theme.colors.cardBg,
-    minWidth: 72,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveText: {
-    color: theme.colors.text,
-    fontWeight: '800',
-  },
-
-  primaryBtn: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.card,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: theme.colors.cardBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryBtnText: {
-    color: theme.colors.text,
-    fontWeight: '800',
-    fontSize: 16,
-  },
-
-  secondaryBtn: {
-    marginTop: 10,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  secondaryBtnText: {
-    color: theme.colors.sub,
-    fontWeight: '700',
+  secondaryAction: {
+    marginTop: theme.space.sm,
   },
 })

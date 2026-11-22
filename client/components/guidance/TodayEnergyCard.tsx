@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 
 import type {
   DailyGuidance,
@@ -11,9 +10,8 @@ import type {
 } from '../../lib/lexicon/guidance'
 import { AppText, MutedText } from '../ui/AppText'
 import { Button } from '../ui/Button'
-import { Card } from '../ui/Card'
 import { theme } from '../ui/theme'
-import { uiStyles } from '../ui/uiStyles'
+import { GuidanceCard } from './GuidanceCard'
 
 function GuidanceSection({
   section,
@@ -24,8 +22,11 @@ function GuidanceSection({
 }) {
   return (
     <View style={styles.section}>
-      <AppText style={styles.sectionTitle}>{section.title}</AppText>
+      <AppText variant="subheading" style={styles.sectionTitle}>
+        {section.title}
+      </AppText>
       <MutedText
+        variant="body"
         numberOfLines={numberOfLines}
         style={styles.sectionBody}
       >
@@ -35,60 +36,55 @@ function GuidanceSection({
   )
 }
 
+/**
+ * Expansion is owned by the Dashboard, not by the card.
+ *
+ * Only one guidance surface is on screen at a time, so the inactive card is
+ * not rendered at all -- which is what keeps it out of the layout and out of
+ * TalkBack's reach without hiding a live subtree. That makes local `useState`
+ * the wrong home for the flag: unmounting would drop it, and a reader who
+ * expanded Today, looked at This Week and came back would find it collapsed.
+ */
 export function TodayEnergyCard({
   guidance,
+  expanded,
+  onExpandedChange,
   onJournalReflection,
 }: {
   guidance: DailyGuidance
+  expanded: boolean
+  onExpandedChange: (next: boolean) => void
   onJournalReflection?: (
     prompt: ReflectionPrompt,
     practice: SuggestedPractice
   ) => void
 }) {
-  const [expanded, setExpanded] = useState(false)
-
   return (
-    <Card>
-      <Pressable
-        accessibilityLabel={`${expanded ? 'Collapse' : 'Expand'} Today’s Energy details`}
-        accessibilityRole="button"
-        accessibilityState={{ expanded }}
-        onPress={() => setExpanded((current) => !current)}
-        style={({ pressed }) => [
-          styles.toggleSurface,
-          pressed && styles.togglePressed,
-        ]}
-      >
-        <AppText style={uiStyles.cardTitle}>Today’s Energy</AppText>
-        <MutedText style={styles.transitSigns}>
-          Moon in {guidance.transitMoonSign ?? 'Unknown'} | Sun in{' '}
-          {guidance.transitSunSign ?? 'Unknown'}
-        </MutedText>
-
-        {!expanded ? (
-          <>
-            <GuidanceSection
-              section={guidance.mood}
+    <GuidanceCard
+      title="Today’s Energy"
+      motif="sun"
+      metadata={`Moon in ${guidance.transitMoonSign ?? 'Unknown'} | Sun in ${guidance.transitSunSign ?? 'Unknown'}`}
+      expanded={expanded}
+      onExpandedChange={onExpandedChange}
+      testID="today-energy"
+    >
+      {!expanded ? (
+        <>
+          <GuidanceSection section={guidance.mood} numberOfLines={2} />
+          <View style={styles.section}>
+            <AppText variant="subheading" style={styles.sectionTitle}>
+              {guidance.transitSummary.title}
+            </AppText>
+            <MutedText
+              variant="body"
               numberOfLines={2}
-            />
-            <View style={styles.section}>
-              <AppText style={styles.sectionTitle}>
-                {guidance.transitSummary.title}
-              </AppText>
-              <MutedText
-                numberOfLines={2}
-                style={styles.sectionBody}
-              >
-                {guidance.transitSummary.body}
-              </MutedText>
-            </View>
-          </>
-        ) : null}
-
-        <MutedText style={styles.toggleHint}>
-          {expanded ? 'Tap to collapse' : 'Tap to expand'}
-        </MutedText>
-      </Pressable>
+              style={styles.sectionBody}
+            >
+              {guidance.transitSummary.body}
+            </MutedText>
+          </View>
+        </>
+      ) : null}
 
       {expanded ? (
         <>
@@ -99,43 +95,50 @@ export function TodayEnergyCard({
 
           {guidance.transitHouse ? (
             <View style={styles.section}>
-              <AppText style={styles.sectionTitle}>Life area</AppText>
-              <AppText style={styles.itemTitle}>
+              <AppText variant="subheading" style={styles.sectionTitle}>
+                Life area
+              </AppText>
+              <AppText variant="subheading" style={styles.itemTitle}>
                 House {guidance.transitHouse.house}
               </AppText>
-              <MutedText style={styles.sectionBody}>
+              <MutedText variant="body" style={styles.sectionBody}>
                 {guidance.transitHouse.guidance.focus}
               </MutedText>
             </View>
           ) : null}
 
-          <View style={styles.section}>
-            <AppText style={styles.sectionTitle}>Reflection</AppText>
-            <AppText style={styles.itemTitle}>
+          <View style={[styles.section, styles.majorBreak]}>
+            <AppText variant="subheading" style={styles.sectionTitle}>
+              Reflection
+            </AppText>
+            <AppText variant="subheading" style={styles.itemTitle}>
               {guidance.reflectionPrompt.title}
             </AppText>
-            <MutedText style={styles.sectionBody}>
+            <MutedText variant="body" style={styles.sectionBody}>
               {guidance.reflectionPrompt.prompt}
             </MutedText>
             {guidance.reflectionPrompt.followUp ? (
-              <MutedText style={styles.followUp}>
+              <MutedText variant="body" style={styles.followUp}>
                 {guidance.reflectionPrompt.followUp}
               </MutedText>
             ) : null}
-            <MutedText style={styles.deeperFraming}>
+            <MutedText variant="body" style={styles.deeperFraming}>
               Deeper layer: notice what feels uncomfortable, repetitive,
               or easy to avoid. Use this as reflection, not a diagnosis.
               Pause if it feels overwhelming.
             </MutedText>
-            <AppText style={styles.practiceTitle}>Grounding practice</AppText>
-            <AppText style={styles.itemTitle}>
+            <AppText variant="subheading" style={styles.practiceTitle}>
+              Grounding practice
+            </AppText>
+            <AppText variant="subheading" style={styles.itemTitle}>
               {guidance.suggestedPractice.title}
             </AppText>
-            <MutedText style={styles.sectionBody}>
+            <MutedText variant="body" style={styles.sectionBody}>
               {guidance.suggestedPractice.summary}
             </MutedText>
             {guidance.suggestedPractice.steps.map((step, index) => (
               <MutedText
+                variant="body"
                 key={`${guidance.suggestedPractice.id}:${index}`}
                 style={styles.practiceStep}
               >
@@ -145,7 +148,7 @@ export function TodayEnergyCard({
             {onJournalReflection ? (
               <Button
                 title="Journal this reflection"
-                variant="ghost"
+                variant="tertiary"
                 onPress={() =>
                   onJournalReflection(
                     guidance.reflectionPrompt,
@@ -156,98 +159,56 @@ export function TodayEnergyCard({
               />
             ) : null}
           </View>
-
-          <Pressable
-            accessibilityLabel="Collapse Today’s Energy details"
-            accessibilityRole="button"
-            accessibilityState={{ expanded: true }}
-            onPress={() => setExpanded(false)}
-            style={({ pressed }) => [
-              styles.bottomToggle,
-              pressed && styles.togglePressed,
-            ]}
-            testID="today-energy-bottom-collapse"
-          >
-            <MutedText style={styles.bottomToggleText}>
-              Tap to collapse
-            </MutedText>
-          </Pressable>
         </>
       ) : null}
-    </Card>
+    </GuidanceCard>
   )
 }
 
 const styles = StyleSheet.create({
-  toggleSurface: {
-    borderRadius: 4,
-  },
-  togglePressed: {
-    opacity: 0.75,
-  },
-  toggleHint: {
-    fontSize: 12,
-    marginTop: 10,
-  },
-  transitSigns: {
-    fontSize: 12,
-  },
+  /*
+   * Spacing-led rhythm. Every section used to carry its own hairline rule,
+   * which drew a grid over what is meant to read as continuous guidance.
+   * Rules are now reserved for genuine boundaries.
+   */
   section: {
+    marginTop: theme.space.lg,
+  },
+  majorBreak: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: theme.colors.border,
-    marginTop: 12,
-    paddingTop: 10,
+    borderTopColor: theme.border.base,
+    paddingTop: theme.space.lg,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 4,
+    color: theme.text.primary,
+    marginBottom: theme.space.xs,
   },
   sectionBody: {
-    fontSize: 13,
-    lineHeight: 19,
+    color: theme.text.secondary,
   },
   itemTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 3,
+    color: theme.text.primary,
+    marginBottom: theme.space.hair,
   },
   followUp: {
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: 6,
+    color: theme.text.secondary,
+    marginTop: theme.space.sm,
   },
   deeperFraming: {
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: 8,
+    color: theme.text.tertiary,
+    marginTop: theme.space.md,
   },
   practiceTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 4,
-    marginTop: 10,
+    color: theme.text.primary,
+    marginBottom: theme.space.xs,
+    marginTop: theme.space.lg,
   },
   practiceStep: {
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: 4,
+    color: theme.text.secondary,
+    marginTop: theme.space.xs,
   },
   journalButton: {
-    marginTop: 8,
+    marginTop: theme.space.md,
     alignSelf: 'flex-start',
-  },
-  bottomToggle: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: theme.colors.border,
-    justifyContent: 'center',
-    marginTop: 12,
-    minHeight: 48,
-    paddingBottom: 8,
-    width: '100%',
-  },
-  bottomToggleText: {
-    fontSize: 12,
-    lineHeight: 18,
   },
 })

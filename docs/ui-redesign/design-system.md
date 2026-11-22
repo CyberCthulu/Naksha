@@ -1,6 +1,6 @@
-# Naksha Design System — Proposal
+# Naksha Design System
 
-Status: **proposed, not approved, not implemented**
+Status: **implemented foundation with subsequent refinements**; final native acceptance pending. Reviewed against current repository 2026-09-25. Remaining release work is tracked in [release-hardening-plan.md](../release-hardening-plan.md).
 Date: 2026-09-02
 Platform focus: Android first
 Direction: premium celestial editorial
@@ -10,8 +10,7 @@ for atmosphere, surfaces, typography, spacing, and information hierarchy only
 
 ## How to read this document
 
-Every value here is a **proposal for review**. Nothing is approved until it is
-signed off, and nothing is implemented until Slice 2.
+This document retains the original design specification and subsequent notes. The shared theme/components are now implemented. Current code, `consistency-review.md`, and later user-approved tuning supersede initial proposal values; remaining release work is tracked in [release-hardening-plan.md](../release-hardening-plan.md).
 
 This system **extends the existing `client/components/ui/theme.ts` and
 `uiStyles.ts` and the existing shared components**. It does not create a parallel
@@ -19,8 +18,7 @@ V2 component library. The audit found 38 of 46 UI files already import `theme`
 and 33 import `uiStyles` — that adoption is the migration vehicle. Every section
 below ends with an explicit mapping onto files that already exist.
 
-**No dependency is installed by this document.** Font packages are proposed in
-§4.4 and must be approved separately.
+**This review installs no dependencies.** The four font families are already installed in the app; §4.4 records the original selection rationale.
 
 ---
 
@@ -43,14 +41,19 @@ no secondary-text color, and no state semantics.
 
 | Role | Value | Use |
 | --- | --- | --- |
-| `surface` | `#131A2C` | Default card. **Opaque** — replaces `rgba(0,0,0,0.35)`. |
-| `surface.raised` | `#1A2238` | Sheets, modals, pressed cards, dropdowns. |
+| `surface` | `#131A2C` | Opaque controls and input states. |
+| `surface.raised` | `#1A2238` | Opaque dropdowns and non-celestial sheets. |
+| `cardSurface.base` | `rgba(19,26,44,0.30)` | Standard reading cards, including both guidance tabs; reader-tuned opacity. |
+| `cardSurface.raised` | `rgba(26,34,56,0.72)` | Raised cards. |
+| `cardSurface.selected` | `rgba(37,40,49,0.72)` | Selected cards with a navy/gold tint and accent border. |
 | `surface.selected` | `rgba(201,164,92,0.10)` | Selected list row. Replaces `rgba(255,255,255,0.06)`. |
 | `scrim` | `rgba(4,6,12,0.72)` | Modal backdrop. Replaces `rgba(0,0,0,0.55)`. |
 
-The current card is a 35 %-opacity black rectangle on pure black — effectively
-invisible, defined only by its border. Opaque surfaces are also cheaper on
-Android: they avoid the overdraw that stacked translucency causes.
+Cards use dedicated translucent fills so stars show through them. Opacity
+belongs to the background color, never the entire card: text and controls
+retain their full opacity. Inputs and dropdowns stay opaque. Chart popups use
+their own contained starry sky over an opaque navy base, so underlying chart
+text cannot bleed through. No blur effect or extra card layer is needed.
 
 #### Borders
 
@@ -69,7 +72,7 @@ surface should be doing. Opaque surfaces let the border recede.
 | --- | --- | --- | --- | --- |
 | `text.primary` | `#F4EFE6` — ivory | **16.2:1** | 14.9:1 | Headings, body, values |
 | `text.secondary` | `#A9B2CC` — muted slate-lavender | **8.9:1** | 8.2:1 | Supporting copy, guidance body |
-| `text.tertiary` | `#7F8AA8` — dim slate | **5.5:1** | **5.0:1** | Meta, captions, hints |
+| `text.tertiary` | `#929FBD` — soft slate | **7.4:1** | **6.5:1** | Meta, captions, hints; lifted for readability over moving sky colors |
 | `text.disabled` | `#4E566E` | 2.4:1 | — | Disabled only. **Never for content.** |
 | `text.onAccent` | `#0A0E1A` | — | 7.9:1 on `accent` | Text on a gold fill |
 
@@ -108,6 +111,10 @@ Each state color also gets a `.muted` fill at 12 % alpha for banner backgrounds.
 3. Section eyebrow labels in the interpretation reading surface.
 4. Chart-wheel planet glyphs and the focal-planet halo.
 5. The active page indicator in the interpretation pager — using `accent`, **not** `accent.bright`.
+6. Small decorative celestial marks beside guidance and chart section headings:
+   sun for daily guidance, a lunar-cycle motif for weekly guidance, and orbital,
+   house-wheel, and connected-star motifs for the chart tabs. These supplement
+   readable labels and are hidden from assistive technology.
 
 Gold is **prohibited** for: body copy, more than one primary action per screen,
 card backgrounds, borders on non-interactive surfaces, decorative dividers, and
@@ -139,6 +146,30 @@ for contrast on deep navy and desaturated for restraint.
 | Uranus | `#7FC4C4` | `#7ad8d8` |
 | Neptune | `#7D94D9` | `#4f79ff` (too saturated) |
 | Pluto | `#A98A7C` | `#b08a7a` |
+
+**The glow palette.** The accents above are tuned to read as *ink* on deep
+navy, which is the wrong job for a large low-opacity wash: as a halo, Pluto and
+Mars all but vanished while Sun blazed. `theme.planetGlow` is the same ten hues
+lifted to a common high luminance, and it owns every luminous surface — the
+selected planet's halo and stable ring, and the halos on both endpoints of a
+selected aspect. The identity survives; no single planet dominates.
+
+| Planet | Accent (`theme.planet`) | Glow (`theme.planetGlow`) |
+| --- | --- | --- |
+| Sun | `#E8B44A` | `#FFD98A` |
+| Moon | `#B9C2D6` | `#DCE4F5` |
+| Mercury | `#A8B0C8` | `#CFD6EA` |
+| Venus | `#E0BE96` | `#F4D9B8` |
+| Mars | `#C7563A` | `#F08A6A` |
+| Jupiter | `#D6B98C` | `#EFD7B0` |
+| Saturn | `#CBB577` | `#E8D49B` |
+| Uranus | `#7FC4C4` | `#A9E4E4` |
+| Neptune | `#7D94D9` | `#A6B8F0` |
+| Pluto | `#A98A7C` | `#D3B4A5` |
+
+The two are not interchangeable. Ink stays ink (glyph tints, the inner accent
+fill); glow stays glow (halos, rings). Using a glow value as text or a fill at
+full opacity breaks the restraint the accent table exists to enforce.
 
 **Usage rules — deliberately narrow:**
 
@@ -416,8 +447,9 @@ lightness steps plus a hairline border.
 | Level | Background | Border | Use |
 | --- | --- | --- | --- |
 | 0 — environment | `background.base` | none | Screen root |
-| 1 — surface | `surface` | `border` | Cards, list rows |
-| 2 — raised | `surface.raised` | `border.strong` | Sheets, modals, dropdowns |
+| 1 — card | `cardSurface.base` | `border` | Cards and card-based list rows |
+| 2 — raised | `cardSurface.raised` or opaque `surface.raised` | `border.strong` | Raised cards or opaque dropdowns |
+| Celestial sheet | Opaque `background.base` + contained sky | `border.strong` | Chart interpretation and legend popups |
 | 3 — selected | `surface.selected` | `border.accent` | Selected row, focused field |
 
 Rules:
@@ -441,9 +473,11 @@ Rules:
 
 ## 6. Backgrounds — Quiet, Atmospheric, Hero
 
-Approved V1 approach: deep navy base, lightweight **static** gradients, sparse
-**static** SVG celestial detail, three intensity variants, flat navy fallback.
-**No `three`, no `expo-gl`, no particle system, no continuous GPU effect.**
+The background uses a deep navy base, slowly drifting violet/blue/teal clouds,
+and fixed SVG stars, with a restrained opacity glimmer on nine bright stars
+and occasional shooting stars. There are three
+intensity variants and a flat navy fallback. No `three`, `expo-gl`, particle
+system, or blur effect is involved.
 
 Implementation uses **`react-native-svg` 15.12.1, already a dependency** —
 `<Defs>` with `<LinearGradient>` / `<RadialGradient>`, and `<Circle>` elements
@@ -451,24 +485,76 @@ for stars. No new dependency is required.
 
 | Variant | Composition | Applied to |
 | --- | --- | --- |
-| **`flat`** | `background.base` solid. Nothing else. | Fallback; low-end devices; reduced-motion; any surface where the gradient measurably costs frames |
-| **`quiet`** | `background.base` + one vertical linear gradient, `background.raised` → `background.base`, top 40 % only | Auth, forms, journal, lists — content-dense reading and input surfaces |
-| **`atmospheric`** | `quiet` + up to **12** static stars: fixed positions, radius 0.5–1.5, three opacity tiers (0.10 / 0.18 / 0.28), `text.primary` fill | Dashboard, MyCharts, Profile |
-| **`hero`** | `atmospheric` + **one** soft radial glow behind the focal element, tinted by the active planet accent at **≤ 8 %** opacity, radius ≈ 45 % of screen width | Chart route and interpretation sheet **only** |
+| **`flat`** | `background.base` solid. Nothing else. | Explicit fallback; any surface where decoration measurably costs frames |
+| **`quiet`** | `background.base` + upper vertical gradient and drifting cosmic colors at half intensity; no stars | Available fallback; no registered route currently uses it |
+| **`atmospheric`** | Navy gradient through the upper 70 %, violet/blue washes and drifting cosmic colors, **180** fixed ambient stars, plus 15 catalog stars from Cassiopeia and central Orion, shown as standalone points and halos without connecting lines. The original 96 stars retain their positions and brightness; 84 smaller, dimmer stars add distance. Nine stars glimmer, and a single shooting star occasionally crosses the sky. | Every registered route except Chart, which uses the hero variant |
+| **`hero`** | `atmospheric` + **one** soft radial glow behind the focal element, tinted by the active `planetGlow` color at **≤ 8 %** opacity, radius ≈ 45 % of screen width | Chart route and interpretation sheet **only** |
+
+2026-09-09 consistency correction: the former twelve faint stars occupied only
+the top half of the screen and largely disappeared behind opaque cards. The
+full-height field and washes restore the requested starry atmosphere. Decorative
+colors live in `theme.atmosphere`. Following the request for more visible stars
+behind cards, card fills use the reader's `theme.cardSurface` setting of 30%
+opacity (72% for raised
+and selected cards), with fully opaque foreground content. Today and This Week
+use exactly the same fill. `SkySurface` gives chart interpretation and legend
+popups their own static starry sky over a solid base, clipped to the panel.
 
 Hard constraints:
 
-1. **Everything is static.** No animation loop, no `requestAnimationFrame`, no
-   `Animated` driver, no timers. The background renders once per layout.
+1. The star field and catalog star groups stay fixed. One native-driver value
+   fades the cached highlight layer; another moves and fades a small shooting
+   star during its occasional flight. A third slowly moves and crossfades two
+   static cloud textures beneath the stars. There are no per-frame React
+   updates, animated SVG paint values, or layout changes.
 2. Star positions are **deterministic constants**, not random per mount — a
    background that reshuffles on re-render reads as noise.
-3. Star count is capped at 12. The disabled GL background used 5,000.
+3. Stars are generated once with a fixed seed, currently 180. Keep the count
+   within the tested 240-star budget when tuning. Additional stars are dim and
+   do not increase the number of animated highlights.
 4. `pointerEvents="none"` on every background layer.
 5. The background never carries information. Removing it entirely must leave the
    screen fully usable and fully legible — this is what makes `flat` a genuine
    fallback rather than a degraded mode.
 6. Exactly one `hero` glow per screen, driven by the existing
    `SpaceProvider.focusedPlanet`.
+7. Sky animations run only while their route is focused, AppState is active, and
+   reduced motion is explicitly off. They stop and reset on blur, inactivity,
+   preference changes, and unmount. An unresolved preference leaves the static
+   sky visible. Quiet screens have softer cloud motion; flat has no decoration.
+8. Contained panel skies disable system-bar protection, since their safe-area
+   spacing belongs to the panel layout. They use a static sky without cloud
+   drift, glimmer, or shooting stars.
+
+The standalone star groups use J2000 star coordinates rounded to 0.01 degrees
+from SIMBAD, projected locally with north up and east left. A uniform scale
+preserves each group's proportions on every viewport. Stars retain their
+positions and halos, with no connecting lines.
+Cassiopeia sits toward the upper right and Orion toward the lower left. Their
+independent placements are decorative, not a representation of the current
+sky or a birth chart. The coordinates and source references live in
+`client/components/ui/constellations.ts`.
+
+### Visual tuning
+
+`client/components/ui/celestialConfig.ts` collects sky settings: `starCount`,
+`nebulaOpacity`, `hazeOpacity`, `glimmerHalfCycleMs`, and
+`shootingStar`, plus `cosmicSky`. Cloud motion has a 24-second half-cycle
+(48 seconds there and back), up to 24 layout pixels of travel, and separate
+full/quiet intensity controls. Its violet, blue and teal colors live in
+`theme.atmosphere`. Set the cosmic intensity to zero to remove the added clouds.
+Defaults are 0.75 for atmospheric/hero screens and 0.375 for quiet screens.
+Small metadata uses a slightly brighter slate so the additional light does
+not compromise reading contrast; card opacity remains at the reader's 30%.
+Shooting stars first appear after 7 seconds of active viewing,
+travel for 1.4 seconds, then wait 18 / 26 / 22 seconds between flights. Paths
+rotate through three fixed diagonals. Only one shooting star is ever scheduled
+or in flight; every timer and animation is cancelled on inactivity or cleanup.
+
+Card fill opacity remains independent in `theme.ts` → `cardSurface`.
+Journal entry cards and the editor's multiline writing field use the same
+`cardSurface.base` fill. The short title input retains the standard input well;
+typing, focus borders, keyboard handling and save/discard behavior are unchanged.
 
 ### Relationship to the dormant GL stack
 
@@ -530,7 +616,7 @@ control is allowed — a compact touch target is not.
 | default | as specified |
 | pressed | `opacity: 0.88`; secondary/tertiary also brighten border to `border.accent` |
 | disabled | `opacity: 0.45`, no press feedback, `accessibilityState={{ disabled: true }}` |
-| loading | spinner in `accent` (or `text.onAccent` on a filled primary), label retained, control disabled |
+| loading | Compact solar loader in `accent` (or `text.onAccent` on a filled primary), label retained, control disabled |
 
 Loading replaces the five different in-progress presentations the audit found
 (italic text, link-text swap, opacity 0.7 + label swap, bare spinner, spinner
@@ -539,10 +625,25 @@ row).
 ### 7.4 Hierarchy rules
 
 1. One `primary` per screen. If two actions feel primary, one is not.
-2. Destructive actions never share a variant with navigation. Dashboard's Sign
-   Out becomes `destructive`.
+2. Destructive actions never share a variant with navigation.
 3. Ghost/secondary is the default for repeated navigation actions.
-4. Navigation to another screen is `secondary` or `tertiary`, never `primary`.
+4. Navigation to another screen is `secondary` or `tertiary`, never the
+   `primary` Button variant — but a screen may still mark **one** destination
+   as the thing it exists to lead to. See below.
+
+**Emphasis without a slab.** Slice 7 found the limit of rule 4. The Dashboard's
+reason to exist is the natal chart, and a full-width gold `primary` Button
+reads as an interruption wherever it is placed — it was tried above the
+guidance, below it, and between the two cards. What worked was moving the
+emphasis from geometry to ink: the chart sits in the same quiet strip as the
+other four destinations and is simply the only one drawn in `accent.base`.
+Rule 1 still holds — there is exactly one emphasised action — and rule 4 still
+holds, because no navigation uses the filled `primary` surface.
+
+**Sign out is not navigation.** It was removed from the Dashboard's ordinary
+actions entirely. It survives as the `tertiary` secondary action of the fatal
+`ErrorState`, where it is a way out of a broken session rather than a place to
+go, and it is wrapped so a failed sign-out reports itself.
 
 ### 7.5 Mapping
 
@@ -555,6 +656,19 @@ row).
 | `JournalListScreen` `newBtn` | → `Button` secondary |
 | Profile card `#007AFF` text links | → `Button` tertiary; destructive ones → `destructive` |
 | RN core `Button` in `ChartScreen`, `ChartScreenContent` | → shared `Button`. **Part of the Slice 6 flagship** |
+
+### 7.6 Section tabs
+
+`SectionTabs` owns the shared Dashboard and chart selector: equal-width,
+48 dp minimum targets, wrapping Inter subheadings, and a gold selection rule.
+The group and controls expose tab-list and selected-tab accessibility semantics.
+
+The Dashboard uses Today / This Week. The chart uses Planets / Houses / Aspects
+below the wheel and current reading, with Planets initially selected. Only the
+active list is mounted; missing houses and empty aspects retain their existing
+explanations inside their tabs. Selecting a planet, house, or aspect on the wheel
+opens the corresponding tab. Manual tab changes preserve the wheel selection
+and interpretation state.
 
 ---
 
@@ -611,17 +725,32 @@ Field min height **48 dp**. Label is `subheading`; hint and error are
 
 | Context | Treatment |
 | --- | --- |
-| Full screen | `LoadingState`, **safe-area aware**, indicator in `accent` |
-| In-card | Inline spinner + `bodySmall` |
-| In-button | See §7.3 |
-| App boot | `flat` background + `accent` indicator |
+| Full screen | `LoadingState`: centered 96px solar/lunar emblem in `accent`, with a named status label; `large` uses 112px |
+| In-card / location search | Compact 20px solar emblem + existing status text |
+| In-button / header action | Compact 20px solar emblem using the control's foreground color; busy/disabled semantics retained |
+| App boot | Flat navy background + 112px solar/lunar emblem and “Preparing Naksha…” |
 
 Label convention: **`Loading <noun>`** — "Loading chart", "Loading charts",
-"Loading journals", "Loading profile". No bare "Loading...". Remove
-`LoadingState`'s `minWidth: 160` and 1-line clamp, which exist to stop the
-default label from reflowing.
+"Loading journals", "Loading your profile". Labels can wrap and follow the
+shared text scaling rules. Loading containers expose a named indeterminate
+progress bar and busy state; the emblem itself is decorative and silent.
 
-`ActivityIndicator` currently never receives a `color` anywhere in the app.
+`CelestialLoader` replaces the generic loading circle throughout the app.
+Its 12-second cycle starts immediately as a golden sun: twelve alternating
+rays rotate, a finer inner ring counter-rotates, and the halo gently breathes.
+After about five seconds, it crossfades through crescent, half and full moon
+shapes before returning to the sun. Compact versions retain the sun throughout
+and omit the halo/lunar layers so they remain legible in small controls. The
+moon sequence is a decorative motif, not the current Moon phase or progress.
+
+One native animated value drives only opacity and transforms of fixed SVG
+geometry. No per-frame React work, new dependency, artificial wait, or minimum
+loading duration is introduced. `ScreenActivityProvider` passes route focus
+from `Background` to loading descendants; AppState and reduced-motion settings
+also stop the loop. Reduced or unresolved motion shows the complete static sun.
+Standalone bootstrap loading uses the same app-state/preference checks without
+requiring navigation. Timing lives in `useCelestialLoadingMotion.ts` as
+`CELESTIAL_LOADING_CYCLE_MS`; shape and glow tuning live in `CelestialLoader.tsx`.
 
 ### 9.2 Error — new `ErrorState` primitive
 
@@ -692,6 +821,104 @@ already do this correctly.
 | `ChoiceRow` | no role/state | `radio` role + `selected` state |
 | Planet / house rows | no role/label | `button` role, label reading placement and meaning |
 | Journal long-press delete | **no discoverable affordance** | Visible action or an accessibility action |
+
+### 10.4 Chart marks
+
+Added in Slice 9C, after device review rejected the alternative.
+
+A saved chart is identified by a **static emblem for its kind**, not by a
+miniature of its own data. The reference design and the first implementation
+both put a real `ChartWheel` on each My Charts row; on a device it failed. A
+64dp wheel renders twelve house divisions, twelve sign ticks, ten planet glyphs
+and every aspect line into roughly four thousand pixels, and the detail is not
+merely small -- it is destroyed. The row read as noise.
+
+| Rule | |
+| --- | --- |
+| Identifies the kind, not the instance | One natal mark, identical on every natal row. The name and birth moment already distinguish rows; the mark answers "what sort of chart is this". |
+| No chart data, no derived tint | Size is the only input. A Sun-sign tint was considered and rejected: it would make a static emblem data-driven through the back door, and staying data-free is what makes sibling marks possible later. |
+| Drawn for its size | A fixed 64-unit viewBox scaled to the rendered size -- a handful of strokes with real space between them, rather than a full chart squeezed down. Proportion and optical weight hold at any density. |
+| Navy and gold only | `background.base` disc, `accent.base` rings, ticks and core at descending opacity. No planet hue. |
+| Decorative | Hidden from assistive technology. The row's accessible label is the source of meaning; an emblem that announced itself would say "chart" twice. |
+| Unreadable data gets a placeholder | A malformed or unsupported-version chart shows a plain outline, never the natal mark. Showing the emblem would claim a chart the validator just rejected. |
+
+**Future kinds extend it rather than complicate it.** Synastry is not one wheel
+and could never be drawn as one -- two interlocking rings; a composite chart,
+one ring with a split core. Those are siblings of the natal mark, which is only
+possible because nothing in it is data-driven. Not built speculatively;
+recorded so the shape is obvious when they arrive.
+
+---
+
+### 10.5 Quick navigation and in-screen selectors
+
+Two patterns established on the Dashboard in Slice 7. Both are presentation
+only: neither adds a route, a param or a navigator.
+
+| Pattern | Rules |
+| --- | --- |
+| **Quick-navigation strip** | Equal columns sized by `flex`, never a percentage basis — a percentage grid overlaps its neighbour as soon as the font scale grows. Icon above a short visible label, both from the shared `Icon` set. Labels wrap and are never clamped. Each column is a 48 dp target with an `accessibilityLabel` phrased as the action it performs ("Open my charts"), not as the label it shows ("Saved"). Unbordered and secondary ink, so the strip introduces destinations without competing with content. |
+| **In-screen tab selector** | `accessibilityRole="tablist"` on the row, `"tab"` on each control, `accessibilityState={{ selected }}`. At least 48 dp high. Selection is carried by an indicator rule **and** an ink step, never colour alone. Only the selected panel is rendered — not hidden, absent — so the inactive one occupies no layout and assistive technology cannot reach it. Any state belonging to a panel is held by the screen, because an unmounted panel cannot keep its own. Switching a selector never triggers computation, I/O or persistence. |
+
+The tab rule that matters most is the last one. A selector that recalculates is
+no longer a selector: it is navigation wearing a tab's clothes, and the
+distinction shows up as a stutter the first time a reader flicks between them.
+
+---
+
+### 10.6 Direct manipulation on the chart wheel
+
+Added in Slice 6B and revised there after device review. The wheel is the one
+surface in the app with continuous direct manipulation, so its rules are
+written down rather than left to the implementation.
+
+| Rule | |
+| --- | --- |
+| Zoom | Pinch, continuous, clamped to 1x-3x. No discrete zoom buttons. The focal point stays under the fingers, so the detail being pinched does not slide away. |
+| Pan | Enabled only while zoomed, and limited to the overflow the zoom created, so the wheel cannot be flung off-screen and left there. |
+| Reset | Double tap. |
+| Accessibility | The same three operations are exposed as `zoomIn` / `zoomOut` / `resetZoom` accessibility actions, because a pinch is not reachable by every user. |
+| Gesture composition | Pinch and pan are recognised **simultaneously**, and that pair is **raced** against the tap group. Racing is what keeps a two-finger pinch from queueing behind a one-finger tap recogniser. Taps are bounded by movement and duration rather than by pointer count. |
+| Overlays | No full-screen `Pressable` over the wheel. One claimed every touch through the responder system and stopped the pinch from ever starting. |
+
+**Tap arbitration.** Three target types overlap on the same pixels, so the
+order and the tolerances are part of the design, not an implementation
+detail. A tap resolves as: planet, then house band, then aspect, then nothing.
+
+| Target | Allowance | |
+| --- | --- | --- |
+| Planet | 48 dp control, radius 24, **excluding the drawn house band** | Drawn inside the transformed wheel, so it is 48 wheel-local points at every scale. The control resolves the touch itself; the gesture layer defers to it rather than selecting a second time, which is what once made a tap in a cluster land on a neighbour. |
+| Aspect, in the open field | 24 | Generous, because the stroke is only 1.2-2.0 wide. |
+| Aspect, inside the house band | 6 | Tightened. Every aspect line **ends at a radius inside the house band**, so at the full corridor each endpoint claims the band around its own planet's longitude — and a wedge holding several planets had almost no surface left that resolved to a house. A tap placed *on* a line still takes the aspect, which is all a conjunction needs, its whole chord being in the band. |
+| House band | Drawn ring plus 16 either side | The padding is what makes the house number itself a target. |
+
+**The drawn house band belongs to the houses.** A planet marker sits on its own
+ring, outside the band — but its 48 dp control does not. At a 345-point wheel
+the control overhangs the drawn band by about 10 points, which claims more than
+half the band arc of the wedge behind it; with two planets close together that
+wedge could not be selected at all, and taps on houses 12 and 1 landed on Mars
+or Pluto. So a touch inside the band's outer edge is never a planet, however
+near one is. Outside that edge the control is untouched, and it keeps its full
+48 dp in the tangential direction, which is the axis where planets crowd each
+other. The boundary is a line the reader can see, which is what makes it
+explicable rather than arbitrary.
+
+Both the gesture layer and the planet's own `Pressable` resolve through the
+same function. They have to: the control and the gesture both see the touch, so
+if only one applied the boundary the control would still fire and select the
+planet.
+
+**Slop is screen-space.** Every allowance above is stated in points under the
+finger and divided by the current scale before it is compared against
+wheel-local geometry. Stated in wheel-local points instead, a corridor grows
+with the drawing — at 3x the aspect band measured 72 points on screen — so
+zooming in to separate crowded targets made them harder to tell apart, not
+easier. The planet radius is the deliberate exception, for the reason in the
+table above.
+
+None of this touches chart calculation or geometry: hit testing reads the same
+endpoint, radius and cusp numbers the wheel draws with, and computes nothing of
+its own.
 
 ---
 
@@ -844,39 +1071,89 @@ hardware-back behavior.
 
 ## 12. Motion and Reduced Motion
 
-V1 has **no motion system and no continuous animation**, and the approved
-background approach is entirely static. This section therefore constrains rather
-than introduces.
+Motion is limited to chart selection, slow cosmic color drift, a subtle
+background glimmer, occasional shooting stars, and the celestial loading cycle. All
+retain a static presentation when reduced motion is enabled or unresolved.
 
 | Rule | |
 | --- | --- |
-| Backgrounds | Static. No loop, no timer, no `Animated` driver |
+| Backgrounds | Fixed stars with a native opacity loop over nine highlights, an occasional native shooting-star flight, and two cloud textures sharing one slow native phase. |
+| Loading | One 12-second native phase rotates and fades static solar/lunar SVG layers; compact controls show only the sun. Runs only while an operation is pending and its screen/app is active. |
 | Transitions | Platform default stack animation. No custom transitions in this migration |
 | Modal | `animationType="slide"` — **unchanged**, part of the preserved interaction behavior |
 | Press feedback | Opacity only. No scale, no spring |
-| Chart selection glow | The single approved exception — see below |
+| Chart wheel selection | Two scoped animated values — see below |
 | Duration budget | If any motion is later approved: 150 ms enter, 120 ms exit |
 
-### The one exception: chart selection glow
+Background glimmer, cosmic drift and shooting-star flights use `useNativeDriver: true` and
+`isInteraction: false`.
+Its two timing animations advance through a JavaScript sequence callback every
+six seconds; animation frames run natively. Hidden routes and inactive apps stop
+the loop. This bounds the work; frame rate and battery impact still require
+device profiling.
 
-Approved after Slice 6B device review. The chart wheel may run **one**
-continuously animating value, and only under all of these conditions:
+Shooting stars use a single timeout while idle and a completion callback to
+schedule the next flight. Their opacity and translation run natively, and stale
+callbacks cannot restart them after a route, app-state, or preference change.
+
+Cloud drift shares one phase between two textures. Each cloud occupies about
+0.92 viewport areas; focus-gated raster caching avoids changing SVG geometry
+on frames. The phase reverses through a sequence callback every 24 seconds.
+Static colors remain visible when motion is disabled. Device profiling is
+still needed to assess native compositing and texture memory.
+
+### Chart wheel selection
+
+Approved after Slice 6B device review, and revised there. The chart wheel may
+run **two** continuously animating values, and only under all of these
+conditions.
 
 | Condition | |
 | --- | --- |
-| Scope | The selected planet's outer halo and the selected aspect's glow stroke. Nothing else. |
-| Count | One shared value for the whole wheel, driving opacity only. |
-| Geometry | Never animated. Coordinates, radii, aspect endpoints and house boundaries are computed once and do not move. |
-| Character | A slow breath — 1800ms, eased, reversing. Mystical, not game-like. |
+| Scope | The selected planet's outer halo; a selected aspect's stroke and bloom, plus the halos on **both** of its endpoint planets. The background glimmer is independent. |
+| Count | Two shared values for the whole wheel: `glow` drives opacity, `trace` drives `strokeDashoffset`. Both are shared by every animated element, so the count does not grow with the number of planets or aspects. |
+| Geometry | Never animated. Coordinates, radii, aspect endpoints and house boundaries are computed once and do not move. `strokeDashoffset` shifts where the dashes fall along a fixed line; it does not move the line. |
+| Character — glow | A slow breath: `GLOW_MAX` 0.7 to `GLOW_MIN` 0.3 over 1800 ms, eased in-out, reversing. It never reaches zero — a selection that fades to invisible reads as a bug. |
+| Character — dash | Linear travel of exactly one dash period per repeat, so the flow is continuous with no jump at the loop boundary. Per aspect type, from `ASPECT_MOTION`. |
 | Thread | Reanimated on the UI thread, so it cannot stutter the chart scroll. |
 | Lifetime | Cancelled when the selection changes or clears, and on unmount. |
-| Reduced motion | Static glow when the preference is `true` **or unresolved**. |
+| Reduced motion | When the preference is `true` **or unresolved**: `glow` pins at `GLOW_MAX`, `trace` at 0. The dash pattern is still drawn, so the selected state stays unmistakable while nothing moves. |
+
+**Why dashes and not a tracer.** Three device rounds rejected earlier attempts
+because each read as *an animation sliding over a line* rather than the line
+itself carrying motion. The cause was structural: a solid stroke underneath a
+moving highlight gives the eye a stationary rail to measure the highlight
+against. The accepted design has **no solid stroke beneath** — the dashes *are*
+the line, so what moves is the line. A selected aspect is exactly two layers:
+
+| Layer | |
+| --- | --- |
+| `aspect-bloom-{i}` | Full length, `accent.base`, stroke width `+5`, opacity `glow x ASPECT_BLOOM_OPACITY` (0.25), so at most ~0.175. Faint enough that it never reads as a rail; present so the aspect stays legible between dashes. |
+| `aspect-selected-{i}` | The line itself, `accent.bright`, stroke width `+0.6`, dashed per type, animated offset. |
+
+**Motion differs by aspect type**, because the types mean different things and a
+single tempo made them interchangeable:
+
+| Type | dash / gap | duration | direction |
+| --- | --- | --- | --- |
+| Conjunction | 3 / 5 | 2400 ms | outward |
+| Opposition | 11 / 9 | 1700 ms | inward |
+| Square | 4 / 4 | 700 ms | outward |
+| Trine | 13 / 8 | 2000 ms | outward |
+| Sextile | 3 / 12 | 1250 ms | outward |
+
+**Both endpoints light.** A selected aspect puts both participants in the
+wheel's highlight set, each in its own `planetGlow` hue (§1.3) — the line says
+there is a relationship, the two glowing markers say between what. Each gets
+the same three layers a directly selected planet gets: an animated halo, a
+planet-coloured inner accent, and a static ring that is never absent while the
+selection stands. A selected house lights no planet.
 
 This does **not** authorize continuous animation anywhere else. Backgrounds
 remain static, screens remain static, and any further exception needs its own
 review. The justification is narrow: a selected line among a dozen crossing
-lines is genuinely hard to pick out when static, and a slow opacity breath
-identifies it without moving anything the reader is trying to measure.
+lines is genuinely hard to pick out when static, and slow motion identifies it
+without moving anything the reader is trying to measure.
 
 ### Reduced motion
 
@@ -971,6 +1248,9 @@ top rows).
 | `@expo-google-fonts/inter` | 3 | `Inter_400Regular`, `Inter_500Medium`, `Inter_600SemiBold` |
 | `@expo-google-fonts/cormorant-garamond` | 3 | `CormorantGaramond_600SemiBold` |
 | `lucide-react-native` | 4 | Functional icons; peer-depends on the already-present `react-native-svg` |
+| `react-native-gesture-handler` | 6B | Pinch, pan and tap recognition on the chart wheel |
+| `react-native-reanimated` | 6B | The selection glow and dash travel, on the UI thread |
+| `react-native-worklets` | 6B | Reanimated 4's worklet runtime; added by it, not chosen separately |
 
 `@expo-google-fonts/eb-garamond` is **not** installed. It enters only as a
 replacement for Cormorant if Slice 3's Android device review rejects it.

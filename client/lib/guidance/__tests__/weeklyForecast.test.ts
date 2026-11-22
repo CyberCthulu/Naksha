@@ -3,6 +3,7 @@ import {
   type HouseCusp,
   type PlanetPos,
 } from '../../astro'
+import { angularSeparation } from '../../aspects'
 import {
   ASPECT_DYNAMIC_GUIDANCE,
   HOUSE_GUIDANCE,
@@ -17,6 +18,13 @@ import {
   type BuildWeeklyForecastInput,
   resolveTransitHouseContext,
 } from '../index'
+import type { WeeklyTransitHighlight } from '../types'
+import {
+  buildWeeklyTransitHighlights,
+  calculateWeeklySignificanceScore,
+  compareWeeklyHighlights,
+  isWithinWeeklyOrbLimit,
+} from '../weeklyTransitEvents'
 
 const EVALUATED_AT = new Date('2026-05-14T18:00:00.000Z')
 const TIME_ZONE = 'America/Los_Angeles'
@@ -87,6 +95,165 @@ function weeklyRelevantNatalPlanets({
       : []),
   ]
 }
+
+function weeklyHighlight(
+  overrides: Partial<WeeklyTransitHighlight> & {
+    selectionOrb?: number
+  } = {}
+): WeeklyTransitHighlight & { selectionOrb?: number } {
+  return {
+    transitPlanet: 'Mars',
+    natalPlanet: 'Moon',
+    aspect: 'conj',
+    orb: 1,
+    tone: 'intensifying',
+    intensity: 'high',
+    sourceIds: [],
+    date: '2026-05-11',
+    activeDays: 1,
+    significanceScore: 50,
+    ...overrides,
+  }
+}
+
+describe('weekly transit precision', () => {
+  it.each([
+    ['Mars', 'conj', 3],
+    ['Mars', 'opp', 3],
+    ['Mars', 'trine', 2.5],
+    ['Mars', 'square', 2.5],
+    ['Mars', 'sextile', 2],
+    ['Saturn', 'conj', 1.5],
+  ] as const)(
+    'filters %s %s against its full-precision %s-degree limit',
+    (planet, aspect, limit) => {
+      expect(
+        isWithinWeeklyOrbLimit(planet, aspect, limit - 0.0004)
+      ).toBe(true)
+      expect(isWithinWeeklyOrbLimit(planet, aspect, limit)).toBe(true)
+      expect(
+        isWithinWeeklyOrbLimit(planet, aspect, limit + 0.004)
+      ).toBe(false)
+      expect(Number((limit + 0.004).toFixed(2))).toBe(limit)
+    }
+  )
+
+  it('uses full precision for the significance orb-closeness contribution', () => {
+    const tighterOrb = 1.001
+    const looserOrb = 1.004
+
+    expect(Number(tighterOrb.toFixed(2))).toBe(
+      Number(looserOrb.toFixed(2))
+    )
+    expect(
+      calculateWeeklySignificanceScore(
+        { transitPlanet: 'Mars', aspect: 'conj', orb: tighterOrb },
+        1
+      )
+    ).toBeGreaterThan(
+      calculateWeeklySignificanceScore(
+        { transitPlanet: 'Mars', aspect: 'conj', orb: looserOrb },
+        1
+      )
+    )
+  })
+
+  it('uses full precision for the orb tie-break before identity order', () => {
+    const tighter = weeklyHighlight({
+      natalPlanet: 'Venus',
+      selectionOrb: 1.001,
+    })
+    const looser = weeklyHighlight({
+      natalPlanet: 'Mars',
+      selectionOrb: 1.004,
+    })
+
+    expect(tighter.orb).toBe(looser.orb)
+    expect(compareWeeklyHighlights(tighter, looser)).toBeLessThan(0)
+  })
+
+  it('filters a rounding-sensitive conjunction through the full Weekly pipeline', () => {
+    const snapshot = {
+      date: '2026-05-14',
+      evaluatedAt: EVALUATED_AT,
+    }
+    const marsLongitude = transitLongitude('Mars', snapshot.evaluatedAt)
+    const highlightsAt = (orb: number) =>
+      buildWeeklyTransitHighlights({
+        natalPlanets: [
+          {
+            name: 'Pluto',
+            lon: (marsLongitude + orb) % 360,
+          },
+        ],
+        snapshots: [snapshot],
+      })
+    const findMarsPlutoConjunction = (
+      highlights: ReturnType<typeof highlightsAt>
+    ) =>
+      highlights.find(
+        (highlight) =>
+          highlight.transitPlanet === 'Mars' &&
+          highlight.aspect === 'conj' &&
+          highlight.natalPlanet === 'Pluto'
+      )
+
+    const outside = findMarsPlutoConjunction(highlightsAt(3.004))
+    const inside = findMarsPlutoConjunction(highlightsAt(2.996))
+
+    expect(Number((3.004).toFixed(2))).toBe(3)
+    expect(outside).toBeUndefined()
+    expect(inside).toEqual(
+      expect.objectContaining({
+        transitPlanet: 'Mars',
+        aspect: 'conj',
+        natalPlanet: 'Pluto',
+        orb: 3,
+      })
+    )
+  })
+
+  it('selects the true minimum-orb snapshot as the Weekly representative day', () => {
+    const earlier = {
+      date: '2026-05-14',
+      evaluatedAt: new Date('2026-05-14T23:58:00.000Z'),
+    }
+    const later = {
+      date: '2026-05-15',
+      evaluatedAt: new Date('2026-05-15T00:03:00.000Z'),
+    }
+    const earlierMars = transitLongitude('Mars', earlier.evaluatedAt)
+    const laterMars = transitLongitude('Mars', later.evaluatedAt)
+    const natalPluto = (laterMars + 1.001) % 360
+    const earlierOrb = angularSeparation(earlierMars, natalPluto)
+    const laterOrb = angularSeparation(laterMars, natalPluto)
+
+    expect(earlierOrb).toBeCloseTo(1.004, 2)
+    expect(laterOrb).toBeCloseTo(1.001, 12)
+    expect(earlierOrb).toBeGreaterThan(laterOrb)
+    expect(Number(earlierOrb.toFixed(2))).toBe(
+      Number(laterOrb.toFixed(2))
+    )
+
+    const highlight = buildWeeklyTransitHighlights({
+      natalPlanets: [{ name: 'Pluto', lon: natalPluto }],
+      snapshots: [earlier, later],
+    }).find(
+      (candidate) =>
+        candidate.transitPlanet === 'Mars' &&
+        candidate.aspect === 'conj' &&
+        candidate.natalPlanet === 'Pluto'
+    )
+
+    expect(highlight).toEqual(
+      expect.objectContaining({
+        date: later.date,
+        orb: 1,
+        activeDays: 2,
+      })
+    )
+  })
+})
 
 describe('buildWeeklyForecast', () => {
   it('returns deterministic output for a fixed chart and local week', () => {

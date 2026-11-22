@@ -1,15 +1,15 @@
 # Naksha UI/UX Redesign
 
-Status: audit accepted; design system proposed; implementation not started
+Status: implemented visual reference; final native/accessibility acceptance remains. Reviewed against current repository 2026-09-25.
 Platform priority: Android first
-Product baseline: D0-D6.3 complete; 25 suites / 183 tests passing
+Implementation checkpoint: `ab9c16c1`, 58 suites / 737 tests. Current post-R3 baseline: 62 suites / 793 tests plus 131 combined pgTAP assertions. Current release work: [release hardening](../release-hardening-plan.md).
 Visual reference: `reference/naksha-ui-north-star.png`
 
 ## Purpose
 
 This directory governs a controlled visual migration of the implemented Naksha V1. The product behavior is already substantial and tested; redesign work should improve clarity, hierarchy, consistency, accessibility, and perceived quality without quietly changing astrology, persistence, navigation, or account behavior.
 
-The intended direction is premium, celestial, and editorial. Visual references are directional rather than pixel-perfect, and no palette, typeface, token values, component geometry, or animation system should be treated as approved until it is reviewed through the redesign process.
+The implemented direction is premium, celestial, and editorial. Preserve current shared tokens and interactions. The original decisions below record the migration baseline; later user-authorized sky motion, all-screen atmosphere, celestial loading, and Sky Now supersede the original static-only scope. See `consistency-review.md` and `current-sky-compass.md` for delivered behavior. Native release acceptance remains separate from the completed implementation.
 
 ## Non-Negotiable Product Loops
 
@@ -64,9 +64,9 @@ Its visual hierarchy may be redesigned later. Its interaction behavior does not 
 
 ### Atmosphere
 
-V1 atmosphere is: deep navy base, lightweight static gradients, sparse static/SVG celestial detail, quiet/atmospheric/hero intensity variants, and a flat navy fallback.
+Implemented V1 atmosphere uses a deep navy base, static stars, subtle cloud drift, glimmer and occasional shooting stars, plus a flat fallback. Motion pauses with reduced motion or inactive app/routes; popup skies remain contained. No constellation connecting lines are rendered.
 
-No `three`, no `expo-gl`, no particle system, and no continuous GPU effect. Existing dependencies are used where practical — `react-native-svg` is already present and is sufficient.
+The active shared background uses no `three`, `expo-gl`, or particle system. Existing dependencies are used where practical — `react-native-svg` is already present and is sufficient.
 
 The dormant GL dependencies are **not** removed until all references and configuration are checked in a later isolated cleanup. `SpaceProvider` remains live and load-bearing for chart focus; only `SpaceBackground` is dormant.
 
@@ -118,9 +118,9 @@ Neither of these is a redesign deliverable, and both are hard Play Store blocker
 | Item | Current state | Owner |
 | --- | --- | --- |
 | Custom Naksha launcher / store icon | `assets/icon.png`, `adaptive-icon.png`, and `splash-icon.png` are **stock Expo placeholders** | **Brand-polish task, after the flagship visual direction is approved** |
-| Application name and Android package identifier | `name`/`slug` are `"client"`; package is `com.anonymous.client` | **Release-hardening configuration task** |
+| Application name and Android package identifier | R4 worktree: visible name **Naksha**, preserved slug `client`, approved package `com.naksha.app` | **Release-hardening configuration implemented; signed artifact pending** |
 
-The stock Expo icon and `com.anonymous.client` cannot ship to Play.
+The stock Expo icon still cannot ship to Play. The placeholder package was replaced by the owner-approved `com.naksha.app` in the R4 worktree.
 
 ### Pre-existing defects
 
@@ -140,7 +140,7 @@ The following are post-V1 possibilities, not redesign deliverables:
 - subscriptions or reports;
 - dedicated shadow-work cycles/milestones;
 - additional astrology or house systems;
-- retrogrades, lunar phases, exact transit windows, or additional moving planets.
+- retrogrades, lunar phases, exact transit windows, or additional planets in personalized forecast selection. Sky Now separately displays all ten chart bodies.
 
 ## Documents
 
@@ -148,7 +148,7 @@ The following are post-V1 possibilities, not redesign deliverables:
 - `redesign-plan.md`: controlled migration sequence, validation gates, and the implementation slice queue
 - `ui-audit.md`: accepted findings, ranked problems, pre-existing defects, and component disposition
 - `baseline.md`: commit and verification baseline, defect register, and the Android screenshot / device-QA checklist
-- `design-system.md`: proposed tokens, typography, primitives, and background variants — **proposed, not approved**
+- `design-system.md`: original design specification and subsequent implementation notes; current tokens in code and `consistency-review.md` govern delivered values
 - `reference/naksha-ui-north-star.png`: directional visual reference
 
 Use `docs/naksha-codebase-handoff.md` for canonical engineering status, `docs/Feature-List.md` for product scope, and `docs/naksha-decomposition-roadmap.md` for the full Android release sequence.

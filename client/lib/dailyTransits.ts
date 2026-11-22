@@ -1,12 +1,13 @@
 import {
   computeTransitPlanets,
-  findAspects,
+  findAspectsWithFullPrecision,
   type Aspect,
   type AspectOrbMode,
   type PlanetPos,
 } from './astro'
 import {
   getAspectMeaning,
+  isPlanetKey,
   type PlanetKey,
   type ZodiacName,
   zodiacNameFromLongitude,
@@ -33,7 +34,7 @@ export type DailyTransitPlanetIdentity = {
 export type DailyNatalPlanetIdentity = {
   kind: 'natal'
   id: string
-  name: string
+  name: PlanetKey
   lon: number
 }
 
@@ -55,6 +56,11 @@ export type TodayEnergy = {
   strongestAspect: DailyTransitAspect | null
 }
 
+type DailyTransitCandidate = {
+  result: DailyTransitAspect
+  selectionOrb: number
+}
+
 const DAILY_TRANSIT_PLANET_SET = new Set<PlanetKey>(
   DAILY_TRANSIT_PLANET_NAMES
 )
@@ -72,14 +78,15 @@ function transitPriority(name: DailyTransitPlanetName): number {
 }
 
 function compareTransitAspects(
-  a: DailyTransitAspect,
-  b: DailyTransitAspect
+  a: DailyTransitCandidate,
+  b: DailyTransitCandidate
 ): number {
   return (
-    a.orb - b.orb ||
-    transitPriority(a.transit.name) - transitPriority(b.transit.name) ||
-    a.natal.name.localeCompare(b.natal.name) ||
-    a.type.localeCompare(b.type)
+    a.selectionOrb - b.selectionOrb ||
+    transitPriority(a.result.transit.name) -
+      transitPriority(b.result.transit.name) ||
+    a.result.natal.name.localeCompare(b.result.natal.name) ||
+    a.result.type.localeCompare(b.result.type)
   )
 }
 
@@ -101,7 +108,9 @@ function buildTransitIdentity(
 function buildNatalIdentity(
   planet: PlanetPos,
   index: number
-): DailyNatalPlanetIdentity {
+): DailyNatalPlanetIdentity | null {
+  if (!isPlanetKey(planet.name)) return null
+
   return {
     kind: 'natal',
     id: `natal:${planet.name}:${index}`,
@@ -120,7 +129,7 @@ function toAspectPlanet(identity: DailyPlanetIdentity): PlanetPos {
 function toDailyTransitAspect(
   aspect: Aspect,
   identitiesById: Map<string, DailyPlanetIdentity>
-): DailyTransitAspect | null {
+): DailyTransitCandidate | null {
   const first = identitiesById.get(aspect.a)
   const second = identitiesById.get(aspect.b)
 
@@ -138,12 +147,42 @@ function toDailyTransitAspect(
   if (!transit || !natal) return null
 
   return {
-    transit,
-    natal,
-    type: aspect.type,
-    orb: aspect.orb,
-    aspectMeaning: getAspectMeaning(aspect.type)?.short ?? null,
+    selectionOrb: aspect.orb,
+    result: {
+      transit,
+      natal,
+      type: aspect.type,
+      orb: +aspect.orb.toFixed(2),
+      aspectMeaning: getAspectMeaning(aspect.type)?.short ?? null,
+    },
   }
+}
+
+function findDailyTransitCandidates(
+  natalPlanets: PlanetPos[],
+  transitPlanets: PlanetPos[],
+  orbMode: AspectOrbMode
+): DailyTransitCandidate[] {
+  const transitIdentities = transitPlanets.flatMap((planet, index) => {
+    const identity = buildTransitIdentity(planet, index)
+    return identity ? [identity] : []
+  })
+  const natalIdentities = natalPlanets.flatMap((planet, index) => {
+    const identity = buildNatalIdentity(planet, index)
+    return identity ? [identity] : []
+  })
+  const identities = [...transitIdentities, ...natalIdentities]
+  const identitiesById = new Map(
+    identities.map((identity) => [identity.id, identity])
+  )
+
+  return findAspectsWithFullPrecision(
+    identities.map(toAspectPlanet),
+    orbMode
+  )
+    .map((aspect) => toDailyTransitAspect(aspect, identitiesById))
+    .filter((aspect): aspect is DailyTransitCandidate => aspect != null)
+    .sort(compareTransitAspects)
 }
 
 export function findDailyTransitAspects(
@@ -151,20 +190,11 @@ export function findDailyTransitAspects(
   transitPlanets: PlanetPos[],
   orbMode: AspectOrbMode = 'medium'
 ): DailyTransitAspect[] {
-  const transitIdentities = transitPlanets.flatMap((planet, index) => {
-    const identity = buildTransitIdentity(planet, index)
-    return identity ? [identity] : []
-  })
-  const natalIdentities = natalPlanets.map(buildNatalIdentity)
-  const identities = [...transitIdentities, ...natalIdentities]
-  const identitiesById = new Map(
-    identities.map((identity) => [identity.id, identity])
-  )
-
-  return findAspects(identities.map(toAspectPlanet), orbMode)
-    .map((aspect) => toDailyTransitAspect(aspect, identitiesById))
-    .filter((aspect): aspect is DailyTransitAspect => aspect != null)
-    .sort(compareTransitAspects)
+  return findDailyTransitCandidates(
+    natalPlanets,
+    transitPlanets,
+    orbMode
+  ).map(({ result }) => result)
 }
 
 export function findStrongestDailyTransitAspect(
@@ -173,7 +203,8 @@ export function findStrongestDailyTransitAspect(
   orbMode: AspectOrbMode = 'medium'
 ): DailyTransitAspect | null {
   return (
-    findDailyTransitAspects(natalPlanets, transitPlanets, orbMode)[0] ?? null
+    findDailyTransitCandidates(natalPlanets, transitPlanets, orbMode)[0]
+      ?.result ?? null
   )
 }
 

@@ -1,6 +1,8 @@
 # Naksha UI/UX Redesign Plan
 
-Status: stages 1-2 complete; stage 3 proposed and awaiting approval; no implementation started
+Status: historical execution plan. The active UI migration and subsequent sky/loading/Sky Now additions were implemented by 2026-09-12. R1–R3 have since completed; final native/accessibility acceptance and current execution follow [release hardening](../release-hardening-plan.md).
+
+The stage descriptions below retain the original migration plan; read completed slice notes and `consistency-review.md` for delivered work. Old proposal-stage wording does not describe the current application. Device approvals apply only to their recorded slices/builds.
 Direction: Android-first, premium/celestial/editorial
 Constraint: preserve current V1 behavior throughout the migration
 Binding decisions: see `README.md` "Binding Decisions" (accepted 2026-09-02)
@@ -168,6 +170,33 @@ cd ..
 git diff --check
 ```
 
+**One dependency is deliberately pinned ahead of the SDK — DEVICE-APPROVED 2026-09-07.**
+`@react-native-picker/picker` is held at **2.11.3** while Expo SDK 54 expects
+2.11.1, and it is listed in `expo.install.exclude` so the check passes rather
+than reporting a finding everyone learns to ignore.
+
+2.11.1 compiles its Android native code with hardcoded C++ flags. React Native
+0.80 changed those flags, so on 0.81.5 the picker's library and
+`libreactnative.so` disagreed about C++ types crossing their boundary --
+`ShadowNode`, `Props`, `ContextContainer`. Memory allocated under one set of
+assumptions was freed under another, and Android's pointer tagging caught it:
+`free()` aborted the process with "Pointer tag was truncated", on Hermes' GC
+thread, while tearing down the 351-item time-zone picker. It killed the app
+outright on Guest Chart and was reachable from Complete Profile too. 2.11.3
+switches to React Native's own `target_compile_reactnative_options()` for
+RN >= 0.80, which is exactly that mismatch.
+
+Verified on a physical Android development build: the time-zone picker was
+opened and dismissed repeatedly, guest charts were created, and Complete
+Profile was exercised, with no recurrence of the SIGABRT. The duplicate-linking
+warning did not return after a clean launch either. Since the crash was
+GC-timed and intermittent, that is strong evidence rather than proof -- but the
+mechanism is understood and the fix addresses it directly.
+
+**Do not run `npx expo install --fix` against this package.** It would revert
+2.11.3 and reintroduce a process-killing crash. The exclusion exists to prevent
+that; remove it only once Expo's expected version is 2.11.3 or newer.
+
 The test gate is only meaningful once Slice 0 lands. Until then, `npm test` can fail with 5000 ms timeouts on a cold cache while the product is healthy — see `baseline.md` §3. Do not read a cold-cache timeout as a regression, and do not raise the global timeout to hide it.
 
 Also perform focused Android visual/manual QA for every changed state. Automated tests protect behavior; they do not approve visual quality.
@@ -270,9 +299,272 @@ Preserve: chart calculations, chart data, chart-wheel behavior, positions, house
 Not in scope: the reference's tabbed interpretation design; transit information inside natal interpretations; any new route or feature.
 Gate: the full validation gate in stage 8 above, compared against the baseline screenshots, on device.
 
-### Later — Dashboard redesign slice
+### Slice 6B — Interactive chart wheel exploration — **DEVICE-APPROVED**
 
-Not sequenced here; it belongs to stage 9 propagation. Recorded now because it owns one deferred item: **replacing the Dashboard's decorative emoji** (`🌌` in the welcome heading; `☀️` / `🌙` in the "Your Signs" card) with standardized icons. The Sun and Moon rows specifically become the astrological glyphs `☉` and `☽`, matching what `ChartWheel` and `ChartCompass` already render.
+Added after Slice 6's gate, because the flagship read as a picture rather than
+something to explore. Scope: pinch/pan zoom on the wheel, tap-to-select for
+planets, aspects and houses, the selection treatment for each, and the Glyph
+Compass as a persistent Chart-route utility.
+
+Preserve: chart calculations, chart data, aspect ordering and orb precision,
+wheel geometry, saved-chart behavior, navigation, persistence, Supabase
+behavior, and the interpretation modal's route, callbacks, content and pager
+behavior.
+
+Not in scope: sign selection, new routes, new features, transit information.
+
+Approved dependencies, installed in this slice: `react-native-gesture-handler`,
+`react-native-reanimated`, `react-native-worklets`.
+
+**Device-approved behavior.** Recorded here because it was settled by device
+evidence over several rounds and supersedes earlier written specifications,
+including a gradient-stroke aspect design that was proposed and then overtaken:
+
+1. A selected aspect keeps its **type-specific dash treatment**; the dash
+   offset is what moves. There is no solid stroke beneath it and no separate
+   tracer — the dashes are the line. See design-system.md §12.
+2. Both of a selected aspect's **endpoint planets glow**, each in its own
+   `theme.planetGlow` hue.
+3. **Only the selected relationship animates.** One glow value and one dash
+   value drive the whole wheel.
+4. **Reduced motion** renders the selected dash pattern statically, at full
+   glow, with no travel.
+5. **Aspect geometry and calculations are unchanged.** Only the offset at which
+   dashes fall along a fixed line animates.
+6. Pinch/pan, and the crowded-wedge hit-test arbitration that followed it,
+   behave as described in design-system.md §10.6 — including the tightened
+   aspect corridor inside the house band and screen-space slop.
+
+Two flagship defects were closed in the same slice: the chart headline is laid
+out at its container's width rather than shrinking to fit, after an Android
+measurement quirk dropped the last word of "Jupiter in Aquarius"; and the
+interpretation pager guards against stale page confirmations so rapid paging
+and swiping both report the page they are on.
+
+Three defects were found and closed during device review, each of them a case
+of one control quietly claiming another's surface:
+
+- the **aspect corridor inside the house band**, tightened from 24 to 6,
+  because every aspect line ends at a radius inside the band;
+- **planet controls overhanging the ring below them** by ~10 points, which let
+  Mars and Pluto absorb taps meant for houses 12 and 1;
+- **slop stated in wheel-local points**, which magnified every corridor with
+  the drawing so zooming in to reach a crowded target made it harder.
+
+Gate: the stage 8 validation gate, on device — **passed 2026-09-04**. Confirmed
+on a physical Android device: pinch zoom, planet selection in clusters, aspect
+selection and its two-endpoint glow, house wedge selection including the
+crowded wedges, the headline placement, and the interpretation pager.
+
+### Slice 7 — Dashboard and the guidance loop — **DEVICE-APPROVED**
+
+Scope: `DashboardScreen`, `TodayEnergyCard`, `WeeklyForecastCard`, and one
+addition to the shared `Icon` set. Presentation and accessibility only.
+
+Option A of the Slice 7 review packet. Options A and B named the same files:
+there is no `TodayEnergyScreen` or `WeeklyForecastScreen`, and `DashboardScreen`
+is the sole consumer of both guidance cards, so nothing could gate separately.
+
+Preserve: the guidance builders, transit and forecast calculations, chart lookup
+and validation, hydration, every fallback string, the reflection prompts, the
+Journal handoff payload, Supabase behaviour, route names and params.
+
+**Approved hierarchy.** Identity, signs, birth context, Today, the chart action,
+Weekly, four utilities. Today sits above the chart action deliberately: the
+Dashboard's recurring job is the current-guidance loop, so the first substantial
+content is today's reading, not the chart the reader already has.
+
+**Birth context replaces the birth-details card.** One quiet line —
+`10 Dec 1815 · 12:00 PM · London` — built from the stored profile with existing
+formatting. Email, raw timezone and coordinates leave the Dashboard entirely;
+the canonical record stays on Profile. Missing segments are dropped rather than
+rendered as a dash, so a separator never appears with nothing beside it.
+
+**Guidance cards.** Today takes the raised surface, Weekly the default one, so
+the distinction is elevation and order rather than a size difference that would
+make Weekly harder to read. Collapsed and expanded content, and its order, are
+unchanged.
+
+**Accessibility.** Each card's toggle was the whole card: TalkBack announced the
+title, the transit line and the entire collapsed summary as one button label,
+and that copy was not otherwise in the reading order. The toggle is now the
+header row alone. The fixed 38-point weekday column and the single-line clamps
+in the weekly rhythm are gone — both clipped under Android font scaling — while
+the deliberate two-line clamp of a collapsed summary stays, because that is the
+compact state rather than an accident.
+
+**Actions.** Six grid buttons become four quiet destinations. Edit Details
+folds into Profile. Sign Out leaves ordinary navigation but is kept as the
+secondary action of the fatal error state, where it is a recovery path out of a
+broken session — and it is now wrapped, so a failed sign-out reports itself
+instead of surfacing as an unhandled rejection.
+
+**Revised after the first device review.** Two structural changes, both
+presentation only and neither adding a route:
+
+1. The four destinations moved from the foot of the screen to a quick-
+   navigation strip directly under the identity block, so the places a reader
+   might go no longer sit behind the content they came for. Four equal columns
+   sized by `flex`, unbordered, secondary ink.
+2. Today and This Week became **tabs** rather than a stack. On device the
+   raised/default elevation step was not carrying the distinction — both cards
+   read as equal weight — and the screen ran to roughly two viewports. They are
+   two views of one thing, so they are peers on a selector.
+
+Only the selected card is rendered. The inactive one is not hidden, it is
+absent: it occupies no layout and TalkBack cannot reach it. That makes card-
+local `useState` the wrong home for the expanded flag, so both booleans are
+held by the screen — a reader who expands Today, looks at This Week and comes
+back finds it as they left it. Guidance computation and every other piece of
+business state stayed where it was; switching tabs triggers no rebuild, no
+chart work and no I/O.
+
+The birth chart joined the strip as a fifth destination in a second device
+pass. The full-width gold button read as an isolated slab wherever it sat, so
+hierarchy moved from geometry to ink: the chart destination is gold, the other
+four are secondary, and it is still the only gold thing on the screen. That
+put every actionable surface above the guidance and removed the last
+interruption between the tabs and the content.
+
+Two names collided once the chart joined — "Chart" for the reader's own and
+"Charts" for the saved collection — so the saved destination reads **Saved**
+and takes its own glyph, `library`. `charts` (Orbit) now means the reader's
+chart, which is what the wheel actually depicts. Spoken labels stay explicit
+about what pressing does: "View birth chart", "Open my charts".
+
+When the profile is incomplete the chart destination is disabled, says why,
+and cannot navigate — asserted directly rather than through a branch that
+could pass without ever reaching the disabled state.
+
+**Settled architecture — not to be reopened during later propagation.** Three
+Android rounds converged on this and it is the shape the rest of the migration
+should assume:
+
+| Decision | |
+| --- | --- |
+| Navigation position | Destinations sit **above** the guidance, under the identity block. Reached without scrolling past the content the screen exists for. |
+| Navigation form | One strip of five equal `flex` columns — never a percentage grid. Icon over a short label. |
+| Primary emphasis | Ink, not geometry. The chart destination is the only gold thing on the screen; there is no full-width gold button anywhere on the Dashboard. |
+| Guidance form | **Today / This Week tabs**, not a stack. They are two views of one thing, so they are peers on a selector. |
+| Default | Today, every visit. No remembered selection — the screen's recurring job is today. |
+| Rendering | Only the selected panel is rendered. The inactive one is absent, not hidden: no layout, no assistive reach. |
+| Panel state | Expanded flags live on the screen, because an unmounted panel cannot keep its own. Today and This Week stay independent across switches. |
+| Cost of switching | None. No rebuild, no chart work, no I/O — a selector that recalculates is not a selector. |
+
+Later slices inherit the two patterns as documented in design-system.md §10.5
+rather than re-deriving them per screen.
+
+Gate: the stage 8 validation gate, on device — **passed 2026-09-05**, over
+three Android rounds. The first confirmed the identity block, the signs line
+and the birth context, and rejected the stacked guidance cards and the
+bottom-placed utilities. The second moved navigation to the top and made the
+guidance a tab selector. The third moved the chart into the strip and settled
+the gold treatment.
+
+### Slice 8 — Journal list and editor — **IMPLEMENTED, pending Android device review**
+
+Scope: `JournalListScreen`, `JournalEditorScreen`, their tests, and one
+additive prop on `ScreenHeaderAction`. One slice rather than two: the two
+screens are 532 lines between them, they are one sitting for a reader, and
+migrating either alone leaves the other visibly V1 mid-flow.
+
+Preserve: the schema, `lib/journals.ts`, route names and params, every
+navigation payload, `promptTemplateId` and the whole guidance payload, stored
+timestamps, the display-title fallback chain, and the focus reload.
+
+**Creation is one action per resolved state.** Empty list carries it on the
+`EmptyState`; a populated list carries it on the header. Loading and error
+carry none. Both route through one `openNewEntry`, so they cannot drift.
+
+**The row is two sibling regions.** An open region carrying the accessibility
+label, the long press and a `delete` accessibility action; and a trailing
+48 dp delete control beside it, never nested inside. Nesting is the defect
+MyCharts already had to unpick — the outer press wins the touch. All three
+routes into deletion call one confirmation.
+
+**Dates are written, not serialised.** `Created 15 Sep 2026 · 1:55 PM` in
+place of `toLocaleString()`, same local-time semantics, year always present
+because a journal outlives one, and an unparseable stamp omits the line rather
+than printing "Invalid Date" over someone's writing.
+
+**The editor has one Save.** F-16's bottom duplicate is gone. The header action
+already had the spinner, the disabled state, the 48 dp target and the label.
+An empty response now disables it with a hint beneath the field and the same
+reason as its `accessibilityHint`, replacing an Alert that scolded the reader
+only after they pressed.
+
+**Guidance context became an epigraph.** A gold rule down the side, no card, no
+border, no focusable control, grouped as one passage. It sat in a `Card`
+directly above two bordered inputs, which gave the prompt the same grammar as
+the things the reader types into. Quoted material gets a rule; editable
+material gets a box.
+
+**One guard for every way out.** `beforeRemove` covers header back, Android
+hardware back and programmatic removal, so there is no `BackHandler` racing a
+navigation listener. Dirty is measured against what the session opened with;
+the fixed context is not part of it. A completed save and a confirmed discard
+both stand the guard down, and a failed save keeps the editor and its changes.
+
+Gate: the stage 8 validation gate, on device. **Not yet run.** The open
+question is whether edge-to-edge plus `adjustResize` leaves the response field
+or the header Save obscured by the IME — deliberately not pre-empted with
+guessed inset compensation.
+
+### Slice 9 — My Charts and Profile — **IMPLEMENTED, pending Android device review**
+
+Three separately reviewable commits: **9A** My Charts, **9B** Profile, **9C**
+the chart mark. Together the last significant `uiStyles` consumers outside
+auth — 1,072 lines across 11 files.
+
+Preserve throughout: `lib/charts.ts`, `lib/accountDeletion.ts`, chart
+validation and hydration, the `chart_preferences` contract, every route and
+param, and all account, export, sign-out and deletion behaviour. Coordinates
+and the IANA zone are still stored and still drive every calculation; they
+simply stopped being presentation.
+
+**9A — My Charts.** `Card` rows, `EmptyState`, `ErrorState`. Creation is one
+action per resolved state, as on the Journal list. The row is two sibling
+regions with a trailing 48 dp delete icon, and the icon, the long press and the
+accessibility action share one confirmation. Loading moved from a mount effect
+to `useFocusEffect` alone — pairing the two fetched twice on the way in, and
+mount-only never refreshed after saving a chart elsewhere.
+
+Row summaries stopped being database rows. `1997-09-15 · 13:55:00 ·
+America/Los_Angeles · (37.49, -122.23)` became `15 Sep 1997 · 1:55 PM`.
+
+**Birth dates are calendar fields, not instants.** `formatBirthDate` parses
+`YYYY-MM-DD` field by field rather than through `new Date()`, which reads the
+string as midnight UTC and renders the 14th for anyone west of Greenwich. This
+is why it is not the Journal's timestamp formatter: journal entries *are*
+instants and should localise; a birth date must never move.
+
+**9B — Profile.** Every card on the shared `Card`. `InfoRow`'s fixed 110pt
+label column is gone (§13.2). `ChoiceRow` is a real 48 dp `radio` with
+`selected` and `disabled` semantics and a gold selection state. Export and
+Sign out became `tertiary` buttons; **Delete account became `destructive`** —
+it was a `#007AFF` text link at roughly a 34 dp target, which is to say an
+irreversible action styled as a hyperlink. Six of the app's seven remaining
+`#007AFF` instances went with it. No "Coming soon" preference was activated,
+removed, or made to look selectable.
+
+**9C — the chart mark.** Device review rejected 9A's miniature `ChartWheel`:
+at 64dp a real wheel destroys its own detail and the row reads as noise. It
+was replaced by one static natal emblem, drawn for that size and carrying no
+chart data. The rule and the reasoning are in design-system.md §10.4,
+including why a Sun-sign tint was considered and rejected, and how synastry and
+composite marks extend it later. The windowing 9A needed went with the wheels —
+there is no longer any chart work for row count to multiply.
+
+Gate: the stage 8 validation gate, on device. **Not yet run.** To be reviewed
+in one combined pass with Slice 8.
+
+### Later — Dashboard redesign slice — **CLOSED BY SLICE 7**
+
+This existed to own one deferred item: replacing the Dashboard's decorative
+emoji. Slice 7 delivered it. `🌌` was removed with the "Welcome to Naksha"
+heading rather than replaced — the reader's name is the headline now — and the
+`☀️` / `🌙` rows became the astrological glyphs `☉` and `☽` on one unboxed
+identity line, matching what `ChartWheel` and `ChartCompass` already render.
 
 ## Transition to Release Hardening
 

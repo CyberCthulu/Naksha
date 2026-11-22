@@ -35,17 +35,26 @@ export type AspectType = 'conj' | 'opp' | 'square' | 'trine' | 'sextile'
  * Planets
  * ────────────────────────────────────────────────────────────────────────── */
 
-export type PlanetKey =
-  | 'Sun'
-  | 'Moon'
-  | 'Mercury'
-  | 'Venus'
-  | 'Mars'
-  | 'Jupiter'
-  | 'Saturn'
-  | 'Uranus'
-  | 'Neptune'
-  | 'Pluto'
+export const CANONICAL_PLANET_KEYS = [
+  'Sun',
+  'Moon',
+  'Mercury',
+  'Venus',
+  'Mars',
+  'Jupiter',
+  'Saturn',
+  'Uranus',
+  'Neptune',
+  'Pluto',
+] as const
+
+export type PlanetKey = (typeof CANONICAL_PLANET_KEYS)[number]
+
+const CANONICAL_PLANET_KEY_SET = new Set<string>(CANONICAL_PLANET_KEYS)
+
+export function isPlanetKey(name: string): name is PlanetKey {
+  return CANONICAL_PLANET_KEY_SET.has(name)
+}
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Interpretation blocks

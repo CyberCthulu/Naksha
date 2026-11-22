@@ -1,11 +1,13 @@
 import React from 'react'
-import { Alert, Text, TextInput, TouchableOpacity } from 'react-native'
+import { Alert, Text, TextInput } from 'react-native'
 import TestRenderer from 'react-test-renderer'
 
 import CompleteProfileScreen from '../CompleteProfileScreen'
+import { Button } from '../../components/ui/Button'
 import supabase from '../../lib/supabase'
 import { geocodePlace } from '../../lib/geocode'
 import type { UserRow } from '../../lib/domainTypes'
+import { getDashboardDataRevision } from '../../lib/dashboardFreshness'
 
 const mockNavigation = {
   goBack: jest.fn(),
@@ -61,6 +63,7 @@ const completeUser: UserRow = {
   last_name: 'Lovelace',
   birth_date: '1990-01-15',
   birth_time: '09:30:00',
+  birth_utc_offset_minutes: null,
   birth_location: 'London, UK',
   time_zone: 'Europe/London',
   birth_lat: 51.5072,
@@ -151,10 +154,8 @@ function textValue(value: unknown): string {
 }
 
 function findButtonByText(root: TestRenderer.ReactTestRenderer, label: string) {
-  const button = root.root.findAllByType(TouchableOpacity).find((node) =>
-    node.findAllByType(Text).some((textNode) =>
-      textValue(textNode.props.children).includes(label)
-    )
+  const button = root.root.findAllByType(Button).find((node) =>
+    node.props.title.includes(label)
   )
 
   if (!button) throw new Error(`Could not find button: ${label}`)
@@ -258,6 +259,7 @@ describe('CompleteProfileScreen', () => {
   })
 
   it('saves selected-coordinate profile data to public.users without auth metadata writes', async () => {
+    const revisionBeforeSave = getDashboardDataRevision()
     const query = mockUsersQuery(completeUser)
     const screen = await renderScreen()
 
@@ -269,6 +271,7 @@ describe('CompleteProfileScreen', () => {
       last_name: 'Lovelace',
       birth_date: '1990-01-15',
       birth_time: '09:30:00',
+      birth_utc_offset_minutes: null,
       birth_location: 'London, UK',
       time_zone: 'Europe/London',
       birth_lat: 51.5072,
@@ -276,7 +279,39 @@ describe('CompleteProfileScreen', () => {
     })
     expect(query.updateEq).toHaveBeenCalledWith('id', 'user-1')
     expect(mockedSupabase().auth.updateUser).not.toHaveBeenCalled()
+    expect(getDashboardDataRevision()).toBe(revisionBeforeSave + 1)
     expect(mockNavigation.goBack).toHaveBeenCalled()
+  })
+
+  it('hydrates and preserves an explicit DST-fold occurrence on save', async () => {
+    const foldUser: UserRow = {
+      ...completeUser,
+      birth_date: '2025-11-02',
+      birth_time: '01:30:00',
+      birth_utc_offset_minutes: -480,
+      time_zone: 'America/Los_Angeles',
+    }
+    const query = mockUsersQuery(foldUser)
+    const screen = await renderScreen()
+
+    expect(
+      screen.root.findAllByType(Text).some((node) =>
+        textValue(node.props.children).includes(
+          'Later occurrence — UTC−08:00'
+        )
+      )
+    ).toBe(true)
+
+    await pressButton(screen, 'Save & Continue')
+
+    expect(query.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        birth_date: '2025-11-02',
+        birth_time: '01:30:00',
+        birth_utc_offset_minutes: -480,
+        time_zone: 'America/Los_Angeles',
+      })
+    )
   })
 
   it('geocodes a manually typed location when coordinates are missing', async () => {
@@ -307,6 +342,7 @@ describe('CompleteProfileScreen', () => {
       last_name: 'Lovelace',
       birth_date: '1990-01-15',
       birth_time: '09:30:00',
+      birth_utc_offset_minutes: null,
       birth_location: 'New York, NY',
       time_zone: 'America/New_York',
       birth_lat: 40.7128,
