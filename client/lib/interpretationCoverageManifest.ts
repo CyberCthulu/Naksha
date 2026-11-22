@@ -686,7 +686,6 @@ export const KNOWN_CONFORMANCE_FOLLOW_UPS = [
   "future-birth-date-policy",
   "rising-sign-doctrine-test-pattern-narrowing",
   "benchmark-meta-commentary-cleanup",
-  "dignity-language-cleanup",
   "outer-planet-calibration",
 ] as const;
 

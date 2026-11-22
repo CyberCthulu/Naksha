@@ -1,6 +1,6 @@
 # Naksha C1 interpretation-system status
 
-Verified **12 October 2026 (Pacific)** on branch `ui/v2-redesign` through commit `073b5b5fb0d48abb7b480836fe72b451b9807a8d` (`C1.3D`).
+Updated **22 November 2026 (Pacific)** on branch `ui/v2-redesign`. The committed C1.3D documentation baseline is `5ee0905f5452807c0509dbe8f10e419706f1ba9a`; the independently approved C1.4A dignity cleanup is complete in the working tree and awaits its final commit.
 
 This document is the concise status and handoff for C1. The governing editorial doctrine remains [naksha-interpretation-standard.md](naksha-interpretation-standard.md). The canonical machine-readable coverage source is `client/lib/interpretationCoverageManifest.ts`; counts in this document summarize that contract rather than replace it.
 
@@ -10,7 +10,7 @@ C1 establishes the correctness boundary beneath Naksha's deterministic interpret
 
 `calculation → structured astrology data → curated interpretation → deterministic composition → UI`
 
-The completed work through C1.3D makes supported identities, physical reachability, content provenance, selection precision, fallback behavior, legacy-data boundaries, and Daily prompt relevance explicit and testable. It preserves the supported V1 astrology surfaces while removing false interpretive claims and selection errors.
+The completed work through C1.4A makes supported identities, physical reachability, content provenance, selection precision, fallback behavior, legacy-data boundaries, Daily prompt relevance, and dignity-language integrity explicit and testable. It preserves the supported V1 astrology surfaces while removing false interpretive claims and selection errors.
 
 **Verdict:** the interpretation foundation is materially stronger and ready for the remaining narrow C1 exit work. C1 is not yet closed, and C2's broad prose rewrite should not start until the exit work listed below and the final capability-preservation audit pass.
 
@@ -38,6 +38,10 @@ Transit direction is part of identity. `transiting Saturn → natal Moon` is not
 C1 removed prose that treated house numbers as literal angles. The first, fourth, seventh, and tenth Whole Sign houses are not automatically identical to the Ascendant, IC, Descendant, and MC. Natural-zodiac teaching correspondences are no longer presented as literal rulership of a calculated house.
 
 These were prose and doctrine corrections. No new angle, ruler, dignity, or house-calculation engine was introduced.
+
+### Dignity-language integrity (C1.4A)
+
+After independent editorial acceptance, C1.4A replaced eight selective planet-sign “at home” claims with explanations of how the planetary function operates through the sign. It also clarified Venus in Libra's relational mechanism and replaced guaranteed social-success language in Saturn in Capricorn with possible development through mastery and accountability. Naksha still does not calculate or interpret essential dignity.
 
 ### Calculation-derived reachability
 
@@ -191,11 +195,10 @@ The next phases should add interpretation, not padding. Longer prose is warrante
 
 C1 should close only after these narrow tasks are complete:
 
-1. **Dignity-language cleanup.** Remove selective shorthand that implies a complete dignity system Naksha does not implement.
-2. **Outer-planet sign calibration.** Frame Uranus, Neptune, and Pluto sign placements as shared/generational and locate personal expression through supported house/aspect evidence.
-3. **Rising-sign doctrine-test cleanup.** Narrow the known overbroad test pattern before rising-sign content work.
-4. **Benchmark cleanup.** Remove reviewer/meta commentary from authoring benchmarks while retaining the doctrine they establish.
-5. **Final capability-preservation audit.** Exhaustively verify planet-sign, planet-house, house-sign, natal, Sky Now, Daily, Weekly, prompts, practices, generated charts, and canonical saved charts against the committed contract.
+1. **Outer-planet sign calibration.** Frame Uranus, Neptune, and Pluto sign placements as shared/generational and locate personal expression through supported house/aspect evidence.
+2. **Rising-sign doctrine-test cleanup.** Narrow the known overbroad test pattern before rising-sign content work.
+3. **Benchmark cleanup.** Remove reviewer/meta commentary from authoring benchmarks while retaining the doctrine they establish.
+4. **Final capability-preservation audit.** Exhaustively verify planet-sign, planet-house, house-sign, natal, Sky Now, Daily, Weekly, prompts, practices, generated charts, and canonical saved charts against the committed contract.
 
 The product-supported astrology epoch and future-birth-date policy also remain explicit product/conformance decisions. They should not be inferred from the civil-year parser envelope.
 

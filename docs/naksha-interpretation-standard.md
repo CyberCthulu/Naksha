@@ -92,7 +92,7 @@ V1 also does not use planet-to-sign rulership as an interpretation mechanism. A 
 
 V1 does not calculate, score, rank, or interpret essential dignity. Terms such as domicile, exaltation, detriment, and fall must not be used to imply that a placement is good, bad, stronger, weaker, or more evolved.
 
-Existing “at home” phrasing is not a supported interpretive mechanism and must not covertly imply dignity status. Its cleanup belongs to later C1 content work, not the C1.1 closure. No C1–C4 rewrite should infer dignity effects from sign placement unless Naksha later implements dignity doctrine deliberately and consistently.
+Planetary “at home” phrasing is not a supported interpretive mechanism and must not covertly imply dignity status. C1.4A removed the eight identified planet-sign instances after independent editorial review. No C1–C4 rewrite should infer dignity effects from sign placement unless Naksha later implements dignity doctrine deliberately and consistently.
 
 ### 3.5 Outer planets
 
@@ -592,7 +592,7 @@ C1.1 completed the following narrow corrections without changing calculation, ke
 - `client/lib/lexicon/houses/index.ts`: replaced dormant “on the cusp of this house” fallback language with Whole Sign house language;
 - `client/lib/lexicon/__tests__/doctrineIntegrity.test.ts`: protects the doctrine across generic houses, planet-house content, house-sign content, and the fallback.
 
-The broader issues remain scheduled content work. `client/lib/lexicon/planets/index.ts` still needs generational calibration for all 36 Uranus, Neptune, and Pluto sign entries. Existing “at home” dignity shorthand also remains for a later deliberate cleanup. Neither belongs to the C1.1 closure.
+At the C1.1 closure, `client/lib/lexicon/planets/index.ts` still needed generational calibration for all 36 Uranus, Neptune, and Pluto sign entries, and selective “at home” dignity shorthand remained. C1.4A subsequently corrected the dignity shorthand; outer-planet calibration remains separate work.
 
 ## 18. C1.1 closure and C1.2 audit boundary
 
@@ -608,7 +608,7 @@ C1.1 closed when the correction record above and its regression tests passed. Th
 
 C1.2A inspected the live calculation and product constraints. It did not infer a birth window, author the aspect rewrite, or change verified astronomy merely to simplify the coverage matrix. C1.2B encodes those reviewed findings in the machine-readable contract below.
 
-Outer-planet sign calibration, dignity cleanup, natal aspect architecture, and the large lexicon rewrite remain later C1–C3 work.
+Outer-planet sign calibration, natal aspect architecture, and the large lexicon rewrite remain later C1–C3 work. C1.4A completed the narrow dignity-language cleanup.
 
 ## 19. C1.2B machine-readable coverage contract
 
@@ -631,7 +631,7 @@ Legacy saved aspects may hydrate defensively, but natal interpretation requires 
 
 Daily prompt relevance follows the doctrine hierarchy: the transit mechanism is evaluated first, and a prompt strongly matched to multiple active mechanism sources leads. A complete prompt written for the exact active natal target may also lead before house context; generic aspect-only or transiting-planet-only matches need not. The exact active Whole Sign house then supplies the life-area context before broader single-primitive and background fallbacks.
 
-Known conformance work remains explicitly deferred: define the product epoch and reject future birth dates by the birth location's local civil date; narrow rising-sign doctrine-test patterns before rising-sign content work; remove benchmark meta-commentary before benchmark-derived authoring; clean up dignity language; and calibrate outer-planet sign content.
+Known conformance work remains explicitly deferred: define the product epoch and reject future birth dates by the birth location's local civil date; narrow rising-sign doctrine-test patterns before rising-sign content work; remove benchmark meta-commentary before benchmark-derived authoring; and calibrate outer-planet sign content. C1.4A completed the dignity-language cleanup after independent editorial acceptance.
 
 ## 20. C1.2C contract-hardening clarifications
 

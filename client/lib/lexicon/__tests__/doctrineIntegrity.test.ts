@@ -2,6 +2,8 @@ import { HOUSE_MEANINGS } from '../houses/meanings'
 import { getHouseSignMeaning } from '../houses'
 import { HOUSE_SIGN_MEANINGS } from '../houses/signMeanings'
 import { PLANET_HOUSE_MEANINGS } from '../planetHouses/meanings'
+import { getPlanetSignMeaning } from '../planets'
+import { CANONICAL_PLANET_KEYS, ZODIAC_FULL } from '../types'
 import type {
   HouseNumber,
   PlanetKey,
@@ -193,4 +195,32 @@ describe('Whole Sign interpretation doctrine', () => {
       expectNoLiteralHouseRulership(meaning!.long, sign, house)
     }
   )
+})
+
+describe('Planet-sign dignity doctrine', () => {
+  it('keeps all 120 canonical planet-sign interpretations resolvable', () => {
+    for (const planet of CANONICAL_PLANET_KEYS) {
+      for (const sign of ZODIAC_FULL) {
+        const meaning = getPlanetSignMeaning(planet, sign)
+
+        expect(meaning).not.toBeNull()
+        expect(meaning?.short.trim()).not.toBe('')
+        expect(meaning?.long.trim()).not.toBe('')
+      }
+    }
+  })
+
+  it('does not describe a planet itself as at home in its sign', () => {
+    for (const planet of CANONICAL_PLANET_KEYS) {
+      for (const sign of ZODIAC_FULL) {
+        const meaning = getPlanetSignMeaning(planet, sign)
+        const dignityShorthand = new RegExp(
+          `\\b${planet}(?:\\s+in\\s+${sign})?\\s+(?:is|feels|seems)\\s+at\\s+home\\b`,
+          'i'
+        )
+
+        expect(meaning?.long).not.toMatch(dignityShorthand)
+      }
+    }
+  })
 })

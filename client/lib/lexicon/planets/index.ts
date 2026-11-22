@@ -152,7 +152,7 @@ Creating space to actually feel—rather than just analyze—gives your heart as
     },
     Cancer: {
       short: 'You’re deeply sensitive and need emotional safety and belonging.',
-      long: `Moon in Cancer is at home in the realm of feelings. You absorb the emotional climate around you, and you’re 
+      long: `With the Moon in Cancer, a need for emotional safety may express itself through care, memory, and close bonds. You absorb the emotional climate around you, and you’re
 often the caretaker or emotional anchor in your circles. Family (chosen or biological) deeply impacts your inner world.
 
 The lifelong task is learning to nurture yourself as fiercely as you nurture others, and to set boundaries that protect 
@@ -241,7 +241,7 @@ You communicate best when you have time to process, and you often express yourse
 
   Gemini: {
     short: 'Your mind is curious, quick, and constantly making connections.',
-    long: `Mercury in Gemini is at home here, bringing mental agility and a hunger for information. You think in webs rather than lines—connecting ideas, people, and perspectives with ease. Conversation, learning, and variety keep your mind alive.
+    long: `Mercury in Gemini approaches ideas through questions, exchange, and quick connections. You think in webs rather than lines—connecting ideas, people, and perspectives with ease. Conversation, learning, and variety keep your mind alive.
 
 You’re skilled at explaining complex ideas simply, but your challenge is focus. With so many interests, it’s easy to skim the surface rather than dive deep. When you learn to sustain attention, your intellect becomes exceptionally versatile and sharp.`
   },
@@ -325,7 +325,7 @@ You tend to fall fast and express affection openly, sometimes impulsively. The c
 
   Taurus: {
     short: 'You love steadily, sensually, and with deep loyalty.',
-    long: `Venus in Taurus is at home here, seeking comfort, security, and physical presence. You value consistency and tend to show love through touch, reliability, and shared pleasures. Once you commit, you’re deeply devoted.
+    long: `Venus in Taurus expresses affection and values through comfort, steadiness, and physical presence. You value consistency and tend to show love through touch, reliability, and shared pleasures. Once you commit, you’re deeply devoted.
 
 You’re drawn to what feels safe and beautiful, but the growth edge is flexibility—learning when to let go rather than holding on out of comfort alone. Your love is a grounding force when trust is established.`
   },
@@ -360,7 +360,7 @@ You may be selective or cautious in relationships, noticing imperfections easily
 
   Libra: {
     short: 'You love harmoniously and seek balance and mutual respect.',
-    long: `Venus in Libra is naturally relationship-oriented. You value fairness, beauty, and emotional reciprocity, often thriving in partnership. Romance, shared aesthetics, and emotional equality matter deeply to you.
+    long: `Venus in Libra may express attraction and affection through comparison and negotiation, seeking a balance between your preferences and someone else’s. You value fairness, beauty, and emotional reciprocity; partnership can bring both these values and their compromises into sharper focus. Romance, shared aesthetics, and emotional equality matter deeply to you.
 
 The challenge is not losing yourself in the relationship. When you honor your own needs as much as the bond itself, your love becomes graceful, supportive, and deeply connective.`
   },
@@ -557,7 +557,7 @@ The risk is obsession or extremity. Growth becomes sustainable when intensity is
 
   Sagittarius: {
     short: 'You grow through exploration, truth, and big-picture thinking.',
-    long: `Jupiter in Sagittarius is at home here. You expand through travel, philosophy, spirituality, and the search for meaning. Optimism and faith in life are natural strengths.
+    long: `Jupiter in Sagittarius seeks a wider horizon for belief and possibility. Travel, philosophy, and spiritual questions can invite you to test what you know against what you have yet to experience. Optimism can help you take chances, though conviction can also make it harder to hear a challenge.
 
 The challenge is excess or restlessness. Grounding wisdom in lived experience turns belief into genuine understanding.`
   },
@@ -655,9 +655,9 @@ True wisdom develops when ideals are grounded in real-world experience. Your per
 
   Capricorn: {
     short: 'You learn mastery, responsibility, and self-respect.',
-    long: `Saturn is at home in Capricorn. Life may feel demanding early, with heavy responsibilities or high expectations.
+    long: `With Saturn in Capricorn, responsibility often takes the form of long-term goals, clear standards, and patient effort. Life may feel demanding early, with heavy responsibilities or high expectations.
 
-Through persistence, you gain authority and respect. Success feels deeply earned, and your leadership becomes a model for others.`
+As you work with long-term commitments, you may develop practical mastery and a steadier sense of authority over your own choices. If you take on leadership, accountability can matter more than recognition.`
   },
 
   Aquarius: {
@@ -753,7 +753,7 @@ Your gift is modernizing systems—introducing change that makes structures more
 
   Aquarius: {
     short: 'You’re naturally ahead of your time and wired for innovation.',
-    long: `Uranus is at home in Aquarius. You think in systems, futures, and collective progress. You may feel different, detached, or misunderstood early on.
+    long: `Uranus in Aquarius can challenge the habits and rules that shape groups, institutions, and shared futures. You think in systems, futures, and collective progress. You may feel different, detached, or misunderstood early on.
 
 Embracing your originality while staying connected allows your ideas to genuinely improve the world around you.`
   },
@@ -851,7 +851,7 @@ Staying grounded helps ensure your hopes translate into real-world impact rather
 
   Pisces: {
     short: 'You’re deeply intuitive, imaginative, and spiritually sensitive.',
-    long: `Neptune is at home in Pisces, amplifying empathy, creativity, and spiritual awareness. You may feel connected to unseen realms, emotions, or collective suffering.
+    long: `Neptune in Pisces can express imagination and spiritual longing through empathy, art, and a sensitivity to what is hard to name. You may feel connected to unseen realms, emotions, or collective suffering.
 
 Learning boundaries is essential. When grounded, your sensitivity becomes a powerful channel for healing, art, and compassion.`
   },
@@ -914,7 +914,7 @@ By confronting dependency and control, you learn to form connections rooted in m
 
   Scorpio: {
     short: 'You are wired for profound emotional and psychological transformation.',
-    long: `Pluto in Scorpio is at home, amplifying themes of death, rebirth, intimacy, and shadow work. You’re naturally attuned to what others avoid—truth, pain, and emotional depth.
+    long: `Pluto in Scorpio brings questions of power, loss, and renewal into the intimate territory of trust and what people keep hidden. You’re naturally attuned to what others avoid—truth, pain, and emotional depth.
 
 Your power lies in your capacity to face darkness without being consumed by it, emerging again and again renewed and wiser.`
   },

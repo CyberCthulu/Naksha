@@ -759,6 +759,21 @@ describe("selection and prompt/practice contracts", () => {
     );
   });
 
+  it("closes dignity cleanup without dropping unrelated C1 follow-ups", () => {
+    expect(KNOWN_CONFORMANCE_FOLLOW_UPS).not.toContain(
+      "dignity-language-cleanup",
+    );
+    expect(KNOWN_CONFORMANCE_FOLLOW_UPS).toEqual(
+      expect.arrayContaining([
+        "product-epoch-undecided",
+        "future-birth-date-policy",
+        "rising-sign-doctrine-test-pattern-narrowing",
+        "benchmark-meta-commentary-cleanup",
+        "outer-planet-calibration",
+      ]),
+    );
+  });
+
   it("keeps Weekly prompt scoring synchronized with runtime weights", () => {
     expect(WEEKLY_PROMPT_SELECTION_WEIGHTS).toEqual({
       sourceMatch:
